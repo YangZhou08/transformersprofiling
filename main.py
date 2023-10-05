@@ -72,7 +72,8 @@ def max_fn(x):
     return x_max / x_max_sum
 
 def run(): 
-    torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
+    # torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
+    torch_device = 'cpu' 
     
     # from transformers import FlaxT5EncoderModel, T5Tokenizer 
     tokenizer = T5Tokenizer.from_pretrained("google/mt5-small") # TODO: need a better solution 
