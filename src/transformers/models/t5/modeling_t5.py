@@ -989,7 +989,8 @@ class T5Stack(T5PreTrainedModel):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
-    ):
+    ): 
+        print("You got here") 
         # Model parallel
         if self.model_parallel:
             torch.cuda.set_device(self.first_device)
