@@ -1,6 +1,6 @@
 import torch 
 import argparse 
-import contexttimer 
+# import contexttimer 
 
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM 
 
