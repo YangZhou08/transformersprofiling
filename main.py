@@ -6,7 +6,7 @@ from src.transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSe
 from src.transformers import FlaxT5EncoderModel, T5Tokenizer 
 
 from tqdm import tqdm
-from sampling.utils import norm_logits, sample
+# from sampling.utils import norm_logits, sample 
 
 def run(): 
     torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
