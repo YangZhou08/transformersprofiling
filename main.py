@@ -82,10 +82,14 @@ def run():
     # tokenizer = T5Tokenizer.from_pretrained("google/mt5-small") # TODO: need a better solution 
     
     small_model = AutoModelForSeq2SeqLM.from_pretrained("t5-small", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
+    small_model.eval() 
     
     input_ids = tokenizer.encode("I am new to huggingface transformers", return_tensors = "pt").to(torch_device) 
     
-    outputs = small_model(input_ids) 
+    pad_token_id = tokenizer.pad_token_id
+    decoder_input_ids = torch.full((input_ids.shape[0], 1), pad_token_id, dtype=torch.long).to(input_ids.device) 
+    
+    outputs = small_model(input_ids = input_ids, decoder_input_ids = decoder_input_ids) 
     
     top_k = 10
     top_p = 0.9 
