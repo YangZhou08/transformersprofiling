@@ -114,6 +114,7 @@ def run():
         past_key_values = outputs.past_key_values
         idx_next = sample(last_p)
         x = torch.cat((x, idx_next), dim=1) 
+        n += 1 
     
     generatedText = tokenizer.decode(x[0], skip_special_tokens = True) 
     print("next generated token: {}".format(generatedText)) 
