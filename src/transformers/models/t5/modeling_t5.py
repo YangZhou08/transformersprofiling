@@ -349,7 +349,6 @@ class T5LayerFF(nn.Module):
 class T5Attention(nn.Module):
     def __init__(self, config: T5Config, has_relative_attention_bias=False):
         super().__init__() 
-        print("You got here") 
         self.is_decoder = config.is_decoder
         self.has_relative_attention_bias = has_relative_attention_bias
         self.relative_attention_num_buckets = config.relative_attention_num_buckets
@@ -479,7 +478,9 @@ class T5Attention(nn.Module):
                 raise ValueError(
                     f"past_key_value should have 2 past states: keys and values. Got { len(past_key_value)} past states"
                 )
-            real_seq_length += past_key_value[0].shape[2] if query_length is None else query_length
+            real_seq_length += past_key_value[0].shape[2] if query_length is None else query_length 
+        
+        print("You got here") 
 
         key_length = real_seq_length if key_value_states is None else key_value_states.shape[1]
 
