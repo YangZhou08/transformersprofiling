@@ -923,7 +923,8 @@ class T5Stack(T5PreTrainedModel):
         # Model parallel
         self.model_parallel = False
         self.device_map = None
-        self.gradient_checkpointing = False
+        self.gradient_checkpointing = False 
+        print("You got here") 
 
     @add_start_docstrings(PARALLELIZE_DOCSTRING)
     def parallelize(self, device_map=None):
@@ -990,7 +991,6 @@ class T5Stack(T5PreTrainedModel):
         output_hidden_states=None,
         return_dict=None,
     ): 
-        print("You got here") 
         # Model parallel
         if self.model_parallel:
             torch.cuda.set_device(self.first_device)
