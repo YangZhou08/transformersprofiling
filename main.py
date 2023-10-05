@@ -90,19 +90,30 @@ def run():
     
     pad_token_id = tokenizer.pad_token_id
     decoder_input_ids = torch.full((input_ids.shape[0], 1), pad_token_id, dtype=torch.long).to(input_ids.device) 
-    x = input_ids 
+    x = decoder_input_ids 
+    eos_token_id = tokenizer.eos_token_id 
     
-    outputs = small_model(input_ids = input_ids, decoder_input_ids = decoder_input_ids) 
+    encoder_outputs = small_model.get_encoder()(input_ids) 
     
+    n = 0 
     top_k = 10
     top_p = 0.9 
     
     temperature = 1 
+    past_key_values = None 
     
-    last_p = norm_logits(outputs.logits[::, -1, :], temperature, top_k, top_p)
-    past_key_values = outputs.past_key_values
-    idx_next = sample(last_p)
-    x = torch.cat((x, idx_next), dim=1) 
+    while n < 100: 
+        outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
+        
+        
+    
+        # outputs = small_model(input_ids = input_ids, decoder_input_ids = decoder_input_ids) 
+        
+        
+        last_p = norm_logits(outputs.logits[::, -1, :], temperature, top_k, top_p)
+        past_key_values = outputs.past_key_values
+        idx_next = sample(last_p)
+        x = torch.cat((x, idx_next), dim=1) 
     
     generatedText = tokenizer.decode(x[0], skip_special_tokens = True) 
     print("next generated token: {}".format(generatedText)) 
