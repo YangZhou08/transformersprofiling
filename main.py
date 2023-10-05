@@ -97,3 +97,6 @@ def run():
     print("next generated token: {}".format(generatedText)) 
     
     # last_p = norm_logits(outputs.logits[::, -1, :], temperature, top_k, top_p) 
+
+if __name__ == "__main__": 
+    run() 
