@@ -90,6 +90,7 @@ def run():
     
     pad_token_id = tokenizer.pad_token_id
     decoder_input_ids = torch.full((input_ids.shape[0], 1), pad_token_id, dtype=torch.long).to(input_ids.device) 
+    x = input_ids 
     
     outputs = small_model(input_ids = input_ids, decoder_input_ids = decoder_input_ids) 
     
