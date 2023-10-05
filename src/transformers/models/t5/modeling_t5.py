@@ -496,7 +496,7 @@ class T5Attention(nn.Module):
                 # self-attn
                 # (batch_size, n_heads, seq_length, dim_per_head)
                 hidden_states = shape(proj_layer(hidden_states))
-            elif past_key_value is None:
+            elif past_key_value is None: # NOTE here the key_value_states is not None and past_key_value is None 
                 # cross-attn
                 # (batch_size, n_heads, seq_length, dim_per_head)
                 hidden_states = shape(proj_layer(key_value_states))
