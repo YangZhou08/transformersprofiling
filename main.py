@@ -83,7 +83,8 @@ def run():
     
     # tokenizer = T5Tokenizer.from_pretrained("google/mt5-small") # TODO: need a better solution 
     
-    small_model = AutoModelForSeq2SeqLM.from_pretrained("t5-small", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
+    # small_model = AutoModelForSeq2SeqLM.from_pretrained("t5-small", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
+    small_model = AutoModelForSeq2SeqLM.from_pretrained("t5-3b", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
     small_model.eval() 
     
     word_seq = "I am new to huggingface transformers" 
