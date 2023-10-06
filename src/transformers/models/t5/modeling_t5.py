@@ -1000,6 +1000,7 @@ class T5Stack(T5PreTrainedModel):
         output_hidden_states=None,
         return_dict=None,
     ): 
+        print("printing to see whether this script is actually of interest") 
         # Model parallel
         if self.model_parallel:
             torch.cuda.set_device(self.first_device)
