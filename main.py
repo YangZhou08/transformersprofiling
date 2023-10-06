@@ -110,7 +110,7 @@ def run():
         last_p = norm_logits(outputs.logits[::, -1, :], temperature, top_k, top_p)
         past_key_values = outputs.past_key_values
         idx_next = sample(last_p) 
-        print("{}".format(tokenizer.decode(idx_next, skip_special_tokens = True))) 
+        print("{}".format(tokenizer.decode(idx_next[0], skip_special_tokens = True))) 
         x = torch.cat((x, idx_next), dim=1) 
         n += 1 
     
