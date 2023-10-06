@@ -117,7 +117,7 @@ def run():
     temperature = 1 
     past_key_values = None 
     
-    while n < 50: 
+    while n < 35: 
         outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
         
         # outputs = small_model(input_ids = input_ids, decoder_input_ids = decoder_input_ids) 
