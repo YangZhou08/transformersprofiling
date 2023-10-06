@@ -101,7 +101,7 @@ def run():
     word_seq2 = "The Apollo 11 mission in 1969 marked a monumental achievement for humanity. American astronauts Neil Armstrong and Buzz Aldrin became the first humans to walk on the moon, with Armstrong's famous words: 'That's one small step for man, one giant leap for mankind." 
     # word_suffix = " In the previous sentence, what did Neil Armstrong say?" 
     word_seq_list = [word_seq1, word_seq2] 
-    word_seq_list = [word_prefix + seq for seq in word_seq] 
+    word_seq_list = [word_prefix + word_seq for word_seq in word_seq_list] 
     
     for word_seq_index, word_seq in enumerate(word_seq_list): 
         input_ids = tokenizer.encode(word_seq, return_tensors = "pt").to(torch_device) 
