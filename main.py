@@ -71,7 +71,7 @@ def max_fn(x):
     """
     x_max = torch.where(x > 0, x, torch.zeros_like(x))
     x_max_sum = torch.sum(x_max, dim=1, keepdim=True) 
-    return x_max / x_max_sum
+    return x_max / x_max_sum 
 
 def run(): 
     torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
@@ -88,7 +88,8 @@ def run():
     
     word_seq = "I am new to huggingface transformers" 
     word_seq = "Peter want to marry a German woman" 
-    # word_seq = "I am a student." 
+    word_seq = "I am a student." 
+    word_seq = "I am currently playing with chatGPT to write a furniture assembly plan to train a robot." 
     
     input_ids = tokenizer.encode(word_seq, return_tensors = "pt").to(torch_device) 
     
@@ -112,9 +113,9 @@ def run():
         # outputs = small_model(input_ids = input_ids, decoder_input_ids = decoder_input_ids) 
         
         # last_p = norm_logits(outputs.logits[::, -1, :], temperature, top_k, top_p) 
-        print(outputs.logits.shape) 
+        print(outputs.logits.shape) # (batch_size, seq_len, vocab_size) 
         # print(outputs) 
-        last_p = outputs.logits.argmax(-1)[:, -1].unsqueeze(-1) 
+        last_p = outputs.logits.argmax(-1)[:, -1].unsqueeze(-1) # argmax (batch_size, seq_len), after [:, -1] -> (batch_size, ), after unsqueeze(-1) -> (batch_size, 1) 
         
         past_key_values = outputs.past_key_values 
         # idx_next = sample(last_p) 
@@ -125,8 +126,9 @@ def run():
         x = torch.cat((x, idx_next), dim=1) 
         n += 1 
     
+    print("input: {}".format(word_seq)) 
     generatedText = tokenizer.decode(x[0], skip_special_tokens = True) 
-    print("next generated token: {}".format(generatedText)) 
+    print("generatedText: {}".format(generatedText)) 
     
     # last_p = norm_logits(outputs.logits[::, -1, :], temperature, top_k, top_p) 
 
