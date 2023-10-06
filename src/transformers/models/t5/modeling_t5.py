@@ -47,7 +47,9 @@ from ...utils import (
     replace_return_docstrings,
 )
 from ...utils.model_parallel_utils import assert_device_map, get_device_map
-from .configuration_t5 import T5Config
+from .configuration_t5 import T5Config 
+
+from torch.profiler import profile, record_function, ProfilerActivity 
 
 
 logger = logging.get_logger(__name__)
@@ -339,9 +341,11 @@ class T5LayerFF(nn.Module):
         self.layer_norm = T5LayerNorm(config.d_model, eps=config.layer_norm_epsilon)
         self.dropout = nn.Dropout(config.dropout_rate)
 
-    def forward(self, hidden_states):
-        forwarded_states = self.layer_norm(hidden_states)
-        forwarded_states = self.DenseReluDense(forwarded_states)
+    def forward(self, hidden_states): 
+        with record_function("layer_norm"): 
+            forwarded_states = self.layer_norm(hidden_states) 
+        with record_function("linear"): 
+            forwarded_states = self.DenseReluDense(forwarded_states) 
         hidden_states = hidden_states + self.dropout(forwarded_states)
         return hidden_states
 
@@ -599,17 +603,19 @@ class T5LayerSelfAttention(nn.Module):
         past_key_value=None,
         use_cache=False,
         output_attentions=False,
-    ):
-        normed_hidden_states = self.layer_norm(hidden_states)
-        attention_output = self.SelfAttention(
-            normed_hidden_states,
-            mask=attention_mask,
-            position_bias=position_bias,
-            layer_head_mask=layer_head_mask,
-            past_key_value=past_key_value,
-            use_cache=use_cache,
-            output_attentions=output_attentions,
-        )
+    ): 
+        with record_function("layer_norm"): 
+            normed_hidden_states = self.layer_norm(hidden_states) 
+        with record_function("self_attention"): 
+            attention_output = self.SelfAttention(
+                normed_hidden_states,
+                mask=attention_mask,
+                position_bias=position_bias,
+                layer_head_mask=layer_head_mask,
+                past_key_value=past_key_value,
+                use_cache=use_cache,
+                output_attentions=output_attentions,
+            ) 
         hidden_states = hidden_states + self.dropout(attention_output[0])
         outputs = (hidden_states,) + attention_output[1:]  # add attentions if we output them
         return outputs
@@ -633,19 +639,21 @@ class T5LayerCrossAttention(nn.Module):
         use_cache=False,
         query_length=None,
         output_attentions=False,
-    ):
-        normed_hidden_states = self.layer_norm(hidden_states)
-        attention_output = self.EncDecAttention(
-            normed_hidden_states,
-            mask=attention_mask,
-            key_value_states=key_value_states,
-            position_bias=position_bias,
-            layer_head_mask=layer_head_mask,
-            past_key_value=past_key_value,
-            use_cache=use_cache,
-            query_length=query_length,
-            output_attentions=output_attentions,
-        )
+    ): 
+        with record_function("layer_norm"): 
+            normed_hidden_states = self.layer_norm(hidden_states) 
+        with record_function("cross_attention"): 
+            attention_output = self.EncDecAttention(
+                normed_hidden_states,
+                mask=attention_mask,
+                key_value_states=key_value_states,
+                position_bias=position_bias,
+                layer_head_mask=layer_head_mask,
+                past_key_value=past_key_value,
+                use_cache=use_cache,
+                query_length=query_length,
+                output_attentions=output_attentions,
+            ) 
         layer_output = hidden_states + self.dropout(attention_output[0])
         outputs = (layer_output,) + attention_output[1:]  # add attentions if we output them
         return outputs
