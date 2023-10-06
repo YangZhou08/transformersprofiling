@@ -93,7 +93,8 @@ def run():
     word_seq = "Peter want to marry a German woman" 
     word_seq = "I am a student." 
     word_seq = "I am currently playing with chatGPT to write a furniture assembly plan to train a robot." 
-    word_suffix = " In the previous sentence, what do I use ChatGPT to do?" 
+    word_seq = "Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equal. Now we are engaged in a great civil war, testing whether that nation, or any nation so conceived and so dedicated, can long endure. We are met on a great battlefield of that war. We have come to dedicate a portion of that field, as a final resting place for those who here gave their lives that that nation might live." 
+    word_suffix = " In the previous sentence, when does our fathers brought forth on this continent?" 
     word_seq = word_seq + word_suffix 
     
     input_ids = tokenizer.encode(word_seq, return_tensors = "pt").to(torch_device) 
@@ -112,7 +113,7 @@ def run():
     temperature = 1 
     past_key_values = None 
     
-    while n < 30: 
+    while n < 50: 
         outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
         
         # outputs = small_model(input_ids = input_ids, decoder_input_ids = decoder_input_ids) 
