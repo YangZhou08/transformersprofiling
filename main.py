@@ -10,6 +10,8 @@ from tqdm import tqdm
 
 import torch.nn.functional as F 
 
+cache_dir = "/rscratch/zhendong/yang_tasc" 
+
 # copy from https://github.com/LeeSinLiang/microGPT/blob/ed40cf9780dbeb180adfe94c227d4aa97e69250e/gpt.py
 def top_k_top_p_filter(logits: torch.Tensor, top_k: int = 0, top_p: float = 0.0):
     """
@@ -87,10 +89,12 @@ def run():
     small_model = AutoModelForSeq2SeqLM.from_pretrained("t5-3b", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
     small_model.eval() 
     
+    world_prefix = "translate English to German: " 
     word_seq = "I am new to huggingface transformers" 
     word_seq = "Peter want to marry a German woman" 
     word_seq = "I am a student." 
     word_seq = "I am currently playing with chatGPT to write a furniture assembly plan to train a robot." 
+    word_seq = world_prefix + word_seq 
     
     input_ids = tokenizer.encode(word_seq, return_tensors = "pt").to(torch_device) 
     
