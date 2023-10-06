@@ -89,7 +89,8 @@ def run():
     small_model = AutoModelForSeq2SeqLM.from_pretrained("t5-3b", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
     small_model.eval() 
     
-    word_prefix = "summarize: " 
+    # word_prefix = "summarize: " 
+    word_prefix = "translate English to German: " 
     word_seq = "I am new to huggingface transformers" 
     word_seq = "Peter want to marry a German woman" 
     word_seq = "I am a student." 
@@ -140,15 +141,6 @@ def run():
     print("input: {}".format(word_seq)) 
     generatedText = tokenizer.decode(x[0], skip_special_tokens = True) 
     print("generatedText: {}".format(generatedText)) 
-    
-    # Load the model configuration
-    config = T5Config.from_pretrained("t5-3b")
-
-    # Print the configuration
-    print(config) 
-
-    # Specifically, to see the max length
-    print("Max Position Embeddings:", config.max_position_embeddings) 
     
     # last_p = norm_logits(outputs.logits[::, -1, :], temperature, top_k, top_p) 
 
