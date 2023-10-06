@@ -108,12 +108,14 @@ def run():
         # outputs = small_model(input_ids = input_ids, decoder_input_ids = decoder_input_ids) 
         
         # last_p = norm_logits(outputs.logits[::, -1, :], temperature, top_k, top_p) 
-        last_p = outputs.logits[:, -1, :].argmax(-1)[:, -1].unsqueeze(-1) 
+        print(outputs.logits.shape) 
+        last_p = outputs.logits.argmax(-1)[:, -1].unsqueeze(-1) 
+        
         past_key_values = outputs.past_key_values 
         idx_next = sample(last_p) 
         if idx_next.item() == eos_token_id: 
             break 
-        print("{}".format(tokenizer.decode(idx_next[0], skip_special_tokens = True))) 
+        # print("{}".format(tokenizer.decode(idx_next[0], skip_special_tokens = True))) 
         x = torch.cat((x, idx_next), dim=1) 
         n += 1 
     
