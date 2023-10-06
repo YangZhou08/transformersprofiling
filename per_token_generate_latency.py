@@ -129,7 +129,7 @@ def run():
         temperature = 1 
         past_key_values = None 
         
-        while n < 100: 
+        while n < 60: 
             start_time = time.time() 
             outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
             if (word_seq_index == 1): 
