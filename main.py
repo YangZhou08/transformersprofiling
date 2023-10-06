@@ -102,7 +102,7 @@ def run():
     temperature = 1 
     past_key_values = None 
     
-    while n < 10: 
+    while n < 30: 
         outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
         
         # outputs = small_model(input_ids = input_ids, decoder_input_ids = decoder_input_ids) 
@@ -110,8 +110,8 @@ def run():
         last_p = norm_logits(outputs.logits[::, -1, :], temperature, top_k, top_p)
         past_key_values = outputs.past_key_values
         idx_next = sample(last_p) 
+        print("{}".format(tokenizer.decode(idx_next, skip_special_tokens = True))) 
         x = torch.cat((x, idx_next), dim=1) 
-        print("one token ahead") 
         n += 1 
     
     generatedText = tokenizer.decode(x[0], skip_special_tokens = True) 
