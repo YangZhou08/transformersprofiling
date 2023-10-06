@@ -79,7 +79,7 @@ def run():
     
     # from transformers import FlaxT5EncoderModel, T5Tokenizer 
     # tokenizer = AutoTokenizer("t5-small", trust_remote_code = True) 
-    tokenizer = AutoTokenizer.from_pretrained("t5-small", trust_remote_code = True) 
+    tokenizer = AutoTokenizer.from_pretrained("t5-3b", cache_dir = "/rscratch/zhendong/yang_tasc") 
     
     # tokenizer = T5Tokenizer.from_pretrained("google/mt5-small") # TODO: need a better solution 
     
@@ -88,7 +88,7 @@ def run():
     
     word_seq = "I am new to huggingface transformers" 
     word_seq = "Peter want to marry a German woman" 
-    word_seq = "I am a student" 
+    word_seq = "I am a student." 
     
     input_ids = tokenizer.encode(word_seq, return_tensors = "pt").to(torch_device) 
     
