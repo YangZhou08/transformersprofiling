@@ -81,13 +81,13 @@ def run():
     # torch_device = 'cpu' 
     
     # from transformers import FlaxT5EncoderModel, T5Tokenizer 
-    # tokenizer = AutoTokenizer("t5-small", trust_remote_code = True) 
-    tokenizer = AutoTokenizer.from_pretrained("t5-3b", cache_dir = "/rscratch/zhendong/yang_tasc") 
+    tokenizer = AutoTokenizer("t5-small", trust_remote_code = True) 
+    # tokenizer = AutoTokenizer.from_pretrained("t5-3b", cache_dir = "/rscratch/zhendong/yang_tasc") 
     
     # tokenizer = T5Tokenizer.from_pretrained("google/mt5-small") # TODO: need a better solution 
     
-    # small_model = AutoModelForSeq2SeqLM.from_pretrained("t5-small", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
-    small_model = AutoModelForSeq2SeqLM.from_pretrained("t5-3b", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
+    small_model = AutoModelForSeq2SeqLM.from_pretrained("t5-small", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
+    # small_model = AutoModelForSeq2SeqLM.from_pretrained("t5-3b", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
     small_model.eval() 
     
     # word_prefix = "summarize: " 
@@ -126,7 +126,7 @@ def run():
         temperature = 1 
         past_key_values = None 
         
-        while n < 35: 
+        while n < 100: 
             start_time = time.time() 
             outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
             if (word_seq_index == 1): 
