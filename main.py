@@ -107,8 +107,9 @@ def run():
         
         # outputs = small_model(input_ids = input_ids, decoder_input_ids = decoder_input_ids) 
         
-        last_p = norm_logits(outputs.logits[::, -1, :], temperature, top_k, top_p)
-        past_key_values = outputs.past_key_values
+        # last_p = norm_logits(outputs.logits[::, -1, :], temperature, top_k, top_p) 
+        last_p = outputs.logits[:, -1, :].argmax(-1)[:, -1].unsqueeze(-1) 
+        past_key_values = outputs.past_key_values 
         idx_next = sample(last_p) 
         if idx_next.item() == eos_token_id: 
             break 
