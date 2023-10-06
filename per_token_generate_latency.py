@@ -156,6 +156,8 @@ def run():
         print("generatedText with {} tokens: {}".format(x[0].shape, generatedText)) 
                 
         # last_p = norm_logits(outputs.logits[::, -1, :], temperature, top_k, top_p) 
+    
+    print(measure_time) 
 
 if __name__ == "__main__": 
     run() 
