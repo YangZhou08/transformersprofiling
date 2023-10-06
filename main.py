@@ -88,7 +88,7 @@ def run():
     
     word_seq = "I am new to huggingface transformers" 
     word_seq = "Peter want to marry a German woman" 
-    word_seq = "I am a student." 
+    # word_seq = "I am a student." 
     
     input_ids = tokenizer.encode(word_seq, return_tensors = "pt").to(torch_device) 
     
