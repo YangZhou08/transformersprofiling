@@ -684,7 +684,8 @@ class T5Block(nn.Module):
         use_cache=False,
         output_attentions=False,
         return_dict=True,
-    ):
+    ): 
+        print("printing to see whether this script is actually of interest") 
         if past_key_value is not None:
             if not self.is_decoder:
                 logger.warning("`past_key_values` is passed to the encoder. Please make sure this is intended.")
@@ -1000,7 +1001,6 @@ class T5Stack(T5PreTrainedModel):
         output_hidden_states=None,
         return_dict=None,
     ): 
-        print("printing to see whether this script is actually of interest") 
         # Model parallel
         if self.model_parallel:
             torch.cuda.set_device(self.first_device)
