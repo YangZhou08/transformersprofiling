@@ -89,12 +89,12 @@ def run():
     small_model = AutoModelForSeq2SeqLM.from_pretrained("t5-3b", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
     small_model.eval() 
     
-    world_prefix = "translate English to German: " 
     word_seq = "I am new to huggingface transformers" 
     word_seq = "Peter want to marry a German woman" 
     word_seq = "I am a student." 
     word_seq = "I am currently playing with chatGPT to write a furniture assembly plan to train a robot." 
-    word_seq = world_prefix + word_seq 
+    word_suffix = " In the previous sentence, what do I use ChatGPT to do?" 
+    word_seq = word_seq + word_suffix 
     
     input_ids = tokenizer.encode(word_seq, return_tensors = "pt").to(torch_device) 
     
