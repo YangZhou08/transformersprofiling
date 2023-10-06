@@ -3,7 +3,7 @@ import argparse
 # import contexttimer 
 
 from src.transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM 
-from src.transformers import FlaxT5EncoderModel, T5Tokenizer 
+from src.transformers import FlaxT5EncoderModel, T5Tokenizer, T5Config 
 
 from tqdm import tqdm
 # from sampling.utils import norm_logits, sample 
@@ -139,6 +139,15 @@ def run():
     print("input: {}".format(word_seq)) 
     generatedText = tokenizer.decode(x[0], skip_special_tokens = True) 
     print("generatedText: {}".format(generatedText)) 
+    
+    # Load the model configuration
+    config = T5Config.from_pretrained("t5-3b")
+
+    # Print the configuration
+    print(config) 
+
+    # Specifically, to see the max length
+    print("Max Position Embeddings:", config.max_position_embeddings) 
     
     # last_p = norm_logits(outputs.logits[::, -1, :], temperature, top_k, top_p) 
 
