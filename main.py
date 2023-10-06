@@ -86,7 +86,10 @@ def run():
     small_model = AutoModelForSeq2SeqLM.from_pretrained("t5-small", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
     small_model.eval() 
     
-    input_ids = tokenizer.encode("I am new to huggingface transformers", return_tensors = "pt").to(torch_device) 
+    word_seq = "I am new to huggingface transformers" 
+    word_seq = "Peter want to marry a German woman" 
+    
+    input_ids = tokenizer.encode(word_seq, return_tensors = "pt").to(torch_device) 
     
     pad_token_id = tokenizer.pad_token_id
     decoder_input_ids = torch.full((input_ids.shape[0], 1), pad_token_id, dtype=torch.long).to(input_ids.device) 
