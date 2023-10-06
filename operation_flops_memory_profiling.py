@@ -125,7 +125,10 @@ def run():
         outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
     
     # prof.export_chrome_trace("initp.json") 
-    print(prof.key_averages().table(sort_by = "cuda_memory_usage", row_limit = 20)) 
+    # print(prof.key_averages().table(sort_by = "cuda_memory_usage", row_limit = 20)) 
+    filter_results = [item for item in prof.key_averages() if "self_attention" in item.key] 
+    for line in filter_results: 
+        print(line) 
     
     # outputs = small_model(input_ids = input_ids, decoder_input_ids = decoder_input_ids) 
     
