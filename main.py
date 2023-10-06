@@ -130,10 +130,10 @@ def run():
         past_key_values = outputs.past_key_values 
         # idx_next = sample(last_p) 
         idx_next = last_p 
-        
+        ''' 
         if idx_next.item() == eos_token_id: 
             break 
-        
+        ''' 
         # print("{}".format(tokenizer.decode(idx_next[0], skip_special_tokens = True))) 
         x = torch.cat((x, idx_next), dim=1) 
         n += 1 
