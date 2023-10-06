@@ -109,10 +109,12 @@ def run():
         
         # last_p = norm_logits(outputs.logits[::, -1, :], temperature, top_k, top_p) 
         print(outputs.logits.shape) 
+        print(outputs) 
         last_p = outputs.logits.argmax(-1)[:, -1].unsqueeze(-1) 
         
         past_key_values = outputs.past_key_values 
-        idx_next = sample(last_p) 
+        # idx_next = sample(last_p) 
+        idx_next = last_p 
         if idx_next.item() == eos_token_id: 
             break 
         # print("{}".format(tokenizer.decode(idx_next[0], skip_special_tokens = True))) 
