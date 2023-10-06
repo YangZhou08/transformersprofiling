@@ -122,6 +122,7 @@ def run():
         encoder_outputs = small_model.get_encoder()(input_ids) 
         outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
     
+    prof.export_chrome_trace("initp.json") 
     print(prof.key_averages().table(sort_by = "cuda_memory_usage", row_limit = 20)) 
     
     # outputs = small_model(input_ids = input_ids, decoder_input_ids = decoder_input_ids) 
