@@ -142,7 +142,7 @@ def run():
         n += 1 
     
     # prof.export_chrome_trace("initp.json") 
-    print(prof.key_averages().table(sort_by = "cuda_time_total", row_limit = 30)) 
+    print(prof.key_averages().table(sort_by = "cpu_time_total", row_limit = 10)) 
     filter_results = [item for item in prof.key_averages() if "self_attention" in item.key] 
     for line in filter_results: 
         print(line) 
