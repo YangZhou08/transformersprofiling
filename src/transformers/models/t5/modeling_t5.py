@@ -523,21 +523,25 @@ class T5Attention(nn.Module):
                     hidden_states = past_key_value
             return hidden_states
 
-        # get query states
-        query_states = shape(self.q(hidden_states))  # (batch_size, n_heads, seq_length, dim_per_head)
+        # get query states 
+        with record_function("computing Q"): 
+            query_states = shape(self.q(hidden_states))  # (batch_size, n_heads, seq_length, dim_per_head)
 
-        # get key/value states
-        key_states = project(
-            hidden_states, self.k, key_value_states, past_key_value[0] if past_key_value is not None else None
-        )
-        value_states = project(
-            hidden_states, self.v, key_value_states, past_key_value[1] if past_key_value is not None else None
-        )
+        # get key/value states 
+        with record_function("computing K"): 
+            key_states = project(
+                hidden_states, self.k, key_value_states, past_key_value[0] if past_key_value is not None else None
+            ) 
+        with record_function("computing V"): 
+            value_states = project(
+                hidden_states, self.v, key_value_states, past_key_value[1] if past_key_value is not None else None
+            ) 
 
-        # compute scores
-        scores = torch.matmul(
-            query_states, key_states.transpose(3, 2)
-        )  # equivalent of torch.einsum("bnqd,bnkd->bnqk", query_states, key_states), compatible with onnx op>9
+        # compute scores 
+        with record_function("QtimesKtransposed"): 
+            scores = torch.matmul(
+                query_states, key_states.transpose(3, 2)
+            )  # equivalent of torch.einsum("bnqd,bnkd->bnqk", query_states, key_states), compatible with onnx op>9
 
         if position_bias is None:
             if not self.has_relative_attention_bias:
@@ -564,10 +568,11 @@ class T5Attention(nn.Module):
         else:
             position_bias_masked = position_bias
 
-        scores += position_bias_masked
-        attn_weights = nn.functional.softmax(scores.float(), dim=-1).type_as(
-            scores
-        )  # (batch_size, n_heads, seq_length, key_length)
+        scores += position_bias_masked 
+        with record_function("softmax"): 
+            attn_weights = nn.functional.softmax(scores.float(), dim=-1).type_as(
+                scores
+            )  # (batch_size, n_heads, seq_length, key_length) 
         attn_weights = nn.functional.dropout(
             attn_weights, p=self.dropout, training=self.training
         )  # (batch_size, n_heads, seq_length, key_length)
@@ -576,8 +581,10 @@ class T5Attention(nn.Module):
         if layer_head_mask is not None:
             attn_weights = attn_weights * layer_head_mask
 
-        attn_output = unshape(torch.matmul(attn_weights, value_states))  # (batch_size, seq_length, dim)
-        attn_output = self.o(attn_output)
+        with record_function("unshape_scores_values"): 
+            attn_output = unshape(torch.matmul(attn_weights, value_states))  # (batch_size, seq_length, dim) 
+        with record_function("output_projecting"): 
+            attn_output = self.o(attn_output) 
 
         present_key_value_state = (key_states, value_states) if (self.is_decoder and use_cache) else None
         outputs = (attn_output,) + (present_key_value_state,) + (position_bias,)
