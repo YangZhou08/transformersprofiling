@@ -121,25 +121,27 @@ def run():
     
     with profile(activities = [ProfilerActivity.CPU], record_shapes = True, profile_memory = True) as prof: 
         encoder_outputs = small_model.get_encoder()(input_ids) 
-        outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
-    
-        # outputs = small_model(input_ids = input_ids, decoder_input_ids = decoder_input_ids) 
         
-        # last_p = norm_logits(outputs.logits[::, -1, :], temperature, top_k, top_p) 
-        # print(outputs.logits.shape) # (batch_size, seq_len, vocab_size) 
-        # print(outputs) 
-        last_p = outputs.logits.argmax(-1)[:, -1].unsqueeze(-1) # argmax (batch_size, seq_len), after [:, -1] -> (batch_size, ), after unsqueeze(-1) -> (batch_size, 1) 
+        while n < 35: 
+            outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
         
-        past_key_values = outputs.past_key_values 
-        # idx_next = sample(last_p) 
-        idx_next = last_p 
-        ''' 
-        if idx_next.item() == eos_token_id: 
-            break 
-        ''' 
-        print("{}".format(tokenizer.decode(idx_next[0], skip_special_tokens = True))) 
-        x = torch.cat((x, idx_next), dim=1) 
-        n += 1 
+            # outputs = small_model(input_ids = input_ids, decoder_input_ids = decoder_input_ids) 
+            
+            # last_p = norm_logits(outputs.logits[::, -1, :], temperature, top_k, top_p) 
+            # print(outputs.logits.shape) # (batch_size, seq_len, vocab_size) 
+            # print(outputs) 
+            last_p = outputs.logits.argmax(-1)[:, -1].unsqueeze(-1) # argmax (batch_size, seq_len), after [:, -1] -> (batch_size, ), after unsqueeze(-1) -> (batch_size, 1) 
+            
+            past_key_values = outputs.past_key_values 
+            # idx_next = sample(last_p) 
+            idx_next = last_p 
+            ''' 
+            if idx_next.item() == eos_token_id: 
+                break 
+            ''' 
+            print("{}".format(tokenizer.decode(idx_next[0], skip_special_tokens = True))) 
+            x = torch.cat((x, idx_next), dim=1) 
+            n += 1 
     
     prof.export_chrome_trace("initp.json") 
     print(prof.key_averages().table(sort_by = "cpu_time_total", row_limit = 10)) 
