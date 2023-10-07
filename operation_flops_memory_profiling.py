@@ -119,8 +119,7 @@ def run():
     temperature = 1 
     past_key_values = None 
     
-    with profile(activities = [ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes = True, profile_memory = True, 
-                 on_trace_ready = torch.profiler.tensorboard_trace_handler("./log/t53bmodel")) as prof: 
+    with profile(activities = [ProfilerActivity.CPU], record_shapes = True, profile_memory = True) as prof: 
         encoder_outputs = small_model.get_encoder()(input_ids) 
         outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
     
