@@ -2515,7 +2515,6 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         self.rollback_signal = None 
         
         print("Printing out to see whether this function is ever called") 
-        print("encoder hidden states is {}".format(output_hidden_states.shape if output_hidden_states is not None else None)) 
         iteration_count = 0 
         
         while True:
@@ -2531,7 +2530,8 @@ class T5BiLDModel(nn.Module, GenerationMixin):
                 print("small model running at iteration {}".format(iteration_count)) 
 
             # prepare model inputs
-            model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs)
+            model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) 
+            print("encoder hidden states is {}".format(model_inputs['encoder_outputs'][0].shape if model_inputs['encoder_outputs'] is not None else None)) 
 
             # past_key_values: #layer list,
             # each element is dict {'self', 'encoder_decoder'}
