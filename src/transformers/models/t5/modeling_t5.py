@@ -2472,11 +2472,11 @@ class T5BiLDModel(nn.Module, GenerationMixin):
             "decoder_input_ids": input_ids,
             "past_key_values": past,
             "encoder_outputs": encoder_outputs,
-            "attention_mask": attention_mask,
-            "head_mask": head_mask,
-            "decoder_head_mask": decoder_head_mask,
-            "cross_attn_head_mask": cross_attn_head_mask,
-            "use_cache": use_cache,
+            "attention_mask": attention_mask, # not none 
+            "head_mask": head_mask, # none 
+            "decoder_head_mask": decoder_head_mask, # none 
+            "cross_attn_head_mask": cross_attn_head_mask, # none 
+            "use_cache": use_cache, # none 
         }
 
     def _reset_kwargs_past_to_new_length(self, new_len):
@@ -2533,11 +2533,12 @@ class T5BiLDModel(nn.Module, GenerationMixin):
             model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) 
             def print_dict_with_tensor_shapes(d):
                 for key, value in d.items():
-                    if isinstance(value, torch.Tensor):
+                    if isinstance(value, [torch.Tensor, tuple]): 
                         print(f"{key}: {value.shape}")
                     else:
                         print(f"{key}: {value}") 
-            print_dict_with_tensor_shapes(model_inputs) 
+            if iteration_count == 0: 
+                print_dict_with_tensor_shapes(model_inputs) 
                     
             # print("encoder hidden states is {}".format(model_inputs['encoder_outputs'][0].shape if model_inputs['encoder_outputs'] is not None else None)) 
 
