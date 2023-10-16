@@ -2533,7 +2533,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
             model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) 
             def print_dict_with_tensor_shapes(d):
                 for key, value in d.items():
-                    if isinstance(value, [torch.Tensor, tuple]): 
+                    if isinstance(value, (torch.Tensor, tuple)): 
                         print(f"{key}: {value.shape}")
                     else:
                         print(f"{key}: {value}") 
