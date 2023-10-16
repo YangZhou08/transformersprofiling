@@ -2531,7 +2531,15 @@ class T5BiLDModel(nn.Module, GenerationMixin):
 
             # prepare model inputs
             model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) 
-            print("encoder hidden states is {}".format(model_inputs['encoder_outputs'][0].shape if model_inputs['encoder_outputs'] is not None else None)) 
+            def print_dict_with_tensor_shapes(d):
+                for key, value in d.items():
+                    if isinstance(value, torch.Tensor):
+                        print(f"{key}: {value.shape}")
+                    else:
+                        print(f"{key}: {value}") 
+            print_dict_with_tensor_shapes(model_inputs) 
+                    
+            # print("encoder hidden states is {}".format(model_inputs['encoder_outputs'][0].shape if model_inputs['encoder_outputs'] is not None else None)) 
 
             # past_key_values: #layer list,
             # each element is dict {'self', 'encoder_decoder'}
