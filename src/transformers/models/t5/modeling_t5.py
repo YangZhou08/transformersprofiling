@@ -2515,14 +2515,19 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         self.rollback_signal = None 
         
         print("Printing out to see whether this function is ever called") 
-
+        iteration_count = 0 
+        
         while True:
             # Iteration right after the rollback
             # need to remove previous k and v caches for the rolled back tokens
             if self.rollback_signal:
                 new_len = input_ids.shape[-1]
                 self._reset_kwargs_past_to_new_length(new_len)
-                self.rollback_signal = None
+                self.rollback_signal = None 
+            if self.is_large(): 
+                print("large model running at iteration {}".format(iteration_count)) 
+            else: 
+                print("small model running at iteration {}".format(iteration_count)) 
 
             # prepare model inputs
             model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs)
@@ -2620,7 +2625,8 @@ class T5BiLDModel(nn.Module, GenerationMixin):
             if unfinished_sequences.max() == 0 or stopping_criteria(input_ids, scores):
                 break
 
-            self.schedule_iters()
+            self.schedule_iters() 
+            iteration_count += 1 # fallback small model iteration doesn't count 
 
         return input_ids
 
