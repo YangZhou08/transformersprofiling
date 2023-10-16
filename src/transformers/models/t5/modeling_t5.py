@@ -2469,9 +2469,9 @@ class T5BiLDModel(nn.Module, GenerationMixin):
             input_ids = input_ids[:, previous_generated_len:]
 
         return {
-            "decoder_input_ids": input_ids,
-            "past_key_values": past,
-            "encoder_outputs": encoder_outputs,
+            "decoder_input_ids": input_ids, # tensor of [1, seq_length] 
+            "past_key_values": past, # none 
+            "encoder_outputs": encoder_outputs, # BaseModelOutputWithPastAndCrossAttentions 
             "attention_mask": attention_mask, # not none 
             "head_mask": head_mask, # none 
             "decoder_head_mask": decoder_head_mask, # none 
@@ -2538,6 +2538,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
                     else:
                         print(f"{key}: {value}") 
             if iteration_count == 0: 
+                print("have encoder outputs in the first iteration" if model_kwargs["encoder_outputs"] is not None else "no encoder outputs in the first iteration") 
                 print_dict_with_tensor_shapes(model_inputs) 
                     
             # print("encoder hidden states is {}".format(model_inputs['encoder_outputs'][0].shape if model_inputs['encoder_outputs'] is not None else None)) 
