@@ -2573,9 +2573,10 @@ class T5BiLDModel(nn.Module, GenerationMixin):
                     raise ValueError("If `eos_token_id` is defined, make sure that `pad_token_id` is defined.")
                 next_tokens = next_tokens * unfinished_sequences + pad_token_id * (1 - unfinished_sequences) 
 
-
+            print("next_token shape {} next_tokens {}".format(next_tokens.shape, next_tokens)) 
             # update generated ids, model inputs, and length for next step
-            input_ids = torch.cat([input_ids, next_tokens[:, None]], dim=-1)
+            input_ids = torch.cat([input_ids, next_tokens[:, None]], dim=-1) 
+            print("input_ids.shape {}".format(input_ids.shape)) 
 
             # If running with the large model, check whether we want to rollback the small model's predictions
             if not self.training and self.is_large():
