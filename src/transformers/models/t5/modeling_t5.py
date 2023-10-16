@@ -695,7 +695,7 @@ class T5Block(nn.Module):
         output_attentions=False,
         return_dict=True,
     ): 
-        print("printing to see whether this script is actually of interest") 
+        # print("printing to see whether this script is actually of interest") 
         if past_key_value is not None:
             if not self.is_decoder:
                 logger.warning("`past_key_values` is passed to the encoder. Please make sure this is intended.")
@@ -2512,7 +2512,9 @@ class T5BiLDModel(nn.Module, GenerationMixin):
 
         self.init_iters(model_kwargs=model_kwargs, init_with='large')
         scores = None
-        self.rollback_signal = None
+        self.rollback_signal = None 
+        
+        print("Printing out to see whether this function is ever called") 
 
         while True:
             # Iteration right after the rollback
