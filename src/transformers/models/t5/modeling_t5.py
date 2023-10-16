@@ -2507,7 +2507,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         eos_token_id,
         synced_gpus,
         unfinished_sequences,
-    ):
+    ): 
         assert not synced_gpus
 
         self.init_iters(model_kwargs=model_kwargs, init_with='large')
@@ -2515,6 +2515,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         self.rollback_signal = None 
         
         print("Printing out to see whether this function is ever called") 
+        print("encoder hidden states is {}".format(output_hidden_states.shape if output_hidden_states is not None else None)) 
         iteration_count = 0 
         
         while True:
