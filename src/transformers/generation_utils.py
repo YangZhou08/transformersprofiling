@@ -360,7 +360,7 @@ class GenerationMixin:
         encoder_kwargs["return_dict"] = True
         encoder_kwargs[model_input_name] = inputs_tensor
         model_kwargs["encoder_outputs"]: ModelOutput = encoder(**encoder_kwargs) 
-        print(model_kwargs["encoder_outputs"].shape) 
+        print("*************** {} ***************".format(model_kwargs["encoder_outputs"].shape)) 
 
         return model_kwargs
 
