@@ -2377,7 +2377,11 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         if init_with == 'large':
             self.model_kwargs = self.large_kwargs
         else: # small
-            self.model_kwargs = self.small_kwargs
+            self.model_kwargs = self.small_kwargs 
+        
+        print("inspecting large model kwargs: {}".format(self.large_kwargs)) 
+        print() 
+        print("inspecting small model kwargs: {}".format(self.small_kwargs)) 
 
     def schedule_iters(self, fall_back_to_large=False, fall_back_to_small=False):
         """
