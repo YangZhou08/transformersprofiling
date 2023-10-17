@@ -1007,7 +1007,7 @@ class GenerationMixin:
         # 0. Validate the `.generate()` call
         self._validate_model_class()
         self._validate_model_kwargs(model_kwargs.copy()) 
-        print("early in generate function, we print out model_kwargs: {}".format(model_kwargs)) # debug 
+        print("early in generate function, we print out model_kwargs: {}".format(model_kwargs)) # early in generate function, we print out model_kwargs: {'input_ids': tensor([[0]], device='cuda:0')} 
 
         # 1. Set generation parameters if not already defined
         bos_token_id = bos_token_id if bos_token_id is not None else self.config.bos_token_id
@@ -1051,14 +1051,16 @@ class GenerationMixin:
         # model_input_name is defined if model-specific keyword input is passed
         # otherwise model_input_name is None
         # all model-specific keyword inputs are removed from `model_kwargs`
-        inputs_tensor, model_input_name, model_kwargs = self._prepare_model_inputs(inputs, bos_token_id, model_kwargs) 
+        inputs_tensor, model_input_name, model_kwargs = self._prepare_model_inputs(inputs, bos_token_id, model_kwargs) #008000 
         print("after _prepare_model_inputs, we print out model_kwargs: {}".format(model_kwargs)) # debug 
         batch_size = inputs_tensor.shape[0]
 
         # 3. Define other model kwargs
         model_kwargs["output_attentions"] = output_attentions
         model_kwargs["output_hidden_states"] = output_hidden_states
-        model_kwargs["use_cache"] = use_cache
+        model_kwargs["use_cache"] = use_cache 
+        
+        print("****** checking to see what is in the model_kwargs['output_hidden_states'] {} ******".format(model_kwargs['output_hidden_states'])) 
 
         accepts_attention_mask = "attention_mask" in set(inspect.signature(self.forward).parameters.keys())
         requires_attention_mask = "encoder_outputs" not in model_kwargs
@@ -1084,7 +1086,7 @@ class GenerationMixin:
             model_kwargs = self._prepare_encoder_decoder_kwargs_for_generation( #F0E68C 
                 inputs_tensor, model_kwargs, model_input_name
             ) 
-        print("****** model_kwargs['encoder_outputs'] is {} ******".format(model_kwargs['encoder_outputs'].last_hidden_state.shape)) # debug 
+        print("****** model_kwargs['encoder_outputs'] is {} ******".format(model_kwargs['encoder_outputs'].last_hidden_state.shape)) # debug #F0E68C 
 
         # 4. Prepare `input_ids` which will be used for auto-regressive generation
         if self.config.is_encoder_decoder:
