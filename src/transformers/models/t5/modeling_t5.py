@@ -2383,10 +2383,12 @@ class T5BiLDModel(nn.Module, GenerationMixin):
             self.model_kwargs = self.small_kwargs 
         
         # print("inspecting large model kwargs: {}".format((k, v) for k, v in self.large_kwargs.items() if k != 'encoder_outputs')) 
-        print("for key encoder_outputs, the value is of shape {}".format(self.large_kwargs['encoder_outputs'].last_hidden_state.shape)) 
+        # print("for key encoder_outputs, the value is of shape {}".format(self.large_kwargs['encoder_outputs'].last_hidden_state.shape)) 
+        print("inspecting large model kwargs: {}".format(self.large_kwargs())) 
         print() 
         # print("inspecting small model kwargs: {}".format((k, v) for k, v in self.small_kwargs.items() if k != 'encoder_outputs')) 
-        print("for key encoder_outputs, the value is of shape {}".format(self.small_kwargs['encoder_outputs'].last_hidden_state.shape)) 
+        # print("for key encoder_outputs, the value is of shape {}".format(self.small_kwargs['encoder_outputs'].last_hidden_state.shape)) 
+        print("inspecting small model kwargs: {}".format(self.small_kwargs())) 
 
     def schedule_iters(self, fall_back_to_large=False, fall_back_to_small=False):
         """
