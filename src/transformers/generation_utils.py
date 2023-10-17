@@ -343,7 +343,8 @@ class GenerationMixin:
     def _prepare_encoder_decoder_kwargs_for_generation(
         self, inputs_tensor: torch.Tensor, model_kwargs, model_input_name: Optional[str] = None
     ) -> Dict[str, Any]:
-        # 1. get encoder
+        # 1. get encoder 
+        print("encoder getting encoder") 
         encoder = self.get_encoder()
 
         # 2. prepare encoder args and encoder kwargs from model kwargs
@@ -1004,7 +1005,8 @@ class GenerationMixin:
         ```"""
         # 0. Validate the `.generate()` call
         self._validate_model_class()
-        self._validate_model_kwargs(model_kwargs.copy())
+        self._validate_model_kwargs(model_kwargs.copy()) 
+        print("early in generate function, we print out model_kwargs: {}".format(model_kwargs)) # debug 
 
         # 1. Set generation parameters if not already defined
         bos_token_id = bos_token_id if bos_token_id is not None else self.config.bos_token_id
@@ -1048,7 +1050,8 @@ class GenerationMixin:
         # model_input_name is defined if model-specific keyword input is passed
         # otherwise model_input_name is None
         # all model-specific keyword inputs are removed from `model_kwargs`
-        inputs_tensor, model_input_name, model_kwargs = self._prepare_model_inputs(inputs, bos_token_id, model_kwargs)
+        inputs_tensor, model_input_name, model_kwargs = self._prepare_model_inputs(inputs, bos_token_id, model_kwargs) 
+        print("after _prepare_model_inputs, we print out model_kwargs: {}".format(model_kwargs)) # debug 
         batch_size = inputs_tensor.shape[0]
 
         # 3. Define other model kwargs
@@ -1075,7 +1078,7 @@ class GenerationMixin:
         if self.config.is_encoder_decoder and "encoder_outputs" not in model_kwargs:
             # if model is encoder decoder encoder_outputs are created
             # and added to `model_kwargs`
-            model_kwargs = self._prepare_encoder_decoder_kwargs_for_generation(
+            model_kwargs = self._prepare_encoder_decoder_kwargs_for_generation( #F0E68C 
                 inputs_tensor, model_kwargs, model_input_name
             )
 

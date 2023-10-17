@@ -2346,7 +2346,8 @@ class T5BiLDModel(nn.Module, GenerationMixin):
     def is_large(self):
         return self.model_type == 'large'
 
-    def get_encoder(self):
+    def get_encoder(self): 
+        print("we are inside bild model get_encoder function call, and current model {}".format("large" if self.is_large() else "small")) 
         return self.large.encoder if self.is_large() else self.small.encoder
 
     def get_decoder(self):
