@@ -2542,7 +2542,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
                 print("have encoder outputs in the first iteration" if model_kwargs["encoder_outputs"] is not None else "no encoder outputs in the first iteration") #ff0000 
                 # print_dict_with_tensor_shapes(model_inputs) 
                     
-            # print("encoder hidden states is {}".format(model_inputs['encoder_outputs'][0].shape if model_inputs['encoder_outputs'] is not None else None)) 
+            print("encoder hidden states is {}".format(model_inputs['encoder_outputs'].last_hidden_state.shape if model_inputs['encoder_outputs'] is not None else None)) 
 
             # past_key_values: #layer list,
             # each element is dict {'self', 'encoder_decoder'}
