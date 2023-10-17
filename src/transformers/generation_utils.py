@@ -1076,7 +1076,7 @@ class GenerationMixin:
                     "generation results, please set `padding_side='left'` when initializing the tokenizer."
                 )
 
-        print("****** model_kwargs['encoder_outputs'] is {} ******".format(model_kwargs['encoder_outputs'])) # debug 
+        # print("****** model_kwargs['encoder_outputs'] is {} ******".format(model_kwargs['encoder_outputs'])) # debug 
         if self.config.is_encoder_decoder and "encoder_outputs" not in model_kwargs:
             # if model is encoder decoder encoder_outputs are created
             # and added to `model_kwargs` 
