@@ -344,7 +344,7 @@ class GenerationMixin:
         self, inputs_tensor: torch.Tensor, model_kwargs, model_input_name: Optional[str] = None
     ) -> Dict[str, Any]:
         # 1. get encoder 
-        print("encoder getting encoder") 
+        # print("encoder getting encoder") 
         encoder = self.get_encoder()
 
         # 2. prepare encoder args and encoder kwargs from model kwargs
@@ -1084,7 +1084,7 @@ class GenerationMixin:
             model_kwargs = self._prepare_encoder_decoder_kwargs_for_generation( #F0E68C 
                 inputs_tensor, model_kwargs, model_input_name
             ) 
-        print("****** model_kwargs['encoder_outputs'] is {} ******".format(model_kwargs['encoder_outputs'])) # debug 
+        print("****** model_kwargs['encoder_outputs'] is {} ******".format(model_kwargs['encoder_outputs'].last_hidden_state.shape)) # debug 
 
         # 4. Prepare `input_ids` which will be used for auto-regressive generation
         if self.config.is_encoder_decoder:
