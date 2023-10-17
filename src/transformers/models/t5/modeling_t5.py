@@ -2518,7 +2518,8 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         print("printing inside the greedy search body") #ff0000 
         iteration_count = 0 
         
-        while True:
+        while True: 
+            print("iteration count {}".format(iteration_count)) 
             # Iteration right after the rollback
             # need to remove previous k and v caches for the rolled back tokens
             if self.rollback_signal:
