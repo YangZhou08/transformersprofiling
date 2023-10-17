@@ -2346,7 +2346,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
     def is_large(self):
         return self.model_type == 'large'
 
-    def get_encoder(self): 
+    def get_encoder(self): #ff0000 
         print("we are inside bild model get_encoder function call, and current model {}".format("large" if self.is_large() else "small")) 
         return self.large.encoder if self.is_large() else self.small.encoder
 
@@ -2515,7 +2515,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         scores = None
         self.rollback_signal = None 
         
-        print("Printing out to see whether this function is ever called") 
+        print("printing inside the greedy search body") #ff0000 
         iteration_count = 0 
         
         while True:
@@ -2526,9 +2526,9 @@ class T5BiLDModel(nn.Module, GenerationMixin):
                 self._reset_kwargs_past_to_new_length(new_len)
                 self.rollback_signal = None 
             if self.is_large(): 
-                print("large model running at iteration {}".format(iteration_count)) 
+                print("large model running at iteration {}".format(iteration_count)) #ff0000 
             else: 
-                print("small model running at iteration {}".format(iteration_count)) 
+                print("small model running at iteration {}".format(iteration_count)) #ff0000 
 
             # prepare model inputs
             model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) 
@@ -2539,8 +2539,8 @@ class T5BiLDModel(nn.Module, GenerationMixin):
                     else:
                         print(f"{key}: {value}") 
             if iteration_count == 0: 
-                print("have encoder outputs in the first iteration" if model_kwargs["encoder_outputs"] is not None else "no encoder outputs in the first iteration") 
-                print_dict_with_tensor_shapes(model_inputs) 
+                print("have encoder outputs in the first iteration" if model_kwargs["encoder_outputs"] is not None else "no encoder outputs in the first iteration") #ff0000 
+                # print_dict_with_tensor_shapes(model_inputs) 
                     
             # print("encoder hidden states is {}".format(model_inputs['encoder_outputs'][0].shape if model_inputs['encoder_outputs'] is not None else None)) 
 

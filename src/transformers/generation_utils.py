@@ -1076,12 +1076,15 @@ class GenerationMixin:
                     "generation results, please set `padding_side='left'` when initializing the tokenizer."
                 )
 
+        print("****** model_kwargs['encoder_outputs'] is {} ******".format(model_kwargs['encoder_outputs'])) # debug 
         if self.config.is_encoder_decoder and "encoder_outputs" not in model_kwargs:
             # if model is encoder decoder encoder_outputs are created
-            # and added to `model_kwargs`
+            # and added to `model_kwargs` 
+            print("****** this function is never called ******") # debug 
             model_kwargs = self._prepare_encoder_decoder_kwargs_for_generation( #F0E68C 
                 inputs_tensor, model_kwargs, model_input_name
-            )
+            ) 
+        print("****** model_kwargs['encoder_outputs'] is {} ******".format(model_kwargs['encoder_outputs'])) # debug 
 
         # 4. Prepare `input_ids` which will be used for auto-regressive generation
         if self.config.is_encoder_decoder:
