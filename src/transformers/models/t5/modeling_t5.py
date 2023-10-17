@@ -2366,11 +2366,14 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         self.model_type = init_with
         self.iter_count = self.num_large_iters
 
+        if (model_kwargs is None): 
+            print("***** model_kwargs is None *****") 
         self.large_kwargs = copy.deepcopy(model_kwargs)
         self.small_kwargs = copy.deepcopy(model_kwargs)
 
         if model_kwargs is not None:
-            # replace small model encoder output
+            # replace small model encoder output 
+            print("***** this code is never enter ******") 
             self.small_kwargs.pop("encoder_outputs_small")
             self.small_kwargs["encoder_outputs"] = self.large_kwargs.pop("encoder_outputs_small")
 
@@ -2379,10 +2382,10 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         else: # small
             self.model_kwargs = self.small_kwargs 
         
-        print("inspecting large model kwargs: {}".format((k, v) for k, v in self.large_kwargs.items() if k != 'encoder_outputs')) 
+        # print("inspecting large model kwargs: {}".format((k, v) for k, v in self.large_kwargs.items() if k != 'encoder_outputs')) 
         print("for key encoder_outputs, the value is of shape {}".format(self.large_kwargs['encoder_outputs'].last_hidden_state.shape)) 
         print() 
-        print("inspecting small model kwargs: {}".format((k, v) for k, v in self.small_kwargs.items() if k != 'encoder_outputs')) 
+        # print("inspecting small model kwargs: {}".format((k, v) for k, v in self.small_kwargs.items() if k != 'encoder_outputs')) 
         print("for key encoder_outputs, the value is of shape {}".format(self.small_kwargs['encoder_outputs'].last_hidden_state.shape)) 
 
     def schedule_iters(self, fall_back_to_large=False, fall_back_to_small=False):
