@@ -89,7 +89,8 @@ def run():
         n += 1 
     ''' 
     # model.generate(input_ids = x, max_length = 10, pad_token_id = eos_token_id, eos_token_id = eos_token_id, 
-    # output_ids = model.generate(input_ids = x, max_length = 30, pad_token_id = eos_token_id, eos_token_id = eos_token_id, do_sample = False) 
+    output_ids = model.generate(input_ids = x, max_length = 30, pad_token_id = eos_token_id, eos_token_id = eos_token_id, do_sample = False) 
+    '''
     logits_processor = None 
     stopping_criteria = None 
     
@@ -111,7 +112,7 @@ def run():
                     synced_gpus = synced_gpus, 
                     unfinished_sequences = unfinished_sequences
     ) 
-    
+    ''' 
     print("input: {}".format(word_seq)) 
     # generatedText = tokenizer.decode(x[0], skip_special_tokens = True) 
     generatedText = tokenizer.decode(output_ids[0], skip_special_tokens = True) 
