@@ -2315,7 +2315,7 @@ class T5ForQuestionAnswering(T5PreTrainedModel):
             encoder_attentions=encoder_outputs.attentions,
         ) 
 
-class T5BiLDModel(nn.Module, GenerationMixin):
+class T5BiLDModel(nn.Module, GenerationMixin): #008000 
     def __init__(
         self, 
         large, 
@@ -2529,13 +2529,15 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         
         while n < 10: 
             model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) 
-            
+            '''
             outputs = self(
                 **model_inputs,
                 return_dict=True,
                 output_attentions=output_attentions,
                 output_hidden_states=output_hidden_states,
             ) 
+            ''' 
+            outputs = self.large(decoder_input_ids = input_ids, encoder_outputs = self.model_kwargs["encoder_outputs"]) 
             
             next_token_logits = outputs.logits[:, -1, :] # (batch_size, sequence_length, vocab_size) -> (batch_size, vocab_size) 
 
