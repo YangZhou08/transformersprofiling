@@ -2529,6 +2529,7 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
         scores = None
         self.rollback_signal = None 
         n = 0 
+        print(self.encoder_input_feedin.shape if self.encoder_input_feedin is not None else None) 
         encoder_output_large = self.large.encoder(input_ids = self.encoder_input_feedin) 
         
         while n < 10: 
