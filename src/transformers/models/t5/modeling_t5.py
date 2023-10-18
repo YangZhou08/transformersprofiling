@@ -2520,8 +2520,8 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         eos_token_id,
         synced_gpus,
         unfinished_sequences, 
-        large_model_encoder_output, # only for debug purposes 
-        small_model_encoder_output # only for debug purposes 
+        large_model_encoder_output = None, # only for debug purposes 
+        small_model_encoder_output = None # only for debug purposes 
     ): 
         assert not synced_gpus
 

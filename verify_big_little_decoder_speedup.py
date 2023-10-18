@@ -11,6 +11,16 @@ from tqdm import tqdm
 
 import torch.nn.functional as F 
 
+from src.transformers.generation.logits_process import LogitsProcessorList 
+
+from src.transformers.generation.stopping_criteria import (
+    MaxLengthCriteria,
+    MaxTimeCriteria,
+    StoppingCriteria,
+    StoppingCriteriaList,
+    validate_stopping_criteria,
+) 
+
 cache_dir = "/rscratch/zhendong/yang_tasc" 
 
 def run(): 
@@ -49,6 +59,7 @@ def run():
     decoder_input_ids = torch.full((input_ids.shape[0], 1), pad_token_id, dtype=torch.long).to(input_ids.device) 
     x = decoder_input_ids 
     eos_token_id = tokenizer.eos_token_id 
+    max_length = 30 
     
     # encoder_output_small = small_model.get_encoder()(input_ids) 
     # encoder_output_large = large_model.get_encoder()(input_ids) 
@@ -78,7 +89,25 @@ def run():
         n += 1 
     ''' 
     # model.generate(input_ids = x, max_length = 10, pad_token_id = eos_token_id, eos_token_id = eos_token_id, 
-    output_ids = model.generate(input_ids = x, max_length = 30, pad_token_id = eos_token_id, eos_token_id = eos_token_id, do_sample = False) 
+    # output_ids = model.generate(input_ids = x, max_length = 30, pad_token_id = eos_token_id, eos_token_id = eos_token_id, do_sample = False) 
+    logits_processor = logits_processor if logits_processor is not None else LogitsProcessorList() 
+    stopping_criteria = stopping_criteria if stopping_criteria is not None else StoppingCriteriaList() 
+    stopping_criteria = validate_stopping_criteria(stopping_criteria, max_length) 
+    unfinished_sequences = input_ids.new(input_ids.shape[0]).fill_(1) 
+    synced_gpus = False 
+    
+    output_ids = model._greedy_search_body(
+                    input_ids = x, 
+                    model_kwargs = None, 
+                    output_attentions = True, 
+                    output_hidden_states = True, 
+                    stopping_criteria = stopping_criteria, 
+                    logits_processor = logits_processor, 
+                    pad_token_id = pad_token_id, 
+                    eos_token_id = eos_token_id, 
+                    synced_gpus = synced_gpus, 
+                    unfinished_sequences = unfinished_sequences
+    ) 
     
     print("input: {}".format(word_seq)) 
     # generatedText = tokenizer.decode(x[0], skip_special_tokens = True) 
