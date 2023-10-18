@@ -2554,6 +2554,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
                 
             # update generated ids, model inputs, and length for next step
             input_ids = torch.cat([input_ids, next_tokens[:, None]], dim=-1) 
+            print(input_ids) 
             
             self.model_kwargs = self._update_model_kwargs_for_generation(
                 outputs, self.model_kwargs, is_encoder_decoder=self.config.is_encoder_decoder
@@ -2567,7 +2568,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
             if unfinished_sequences.max() == 0 or stopping_criteria(input_ids, scores):
                 break 
             
-            iteration_count += 1 # fallback small model iteration doesn't count 
+            n += 1 # fallback small model iteration doesn't count 
             print() 
 
         return input_ids 
