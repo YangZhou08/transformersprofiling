@@ -30,6 +30,7 @@ def run():
     large_model.eval() 
     
     model = T5BiLDModel(large = large_model, small = small_model) # num_small_iter, fallback_threshold, rollback_threshold 
+    model.resize_token_embeddings(len(tokenizer)) 
     
     word_prefix = "translate English to German: " 
     word_seq = "I am new to huggingface transformers" 
@@ -77,7 +78,8 @@ def run():
         n += 1 
     ''' 
     # model.generate(input_ids = x, max_length = 10, pad_token_id = eos_token_id, eos_token_id = eos_token_id, 
-    output_ids = model.generate(input_ids = x, max_length = 30, pad_token_id = eos_token_id, eos_token_id = eos_token_id, do_sample = False) 
+    # output_ids = model.generate(input_ids = x, max_length = 30, pad_token_id = eos_token_id, eos_token_id = eos_token_id, do_sample = False) 
+    
     print("input: {}".format(word_seq)) 
     # generatedText = tokenizer.decode(x[0], skip_special_tokens = True) 
     generatedText = tokenizer.decode(output_ids[0], skip_special_tokens = True) 
