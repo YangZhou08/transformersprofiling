@@ -2664,7 +2664,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         self, inputs_tensor: torch.Tensor, model_kwargs, model_input_name: Optional[str] = None
     ):  
         print("in _prepare_encoder_decoder_kwargs_for_generation function, printing out  model_kwargs") #008000 
-        for (key, value) in model_kwargs: 
+        for (key, value) in model_kwargs.items(): 
             if isinstance(value, (torch.Tensor, tuple)): 
                 print("{}: {}".format(key, value.shape if isinstance(value, torch.Tensor) else len(value))) 
             else: 
@@ -2679,7 +2679,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         } 
         
         print("after filtering out encoder related contents, we print out encoder kwargs") #008000 
-        for (key, value) in encoder_kwargs: 
+        for (key, value) in encoder_kwargs.items(): 
             if isinstance(value, (torch.Tensor, tuple)): 
                 print("{}: {}".format(key, value.shape if isinstance(value, torch.Tensor) else len(value))) 
             else: 
