@@ -2662,14 +2662,28 @@ class T5BiLDModel(nn.Module, GenerationMixin):
 
     def _prepare_encoder_decoder_kwargs_for_generation(
         self, inputs_tensor: torch.Tensor, model_kwargs, model_input_name: Optional[str] = None
-    ):
+    ):  
+        print("in _prepare_encoder_decoder_kwargs_for_generation function, printing out  model_kwargs") #008000 
+        for (key, value) in model_kwargs: 
+            if isinstance(value, (torch.Tensor, tuple)): 
+                print("{}: {}".format(key, value.shape if isinstance(value, torch.Tensor) else len(value))) 
+            else: 
+                print("{}: {}".format(key, value)) 
+        
         # 2. prepare encoder args and encoder kwargs from model kwargs
         irrelevant_prefix = ["decoder_", "cross_attn", "use_cache"]
         encoder_kwargs = {
             argument: value
             for argument, value in model_kwargs.items()
             if not any(argument.startswith(p) for p in irrelevant_prefix)
-        }
+        } 
+        
+        print("after filtering out encoder related contents, we print out encoder kwargs") #008000 
+        for (key, value) in encoder_kwargs: 
+            if isinstance(value, (torch.Tensor, tuple)): 
+                print("{}: {}".format(key, value.shape if isinstance(value, torch.Tensor) else len(value))) 
+            else: 
+                print("{}: {}".format(key, value)) 
 
         # 3. make sure that encoder returns `ModelOutput`
         model_input_name = model_input_name if model_input_name is not None else self.main_input_name
@@ -2679,4 +2693,4 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         model_kwargs["encoder_outputs"] = self.large.encoder(**encoder_kwargs)
         model_kwargs["encoder_outputs_small"] = self.small.encoder(**encoder_kwargs)
 
-        return model_kwargs
+        return model_kwargs 
