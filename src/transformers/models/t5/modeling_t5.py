@@ -2323,8 +2323,11 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
         num_small_iters=10, 
         fallback_threshold=0.6,
         rollback_threshold=5.0,
-    ):
+        temporary_input_feedin = None
+    ): 
+    
         super().__init__()
+        self.encoder_input_feedin = temporary_input_feedin 
         self.large = large # Large T5 model
         self.small = small # Small T5 model
 
@@ -2526,6 +2529,7 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
         scores = None
         self.rollback_signal = None 
         n = 0 
+        encoder_output_large = self.large.get_encoder()(self.encoder_input_feedin) 
         
         while n < 10: 
             model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) 
@@ -2538,7 +2542,9 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
             ) 
             ''' 
             print("input ids: {}, shape {}".format(input_ids, input_ids.shape)) 
-            outputs = self.large(decoder_input_ids = input_ids, encoder_outputs = self.model_kwargs["encoder_outputs"]) 
+            
+            # outputs = self.large(decoder_input_ids = input_ids, encoder_outputs = self.model_kwargs["encoder_outputs"]) 
+            outputs = self.large(decoder_input_ids = input_ids, encoder_outputs = encoder_output_large) 
             
             next_token_logits = outputs.logits[:, -1, :] # (batch_size, sequence_length, vocab_size) -> (batch_size, vocab_size) 
 
