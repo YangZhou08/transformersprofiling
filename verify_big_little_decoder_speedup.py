@@ -90,6 +90,9 @@ def run():
     ''' 
     # model.generate(input_ids = x, max_length = 10, pad_token_id = eos_token_id, eos_token_id = eos_token_id, 
     # output_ids = model.generate(input_ids = x, max_length = 30, pad_token_id = eos_token_id, eos_token_id = eos_token_id, do_sample = False) 
+    logits_processor = None 
+    stopping_criteria = None 
+    
     logits_processor = logits_processor if logits_processor is not None else LogitsProcessorList() 
     stopping_criteria = stopping_criteria if stopping_criteria is not None else StoppingCriteriaList() 
     stopping_criteria = validate_stopping_criteria(stopping_criteria, max_length) 
