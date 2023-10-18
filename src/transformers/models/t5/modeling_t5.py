@@ -2529,7 +2529,7 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
         scores = None
         self.rollback_signal = None 
         n = 0 
-        encoder_output_large = self.large.get_encoder()(self.encoder_input_feedin) 
+        encoder_output_large = self.large.encoder(input_ids = self.encoder_input_feedin) 
         
         while n < 10: 
             model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) 
