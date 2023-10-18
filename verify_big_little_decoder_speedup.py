@@ -49,8 +49,8 @@ def run():
     x = decoder_input_ids 
     eos_token_id = tokenizer.eos_token_id 
     
-    encoder_output_small = small_model.get_encoder()(input_ids) 
-    encoder_output_large = large_model.get_encoder()(input_ids) 
+    # encoder_output_small = small_model.get_encoder()(input_ids) 
+    # encoder_output_large = large_model.get_encoder()(input_ids) 
     '''
     n = 0 
     past_key_values = None 

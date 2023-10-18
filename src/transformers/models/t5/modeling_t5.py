@@ -2476,7 +2476,8 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         **kwargs
     ):
         # cut decoder_input_ids if past is used
-        if past is not None:
+        if past is not None: 
+            print("***** Past is used *****") 
             previous_generated_len = past[0][0].shape[2]
             input_ids = input_ids[:, previous_generated_len:]
 
