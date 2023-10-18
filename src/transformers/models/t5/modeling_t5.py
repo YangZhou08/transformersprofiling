@@ -2506,9 +2506,73 @@ class T5BiLDModel(nn.Module, GenerationMixin):
                     else:
                         new_layer_kwargs.append(past)
                 new_kwargs.append(tuple(new_layer_kwargs))
-            kwargs['past'] = tuple(new_kwargs)
+            kwargs['past'] = tuple(new_kwargs) 
+    
+    def _greedy_search_body(
+        self, 
+        input_ids, 
+        model_kwargs, 
+        output_attentions, 
+        output_hidden_states, 
+        stopping_criteria, 
+        logits_processor, 
+        pad_token_id, 
+        eos_token_id, 
+        synced_gpus, 
+        unfinished_sequences
+    ): 
+        assert not synced_gpus 
+        self.init_iters(model_kwargs=model_kwargs, init_with='large')
+        scores = None
+        self.rollback_signal = None 
+        n = 0 
+        
+        while n < 10: 
+            model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) 
+            
+            outputs = self(
+                **model_inputs,
+                return_dict=True,
+                output_attentions=output_attentions,
+                output_hidden_states=output_hidden_states,
+            ) 
+            
+            next_token_logits = outputs.logits[:, -1, :] # (batch_size, sequence_length, vocab_size) -> (batch_size, vocab_size) 
 
-    def _greedy_search_body( 
+            # pre-process distribution
+            next_tokens_scores = logits_processor(input_ids, next_token_logits)
+            score = torch.softmax(next_tokens_scores, dim=-1)
+
+            # argmax policy for the next token
+            next_tokens = torch.argmax(score, dim=-1) 
+            
+            # finished sentences should have their next token be a padding token
+            if eos_token_id is not None:
+                if pad_token_id is None:
+                    raise ValueError("If `eos_token_id` is defined, make sure that `pad_token_id` is defined.")
+                next_tokens = next_tokens * unfinished_sequences + pad_token_id * (1 - unfinished_sequences) 
+                
+            # update generated ids, model inputs, and length for next step
+            input_ids = torch.cat([input_ids, next_tokens[:, None]], dim=-1) 
+            
+            self.model_kwargs = self._update_model_kwargs_for_generation(
+                outputs, self.model_kwargs, is_encoder_decoder=self.config.is_encoder_decoder
+            )
+
+            # if eos_token was found in one sentence, set sentence to finished
+            if eos_token_id is not None:
+                unfinished_sequences = unfinished_sequences.mul((next_tokens != eos_token_id).long())
+
+            # stop when each sentence is finished, or if we exceed the maximum length
+            if unfinished_sequences.max() == 0 or stopping_criteria(input_ids, scores):
+                break 
+            
+            iteration_count += 1 # fallback small model iteration doesn't count 
+            print() 
+
+        return input_ids 
+
+    def _greedy_search_body2( 
         self,
         input_ids,
         model_kwargs,
@@ -2529,7 +2593,10 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         scores = None
         self.rollback_signal = None 
         
-        print("printing inside the greedy search body") #ff0000 
+        print() 
+        print("-------------------") 
+        print("inside the greedy search body function print") 
+        
         iteration_count = 0 
         
         while True: 
@@ -2553,8 +2620,8 @@ class T5BiLDModel(nn.Module, GenerationMixin):
                         print(f"{key}: {value.shape}")
                     else:
                         print(f"{key}: {value}") 
-            if iteration_count == 0: 
-                print("have encoder outputs in the first iteration" if model_kwargs["encoder_outputs"] is not None else "no encoder outputs in the first iteration") #ff0000 
+            # if iteration_count == 0: 
+                # print("have encoder outputs in the first iteration" if model_kwargs["encoder_outputs"] is not None else "no encoder outputs in the first iteration") #ff0000 
                 # print_dict_with_tensor_shapes(model_inputs) 
                     
             print("encoder hidden states is {}".format(model_inputs['encoder_outputs'].last_hidden_state.shape if model_inputs['encoder_outputs'] is not None else None)) 
