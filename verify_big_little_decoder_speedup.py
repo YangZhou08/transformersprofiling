@@ -78,7 +78,7 @@ def run():
         n += 1 
     ''' 
     # model.generate(input_ids = x, max_length = 10, pad_token_id = eos_token_id, eos_token_id = eos_token_id, 
-    # output_ids = model.generate(input_ids = x, max_length = 30, pad_token_id = eos_token_id, eos_token_id = eos_token_id, do_sample = False) 
+    output_ids = model.generate(input_ids = x, max_length = 30, pad_token_id = eos_token_id, eos_token_id = eos_token_id, do_sample = False) 
     
     print("input: {}".format(word_seq)) 
     # generatedText = tokenizer.decode(x[0], skip_special_tokens = True) 
