@@ -11,7 +11,8 @@ from tqdm import tqdm
 import torch.nn.functional as F 
 
 from pytorch_memlab import profile 
-from pytorch_memlab import set_logger 
+# from pytorch_memlab import set_logger 
+from pytorch_memlab import MemReporter 
 
 set_logger("/rscratch/zhendong/yang_tasc/transformersprofiling/simple_tb3b_log.txt") 
 cache_dir = "/rscratch/zhendong/yang_tasc" 
@@ -79,7 +80,6 @@ def max_fn(x):
     x_max_sum = torch.sum(x_max, dim=1, keepdim=True) 
     return x_max / x_max_sum 
 
-@profile 
 def run(): 
     torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
     # torch_device = 'cpu' 
@@ -121,6 +121,7 @@ def run():
     
     temperature = 1 
     past_key_values = None 
+    reporter = MemReporter(past_key_values) # monitoring memory usage 
     
     while n < 35: 
         outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
@@ -142,6 +143,7 @@ def run():
         # print("{}".format(tokenizer.decode(idx_next[0], skip_special_tokens = True))) 
         x = torch.cat((x, idx_next), dim=1) 
         n += 1 
+        reporter.report() 
     
     print("input: {}".format(word_seq)) 
     generatedText = tokenizer.decode(x[0], skip_special_tokens = True) 
