@@ -10,6 +10,8 @@ from tqdm import tqdm
 
 import torch.nn.functional as F 
 
+from pytorch_memlab import profile 
+
 cache_dir = "/rscratch/zhendong/yang_tasc" 
 
 # copy from https://github.com/LeeSinLiang/microGPT/blob/ed40cf9780dbeb180adfe94c227d4aa97e69250e/gpt.py
@@ -75,6 +77,7 @@ def max_fn(x):
     x_max_sum = torch.sum(x_max, dim=1, keepdim=True) 
     return x_max / x_max_sum 
 
+@profile 
 def run(): 
     torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
     # torch_device = 'cpu' 

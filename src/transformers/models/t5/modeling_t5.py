@@ -2367,13 +2367,13 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         self.iter_count = self.num_large_iters
 
         if (model_kwargs is None): 
-            print("***** model_kwargs is None *****") 
+            print("***** model_kwargs is None *****") # line one 
         self.large_kwargs = copy.deepcopy(model_kwargs)
         self.small_kwargs = copy.deepcopy(model_kwargs)
 
         if model_kwargs is not None:
             # replace small model encoder output 
-            print("***** this code is never enter ******") 
+            print("***** this code is never enter ******") # line two 
             self.small_kwargs.pop("encoder_outputs_small")
             self.small_kwargs["encoder_outputs"] = self.large_kwargs.pop("encoder_outputs_small")
 
