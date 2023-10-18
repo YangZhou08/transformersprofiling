@@ -11,7 +11,9 @@ from tqdm import tqdm
 import torch.nn.functional as F 
 
 from pytorch_memlab import profile 
+from pytorch_memlab import set_logger 
 
+set_logger("/rscratch/zhendong/yang_tasc/transformersprofiling/simple_tb3b_log.txt") 
 cache_dir = "/rscratch/zhendong/yang_tasc" 
 
 # copy from https://github.com/LeeSinLiang/microGPT/blob/ed40cf9780dbeb180adfe94c227d4aa97e69250e/gpt.py
