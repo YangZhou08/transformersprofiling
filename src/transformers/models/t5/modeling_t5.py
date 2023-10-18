@@ -2537,6 +2537,7 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
                 output_hidden_states=output_hidden_states,
             ) 
             ''' 
+            print("input ids: {}, shape {}".format(input_ids, input_ids.shape)) 
             outputs = self.large(decoder_input_ids = input_ids, encoder_outputs = self.model_kwargs["encoder_outputs"]) 
             
             next_token_logits = outputs.logits[:, -1, :] # (batch_size, sequence_length, vocab_size) -> (batch_size, vocab_size) 
