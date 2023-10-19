@@ -28,8 +28,8 @@ def run():
     # torch_device = 'cpu' 
     
     # from transformers import FlaxT5EncoderModel, T5Tokenizer 
-    tokenizer = AutoTokenizer("t5-small", trust_remote_code = True) 
-    # tokenizer = AutoTokenizer.from_pretrained("t5-3b", cache_dir = "/rscratch/zhendong/yang_tasc") 
+    # tokenizer = AutoTokenizer("t5-small", trust_remote_code = True) 
+    tokenizer = AutoTokenizer.from_pretrained("t5-3b", cache_dir = "/rscratch/zhendong/yang_tasc") 
     
     # tokenizer = T5Tokenizer.from_pretrained("google/mt5-small") # TODO: need a better solution 
     
