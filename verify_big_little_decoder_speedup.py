@@ -35,8 +35,8 @@ def run():
     
     small_model = AutoModelForSeq2SeqLM.from_pretrained("t5-small", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
     small_model.eval() 
-    # large_model = AutoModelForSeq2SeqLM.from_pretrained("t5-3b", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
-    large_model = AutoModelForSeq2SeqLM.from_pretrained("t5-large", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
+    large_model = AutoModelForSeq2SeqLM.from_pretrained("t5-3b", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
+    # large_model = AutoModelForSeq2SeqLM.from_pretrained("t5-large", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
     large_model.eval() 
     
     word_prefix = "translate English to German: " 
