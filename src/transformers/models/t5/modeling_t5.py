@@ -2371,14 +2371,11 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
         self.model_type = init_with
         self.iter_count = self.num_large_iters
 
-        if (model_kwargs is None): 
-            print("***** model_kwargs is None *****") # line one 
         self.large_kwargs = copy.deepcopy(model_kwargs)
         self.small_kwargs = copy.deepcopy(model_kwargs)
 
         if model_kwargs is not None:
             # replace small model encoder output 
-            print("***** this code is never enter ******") # line two 
             self.small_kwargs.pop("encoder_outputs_small")
             self.small_kwargs["encoder_outputs"] = self.large_kwargs.pop("encoder_outputs_small")
 
@@ -2454,7 +2451,8 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
             output_attentions,
             output_hidden_states,
             return_dict,
-        ]
+        ] 
+        print(colored("past_key_values is {}".format(len(past_key_values) if past_key_values is not None else None), "blue")) 
         if self.is_large():
             return self.large(*args)
         else:
@@ -2616,15 +2614,6 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
 
             # prepare model inputs
             model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) # putting things in a dictionary 
-            def print_dict_with_tensor_shapes(d):
-                for key, value in d.items():
-                    if isinstance(value, (torch.Tensor, tuple)): 
-                        print(f"{key}: {value.shape}")
-                    else:
-                        print(f"{key}: {value}") 
-            # if iteration_count == 0: 
-                # print("have encoder outputs in the first iteration" if model_kwargs["encoder_outputs"] is not None else "no encoder outputs in the first iteration") #ff0000 
-                # print_dict_with_tensor_shapes(model_inputs) 
                     
             print("encoder hidden states is {}".format(model_inputs['encoder_outputs'].last_hidden_state.shape if model_inputs['encoder_outputs'] is not None else None)) 
 

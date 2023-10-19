@@ -360,7 +360,6 @@ class GenerationMixin:
         encoder_kwargs["return_dict"] = True
         encoder_kwargs[model_input_name] = inputs_tensor
         model_kwargs["encoder_outputs"]: ModelOutput = encoder(**encoder_kwargs) 
-        print("*************** {} ***************".format(model_kwargs["encoder_outputs"].shape)) 
 
         return model_kwargs
 
@@ -1052,15 +1051,12 @@ class GenerationMixin:
         # otherwise model_input_name is None
         # all model-specific keyword inputs are removed from `model_kwargs`
         inputs_tensor, model_input_name, model_kwargs = self._prepare_model_inputs(inputs, bos_token_id, model_kwargs) #008000 
-        print("after _prepare_model_inputs, we print out model_kwargs: {}".format(model_kwargs)) # debug 
         batch_size = inputs_tensor.shape[0]
 
         # 3. Define other model kwargs
         model_kwargs["output_attentions"] = output_attentions
         model_kwargs["output_hidden_states"] = output_hidden_states
         model_kwargs["use_cache"] = use_cache 
-        
-        print("****** checking to see what is in the model_kwargs['output_hidden_states'] {} ******".format(model_kwargs['output_hidden_states'])) 
 
         accepts_attention_mask = "attention_mask" in set(inspect.signature(self.forward).parameters.keys())
         requires_attention_mask = "encoder_outputs" not in model_kwargs
@@ -1082,11 +1078,9 @@ class GenerationMixin:
         if self.config.is_encoder_decoder and "encoder_outputs" not in model_kwargs:
             # if model is encoder decoder encoder_outputs are created
             # and added to `model_kwargs` 
-            print("****** this function is never called ******") # debug 
             model_kwargs = self._prepare_encoder_decoder_kwargs_for_generation( #F0E68C 
                 inputs_tensor, model_kwargs, model_input_name
             ) 
-        print("****** model_kwargs['encoder_outputs'] is {} ******".format(model_kwargs['encoder_outputs'].last_hidden_state.shape)) # debug #F0E68C 
 
         # 4. Prepare `input_ids` which will be used for auto-regressive generation
         if self.config.is_encoder_decoder:
