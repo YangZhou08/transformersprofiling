@@ -11,6 +11,8 @@ from tqdm import tqdm
 import torch.nn.functional as F 
 import time 
 
+import numpy as np 
+
 cache_dir = "/rscratch/zhendong/yang_tasc" 
 
 # copy from https://github.com/LeeSinLiang/microGPT/blob/ed40cf9780dbeb180adfe94c227d4aa97e69250e/gpt.py
@@ -129,12 +131,9 @@ def run():
         temperature = 1 
         past_key_values = None 
         
-        while n < 60: 
+        while n < 30: 
             start_time = time.time() 
             outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
-            if (word_seq_index == 1): 
-                torch.cuda.synchronize() 
-                measure_time.append(time.time() - start_time) 
             
             # outputs = small_model(input_ids = input_ids, decoder_input_ids = decoder_input_ids) 
             
@@ -153,6 +152,10 @@ def run():
             # print("{}".format(tokenizer.decode(idx_next[0], skip_special_tokens = True))) 
             x = torch.cat((x, idx_next), dim=1) 
             n += 1 
+            
+            if (word_seq_index == 1): 
+                torch.cuda.synchronize() 
+                measure_time.append(time.time() - start_time) 
         
         print("input: {}".format(word_seq)) 
         generatedText = tokenizer.decode(x[0], skip_special_tokens = True) 
@@ -161,6 +164,7 @@ def run():
         # last_p = norm_logits(outputs.logits[::, -1, :], temperature, top_k, top_p) 
     
     print(measure_time) 
+    print(np.mean(measure_time)) 
 
 if __name__ == "__main__": 
     run() 
