@@ -2612,7 +2612,7 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
                 start_time = time.time() 
                 time_start = True 
 
-            print("iteration count {}".format(iteration_count)) 
+            # print("iteration count {}".format(iteration_count)) 
             # Iteration right after the rollback
             # need to remove previous k and v caches for the rolled back tokens
             if self.rollback_signal:
