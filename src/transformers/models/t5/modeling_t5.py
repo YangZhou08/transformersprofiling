@@ -2625,7 +2625,7 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
                 print("small model running at iteration {}".format(iteration_count)) #ff0000 
 
             # prepare model inputs
-            model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) 
+            model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) # putting things in a dictionary 
             def print_dict_with_tensor_shapes(d):
                 for key, value in d.items():
                     if isinstance(value, (torch.Tensor, tuple)): 
@@ -2743,6 +2743,7 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
         self, inputs_tensor: torch.Tensor, model_kwargs, model_input_name: Optional[str] = None
     ):  
         print("in _prepare_encoder_decoder_kwargs_for_generation function, printing out  model_kwargs") #008000 
+        print("******************** input_ids has shape {} *********************".format(inputs_tensor.shape if inputs_tensor is not None else None)) 
         for (key, value) in model_kwargs.items(): 
             if isinstance(value, (torch.Tensor, tuple)): 
                 print("{}: {}".format(key, value.shape if isinstance(value, torch.Tensor) else len(value))) 
@@ -2769,7 +2770,7 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
         encoder_kwargs["return_dict"] = True
         encoder_kwargs[model_input_name] = inputs_tensor
         #s = time.time()
-        model_kwargs["encoder_outputs"] = self.large.encoder(**encoder_kwargs)
+        model_kwargs["encoder_outputs"] = self.large.encoder(**encoder_kwargs) 
         model_kwargs["encoder_outputs_small"] = self.small.encoder(**encoder_kwargs)
 
         return model_kwargs 
