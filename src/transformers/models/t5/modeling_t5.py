@@ -56,6 +56,8 @@ from transformers.generation_utils import GenerationMixin
 
 from termcolor import colored 
 
+import time 
+import numpy as np 
 
 logger = logging.get_logger(__name__)
 
@@ -2498,7 +2500,10 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
     def _reset_kwargs_past_to_new_length(self, new_len):
         """
         reset both small and large model kwargs past into the given length
-        """
+        """ 
+        # past_key_values are a tuple of number of layers element, each a tuple 
+        # each tuple is a tuple of length 2 key and value 
+        # key and value are of dimension (batch_size, num_heads, sequence_length, embed_size_per_head) 
         for kwargs in [self.large_kwargs, self.small_kwargs]:
             new_kwargs = []
             for layer_past in kwargs['past']:
@@ -2599,7 +2604,14 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
         
         iteration_count = 0 
         
+        time_measurement = [] 
+        time_start = False 
+        
         while True: 
+            if not time_start: 
+                start_time = time.time() 
+                time_start = True 
+
             print("iteration count {}".format(iteration_count)) 
             # Iteration right after the rollback
             # need to remove previous k and v caches for the rolled back tokens
@@ -2607,15 +2619,15 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
                 new_len = input_ids.shape[-1]
                 self._reset_kwargs_past_to_new_length(new_len)
                 self.rollback_signal = None 
-            if self.is_large(): 
-                print(colored("large model running at iteration {}".format(iteration_count), "green")) #ff0000 
-            else: 
-                print(colored("small model running at iteration {}".format(iteration_count), "yellow")) #ff0000 
+            # if self.is_large(): 
+                # print(colored("large model running at iteration {}".format(iteration_count), "green")) #ff0000 
+            # else: 
+                # print(colored("small model running at iteration {}".format(iteration_count), "yellow")) #ff0000 
 
             # prepare model inputs
             model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) # putting things in a dictionary 
                     
-            print("encoder hidden states is {}".format(model_inputs['encoder_outputs'].last_hidden_state.shape if model_inputs['encoder_outputs'] is not None else None)) 
+            # print("encoder hidden states is {}".format(model_inputs['encoder_outputs'].last_hidden_state.shape if model_inputs['encoder_outputs'] is not None else None)) 
 
             # past_key_values: #layer list,
             # each element is dict {'self', 'encoder_decoder'}
@@ -2658,10 +2670,10 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
                     raise ValueError("If `eos_token_id` is defined, make sure that `pad_token_id` is defined.")
                 next_tokens = next_tokens * unfinished_sequences + pad_token_id * (1 - unfinished_sequences) 
 
-            print("next_token shape {} next_tokens {}".format(next_tokens.shape, next_tokens)) 
+            # print("next_token shape {} next_tokens {}".format(next_tokens.shape, next_tokens)) 
             # update generated ids, model inputs, and length for next step
             input_ids = torch.cat([input_ids, next_tokens[:, None]], dim=-1) 
-            print("input_ids.shape {}".format(input_ids.shape)) 
+            # print("input_ids.shape {}".format(input_ids.shape)) 
 
             # If running with the large model, check whether we want to rollback the small model's predictions
             if not self.training and self.is_large():
@@ -2713,7 +2725,14 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
 
             self.schedule_iters() 
             iteration_count += 1 # fallback small model iteration doesn't count 
-            print() 
+            # print() 
+            assert time_start 
+            torch.cuda.synchronize() 
+            end_time = time.time() 
+            time_measurement.append(end_time - start_time) 
+        
+        print(time_measurement) 
+        print("average time per iteration is {}".format(np.mean(time_measurement))) 
 
         return input_ids
 
