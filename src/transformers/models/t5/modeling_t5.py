@@ -2730,6 +2730,7 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
             torch.cuda.synchronize() 
             end_time = time.time() 
             time_measurement.append(end_time - start_time) 
+            time_start = False 
         
         print(time_measurement) 
         print("average time per iteration is {}".format(np.mean(time_measurement))) 
