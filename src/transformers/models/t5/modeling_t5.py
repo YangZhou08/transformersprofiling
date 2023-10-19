@@ -2511,7 +2511,7 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
                 new_kwargs.append(tuple(new_layer_kwargs))
             kwargs['past'] = tuple(new_kwargs) 
     
-    def _greedy_search_body(
+    def _greedy_search_body2(
         self, 
         input_ids, 
         model_kwargs, 
@@ -2584,7 +2584,7 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
 
         return input_ids 
 
-    def _greedy_search_body2( 
+    def _greedy_search_body( 
         self,
         input_ids,
         model_kwargs,
