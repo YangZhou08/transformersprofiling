@@ -54,6 +54,8 @@ from torch.profiler import profile, record_function, ProfilerActivity
 from transformers.generation_utils import GenerationMixin 
 # from transformers.generation.utils import GenerationMixin 
 
+from termcolor import colored 
+
 
 logger = logging.get_logger(__name__)
 
@@ -2523,7 +2525,8 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
         eos_token_id, 
         synced_gpus, 
         unfinished_sequences
-    ): 
+    ):  
+        # this function is created because I have debugged this bug for too long Now it is not used. 
         assert not synced_gpus 
         self.init_iters(model_kwargs=model_kwargs, init_with='large')
         scores = None
@@ -2535,14 +2538,7 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
         
         while n < 10: 
             model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) 
-            '''
-            outputs = self(
-                **model_inputs,
-                return_dict=True,
-                output_attentions=output_attentions,
-                output_hidden_states=output_hidden_states,
-            ) 
-            ''' 
+            
             print("input ids: {}, shape {}".format(input_ids, input_ids.shape)) 
             
             # outputs = self.large(decoder_input_ids = input_ids, encoder_outputs = self.model_kwargs["encoder_outputs"]) 
@@ -2595,19 +2591,13 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
         pad_token_id,
         eos_token_id,
         synced_gpus,
-        unfinished_sequences, 
-        large_model_encoder_output = None, # only for debug purposes 
-        small_model_encoder_output = None # only for debug purposes 
+        unfinished_sequences 
     ): 
         assert not synced_gpus
 
         self.init_iters(model_kwargs=model_kwargs, init_with='large')
         scores = None
         self.rollback_signal = None 
-        
-        print() 
-        print("-------------------") 
-        print("inside the greedy search body function print") 
         
         iteration_count = 0 
         
@@ -2620,9 +2610,9 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
                 self._reset_kwargs_past_to_new_length(new_len)
                 self.rollback_signal = None 
             if self.is_large(): 
-                print("large model running at iteration {}".format(iteration_count)) #ff0000 
+                print(colored("large model running at iteration {}".format(iteration_count), "green")) #ff0000 
             else: 
-                print("small model running at iteration {}".format(iteration_count)) #ff0000 
+                print(colored("small model running at iteration {}".format(iteration_count), "yellow")) #ff0000 
 
             # prepare model inputs
             model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) # putting things in a dictionary 
