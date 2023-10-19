@@ -2531,7 +2531,7 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
         n = 0 
         print(self.encoder_input_feedin.shape if self.encoder_input_feedin is not None else None) 
         encoder_output_large = self.large.encoder(input_ids = self.encoder_input_feedin) 
-        print("difference between actual large model output and the saved output of large model is {}".format((encoder_output_large.last_hidden_states - self.model_kwargs["encoder_outputs"].last_hidden_states).norm())) 
+        print("difference between actual large model output and the saved output of large model is {}".format((encoder_output_large.last_hidden_state - self.model_kwargs["encoder_outputs"].last_hidden_state).norm())) 
         
         while n < 10: 
             model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) 
@@ -2636,7 +2636,7 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
                 # print("have encoder outputs in the first iteration" if model_kwargs["encoder_outputs"] is not None else "no encoder outputs in the first iteration") #ff0000 
                 # print_dict_with_tensor_shapes(model_inputs) 
                     
-            # print("encoder hidden states is {}".format(model_inputs['encoder_outputs'].last_hidden_state.shape if model_inputs['encoder_outputs'] is not None else None)) 
+            print("encoder hidden states is {}".format(model_inputs['encoder_outputs'].last_hidden_state.shape if model_inputs['encoder_outputs'] is not None else None)) 
 
             # past_key_values: #layer list,
             # each element is dict {'self', 'encoder_decoder'}
