@@ -2531,6 +2531,7 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
         n = 0 
         print(self.encoder_input_feedin.shape if self.encoder_input_feedin is not None else None) 
         encoder_output_large = self.large.encoder(input_ids = self.encoder_input_feedin) 
+        print("difference between actual large model output and the saved output of large model is {}".format((encoder_output_large - self.model_kwargs["encoder_outputs"]).norm())) 
         
         while n < 10: 
             model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) 
