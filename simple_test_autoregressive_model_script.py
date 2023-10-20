@@ -104,7 +104,7 @@ def run():
         print("input_ids is a Tensor") 
         # input_ids = input_ids["input_ids"] 
     else: 
-        print("input_ids is not a tensor") 
+        print("type of input_ids is {}".format(type(input_ids))) 
     
     pad_token_id = tokenizer.pad_token_id
     # decoder_input_ids = torch.full((input_ids.shape[0], 1), pad_token_id, dtype=torch.long).to(input_ids.device) 
