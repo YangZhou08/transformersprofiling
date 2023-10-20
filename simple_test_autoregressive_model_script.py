@@ -144,7 +144,7 @@ def run():
         input_ids = torch.cat((input_ids, idx_next), dim = 1) 
         n += 1 
     ''' 
-    small_model.generate(**input_ids, max_length = 20) 
+    input_ids = small_model.generate(**input_ids, max_length = 20) 
     print("input: {}".format(word_seq)) 
     generatedText = tokenizer.decode(input_ids[0], skip_special_tokens = True) 
     print("generatedText: {}".format(generatedText)) 
