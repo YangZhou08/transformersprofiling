@@ -172,7 +172,7 @@ def run():
         position_ids = torch.tensor([input_ids.shape[-1] - 1]).to(torch_device).view(1, -1) 
         print() 
     print("input: {}".format(word_seq)) 
-    generatedText = tokenizer.decode(input_ids[0], skip_special_tokens = True) 
+    generatedText = tokenizer.decode(generated_sequence[0], skip_special_tokens = True) 
     print("generatedText: {}".format(generatedText)) 
     
     print() 
