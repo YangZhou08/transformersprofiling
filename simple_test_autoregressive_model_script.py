@@ -108,7 +108,8 @@ def run():
         print("type of input_ids is {}".format(type(input_ids))) 
         input_ids = input_ids["input_ids"] 
     
-    pad_token_id = tokenizer.pad_token_id
+    pad_token_id = tokenizer.pad_token_id 
+    eos_token_id = tokenizer.eos_token_id 
     # decoder_input_ids = torch.full((input_ids.shape[0], 1), pad_token_id, dtype=torch.long).to(input_ids.device) 
     print("input: {}".format(word_seq)) 
     
@@ -119,7 +120,7 @@ def run():
     temperature = 1 
     past_key_values = None 
     
-    while n < 38: 
+    while n < 30: 
         # outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
         outputs = small_model(input_ids = input_ids, past_key_values = past_key_values) 
         
@@ -132,10 +133,10 @@ def run():
         past_key_values = outputs.past_key_values 
         # idx_next = sample(last_p) 
         idx_next = last_p 
-        ''' 
+        
         if idx_next.item() == eos_token_id: 
             break 
-        ''' 
+        
         # print("{}".format(tokenizer.decode(idx_next[0], skip_special_tokens = True))) 
         # input_ids.input_ids = torch.cat(input_ids.input_ids, idx_next, dim = 1) 
         input_ids = torch.cat((input_ids, idx_next), dim = 1) 
