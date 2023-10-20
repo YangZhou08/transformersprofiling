@@ -126,10 +126,16 @@ def run():
     temperature = 1 
     past_key_values = None 
     
+    print("--------- What should be the actual output ---------") 
+    input_ids = small_model.generate(**input_ids2, max_length = 12) 
+    print("input: {}".format(word_seq)) 
+    generatedText = tokenizer.decode(input_ids[0], skip_special_tokens = True) 
+    print("generatedText: {}".format(generatedText)) 
+    print() 
     while n < 5: 
         # outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
         # outputs = small_model(**input_ids, past_key_values = past_key_values) 
-        outputs = small_model(input_ids = input_ids, past_key_values = past_key_values) 
+        outputs = small_model(input_ids = input_ids, past_key_values = past_key_values) #, attention_mask = attention_mask, 
         # outputs = small_model(**input_ids, past_key_values = past_key_values) 
         
         print(outputs.logits.shape) # (batch_size, seq_len, vocab_size) 
@@ -156,11 +162,6 @@ def run():
     print("generatedText: {}".format(generatedText)) 
     
     print() 
-    print("--------- What should be the actual output ---------") 
-    input_ids = small_model.generate(**input_ids2, max_length = 12) 
-    print("input: {}".format(word_seq)) 
-    generatedText = tokenizer.decode(input_ids[0], skip_special_tokens = True) 
-    print("generatedText: {}".format(generatedText)) 
     
     # last_p = norm_logits(outputs.logits[::, -1, :], temperature, top_k, top_p) 
 
