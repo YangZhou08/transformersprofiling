@@ -169,7 +169,7 @@ def run():
         input_ids = next_tokens.unsqueeze(1) 
         n += 1 
         attention_mask = torch.cat((attention_mask, torch.ones(attention_mask.shape[0], 1, dtype = torch.long).to(torch_device)), dim = 1) 
-        position_ids = torch.tensor([input_ids.shape[-1] - 1]).to(torch_device).view(1, -1) 
+        position_ids = torch.tensor([generated_sequence.shape[-1] - 1]).to(torch_device).view(1, -1) 
         print() 
     print("input: {}".format(word_seq)) 
     generatedText = tokenizer.decode(generated_sequence[0], skip_special_tokens = True) 
