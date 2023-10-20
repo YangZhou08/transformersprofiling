@@ -158,7 +158,7 @@ def run():
         # input_ids.input_ids = torch.cat(input_ids.input_ids, idx_next, dim = 1) 
         input_ids = torch.cat([input_ids, next_tokens[:, None]], dim = -1) 
         n += 1 
-        torch.cat(attention_mask, torch.ones(attention_mask.shape[0], 1, dtype = torch.long).to(torch_device), dim = -1) 
+        torch.cat((attention_mask, torch.ones(attention_mask.shape[0], 1, dtype = torch.long).to(torch_device)), dim = -1) 
         print() 
     print("input: {}".format(word_seq)) 
     generatedText = tokenizer.decode(input_ids[0], skip_special_tokens = True) 
