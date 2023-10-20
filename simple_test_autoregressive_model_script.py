@@ -106,13 +106,6 @@ def run():
     input_ids2 = tokenizer(word_seq, return_tensors = "pt").to(torch_device) 
     attention_mask = None 
     print(input_ids2) 
-    if isinstance(input_ids2, torch.Tensor): 
-        print("input_ids is a Tensor") 
-        # input_ids = input_ids["input_ids"] 
-    else: 
-        print("type of input_ids is {}".format(type(input_ids2))) 
-        input_ids = input_ids2["input_ids"] 
-        attention_mask = input_ids2["attention_mask"] 
     
     pad_token_id = tokenizer.pad_token_id 
     eos_token_id = tokenizer.eos_token_id 
@@ -132,10 +125,19 @@ def run():
     generatedText = tokenizer.decode(input_ids[0], skip_special_tokens = True) 
     print("generatedText: {}".format(generatedText)) 
     print() 
+    
+    if isinstance(input_ids2, torch.Tensor): 
+        print("input_ids is a Tensor") 
+        # input_ids = input_ids["input_ids"] 
+    else: 
+        print("type of input_ids is {}".format(type(input_ids2))) 
+        input_ids = input_ids2["input_ids"] 
+        attention_mask = input_ids2["attention_mask"] 
+    
     while n < 5: 
         # outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
         # outputs = small_model(**input_ids, past_key_values = past_key_values) 
-        outputs = small_model(input_ids = input_ids, past_key_values = past_key_values) #, attention_mask = attention_mask, 
+        outputs = small_model(input_ids = input_ids, past_key_values = past_key_values, attention_mask = attention_mask) 
         # outputs = small_model(**input_ids, past_key_values = past_key_values) 
         
         print(outputs.logits.shape) # (batch_size, seq_len, vocab_size) 
@@ -156,6 +158,7 @@ def run():
         # input_ids.input_ids = torch.cat(input_ids.input_ids, idx_next, dim = 1) 
         input_ids = torch.cat([input_ids, next_tokens[:, None]], dim = -1) 
         n += 1 
+        torch.cat(attention_mask, torch.ones(attention_mask.shape[0], 1, dtype = torch.long).to(torch_device), dim = -1)) 
         print() 
     print("input: {}".format(word_seq)) 
     generatedText = tokenizer.decode(input_ids[0], skip_special_tokens = True) 
