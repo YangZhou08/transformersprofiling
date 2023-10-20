@@ -131,8 +131,9 @@ def run():
         # input_ids = input_ids["input_ids"] 
     else: 
         print("type of input_ids is {}".format(type(input_ids2))) 
-        # input_ids = input_ids2["input_ids"] 
-        # attention_mask = input_ids2["attention_mask"] 
+        input_ids = input_ids2["input_ids"] 
+        attention_mask = input_ids2["attention_mask"] 
+        position_ids = torch.arange(0, input_ids.shape[-1], dtype = torch.long, device = input_ids.device) 
     
     while n < 5: 
         # outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
@@ -161,7 +162,10 @@ def run():
         # input_ids.input_ids = torch.cat(input_ids.input_ids, idx_next, dim = 1) 
         input_ids = torch.cat([input_ids, next_tokens[:, None]], dim = -1) 
         n += 1 
-        torch.cat((attention_mask, torch.ones(attention_mask.shape[0], 1, dtype = torch.long).to(torch_device)), dim = 1)  
+        torch.cat((attention_mask, torch.ones(attention_mask.shape[0], 1, dtype = torch.long).to(torch_device)), dim = 1) 
+        print("attention_mask get is {}".format(attention_mask)) 
+        print("previous round posision_ids is {}".format(position_ids)) 
+        position_ids = torch.tensor([input_ids.shape[-1]]).to(torch_device) 
         print() 
     print("input: {}".format(word_seq)) 
     generatedText = tokenizer.decode(input_ids[0], skip_special_tokens = True) 
