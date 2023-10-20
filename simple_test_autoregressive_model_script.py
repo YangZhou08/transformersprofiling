@@ -133,7 +133,7 @@ def run():
         print("type of input_ids is {}".format(type(input_ids2))) 
         input_ids = input_ids2["input_ids"] 
         attention_mask = input_ids2["attention_mask"] 
-        position_ids = torch.arange(0, input_ids.shape[-1] - 1, dtype = torch.long, device = input_ids.device).view(1, -1) 
+        position_ids = torch.arange(0, input_ids.shape[-1], dtype = torch.long, device = input_ids.device).view(1, -1) 
     
     while n < 5: 
         # outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
