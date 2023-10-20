@@ -86,8 +86,8 @@ def run():
     tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
     
     # small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-6.9b", revision = "step3000", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
-    small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-2.8b-deduped", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
-    # small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir).to(torch_device) 
+    # small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-2.8b-deduped", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
+    small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir).to(torch_device) 
     small_model.eval() 
     
     # word_prefix = "summarize: " 
