@@ -99,6 +99,8 @@ def run():
     
     # input_ids = tokenizer.encode(word_seq, return_tensors = "pt").to(torch_device) 
     input_ids = tokenizer(word_seq, return_tensors = "pt").to(torch_device) 
+    if isinstance(input_ids, torch.Tensor): 
+        input_ids = input_ids["input_ids"] 
     
     pad_token_id = tokenizer.pad_token_id
     # decoder_input_ids = torch.full((input_ids.shape[0], 1), pad_token_id, dtype=torch.long).to(input_ids.device) 
@@ -113,7 +115,8 @@ def run():
     
     while n < 10: 
         # outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
-        outputs = small_model(input_ids = input_ids, past_key_values = past_key_values) 
+        # outputs = small_model(input_ids = input_ids, past_key_values = past_key_values) 
+        outputs = small_model(input_ids = input_ids) 
         
         print(outputs.logits.shape) # (batch_size, seq_len, vocab_size) 
         # print(outputs) 
