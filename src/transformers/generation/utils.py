@@ -2506,7 +2506,11 @@ class GenerationMixin:
 
             for (k, v) in model_inputs.items(): 
                 if isinstance(v, (tuple, torch.Tensor)): 
-                    print("{}, shape of values is {}".format(k, v.shape if isinstance(v, torch.Tensor) else len(v))) 
+                    # print("{}, shape of values is {}".format(k, v.shape if isinstance(v, torch.Tensor) else len(v))) 
+                    if isinstance(v, torch.Tensor): 
+                        print(k, v if v.numel() <= 20 else v.shape) 
+                    else: 
+                        print(k, len(v)) 
                 else: 
                     print(k, v) 
             # forward pass to get next token
@@ -2515,7 +2519,7 @@ class GenerationMixin:
                 return_dict=True,
                 output_attentions=output_attentions,
                 output_hidden_states=output_hidden_states,
-            )
+            ) 
 
             if synced_gpus and this_peer_finished:
                 continue  # don't waste resources running the code we don't need
@@ -2546,6 +2550,7 @@ class GenerationMixin:
             # argmax
             next_tokens = torch.argmax(next_tokens_scores, dim=-1) 
             print(next_tokens) 
+            print() 
 
             # finished sentences should have their next token be a padding token
             if eos_token_id is not None:
