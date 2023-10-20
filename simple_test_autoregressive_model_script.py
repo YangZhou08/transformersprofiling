@@ -102,7 +102,7 @@ def run():
     
     # input_ids = tokenizer.encode(word_seq, return_tensors = "pt").to(torch_device) 
     input_ids = tokenizer(word_seq, return_tensors = "pt").to(torch_device) 
-    print(input_ids) 
+    # print(input_ids) 
     if isinstance(input_ids, torch.Tensor): 
         print("input_ids is a Tensor") 
         # input_ids = input_ids["input_ids"] 
@@ -121,16 +121,17 @@ def run():
     
     temperature = 1 
     past_key_values = None 
-    '''
+    
     while n < 30: 
         # outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
-        outputs = small_model(input_ids = input_ids, past_key_values = past_key_values) 
+        outputs = small_model(**input_ids, past_key_values = past_key_values) 
         
         # outputs = small_model(**input_ids, past_key_values = past_key_values) 
         
         print(outputs.logits.shape) # (batch_size, seq_len, vocab_size) 
         # print(outputs) 
-        last_p = outputs.logits.argmax(-1)[:, -1].unsqueeze(-1) # argmax (batch_size, seq_len), after [:, -1] -> (batch_size, ), after unsqueeze(-1) -> (batch_size, 1) 
+        # last_p = outputs.logits.argmax(-1)[:, -1].unsqueeze(-1) # argmax (batch_size, seq_len), after [:, -1] -> (batch_size, ), after unsqueeze(-1) -> (batch_size, 1) 
+        next_token_logits = outputs.logits[:, -1, :] 
         
         past_key_values = outputs.past_key_values 
         # idx_next = sample(last_p) 
@@ -143,8 +144,8 @@ def run():
         # input_ids.input_ids = torch.cat(input_ids.input_ids, idx_next, dim = 1) 
         input_ids = torch.cat((input_ids, idx_next), dim = 1) 
         n += 1 
-    ''' 
-    input_ids = small_model.generate(**input_ids, max_length = 20) 
+    
+    # input_ids = small_model.generate(**input_ids, max_length = 20) 
     print("input: {}".format(word_seq)) 
     generatedText = tokenizer.decode(input_ids[0], skip_special_tokens = True) 
     print("generatedText: {}".format(generatedText)) 
