@@ -140,6 +140,7 @@ def run():
         # outputs = small_model(**input_ids, past_key_values = past_key_values) 
         # outputs = small_model(input_ids = input_ids, past_key_values = past_key_values) # , attention_mask = attention_mask) 
         # outputs = small_model(**input_ids, past_key_values = past_key_values) 
+        print("input_ids get is {}".format(input_ids.shape)) 
         print("attention_mask get is {}".format(attention_mask)) 
         print("previous round posision_ids is {}".format(position_ids)) 
         outputs = small_model(input_ids = input_ids, past_key_values = past_key_values, use_cache = True, attention_mask = attention_mask, position_ids = position_ids) 
