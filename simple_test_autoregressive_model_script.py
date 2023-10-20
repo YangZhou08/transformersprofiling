@@ -140,7 +140,7 @@ def run():
         # outputs = small_model(**input_ids, past_key_values = past_key_values) 
         # outputs = small_model(input_ids = input_ids, past_key_values = past_key_values) # , attention_mask = attention_mask) 
         # outputs = small_model(**input_ids, past_key_values = past_key_values) 
-        outputs = small_model(**input_ids2, past_key_values = past_key_values) 
+        outputs = small_model(**input_ids2, past_key_values = past_key_values, use_cache = True) 
         
         print(outputs.logits.shape) # (batch_size, seq_len, vocab_size) 
         print(outputs.attention_mask) 
