@@ -100,11 +100,13 @@ def run():
     
     # input_ids = tokenizer.encode(word_seq, return_tensors = "pt").to(torch_device) 
     input_ids = tokenizer(word_seq, return_tensors = "pt").to(torch_device) 
+    print(input_ids) 
     if isinstance(input_ids, torch.Tensor): 
         print("input_ids is a Tensor") 
         # input_ids = input_ids["input_ids"] 
     else: 
         print("type of input_ids is {}".format(type(input_ids))) 
+        input_ids = input_ids["input_ids"] 
     
     pad_token_id = tokenizer.pad_token_id
     # decoder_input_ids = torch.full((input_ids.shape[0], 1), pad_token_id, dtype=torch.long).to(input_ids.device) 
@@ -119,9 +121,9 @@ def run():
     
     while n < 10: 
         # outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
-        # outputs = small_model(input_ids = input_ids, past_key_values = past_key_values) 
-        # outputs = small_model(input_ids = input_ids) 
-        outputs = small_model(**input_ids, past_key_values = past_key_values) 
+        outputs = small_model(input_ids = input_ids, past_key_values = past_key_values) 
+        
+        # outputs = small_model(**input_ids, past_key_values = past_key_values) 
         
         print(outputs.logits.shape) # (batch_size, seq_len, vocab_size) 
         # print(outputs) 
@@ -135,6 +137,7 @@ def run():
             break 
         ''' 
         # print("{}".format(tokenizer.decode(idx_next[0], skip_special_tokens = True))) 
+        input_ids.input_ids = torch.cat(input_ids.input_ids, idx_next, dim = 1) 
         input_ids = torch.cat((input_ids, idx_next), dim = 1) 
         n += 1 
     
