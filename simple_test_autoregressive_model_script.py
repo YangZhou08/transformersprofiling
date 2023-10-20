@@ -104,7 +104,7 @@ def run():
     
     # input_ids = tokenizer.encode(word_seq, return_tensors = "pt").to(torch_device) 
     input_ids = tokenizer(word_seq, return_tensors = "pt").to(torch_device) 
-    # print(input_ids) 
+    print(input_ids) 
     if isinstance(input_ids, torch.Tensor): 
         print("input_ids is a Tensor") 
         # input_ids = input_ids["input_ids"] 
