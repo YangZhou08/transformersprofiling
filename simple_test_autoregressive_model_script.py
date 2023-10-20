@@ -10,10 +10,6 @@ from tqdm import tqdm
 
 import torch.nn.functional as F 
 
-from pytorch_memlab import profile 
-# from pytorch_memlab import set_logger 
-from pytorch_memlab import MemReporter 
-
 # set_logger("/rscratch/zhendong/yang_tasc/transformersprofiling/simple_tb3b_log.txt") 
 cache_dir = "/rscratch/zhendong/yang_tasc" 
 
@@ -106,6 +102,7 @@ def run():
     
     pad_token_id = tokenizer.pad_token_id
     # decoder_input_ids = torch.full((input_ids.shape[0], 1), pad_token_id, dtype=torch.long).to(input_ids.device) 
+    print("input: {}".format(word_seq)) 
     
     n = 0 
     top_k = 10
@@ -113,11 +110,10 @@ def run():
     
     temperature = 1 
     past_key_values = None 
-    reporter = MemReporter(past_key_values) # monitoring memory usage 
     
     while n < 10: 
         # outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
-        outputs = small_model(input_ids = input_ids, past_key_values = past_key_values, use_cache = True) 
+        outputs = small_model(input_ids = input_ids, past_key_values = past_key_values) 
         
         print(outputs.logits.shape) # (batch_size, seq_len, vocab_size) 
         # print(outputs) 
