@@ -132,7 +132,7 @@ def run():
             break 
         ''' 
         # print("{}".format(tokenizer.decode(idx_next[0], skip_special_tokens = True))) 
-        x = torch.cat((x, idx_next), dim=1) 
+        input_ids = torch.cat((input_ids, idx_next), dim = 1) 
         n += 1 
     
     print("input: {}".format(word_seq)) 
