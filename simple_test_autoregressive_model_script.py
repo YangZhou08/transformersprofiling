@@ -142,7 +142,7 @@ def run():
         n += 1 
     
     print("input: {}".format(word_seq)) 
-    generatedText = tokenizer.decode(x[0], skip_special_tokens = True) 
+    generatedText = tokenizer.decode(input_ids[0], skip_special_tokens = True) 
     print("generatedText: {}".format(generatedText)) 
     
     # last_p = norm_logits(outputs.logits[::, -1, :], temperature, top_k, top_p) 
