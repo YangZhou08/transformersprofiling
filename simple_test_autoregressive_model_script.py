@@ -140,7 +140,7 @@ def run():
         # outputs = small_model(**input_ids, past_key_values = past_key_values) 
         # outputs = small_model(input_ids = input_ids, past_key_values = past_key_values) # , attention_mask = attention_mask) 
         # outputs = small_model(**input_ids, past_key_values = past_key_values) 
-        outputs = small_model(input_ids = input_ids, past_key_values = past_key_values, use_cache = True) 
+        outputs = small_model(input_ids = input_ids, past_key_values = past_key_values, use_cache = True, attention_mask = attention_mask, position_ids = position_ids) 
         
         print(outputs.logits.shape) # (batch_size, seq_len, vocab_size) 
         # print(outputs.attention_mask) 
@@ -162,10 +162,10 @@ def run():
         # input_ids.input_ids = torch.cat(input_ids.input_ids, idx_next, dim = 1) 
         input_ids = torch.cat([input_ids, next_tokens[:, None]], dim = -1) 
         n += 1 
-        torch.cat((attention_mask, torch.ones(attention_mask.shape[0], 1, dtype = torch.long).to(torch_device)), dim = 1) 
+        attention_mask = torch.cat((attention_mask, torch.ones(attention_mask.shape[0], 1, dtype = torch.long).to(torch_device)), dim = 1) 
         print("attention_mask get is {}".format(attention_mask)) 
         print("previous round posision_ids is {}".format(position_ids)) 
-        position_ids = torch.tensor([input_ids.shape[-1]]).to(torch_device).view(1, -1) 
+        position_ids = torch.tensor([input_ids.shape[-1] - 1]).to(torch_device).view(1, -1) 
         print() 
     print("input: {}".format(word_seq)) 
     generatedText = tokenizer.decode(input_ids[0], skip_special_tokens = True) 
