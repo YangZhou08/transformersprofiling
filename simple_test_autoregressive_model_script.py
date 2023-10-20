@@ -157,7 +157,7 @@ def run():
     
     print() 
     print("--------- What should be the actual output ---------") 
-    input_ids = small_model.generate(**input_ids2, max_length = 5) 
+    input_ids = small_model.generate(**input_ids2, max_length = 12) 
     print("input: {}".format(word_seq)) 
     generatedText = tokenizer.decode(input_ids[0], skip_special_tokens = True) 
     print("generatedText: {}".format(generatedText)) 
