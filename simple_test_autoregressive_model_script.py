@@ -100,8 +100,8 @@ def run():
     
     # input_ids = tokenizer.encode(word_seq, return_tensors = "pt").to(torch_device) 
     input_ids = tokenizer(word_seq, return_tensors = "pt").to(torch_device) 
-    if isinstance(input_ids, torch.Tensor): 
-        input_ids = input_ids["input_ids"] 
+    # if isinstance(input_ids, torch.Tensor): 
+    #     input_ids = input_ids["input_ids"] 
     
     pad_token_id = tokenizer.pad_token_id
     # decoder_input_ids = torch.full((input_ids.shape[0], 1), pad_token_id, dtype=torch.long).to(input_ids.device) 
