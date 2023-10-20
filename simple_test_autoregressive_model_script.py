@@ -121,7 +121,7 @@ def run():
     
     temperature = 1 
     past_key_values = None 
-    
+    '''
     while n < 30: 
         # outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
         outputs = small_model(**input_ids, past_key_values = past_key_values) 
@@ -144,7 +144,7 @@ def run():
         # input_ids.input_ids = torch.cat(input_ids.input_ids, idx_next, dim = 1) 
         input_ids = torch.cat((input_ids, idx_next), dim = 1) 
         n += 1 
-    
+    ''' 
     # input_ids = small_model.generate(**input_ids, max_length = 20) 
     print("input: {}".format(word_seq)) 
     generatedText = tokenizer.decode(input_ids[0], skip_special_tokens = True) 
