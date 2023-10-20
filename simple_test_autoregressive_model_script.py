@@ -137,7 +137,7 @@ def run():
     while n < 5: 
         # outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
         # outputs = small_model(**input_ids, past_key_values = past_key_values) 
-        outputs = small_model(input_ids = input_ids, past_key_values = past_key_values, attention_mask = attention_mask) 
+        outputs = small_model(input_ids = input_ids, past_key_values = past_key_values) # , attention_mask = attention_mask) 
         # outputs = small_model(**input_ids, past_key_values = past_key_values) 
         
         print(outputs.logits.shape) # (batch_size, seq_len, vocab_size) 
