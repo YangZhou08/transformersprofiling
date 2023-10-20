@@ -120,7 +120,7 @@ def run():
     past_key_values = None 
     
     print("--------- What should be the actual output ---------") 
-    input_ids = small_model.generate(**input_ids2, max_length = 12) 
+    input_ids = small_model.generate(**input_ids2, max_length = 30) 
     print("input: {}".format(word_seq)) 
     generatedText = tokenizer.decode(input_ids[0], skip_special_tokens = True) 
     print("generatedText: {}".format(generatedText)) 
@@ -136,7 +136,7 @@ def run():
         position_ids = torch.arange(0, input_ids.shape[-1], dtype = torch.long, device = input_ids.device).view(1, -1) 
     
     generated_sequence = input_ids 
-    while n < 5: 
+    while n < 23: 
         # outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
         # outputs = small_model(**input_ids, past_key_values = past_key_values) 
         # outputs = small_model(input_ids = input_ids, past_key_values = past_key_values) # , attention_mask = attention_mask) 
