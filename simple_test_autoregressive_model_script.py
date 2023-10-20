@@ -143,8 +143,8 @@ def run():
         outputs = small_model(**input_ids2, past_key_values = past_key_values, use_cache = True) 
         
         print(outputs.logits.shape) # (batch_size, seq_len, vocab_size) 
-        print(outputs.attention_mask) 
-        print(outputs.position_ids) 
+        # print(outputs.attention_mask) 
+        # print(outputs.position_ids) 
         # print(outputs) 
         # last_p = outputs.logits.argmax(-1)[:, -1].unsqueeze(-1) # argmax (batch_size, seq_len), after [:, -1] -> (batch_size, ), after unsqueeze(-1) -> (batch_size, 1) 
         next_token_logits = outputs.logits[:, -1, :] 
