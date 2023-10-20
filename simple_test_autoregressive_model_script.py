@@ -131,16 +131,19 @@ def run():
         # input_ids = input_ids["input_ids"] 
     else: 
         print("type of input_ids is {}".format(type(input_ids2))) 
-        input_ids = input_ids2["input_ids"] 
-        attention_mask = input_ids2["attention_mask"] 
+        # input_ids = input_ids2["input_ids"] 
+        # attention_mask = input_ids2["attention_mask"] 
     
     while n < 5: 
         # outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
         # outputs = small_model(**input_ids, past_key_values = past_key_values) 
-        outputs = small_model(input_ids = input_ids, past_key_values = past_key_values) # , attention_mask = attention_mask) 
+        # outputs = small_model(input_ids = input_ids, past_key_values = past_key_values) # , attention_mask = attention_mask) 
         # outputs = small_model(**input_ids, past_key_values = past_key_values) 
+        outputs = small_model(**input_ids2, past_key_values = past_key_values) 
         
         print(outputs.logits.shape) # (batch_size, seq_len, vocab_size) 
+        print(outputs.attention_mask) 
+        print(outputs.position_ids) 
         # print(outputs) 
         # last_p = outputs.logits.argmax(-1)[:, -1].unsqueeze(-1) # argmax (batch_size, seq_len), after [:, -1] -> (batch_size, ), after unsqueeze(-1) -> (batch_size, 1) 
         next_token_logits = outputs.logits[:, -1, :] 
@@ -158,7 +161,7 @@ def run():
         # input_ids.input_ids = torch.cat(input_ids.input_ids, idx_next, dim = 1) 
         input_ids = torch.cat([input_ids, next_tokens[:, None]], dim = -1) 
         n += 1 
-        torch.cat((attention_mask, torch.ones(attention_mask.shape[0], 1, dtype = torch.long).to(torch_device)), dim = -1) 
+        torch.cat((attention_mask, torch.ones(attention_mask.shape[0], 1, dtype = torch.long).to(torch_device)), dim = 1)  
         print() 
     print("input: {}".format(word_seq)) 
     generatedText = tokenizer.decode(input_ids[0], skip_special_tokens = True) 
