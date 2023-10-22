@@ -83,10 +83,10 @@ def run():
     # torch_device = 'cpu' 
     
     # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-2.8b-deduped", cache_dir = cache_dir) 
-    tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
+    tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m", revision = "step3000", cache_dir = cache_dir) 
     
     # small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-6.9b", revision = "step3000", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
-    small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-2.8b-deduped", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
+    small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-2.8b", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
     # small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir).to(torch_device) 
     small_model.eval() 
     
@@ -136,6 +136,7 @@ def run():
         position_ids = torch.arange(0, input_ids.shape[-1], dtype = torch.long, device = input_ids.device).view(1, -1) 
     
     generated_sequence = input_ids 
+    past_output = None 
     while n < 23: 
         # outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
         # outputs = small_model(**input_ids, past_key_values = past_key_values) 
@@ -147,6 +148,10 @@ def run():
         # outputs = small_model(input_ids = input_ids, past_key_values = past_key_values, use_cache = True, attention_mask = attention_mask, position_ids = position_ids) 
         outputs = small_model(input_ids = input_ids, past_key_values = past_key_values, use_cache = True) 
         
+        if n == 0: 
+            past_output = outputs.logits 
+        else: 
+            print((outputs.logits[:, : -1, :] - past_output).norm()) 
         print(outputs.logits.shape) # (batch_size, seq_len, vocab_size) 
         # print(outputs.attention_mask) 
         # print(outputs.position_ids) 
