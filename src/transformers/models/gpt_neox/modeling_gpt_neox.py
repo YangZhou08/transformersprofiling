@@ -42,6 +42,7 @@ from .configuration_gpt_neox import GPTNeoXConfig
 from transformers.generation_utils import GenerationMixin 
 import copy 
 import time 
+import numpy as np 
 
 
 logger = logging.get_logger(__name__)
@@ -1296,10 +1297,10 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
         if past is not None: 
             print("***** Past is used *****") 
             previous_generated_len = past[0][0].shape[2]
-            input_ids = input_ids[:, previous_generated_len:]
+            input_ids = input_ids[:, previous_generated_len:] 
 
         return {
-            "decoder_input_ids": input_ids, # tensor of [1, seq_length] 
+            "input_ids": input_ids, # tensor of [1, seq_length] 
             "past_key_values": past, # none 
             "attention_mask": attention_mask, # not none 
             "head_mask": head_mask, # none 
@@ -1369,6 +1370,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
 
             # prepare model inputs
             model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) # putting things in a dictionary 
+            # NOTE to my surprise that the input_ids has already chopped based on the past_key_value sequence length 
                     
             # print("encoder hidden states is {}".format(model_inputs['encoder_outputs'].last_hidden_state.shape if model_inputs['encoder_outputs'] is not None else None)) 
 
@@ -1376,7 +1378,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             # each element is dict {'self', 'encoder_decoder'}
             # each has 'prev_key' and 'previous_value'
             # for 'self' they grow in sequence length
-            # for 'encoder_decoder' the sequence length is fixed
+            # for 'encoder_decoder' the sequence length is fixed 
 
             # forward pass to get next token
             outputs = self(
@@ -1423,7 +1425,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                 large_model_logits = outputs.logits[0, :, :] # (batch_size, sequence_length, vocab_size) -> (sequence_length, vocab_size) 
                 if large_model_logits.shape[0] != 1:
                     # Compare the small model's predictions so far vs. the large model's non-autoregressive predictions
-                    small_model_prediction = model_inputs["decoder_input_ids"][0]
+                    small_model_prediction = model_inputs["input_ids"][0] 
                     large_model_prediction = large_model_logits.argmax(-1)
 
                     small_model_prediction = small_model_prediction[1:] # SL-1
