@@ -5,8 +5,8 @@ import contexttimer
 from src.transformers import AutoTokenizer, AutoModelForCausalLM 
 from torch.profiler import ProfilerActivity
 
-from sampling import autoregressive_sampling, speculative_sampling, speculative_sampling_v2
-from globals import Decoder
+# from sampling import autoregressive_sampling, speculative_sampling, speculative_sampling_v2 
+import tqdm 
 
 # my local models
 MODELZOO = {
@@ -59,7 +59,106 @@ def benchmark(fn, print_prefix, use_profiler=True, *args, **kwargs):
             for _ in range(TEST_TIME): 
                 output = fn(*args, **kwargs)
 
-    print(f"\n [benchmark] {print_prefix}, tokens/sec: {len(output[0]) / t.elapsed / TEST_TIME}, {t.elapsed / TEST_TIME} sec generates {len(output[0])} tokens")
+    print(f"\n [benchmark] {print_prefix}, tokens/sec: {len(output[0]) / t.elapsed / TEST_TIME}, {t.elapsed / TEST_TIME} sec generates {len(output[0])} tokens") 
+
+@torch.no_grad()
+def speculative_sampling_v2(prefix : torch.Tensor, approx_model : torch.nn.Module, target_model : torch.nn.Module, 
+                         max_len : int , gamma : int = 4,
+                         temperature : float = 1, top_k : int = 0, top_p : float = 0, random_seed : int = None) -> torch.Tensor:
+    """
+    DeepMind version Speculative Sampling.
+    Accelerating Large Language Model Decoding with Speculative Sampling
+    https://arxiv.org/abs/2302.01318
+    No KV Cache Optimization
+    
+    Args:
+        x (torch.Tensor): input sequence, (batch, prefix_seqlen), Note that the batch dim is always 1 now.
+        approx_model (torch.nn.Module): approx model, the small one
+        target_model (torch.nn.Module): target model, the large one
+        max_len (int): the max overall generated tokens number.
+        gamma (int): $\gamma$, the token number small model guesses.
+        temperature (float, optional): Defaults to 1.
+        top_k (int, optional): Defaults to 0.
+        top_p (float, optional): Defaults to 0.
+
+    Returns:
+        torch.Tensor: generated tokens (batch, target_seqlen)
+    """
+    seq_len = prefix.shape[1]
+    T = seq_len + max_len
+    
+    assert prefix.shape[0] == 1, "input batch size must be 1"
+
+    with tqdm(total=T, desc="speculative sampling") as pbar:
+        while prefix.shape[1] < T:
+            # q = M_q[prefix + x_0, x_1, .., x_(gamma-2)]
+            x = prefix
+            prefix_len = prefix.shape[1]
+            for _ in range(gamma):
+                # p.logits shape (batch, seq, vocab)
+                q = approx_model(x).logits
+                # below is a line with LogitsProcessor and sampling, however for now, we just use greedy decoding 
+                # next_tok = sample(norm_logits(q[:, -1, :], 
+                                #   temperature, top_k, top_p), random_seed = random_seed) 
+                next_tok = torch.argmax(q[:, -1, :], dim = -1) 
+                # x = torch.cat((x, next_tok), dim=1)
+                x = torch.cat([x, next_tok[:, None]], dim = 1) 
+            '''
+            # normalize the logits
+            for i in range(q.shape[1]):
+                q[:,i,:] = norm_logits(q[:,i,:],
+                                temperature, top_k, top_p)
+            # p  = M_p[prefix + x_0, x_0, .., x_(gamma-1)]
+            p = target_model(x).logits
+            for i in range(p.shape[1]):
+                p[:,i,:] = norm_logits(p[:,i,:],
+                                temperature, top_k, top_p)
+            ''' 
+            p = target_model(x).logits 
+            # n the end position of the valid prefix
+            # x = x_[:prefix_len-1] + x_0, ... x_(gamma-1)
+            
+            is_all_accept = True
+            n = prefix_len - 1 
+            '''
+            for i in range(gamma):
+                r = torch.rand(1, device = p.device)
+                j = x[:, prefix_len + i]
+                
+                if r < torch.min(torch.tensor([1], device=q.device), p[:, prefix_len + i - 1, j] / q[:, prefix_len + i - 1, j]):
+                    # accept, and update n
+                    n += 1
+                else:
+                    # reject
+                    t = sample(max_fn(p[:, n, :] - q[:, n, :]), random_seed = random_seed)
+                    is_all_accept = False
+                    break
+            ''' 
+            # vectorize all the operations 
+            r = torch.rand(gamma, device = p.device) 
+            j = x[:, prefix_len : prefix_len + gamma] # (batch_size, gamma) 
+            
+            p_seg = p[:, prefix_len - 1 : prefix_len + gamma - 2, j] 
+            q_seg = q[:, prefix_len - 1 : prefix_len + gamma - 2, j] 
+            pdivq = torch.div(p_seg, q_seg) 
+            pdivq = torch.minimum(torch.ones_like(pdivq).to(pdivq.device), pdivq) 
+            criterion = (pdivq - r.unsqueeze(1)) > 0 
+            
+            if criterion.any(): 
+                n = criterion.to(torch.int).argmax() # hack, just to find the first 
+                n += 1 # NOTE note sure whether this is needed 
+            
+            
+            prefix = x[:, :n + 1]
+            
+            if is_all_accept:
+                t = sample(p[:, -1, :], random_seed = random_seed)
+            
+            prefix = torch.cat((prefix, t), dim=1)
+            pbar.update(n - pbar.n)
+
+    return prefix
+
 
 def generate(input_text, approx_model_name, target_model_name, num_tokens=40, random_seed = None, verbose = False, use_benchmark = True):
     # NOTE() approx_model_name and target_model_name should use the same tokenizer!

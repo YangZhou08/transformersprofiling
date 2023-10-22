@@ -2686,7 +2686,7 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
 
             # If running with the large model, check whether we want to rollback the small model's predictions
             if not self.training and self.is_large():
-                large_model_logits = outputs.logits[0, :, :]
+                large_model_logits = outputs.logits[0, :, :] # (batch_size, sequence_length, vocab_size) -> (sequence_length, vocab_size) 
                 if large_model_logits.shape[0] != 1:
                     # Compare the small model's predictions so far vs. the large model's non-autoregressive predictions
                     small_model_prediction = model_inputs["decoder_input_ids"][0]
