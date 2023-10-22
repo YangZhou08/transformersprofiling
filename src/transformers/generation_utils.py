@@ -1434,7 +1434,7 @@ class GenerationMixin:
 
         # keep track of which sequences are already finished
         unfinished_sequences = input_ids.new(input_ids.shape[0]).fill_(1)
-
+        
         input_ids = self._greedy_search_body(
             input_ids=input_ids,
             model_kwargs=model_kwargs,

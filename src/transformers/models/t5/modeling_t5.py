@@ -2643,6 +2643,9 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
             # each has 'prev_key' and 'previous_value'
             # for 'self' they grow in sequence length
             # for 'encoder_decoder' the sequence length is fixed
+            
+            if self.is_large(): 
+                print("** get sequence length of large model kvcache before model forward propagation {}".format(model_inputs['past_key_value'][0][0].shape[2])) 
 
             # forward pass to get next token
             outputs = self(
@@ -2650,7 +2653,9 @@ class T5BiLDModel(nn.Module, GenerationMixin): #008000
                 return_dict=True,
                 output_attentions=output_attentions,
                 output_hidden_states=output_hidden_states,
-            )
+            ) 
+            if self.is_large(): 
+                print("** get sequence length after the model forward propagation of large model kvcache {}".format(outputs.past_key_values[0][0].shape[2])) 
 
             next_token_logits = outputs.logits[:, -1, :] # (batch_size, sequence_length, vocab_size) -> (batch_size, vocab_size) 
 
