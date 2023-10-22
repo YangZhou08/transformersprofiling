@@ -1357,17 +1357,17 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                 start_time = time.time() 
                 time_start = True 
 
-            # print("iteration count {}".format(iteration_count)) 
+            print("iteration count {}".format(iteration_count)) 
             # Iteration right after the rollback
             # need to remove previous k and v caches for the rolled back tokens
             if self.rollback_signal:
                 new_len = input_ids.shape[-1]
                 self._reset_kwargs_past_to_new_length(new_len)
                 self.rollback_signal = None 
-            # if self.is_large(): 
-                # print(colored("large model running at iteration {}".format(iteration_count), "green")) #ff0000 
-            # else: 
-                # print(colored("small model running at iteration {}".format(iteration_count), "yellow")) #ff0000 
+            if self.is_large(): 
+                print(colored("large model running at iteration {}".format(iteration_count), "green")) #ff0000 
+            else: 
+                print(colored("small model running at iteration {}".format(iteration_count), "yellow")) #ff0000 
 
             # prepare model inputs
             model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) # putting things in a dictionary 
@@ -1477,6 +1477,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             end_time = time.time() 
             time_measurement.append(end_time - start_time) 
             time_start = False 
+            print() 
         
         print(time_measurement) 
         print("average time per iteration is {}".format(np.mean(time_measurement))) 
