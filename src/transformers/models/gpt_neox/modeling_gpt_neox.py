@@ -43,6 +43,7 @@ from transformers.generation_utils import GenerationMixin
 import copy 
 import time 
 import numpy as np 
+from termcolor import colored 
 
 
 logger = logging.get_logger(__name__)
