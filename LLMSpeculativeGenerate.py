@@ -165,6 +165,7 @@ def speculative_sampling_modified(prefix : torch.Tensor, approx_model : torch.nn
                 # x = torch.cat((x, next_tok), dim=1)
                 x = torch.cat([x, next_tok[:, None]], dim = 1) # shape (batch, seq_len + 1) 
             # x shape after for loop (batch, seq_len + gamma) 
+            # last q has shape (batch, seq_len + 
             
             p = target_model(x).logits # shape (batch, seq_len + gamma, vocab) 
             # n the end position of the valid prefix
