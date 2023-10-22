@@ -1299,7 +1299,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             print("***** Past is used *****") 
             previous_generated_len = past[0][0].shape[2]
             input_ids = input_ids[:, previous_generated_len:] 
-            print("input_ids has shape {}".format(input_ids.shape)) 
+        print("input_ids has shape {}".format(input_ids.shape)) 
 
         return {
             "input_ids": input_ids, # tensor of [1, seq_length] 
@@ -1365,6 +1365,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                 new_len = input_ids.shape[-1]
                 self._reset_kwargs_past_to_new_length(new_len)
                 self.rollback_signal = None 
+            
             if self.is_large(): 
                 print(colored("large model running at iteration {}".format(iteration_count), "green")) #ff0000 
             else: 
