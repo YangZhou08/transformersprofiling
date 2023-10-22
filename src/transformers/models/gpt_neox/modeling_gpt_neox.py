@@ -1391,6 +1391,9 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                     print(k, v if v.numel() <= 20 else v.shape) 
                 else: 
                     print(k, v) 
+            
+            if ("attention_mask" in model_inputs.keys()): 
+                model_inputs.pop("attention_mask") 
 
             # forward pass to get next token
             outputs = self(
