@@ -1299,6 +1299,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             print("***** Past is used *****") 
             previous_generated_len = past[0][0].shape[2]
             input_ids = input_ids[:, previous_generated_len:] 
+            
         print("input_ids has shape {}".format(input_ids.shape)) 
 
         return {
@@ -1382,6 +1383,14 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             # each has 'prev_key' and 'previous_value'
             # for 'self' they grow in sequence length
             # for 'encoder_decoder' the sequence length is fixed 
+            
+            for k, v in model_inputs.items(): 
+                if isinstance(v, tuple): 
+                    print(k, len(v)) 
+                elif isinstance(v, torch.Tensor): 
+                    print(k, v if v.numel() <= 20 else v.shape) 
+                else: 
+                    print(k, v) 
 
             # forward pass to get next token
             outputs = self(
