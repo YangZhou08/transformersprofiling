@@ -149,11 +149,13 @@ def run():
         outputs = small_model(input_ids = input_ids, past_key_values = past_key_values, use_cache = True) 
         
         print(outputs.logits.shape) # (batch_size, seq_len, vocab_size) 
+        '''
         if n == 0: 
             past_output = outputs.logits 
         else: 
             print((outputs.logits[:, : -1, :] - past_output).norm()) 
             past_output = outputs.logits 
+        ''' 
         # print(outputs.attention_mask) 
         # print(outputs.position_ids) 
         # print(outputs) 
