@@ -2503,7 +2503,7 @@ class GenerationMixin:
 
             # prepare model inputs
             model_inputs = self.prepare_inputs_for_generation(input_ids, **model_kwargs)
-            '''
+            
             for (k, v) in model_inputs.items(): 
                 if isinstance(v, (tuple, torch.Tensor)): 
                     # print("{}, shape of values is {}".format(k, v.shape if isinstance(v, torch.Tensor) else len(v))) 
@@ -2513,7 +2513,7 @@ class GenerationMixin:
                         print(k, len(v)) 
                 else: 
                     print(k, v) 
-            ''' 
+            
             # forward pass to get next token
             outputs = self(
                 **model_inputs,
@@ -2521,6 +2521,7 @@ class GenerationMixin:
                 output_attentions=output_attentions,
                 output_hidden_states=output_hidden_states,
             ) 
+            print("outputs.logits.shape", outputs.logits.shape) 
 
             if synced_gpus and this_peer_finished:
                 continue  # don't waste resources running the code we don't need

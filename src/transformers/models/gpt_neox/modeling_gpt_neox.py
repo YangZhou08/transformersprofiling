@@ -841,7 +841,6 @@ class GPTNeoXForCausalLM(GPTNeoXPreTrainedModel):
             model_inputs = {"inputs_embeds": inputs_embeds}
         else:
             model_inputs = {"input_ids": input_ids}
-        print(position_ids.shape)
         model_inputs.update(
             {
                 "attention_mask": attention_mask,
