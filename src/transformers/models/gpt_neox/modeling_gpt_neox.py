@@ -1299,6 +1299,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             print("***** Past is used *****") 
             previous_generated_len = past[0][0].shape[2]
             input_ids = input_ids[:, previous_generated_len:] 
+            print("input_ids has shape {}".format(input_ids.shape)) 
 
         return {
             "input_ids": input_ids, # tensor of [1, seq_length] 
