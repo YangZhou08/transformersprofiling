@@ -104,7 +104,7 @@ def run():
     # word_suffix = " In the previous sentence, what did Neil Armstrong say?" 
     # word_seq = word_prefix + word_seq 
     
-    model = GPTNeoXSpeculativeDecoding(large = large_model, small = small_model) 
+    model = GPTNeoXSpeculativeDecoding(large = large_model, small = small_model, fallback_threshold = 0.45) 
     model.resize_token_embeddings(len(tokenizer)) 
     
     # input_ids = tokenizer.encode(word_seq, return_tensors = "pt").to(torch_device) 
