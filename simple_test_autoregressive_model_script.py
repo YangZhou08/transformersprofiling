@@ -11,6 +11,8 @@ from tqdm import tqdm
 import torch.nn.functional as F 
 
 from src.transformers.generation.logits_process import LogitsProcessorList 
+import time 
+import numpy as np 
 
 # set_logger("/rscratch/zhendong/yang_tasc/transformersprofiling/simple_tb3b_log.txt") 
 cache_dir = "/rscratch/zhendong/yang_tasc" 
@@ -135,9 +137,12 @@ def run():
         attention_mask = input_ids2["attention_mask"] 
         position_ids = torch.arange(0, input_ids.shape[-1], dtype = torch.long, device = input_ids.device).view(1, -1) 
     
+    measure_time_list = [] 
+    
     generated_sequence = input_ids 
     past_output = None 
     while n < 23: 
+        start_time = time.time() 
         # outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
         # outputs = small_model(**input_ids, past_key_values = past_key_values) 
         # outputs = small_model(input_ids = input_ids, past_key_values = past_key_values) # , attention_mask = attention_mask) 
@@ -163,7 +168,7 @@ def run():
         next_token_logits = outputs.logits[:, -1, :] 
         next_tokens = torch.argmax(next_token_logits, dim = -1) 
         
-        print("****** {} iteration {} ******".format(n, next_tokens)) 
+        # print("****** {} iteration {} ******".format(n, next_tokens)) 
         
         past_key_values = outputs.past_key_values 
         # idx_next = sample(last_p) 
@@ -179,10 +184,15 @@ def run():
         n += 1 
         # attention_mask = torch.cat((attention_mask, torch.ones(attention_mask.shape[0], 1, dtype = torch.long).to(torch_device)), dim = 1) 
         # position_ids = torch.tensor([generated_sequence.shape[-1] - 1]).to(torch_device).view(1, -1) 
+        torch.cuda.synchronize() 
+        measure_time_list.append(time.time() - start_time) 
         print() 
     print("input: {}".format(word_seq)) 
     generatedText = tokenizer.decode(generated_sequence[0], skip_special_tokens = True) 
     print("generatedText: {}".format(generatedText)) 
+    
+    print(measure_time_list) 
+    print(np.mean(measure_time_list)) 
     
     print() 
     
