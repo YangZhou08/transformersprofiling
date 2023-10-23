@@ -120,14 +120,14 @@ def run():
     
     temperature = 1 
     past_key_values = None 
-    
+    '''
     print("--------- What should be the actual output ---------") 
     input_ids = small_model.generate(**input_ids2, max_length = 30) 
     print("input: {}".format(word_seq)) 
     generatedText = tokenizer.decode(input_ids[0], skip_special_tokens = True) 
     print("generatedText: {}".format(generatedText)) 
     print() 
-    
+    ''' 
     if isinstance(input_ids2, torch.Tensor): 
         print("input_ids is a Tensor") 
         # input_ids = input_ids["input_ids"] 
