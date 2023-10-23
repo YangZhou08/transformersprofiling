@@ -1394,6 +1394,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             
             if ("attention_mask" in model_inputs.keys()): 
                 model_inputs.pop("attention_mask") 
+                model_inputs.pop("head_mask") 
 
             # forward pass to get next token
             outputs = self(
