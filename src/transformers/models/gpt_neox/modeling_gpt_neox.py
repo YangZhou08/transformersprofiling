@@ -1614,7 +1614,8 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             # print("input_ids.shape {}".format(input_ids.shape)) 
 
             # If running with the large model, check whether we want to rollback the small model's predictions
-            if not self.training and self.is_large():
+            if not self.training and self.is_large(): 
+                print("large model output logits shape {}".format(outputs.logits.shape)) 
                 large_model_logits = outputs.logits[0, :, :] # (batch_size, sequence_length, vocab_size) -> (sequence_length, vocab_size) 
                 if large_model_logits.shape[0] != 1:
                     # Compare the small model's predictions so far vs. the large model's non-autoregressive predictions
