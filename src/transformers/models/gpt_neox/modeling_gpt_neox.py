@@ -1616,7 +1616,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                 print("large model output logits shape {}".format(outputs.logits.shape)) 
 
             # If running with the large model, check whether we want to rollback the small model's predictions
-            self.is_large(): 
+            if self.is_large(): 
                 print("large model output logits shape {}".format(outputs.logits.shape)) 
                 large_model_logits = outputs.logits[0, :, :] # (batch_size, sequence_length, vocab_size) -> (sequence_length, vocab_size) 
                 if large_model_logits.shape[0] != 1:
