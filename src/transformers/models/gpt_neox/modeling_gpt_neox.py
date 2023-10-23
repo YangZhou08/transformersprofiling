@@ -1295,15 +1295,16 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
         **kwargs
     ): 
         # cut decoder_input_ids if past is used 
-        '''
+        
         if past is not None: 
             print("***** Past is used *****") 
             previous_generated_len = past[0][0].shape[2] 
             print(previous_generated_len) 
             print(input_ids) 
             input_ids = input_ids[:, previous_generated_len:] 
-        ''' 
-        past = None # only for debug 
+            use_cache = True 
+            
+        # past = None # only for debug 
             
         print("input_ids has shape {}".format(input_ids.shape)) 
 
