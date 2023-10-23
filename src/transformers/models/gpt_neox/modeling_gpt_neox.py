@@ -1421,7 +1421,8 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             if fallback_cond:
                 # if fall back, we ignore the current run
                 # the large model will produce the same token (i.e. redundant)
-                self.schedule_iters(fall_back_to_large=True)
+                self.schedule_iters(fall_back_to_large=True) 
+                print(colored("Fallback to large model", "blue")) 
                 continue
 
             # finished sentences should have their next token be a padding token
