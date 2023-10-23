@@ -1393,12 +1393,6 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             # for 'self' they grow in sequence length
             # for 'encoder_decoder' the sequence length is fixed 
             
-            
-            if ("attention_mask" in model_inputs.keys()): 
-                model_inputs.pop("attention_mask") 
-            if ("head_mask" in model_inputs.keys()): 
-                model_inputs.pop("head_mask") 
-            
             for k, v in model_inputs.items(): 
                 if isinstance(v, tuple): 
                     print(k, len(v)) 
