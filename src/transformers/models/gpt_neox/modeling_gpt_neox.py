@@ -1214,11 +1214,9 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
 
         if init_with == 'large':
             self.model_kwargs = self.large_kwargs
-            self.model_kwargs.use_cache = True 
             self.past_key_value = None 
         else: # small
             self.model_kwargs = self.small_kwargs 
-            self.model_kwargs.use_cache = True 
             self.past_key_value = None 
         
         print("inspecting large model kwargs: {}".format(self.large_kwargs)) 
@@ -1306,7 +1304,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             print(previous_generated_len) 
             print(input_ids) 
             input_ids = input_ids[:, previous_generated_len:] 
-            # use_cache = True 
+            use_cache = True 
             
         # past = None # only for debug 
             
