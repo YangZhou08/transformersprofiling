@@ -1612,6 +1612,8 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             # update generated ids, model inputs, and length for next step
             input_ids = torch.cat([input_ids, next_tokens[:, None]], dim=-1) 
             # print("input_ids.shape {}".format(input_ids.shape)) 
+            if self.is_large(): 
+                print("large model output logits shape {}".format(outputs.logits.shape)) 
 
             # If running with the large model, check whether we want to rollback the small model's predictions
             if not self.training and self.is_large(): 
