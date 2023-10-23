@@ -1269,6 +1269,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             output_hidden_states,
             return_dict,
         ] 
+        
         print(colored("past_key_values is {}".format(len(past_key_values) if past_key_values is not None else None), "blue")) 
         if self.is_large():
             
@@ -1301,7 +1302,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             print(previous_generated_len) 
             print(input_ids) 
             input_ids = input_ids[:, previous_generated_len:] 
-            use_cache = True 
+            # use_cache = True 
             
         # past = None # only for debug 
             
