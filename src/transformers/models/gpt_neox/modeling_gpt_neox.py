@@ -1386,13 +1386,6 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             # for 'self' they grow in sequence length
             # for 'encoder_decoder' the sequence length is fixed 
             
-            for k, v in model_inputs.items(): 
-                if isinstance(v, tuple): 
-                    print(k, len(v)) 
-                elif isinstance(v, torch.Tensor): 
-                    print(k, v if v.numel() <= 20 else v.shape) 
-                else: 
-                    print(k, v) 
             
             if ("attention_mask" in model_inputs.keys()): 
                 model_inputs.pop("attention_mask") 
@@ -1405,7 +1398,15 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                 return_dict=True,
                 output_attentions=output_attentions,
                 output_hidden_states=output_hidden_states,
-            )
+            ) 
+            
+            for k, v in model_inputs.items(): 
+                if isinstance(v, tuple): 
+                    print(k, len(v)) 
+                elif isinstance(v, torch.Tensor): 
+                    print(k, v if v.numel() <= 20 else v.shape) 
+                else: 
+                    print(k, v) 
 
             next_token_logits = outputs.logits[:, -1, :] # (batch_size, sequence_length, vocab_size) -> (batch_size, vocab_size) 
 
