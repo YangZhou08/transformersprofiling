@@ -1192,6 +1192,9 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
         
         self.fallback_threshold = fallback_threshold or 0.6
         self.rollback_threshold = rollback_threshold or 5.0 
+        
+        self.use_sd = False 
+        self.num_small_iters = 5 
     
     def is_large(self):
         return self.model_type == 'large' 
@@ -1339,6 +1342,167 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                 new_kwargs.append(tuple(new_layer_kwargs))
             kwargs['past'] = tuple(new_kwargs) 
     
+    def _greedy_search_body_sd(
+        self, 
+        input_ids, 
+        model_kwargs, 
+        output_attentions, 
+        output_hidden_states, 
+        stopping_criteria, 
+        logits_processor, 
+        pad_token_id, 
+        eos_token_id, 
+        synced_gpus, 
+        unfinished_sequences, 
+    ): 
+        assert not synced_gpus
+
+        self.init_iters(model_kwargs=model_kwargs, init_with='large')
+        scores = None
+        self.rollback_signal = None 
+        
+        iteration_count = 0 
+        
+        time_measurement = [] 
+        time_start = False 
+        
+        while True: 
+            if not time_start: 
+                start_time = time.time() 
+                time_start = True 
+
+            # print("iteration count {}".format(iteration_count)) #ff0000 
+            # Iteration right after the rollback
+            # need to remove previous k and v caches for the rolled back tokens
+            if self.rollback_signal:
+                new_len = input_ids.shape[-1]
+                self._reset_kwargs_past_to_new_length(new_len)
+                self.rollback_signal = None 
+            
+            # if self.is_large(): 
+                # print(colored("large model running at iteration {}".format(iteration_count), "green")) #ff0000 
+            # else: 
+                # print(colored("small model running at iteration {}".format(iteration_count), "yellow")) #ff0000 
+
+            # prepare model inputs
+            model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) # putting things in a dictionary 
+            # NOTE to my surprise that the input_ids has already chopped based on the past_key_value sequence length 
+                    
+            # print("encoder hidden states is {}".format(model_inputs['encoder_outputs'].last_hidden_state.shape if model_inputs['encoder_outputs'] is not None else None)) 
+
+            # past_key_values: #layer list,
+            # each element is dict {'self', 'encoder_decoder'}
+            # each has 'prev_key' and 'previous_value'
+            # for 'self' they grow in sequence length
+            # for 'encoder_decoder' the sequence length is fixed 
+            
+            if ("attention_mask" in model_inputs.keys()): 
+                model_inputs.pop("attention_mask") 
+            
+            '''
+            for k, v in model_inputs.items(): #ff0000 
+                if isinstance(v, tuple): 
+                    print(k, len(v)) 
+                elif isinstance(v, torch.Tensor): 
+                    print(k, v if v.numel() <= 20 else v.shape) 
+                else: 
+                    print(k, v) 
+            ''' 
+
+            # forward pass to get next token
+            outputs = self(
+                **model_inputs,
+                return_dict=True,
+                output_attentions=output_attentions,
+                output_hidden_states=output_hidden_states,
+            ) 
+
+            next_token_logits = outputs.logits[:, -1, :] # (batch_size, sequence_length, vocab_size) -> (batch_size, vocab_size) 
+
+            # pre-process distribution
+            next_tokens_scores = logits_processor(input_ids, next_token_logits)
+            score = torch.softmax(next_tokens_scores, dim=-1) # needed for other decoding methods 
+
+            # argmax policy for the next token
+            next_tokens = torch.argmax(score, dim=-1) 
+            # print("next_tokens is {}".format(next_tokens)) #ff0000 
+            # print("with probability of {}".format(score[0][next_tokens[0]])) #FF0000 
+            
+            # finished sentences should have their next token be a padding token
+            if eos_token_id is not None:
+                if pad_token_id is None:
+                    raise ValueError("If `eos_token_id` is defined, make sure that `pad_token_id` is defined.")
+                next_tokens = next_tokens * unfinished_sequences + pad_token_id * (1 - unfinished_sequences) 
+
+            # print("next_token shape {} next_tokens {}".format(next_tokens.shape, next_tokens)) 
+            # update generated ids, model inputs, and length for next step
+            input_ids = torch.cat([input_ids, next_tokens[:, None]], dim=-1) 
+            # print("input_ids.shape {}".format(input_ids.shape)) 
+
+            # If running with the large model, check whether we want to rollback the small model's predictions
+            if not self.training and self.is_large():
+                large_model_logits = outputs.logits[0, :, :] # (batch_size, sequence_length, vocab_size) -> (sequence_length, vocab_size) 
+                if large_model_logits.shape[0] != 1:
+                    # Compare the small model's predictions so far vs. the large model's non-autoregressive predictions
+                    small_model_prediction = model_inputs["input_ids"][0] 
+                    large_model_prediction = large_model_logits.argmax(-1)
+
+                    small_model_prediction = small_model_prediction[1:] # SL-1
+                    large_model_logits = large_model_logits[:-1, :] # SL-1 x Dim
+
+                    loss = self.crossentropy_loss(large_model_logits, small_model_prediction)
+                    loss_above_thres = loss > self.rollback_threshold
+
+                    # if there exists any predictions that deviates above threshold vs. the large model's prediction
+                    if loss_above_thres.any():
+                        # get the earliest index among those above-threshold prediction
+                        first_idx_loss_above_thres = loss_above_thres.to(torch.int).argmax() # NOTE heck, it uses argmax but it should return the first occurance of the 1 
+                        past = model_inputs['past_key_values']
+                        past_len = past[0][0].shape[2]
+                        new_len = first_idx_loss_above_thres + past_len + 1
+                        new_input_ids = input_ids[:, :new_len] 
+
+                        new_pred = nn.functional.softmax(
+                            large_model_logits[first_idx_loss_above_thres:first_idx_loss_above_thres + 1, :],
+                            dim=-1,
+                        ).argmax(-1).unsqueeze(0) # NOTE greedy decoding 
+
+                        # Minor optimization:
+                        # Avoid rollback if the new prediction from the large model is same as the small model's old prediction
+                        # You can remove this condition
+                        if new_pred[0] != input_ids[0, new_len]:
+                            input_ids = torch.cat([new_input_ids, new_pred], dim=-1)
+                            self.rollback_signal = True
+                            continue
+
+            self.model_kwargs = self._update_model_kwargs_for_generation(
+                outputs, self.model_kwargs, is_encoder_decoder=self.config.is_encoder_decoder
+            )
+
+            # if eos_token was found in one sentence, set sentence to finished
+            if eos_token_id is not None:
+                unfinished_sequences = unfinished_sequences.mul((next_tokens != eos_token_id).long())
+
+            # stop when each sentence is finished, or if we exceed the maximum length
+            if unfinished_sequences.max() == 0 or stopping_criteria(input_ids, scores):
+                break
+
+            self.schedule_iters() 
+            iteration_count += 1 # fallback small model iteration doesn't count 
+            # print() 
+            assert time_start 
+            torch.cuda.synchronize() 
+            end_time = time.time() 
+            time_measurement.append(end_time - start_time) 
+            time_start = False 
+            # print() #ff0000 
+        
+        print(time_measurement) 
+        print("average time per iteration is {}".format(np.mean(time_measurement))) 
+
+        return input_ids
+
+    
     def _greedy_search_body( 
         self,
         input_ids,
@@ -1424,7 +1588,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             next_tokens = torch.argmax(score, dim=-1) 
             # print("next_tokens is {}".format(next_tokens)) #ff0000 
             # print("with probability of {}".format(score[0][next_tokens[0]])) #FF0000 
-
+            
             # Fallback condition
             fallback_cond = (
                 self.model_type == 'small'
@@ -1437,7 +1601,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                 self.schedule_iters(fall_back_to_large=True) 
                 # print(colored("Fallback to large model", "blue")) #FF0000 
                 continue
-
+            
             # finished sentences should have their next token be a padding token
             if eos_token_id is not None:
                 if pad_token_id is None:
@@ -1457,16 +1621,19 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                     small_model_prediction = model_inputs["input_ids"][0] 
                     large_model_prediction = large_model_logits.argmax(-1)
 
-                    small_model_prediction = small_model_prediction[1:] # SL-1
-                    large_model_logits = large_model_logits[:-1, :] # SL-1 x Dim
+                    small_model_prediction = small_model_prediction[1:] # SL-1 
+                    print("small_model_prediction: {}".format(small_model_prediction.shape)) 
+                    large_model_logits = large_model_logits[:-1, :] # SL-1 x Dim 
+                    print("large_model_logits: {}".format(large_model_logits.shape)) 
 
-                    loss = self.crossentropy_loss(large_model_logits, small_model_prediction)
+                    loss = self.crossentropy_loss(large_model_logits, small_model_prediction) 
                     loss_above_thres = loss > self.rollback_threshold
 
                     # if there exists any predictions that deviates above threshold vs. the large model's prediction
                     if loss_above_thres.any():
                         # get the earliest index among those above-threshold prediction
-                        first_idx_loss_above_thres = loss_above_thres.to(torch.int).argmax() # NOTE heck, it uses argmax but it should return the first occurance of the 1 
+                        first_idx_loss_above_thres = loss_above_thres.to(torch.int).argmax() #ff0000 Focus on this line 
+                        # NOTE heck, it uses argmax but it should return the first occurance of the 1 
                         past = model_inputs['past_key_values']
                         past_len = past[0][0].shape[2]
                         new_len = first_idx_loss_above_thres + past_len + 1
