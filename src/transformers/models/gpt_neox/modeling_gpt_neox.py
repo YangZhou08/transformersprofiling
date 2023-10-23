@@ -1407,10 +1407,12 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
 
             # pre-process distribution
             next_tokens_scores = logits_processor(input_ids, next_token_logits)
-            score = torch.softmax(next_tokens_scores, dim=-1)
+            score = torch.softmax(next_tokens_scores, dim=-1) # needed for other decoding methods 
 
             # argmax policy for the next token
-            next_tokens = torch.argmax(score, dim=-1)
+            next_tokens = torch.argmax(score, dim=-1) 
+            print("next_tokens is {}".format(next_tokens)) 
+            print("with probability of {}".format(score[0][next_tokens[0]])) 
 
             # Fallback condition
             fallback_cond = (
