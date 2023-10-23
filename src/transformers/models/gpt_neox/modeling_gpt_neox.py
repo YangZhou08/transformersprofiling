@@ -1218,11 +1218,12 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
         else: # small
             self.model_kwargs = self.small_kwargs 
             self.past_key_value = None 
-        
+        '''
         print("inspecting large model kwargs: {}".format(self.large_kwargs)) 
         print() 
         
         print("inspecting small model kwargs: {}".format(self.small_kwargs)) 
+        ''' 
     
     def schedule_iters(self, fall_back_to_large=False, fall_back_to_small=False):
         """
@@ -1300,15 +1301,15 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
         # cut decoder_input_ids if past is used 
         
         if past is not None: 
-            print("***** Past is used *****") 
+            # print("***** Past is used *****") #ff0000 
             previous_generated_len = past[0][0].shape[2] 
-            print(previous_generated_len) 
-            print(input_ids) 
+            # print(previous_generated_len) #ff0000 
+            # print(input_ids) #ff0000 
             input_ids = input_ids[:, previous_generated_len:] 
             
         # past = None # only for debug 
             
-        print("input_ids has shape {}".format(input_ids.shape)) 
+        # print("input_ids has shape {}".format(input_ids.shape)) #ff0000 
 
         return {
             "input_ids": input_ids, # tensor of [1, seq_length] 
@@ -1367,7 +1368,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                 start_time = time.time() 
                 time_start = True 
 
-            print("iteration count {}".format(iteration_count)) 
+            # print("iteration count {}".format(iteration_count)) #ff0000 
             # Iteration right after the rollback
             # need to remove previous k and v caches for the rolled back tokens
             if self.rollback_signal:
@@ -1375,10 +1376,10 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                 self._reset_kwargs_past_to_new_length(new_len)
                 self.rollback_signal = None 
             
-            if self.is_large(): 
-                print(colored("large model running at iteration {}".format(iteration_count), "green")) #ff0000 
-            else: 
-                print(colored("small model running at iteration {}".format(iteration_count), "yellow")) #ff0000 
+            # if self.is_large(): 
+                # print(colored("large model running at iteration {}".format(iteration_count), "green")) #ff0000 
+            # else: 
+                # print(colored("small model running at iteration {}".format(iteration_count), "yellow")) #ff0000 
 
             # prepare model inputs
             model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) # putting things in a dictionary 
@@ -1395,13 +1396,15 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             if ("attention_mask" in model_inputs.keys()): 
                 model_inputs.pop("attention_mask") 
             
-            for k, v in model_inputs.items(): 
+            '''
+            for k, v in model_inputs.items(): #ff0000 
                 if isinstance(v, tuple): 
                     print(k, len(v)) 
                 elif isinstance(v, torch.Tensor): 
                     print(k, v if v.numel() <= 20 else v.shape) 
                 else: 
                     print(k, v) 
+            ''' 
 
             # forward pass to get next token
             outputs = self(
@@ -1419,8 +1422,8 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
 
             # argmax policy for the next token
             next_tokens = torch.argmax(score, dim=-1) 
-            print("next_tokens is {}".format(next_tokens)) 
-            print("with probability of {}".format(score[0][next_tokens[0]])) 
+            # print("next_tokens is {}".format(next_tokens)) #ff0000 
+            # print("with probability of {}".format(score[0][next_tokens[0]])) #FF0000 
 
             # Fallback condition
             fallback_cond = (
@@ -1432,7 +1435,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                 # if fall back, we ignore the current run
                 # the large model will produce the same token (i.e. redundant)
                 self.schedule_iters(fall_back_to_large=True) 
-                print(colored("Fallback to large model", "blue")) 
+                # print(colored("Fallback to large model", "blue")) #FF0000 
                 continue
 
             # finished sentences should have their next token be a padding token
@@ -1502,7 +1505,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             end_time = time.time() 
             time_measurement.append(end_time - start_time) 
             time_start = False 
-            print() 
+            # print() #ff0000 
         
         print(time_measurement) 
         print("average time per iteration is {}".format(np.mean(time_measurement))) 
