@@ -1249,7 +1249,6 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
         input_ids: Optional[torch.LongTensor] = None,
         attention_mask: Optional[torch.FloatTensor] = None,
         head_mask: Optional[torch.FloatTensor] = None,
-        encoder_outputs: Optional[Tuple[Tuple[torch.Tensor]]] = None,
         past_key_values: Optional[Tuple[Tuple[torch.Tensor]]] = None,
         inputs_embeds: Optional[torch.FloatTensor] = None,
         labels: Optional[torch.LongTensor] = None,
@@ -1262,7 +1261,6 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             input_ids,
             attention_mask,
             head_mask,
-            encoder_outputs,
             past_key_values,
             inputs_embeds,
             labels,
@@ -1273,6 +1271,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
         ] 
         print(colored("past_key_values is {}".format(len(past_key_values) if past_key_values is not None else None), "blue")) 
         if self.is_large():
+            
             return self.large(*args)
         else:
             return self.small(*args)
@@ -1395,14 +1394,6 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                 model_inputs.pop("attention_mask") 
             if ("head_mask" in model_inputs.keys()): 
                 model_inputs.pop("head_mask") 
-
-            # forward pass to get next token
-            outputs = self(
-                **model_inputs,
-                return_dict=True,
-                output_attentions=output_attentions,
-                output_hidden_states=output_hidden_states,
-            ) 
             
             for k, v in model_inputs.items(): 
                 if isinstance(v, tuple): 
@@ -1411,6 +1402,14 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                     print(k, v if v.numel() <= 20 else v.shape) 
                 else: 
                     print(k, v) 
+
+            # forward pass to get next token
+            outputs = self(
+                **model_inputs,
+                return_dict=True,
+                output_attentions=output_attentions,
+                output_hidden_states=output_hidden_states,
+            ) 
 
             next_token_logits = outputs.logits[:, -1, :] # (batch_size, sequence_length, vocab_size) -> (batch_size, vocab_size) 
 
