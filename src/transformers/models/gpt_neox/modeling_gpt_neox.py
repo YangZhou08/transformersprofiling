@@ -1195,6 +1195,8 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
         
         self.use_sd = False 
         self.num_small_iters = 5 
+        
+        self.accumulate_small_probability = None 
     
     def is_large(self):
         return self.model_type == 'large' 
@@ -1532,7 +1534,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                 start_time = time.time() 
                 time_start = True 
 
-            # print("iteration count {}".format(iteration_count)) #ff0000 
+            print("iteration count {}".format(iteration_count)) #ff0000 
             # Iteration right after the rollback
             # need to remove previous k and v caches for the rolled back tokens
             if self.rollback_signal:
@@ -1540,10 +1542,10 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                 self._reset_kwargs_past_to_new_length(new_len)
                 self.rollback_signal = None 
             
-            # if self.is_large(): 
-                # print(colored("large model running at iteration {}".format(iteration_count), "green")) #ff0000 
-            # else: 
-                # print(colored("small model running at iteration {}".format(iteration_count), "yellow")) #ff0000 
+            if self.is_large(): 
+                print(colored("large model running at iteration {}".format(iteration_count), "green")) #ff0000 
+            else: 
+                print(colored("small model running at iteration {}".format(iteration_count), "yellow")) #ff0000 
 
             # prepare model inputs
             model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) # putting things in a dictionary 
@@ -1560,7 +1562,6 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             if ("attention_mask" in model_inputs.keys()): 
                 model_inputs.pop("attention_mask") 
             
-            '''
             for k, v in model_inputs.items(): #ff0000 
                 if isinstance(v, tuple): 
                     print(k, len(v)) 
@@ -1568,7 +1569,6 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                     print(k, v if v.numel() <= 20 else v.shape) 
                 else: 
                     print(k, v) 
-            ''' 
 
             # forward pass to get next token
             outputs = self(
@@ -1586,8 +1586,8 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
 
             # argmax policy for the next token
             next_tokens = torch.argmax(score, dim=-1) 
-            # print("next_tokens is {}".format(next_tokens)) #ff0000 
-            # print("with probability of {}".format(score[0][next_tokens[0]])) #FF0000 
+            print("next_tokens is {}".format(next_tokens)) #ff0000 
+            print("with probability of {}".format(score[0][next_tokens[0]])) #FF0000 
             
             # Fallback condition
             fallback_cond = (
@@ -1599,7 +1599,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                 # if fall back, we ignore the current run
                 # the large model will produce the same token (i.e. redundant)
                 self.schedule_iters(fall_back_to_large=True) 
-                # print(colored("Fallback to large model", "blue")) #FF0000 
+                print(colored("Fallback to large model", "blue")) #FF0000 
                 continue
             
             # finished sentences should have their next token be a padding token
@@ -1672,7 +1672,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             end_time = time.time() 
             time_measurement.append(end_time - start_time) 
             time_start = False 
-            # print() #ff0000 
+            print() #ff0000 
         
         print(time_measurement) 
         print("average time per iteration is {}".format(np.mean(time_measurement))) 
