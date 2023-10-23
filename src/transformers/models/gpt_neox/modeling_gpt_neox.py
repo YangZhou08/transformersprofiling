@@ -1247,12 +1247,13 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             self.model_kwargs = self.large_kwargs 
     
     def forward(
-        self,
+        self, 
         input_ids: Optional[torch.LongTensor] = None,
         attention_mask: Optional[torch.FloatTensor] = None,
-        head_mask: Optional[torch.FloatTensor] = None,
-        past_key_values: Optional[Tuple[Tuple[torch.Tensor]]] = None,
+        position_ids: Optional[torch.LongTensor] = None,
         inputs_embeds: Optional[torch.FloatTensor] = None,
+        head_mask: Optional[torch.FloatTensor] = None,
+        past_key_values: Optional[Tuple[Tuple[torch.FloatTensor]]] = None,
         labels: Optional[torch.LongTensor] = None,
         use_cache: Optional[bool] = None,
         output_attentions: Optional[bool] = None,
@@ -1260,24 +1261,24 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
         return_dict: Optional[bool] = None,
     ): 
         args = [
-            input_ids,
-            attention_mask,
-            head_mask,
-            past_key_values,
-            inputs_embeds,
-            labels,
-            use_cache,
-            output_attentions,
-            output_hidden_states,
-            return_dict,
+            input_ids, 
+            attention_mask, 
+            position_ids, 
+            inputs_embeds, 
+            head_mask, 
+            past_key_values, 
+            labels, 
+            use_cache, 
+            output_attentions, 
+            output_hidden_states, 
+            return_dict, 
         ] 
         
         print(colored("past_key_values is {}".format(len(past_key_values) if past_key_values is not None else None), "blue")) 
         if self.is_large():
-            
             return self.large(*args)
         else:
-            return self.small(*args)
+            return self.small(*args) 
     
     @property
     def config(self):
