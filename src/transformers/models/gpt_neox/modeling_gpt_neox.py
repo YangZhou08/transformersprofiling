@@ -1304,7 +1304,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             print(previous_generated_len) 
             print(input_ids) 
             input_ids = input_ids[:, previous_generated_len:] 
-            use_cache = True 
+        use_cache = True 
             
         # past = None # only for debug 
             
