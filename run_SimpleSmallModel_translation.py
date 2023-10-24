@@ -19,6 +19,7 @@ simple_small_model.eval()
 inputs_embeds = torch.randn(1, 2, 512).to(torch_device) 
 word_seq = "Peter want to marry a German woman" 
 input_ids = tokenizer.encode(word_seq, return_tensors = "pt").to(torch_device) 
+past_key_values = None 
 
 if isinstance(input_ids, torch.Tensor): 
     print("input_ids is a Tensor") 
@@ -29,6 +30,6 @@ else:
     attention_mask = input_ids["attention_mask"] 
     position_ids = torch.arange(0, input_ids.shape[-1], dtype = torch.long, device = input_ids.device).view(1, -1) 
 
-outputs = simple_small_model(input_ids = input_ids, inputs_embeds = inputs_embeds) 
+outputs = simple_small_model(input_ids = input_ids, inputs_embeds = inputs_embeds, past_key_values = past_key_values, use_cache = True) 
 
 print(outputs.logits.shape) 
