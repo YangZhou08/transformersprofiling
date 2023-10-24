@@ -18,6 +18,7 @@ import time
 import numpy as np 
 cache_dir = "/rscratch/zhendong/yang_tasc" 
 
+torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 onedataset = load_dataset('json', data_files = '/rscratch/zhendong/yang_tasc/downloads/c4_subset.json', split = 'train') 
 
 tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
@@ -38,7 +39,6 @@ print("*** Below is the selected line to test ***")
 word_seq = onedataset[0]["text"] 
 print(word_seq) 
 
-torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 input_ids = tokenizer.encode(word_seq, return_tensors = 'pt').to(torch_device) 
 
 print("the input ids is {}".format(input_ids.shape)) 
@@ -53,4 +53,3 @@ print(outputs.shape)
 
 output_t = tokenizer.decode(outputs[0]) 
 print(output_t) 
-
