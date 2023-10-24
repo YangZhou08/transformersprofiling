@@ -6,5 +6,5 @@ onedataset = load_dataset('json', data_files = '/rscratch/zhendong/yang_tasc/dow
 # train_dataset = onedataset["train"] 
 # validation_dataset = onedataset["validation"] 
 
-for i in range(100): 
+for i in range(10): 
     print(onedataset[i]) 
