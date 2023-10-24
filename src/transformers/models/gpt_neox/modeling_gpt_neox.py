@@ -44,6 +44,7 @@ import copy
 import time 
 import numpy as np 
 from termcolor import colored 
+import torch.nn.functional as F 
 
 
 logger = logging.get_logger(__name__)
@@ -528,7 +529,7 @@ class GPTNeoXModel(GPTNeoXPreTrainedModel):
         self.embed_in = nn.Embedding(config.vocab_size, config.hidden_size)
         self.emb_dropout = nn.Dropout(config.hidden_dropout)
         self.layers = nn.ModuleList([GPTNeoXLayer(config) for _ in range(config.num_hidden_layers)])
-        self.final_layer_norm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
+        self.final_layer_norm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps) 
 
         self.gradient_checkpointing = False
 
@@ -1306,15 +1307,15 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
         # cut decoder_input_ids if past is used 
         
         if past is not None: 
-            # print("***** Past is used *****") #ff0000 
+            # print("***** Past is used *****") 
             previous_generated_len = past[0][0].shape[2] 
-            # print(previous_generated_len) #ff0000 
-            # print(input_ids) #ff0000 
+            # print(previous_generated_len) 
+            # print(input_ids) 
             input_ids = input_ids[:, previous_generated_len:] 
             
         # past = None # only for debug 
             
-        # print("input_ids has shape {}".format(input_ids.shape)) #ff0000 
+        # print("input_ids has shape {}".format(input_ids.shape)) 
 
         return {
             "input_ids": input_ids, # tensor of [1, seq_length] 
@@ -1373,7 +1374,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                 start_time = time.time() 
                 time_start = True 
 
-            # print("iteration count {}".format(iteration_count)) #ff0000 
+            # print("iteration count {}".format(iteration_count)) 
             # Iteration right after the rollback
             # need to remove previous k and v caches for the rolled back tokens
             if self.rollback_signal:
@@ -1382,9 +1383,9 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                 self.rollback_signal = None 
             
             # if self.is_large(): 
-                # print(colored("large model running at iteration {}".format(iteration_count), "green")) #ff0000 
+                # print(colored("large model running at iteration {}".format(iteration_count), "green")) 
             # else: 
-                # print(colored("small model running at iteration {}".format(iteration_count), "yellow")) #ff0000 
+                # print(colored("small model running at iteration {}".format(iteration_count), "yellow")) 
 
             # prepare model inputs
             model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) # putting things in a dictionary 
@@ -1402,7 +1403,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                 model_inputs.pop("attention_mask") 
             
             '''
-            for k, v in model_inputs.items(): #ff0000 
+            for k, v in model_inputs.items(): 
                 if isinstance(v, tuple): 
                     print(k, len(v)) 
                 elif isinstance(v, torch.Tensor): 
@@ -1418,6 +1419,11 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                 output_attentions=output_attentions,
                 output_hidden_states=output_hidden_states,
             ) 
+            
+            if (iteration_count == 1 and self.is_large() is False): 
+                self.accumulate_small_probability = torch.softmax(outputs.logits, dim = -1) # (batch_size, seq_len, vocab) 
+            elif self.is_large() is False: 
+                torch.cat([self.accumulate_small_probability, torch.softmax(outputs.logits, dim = -1)], dim = 1) 
 
             next_token_logits = outputs.logits[:, -1, :] # (batch_size, sequence_length, vocab_size) -> (batch_size, vocab_size) 
 
@@ -1427,8 +1433,8 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
 
             # argmax policy for the next token
             next_tokens = torch.argmax(score, dim=-1) 
-            # print("next_tokens is {}".format(next_tokens)) #ff0000 
-            # print("with probability of {}".format(score[0][next_tokens[0]])) #FF0000 
+            # print("next_tokens is {}".format(next_tokens)) 
+            # print("with probability of {}".format(score[0][next_tokens[0]])) 
             
             # finished sentences should have their next token be a padding token
             if eos_token_id is not None:
@@ -1442,7 +1448,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             # print("input_ids.shape {}".format(input_ids.shape)) 
 
             # If running with the large model, check whether we want to rollback the small model's predictions
-            if not self.training and self.is_large():
+            if not self.training and self.is_large(): 
                 large_model_logits = outputs.logits[0, :, :] # (batch_size, sequence_length, vocab_size) -> (sequence_length, vocab_size) 
                 if large_model_logits.shape[0] != 1:
                     # Compare the small model's predictions so far vs. the large model's non-autoregressive predictions
@@ -1468,6 +1474,8 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                             large_model_logits[first_idx_loss_above_thres:first_idx_loss_above_thres + 1, :],
                             dim=-1,
                         ).argmax(-1).unsqueeze(0) # NOTE greedy decoding 
+                        
+                        self.accumulate_small_probability = None 
 
                         # Minor optimization:
                         # Avoid rollback if the new prediction from the large model is same as the small model's old prediction
@@ -1497,7 +1505,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             end_time = time.time() 
             time_measurement.append(end_time - start_time) 
             time_start = False 
-            # print() #ff0000 
+            # print() 
         
         print(time_measurement) 
         print("average time per iteration is {}".format(np.mean(time_measurement))) 
@@ -1534,7 +1542,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                 start_time = time.time() 
                 time_start = True 
 
-            print("iteration count {}".format(iteration_count)) #ff0000 
+            print("iteration count {}".format(iteration_count)) 
             # Iteration right after the rollback
             # need to remove previous k and v caches for the rolled back tokens
             if self.rollback_signal:
@@ -1543,9 +1551,9 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                 self.rollback_signal = None 
             
             if self.is_large(): 
-                print(colored("large model running at iteration {}".format(iteration_count), "green")) #ff0000 
+                print(colored("large model running at iteration {}".format(iteration_count), "green")) 
             else: 
-                print(colored("small model running at iteration {}".format(iteration_count), "yellow")) #ff0000 
+                print(colored("small model running at iteration {}".format(iteration_count), "yellow")) 
 
             # prepare model inputs
             model_inputs = self.prepare_inputs_for_generation(input_ids, **self.model_kwargs) # putting things in a dictionary 
@@ -1562,7 +1570,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             if ("attention_mask" in model_inputs.keys()): 
                 model_inputs.pop("attention_mask") 
             
-            for k, v in model_inputs.items(): #ff0000 
+            for k, v in model_inputs.items(): 
                 if isinstance(v, tuple): 
                     print(k, len(v)) 
                 elif isinstance(v, torch.Tensor): 
@@ -1586,8 +1594,8 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
 
             # argmax policy for the next token
             next_tokens = torch.argmax(score, dim=-1) 
-            print("next_tokens is {}".format(next_tokens)) #ff0000 
-            print("with probability of {}".format(score[0][next_tokens[0]])) #FF0000 
+            print("next_tokens is {}".format(next_tokens)) 
+            print("with probability of {}".format(score[0][next_tokens[0]])) 
             
             # Fallback condition
             fallback_cond = (
@@ -1599,7 +1607,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                 # if fall back, we ignore the current run
                 # the large model will produce the same token (i.e. redundant)
                 self.schedule_iters(fall_back_to_large=True) 
-                print(colored("Fallback to large model", "blue")) #FF0000 
+                print(colored("Fallback to large model", "blue")) 
                 continue
             
             # finished sentences should have their next token be a padding token
@@ -1635,7 +1643,7 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
                     # if there exists any predictions that deviates above threshold vs. the large model's prediction
                     if loss_above_thres.any():
                         # get the earliest index among those above-threshold prediction
-                        first_idx_loss_above_thres = loss_above_thres.to(torch.int).argmax() #ff0000 Focus on this line 
+                        first_idx_loss_above_thres = loss_above_thres.to(torch.int).argmax() # Focus on this line 
                         # NOTE heck, it uses argmax but it should return the first occurance of the 1 
                         past = model_inputs['past_key_values']
                         past_len = past[0][0].shape[2]
@@ -1675,9 +1683,273 @@ class GPTNeoXSpeculativeDecoding(nn.Module, GenerationMixin):
             end_time = time.time() 
             time_measurement.append(end_time - start_time) 
             time_start = False 
-            print() #ff0000 
+            print() 
         
         print(time_measurement) 
         print("average time per iteration is {}".format(np.mean(time_measurement))) 
 
-        return input_ids
+        return input_ids 
+
+class SimpleSmallModel(GPTNeoXPreTrainedModel): 
+    _tied_weights_keys = ["embed_out.weight"]
+
+    def __init__(self, config): 
+        # copied from GPTNeoXModel 
+        super().__init__(config) 
+        self.config = config 
+        
+        self.embed_in = nn.Embedding(config.vocab_size, config.hidden_size) 
+        self.emb_dropout = nn.Dropout(config.hidden_dropout) 
+        self.layers = nn.ModuleList([GPTNeoXLayer(config) for _ in range(config.num_hidden_layers)]) 
+        self.final_layer_norm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps) 
+        
+        self.gradient_checkpointing = False 
+
+        # copied from GPTNeoXForCausalLM 
+        self.embed_out = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
+
+        # Initialize weights and apply final processing
+        self.post_init() 
+        
+    def get_input_embeddings(self):
+        return self.embed_in 
+    
+    def set_input_embeddings(self, value):
+        self.embed_in = value 
+        
+    def get_output_embeddings(self):
+        return self.embed_out 
+
+    def set_output_embeddings(self, new_embeddings):
+        self.embed_out = new_embeddings 
+    
+    @add_start_docstrings_to_model_forward(GPT_NEOX_INPUTS_DOCSTRING.format("batch_size, sequence_length"))
+    @add_code_sample_docstrings(
+        checkpoint=_CHECKPOINT_FOR_DOC,
+        real_checkpoint=_REAL_CHECKPOINT_FOR_DOC,
+        output_type=BaseModelOutputWithPast,
+        config_class=_CONFIG_FOR_DOC,
+    ) 
+    @replace_return_docstrings(output_type=CausalLMOutputWithPast, config_class=_CONFIG_FOR_DOC) 
+    def forward( 
+        self,
+        input_ids: Optional[torch.LongTensor] = None,
+        attention_mask: Optional[torch.FloatTensor] = None,
+        position_ids: Optional[torch.LongTensor] = None,
+        inputs_embeds: Optional[torch.FloatTensor] = None,
+        head_mask: Optional[torch.FloatTensor] = None,
+        past_key_values: Optional[Tuple[Tuple[torch.FloatTensor]]] = None,
+        labels: Optional[torch.LongTensor] = None,
+        use_cache: Optional[bool] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        return_dict: Optional[bool] = None, 
+        straight_hidden_states: Optional[int] = None, 
+    ) -> Union[Tuple[torch.Tensor], SequenceClassifierOutputWithPast]: 
+        output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
+        output_hidden_states = (
+            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
+        )
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        use_cache = use_cache if use_cache is not None else self.config.use_cache
+
+        if input_ids is not None and inputs_embeds is not None:
+            raise ValueError("You cannot specify both input_ids and inputs_embeds at the same time")
+        elif input_ids is not None:
+            self.warn_if_padding_and_no_attention_mask(input_ids, attention_mask)
+            input_shape = input_ids.size()
+        elif inputs_embeds is not None:
+            input_shape = inputs_embeds.size()[:-1]
+        else:
+            raise ValueError("You have to specify either input_ids or inputs_embeds")
+
+        batch_size, seq_length = input_shape
+
+        if past_key_values is None:
+            past_length = 0
+            past_key_values = tuple([None] * self.config.num_hidden_layers)
+        else:
+            past_length = past_key_values[0][0].size(-2)
+
+        if position_ids is None:
+            device = input_ids.device if input_ids is not None else inputs_embeds.device
+            position_ids = torch.arange(past_length, seq_length + past_length, dtype=torch.long, device=device)
+            position_ids = position_ids.unsqueeze(0)
+
+        # Attention mask.
+        if attention_mask is not None:
+            assert batch_size > 0, "batch_size has to be defined and > 0"
+            attention_mask = attention_mask.view(batch_size, -1)
+            # We create a 3D attention mask from a 2D tensor mask.
+            # Sizes are [batch_size, 1, 1, to_seq_length]
+            # So we can broadcast to [batch_size, num_heads, from_seq_length, to_seq_length]
+            # this attention mask is more simple than the triangular masking of causal attention
+            # used in OpenAI GPT, we just need to prepare the broadcast dimension here.
+            attention_mask = attention_mask[:, None, None, :]
+
+            # Since attention_mask is 1.0 for positions we want to attend and 0.0 for
+            # masked positions, this operation will create a tensor which is 0.0 for
+            # positions we want to attend and the dtype's smallest value for masked positions.
+            # Since we are adding it to the raw scores before the softmax, this is
+            # effectively the same as removing these entirely.
+            attention_mask = attention_mask.to(dtype=self.dtype)  # fp16 compatibility
+            attention_mask = (1.0 - attention_mask) * torch.finfo(self.dtype).min
+
+        # Prepare head mask if needed
+        # 1.0 in head_mask indicate we keep the head
+        # attention_probs has shape bsz x n_heads x N x N
+        # input head_mask has shape [num_heads] or [num_hidden_layers x num_heads]
+        # and head_mask is converted to shape [num_hidden_layers x batch x num_heads x seq_length x seq_length]
+        head_mask = self.get_head_mask(head_mask, self.config.num_hidden_layers) 
+        
+        # special change to the model SimpleSmallModel use the inputs_embeds to hold the extra padded hidden states and use the input_ids to hold the ids 
+        #008000 
+        inputs_id_embeds = self.embed_in(input_ids) 
+        if inputs_embeds is not None: 
+            inputs_embeds = torch.cat([inputs_embeds, inputs_id_embeds], dim = 1) # append it on the sequence length dimension 
+        else: 
+            inputs_embeds = inputs_id_embeds 
+        
+        hidden_states = self.emb_dropout(inputs_embeds)
+
+        if self.gradient_checkpointing and self.training:
+            if use_cache:
+                logger.warning(
+                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
+                )
+                use_cache = False
+
+        presents = () if use_cache else None
+        all_attentions = () if output_attentions else None
+        all_hidden_states = () if output_hidden_states else None
+        for i, (layer, layer_past) in enumerate(zip(self.layers, past_key_values)):
+            if output_hidden_states:
+                all_hidden_states = all_hidden_states + (hidden_states,)
+
+            if self.gradient_checkpointing and self.training:
+
+                def create_custom_forward(module):
+                    def custom_forward(*inputs):
+                        # None for layer_past
+                        return module(*inputs, use_cache, None, output_attentions)
+
+                    return custom_forward
+
+                outputs = torch.utils.checkpoint.checkpoint(
+                    create_custom_forward(layer),
+                    hidden_states,
+                    attention_mask,
+                    position_ids,
+                    head_mask[i],
+                )
+            else:
+                outputs = layer(
+                    hidden_states,
+                    attention_mask=attention_mask,
+                    position_ids=position_ids,
+                    head_mask=head_mask[i],
+                    layer_past=layer_past,
+                    use_cache=use_cache,
+                    output_attentions=output_attentions,
+                )
+            hidden_states = outputs[0]
+            if use_cache is True:
+                presents = presents + (outputs[1],)
+            if output_attentions:
+                all_attentions = all_attentions + (outputs[2 if use_cache else 1],)
+
+        hidden_states = self.final_layer_norm(hidden_states)
+        # Add last hidden state
+        if output_hidden_states:
+            all_hidden_states = all_hidden_states + (hidden_states,)
+
+        if not return_dict:
+            return tuple(v for v in [hidden_states, presents, all_hidden_states, all_attentions] if v is not None)
+
+        # return BaseModelOutputWithPast(
+        #     last_hidden_state=hidden_states,
+        #     past_key_values=presents,
+        #     hidden_states=all_hidden_states,
+        #     attentions=all_attentions,
+        # ) 
+
+        # continued from GPTNeoXForCausalLM copied from GPTNeoXForCausalLM 
+        lm_logits = self.embed_out(hidden_states) 
+        
+        lm_loss = None 
+        if labels is not None: 
+            # move labels to correct device to enable model parallelism
+            labels = labels.to(lm_logits.device)
+            # we are doing next-token prediction; shift prediction scores and input ids by one
+            shift_logits = lm_logits[:, :-1, :].contiguous()
+            labels = labels[:, 1:].contiguous()
+            loss_fct = CrossEntropyLoss()
+            lm_loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), labels.view(-1)) 
+        
+        if not return_dict:
+            output = (lm_logits,) + outputs[1:]
+            return ((lm_loss,) + output) if lm_loss is not None else output 
+        
+        return CausalLMOutputWithPast(
+            loss=lm_loss,
+            logits=lm_logits,
+            past_key_values=outputs.past_key_values,
+            hidden_states=outputs.hidden_states,
+            attentions=outputs.attentions,
+        ) 
+        
+    def prepare_inputs_for_generation(
+    self, input_ids, past_key_values=None, attention_mask=None, inputs_embeds=None, **kwargs
+    ):
+        input_shape = input_ids.shape
+        print(input_shape)
+        print(past_key_values[0][0].shape if past_key_values is not None else "no pkv")
+
+        # cut decoder_input_ids if past is used
+        if past_key_values is not None:
+            past_length = past_key_values[0][0].shape[2]
+
+            # Some generation methods already pass only the last input ID
+            if input_ids.shape[1] > past_length:
+                remove_prefix_length = past_length
+            else:
+                # Default to old behavior: keep only final ID
+                remove_prefix_length = input_ids.shape[1] - 1
+
+            input_ids = input_ids[:, remove_prefix_length:]
+
+        position_ids = kwargs.get("position_ids", None)
+        if attention_mask is not None and position_ids is None:
+            # create position_ids on the fly for batch generation
+            position_ids = attention_mask.long().cumsum(-1) - 1
+            position_ids.masked_fill_(attention_mask == 0, 1)
+            if past_key_values:
+                position_ids = position_ids[:, -input_ids.shape[1] :]
+
+        # if model is used as a decoder in encoder-decoder model, the decoder attention mask is created on the fly
+        if attention_mask is None:
+            attention_mask = input_ids.new_ones(input_shape)
+
+        # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
+        if inputs_embeds is not None and past_key_values is None:
+            model_inputs = {"inputs_embeds": inputs_embeds}
+        else:
+            model_inputs = {"input_ids": input_ids}
+        model_inputs.update(
+            {
+                "attention_mask": attention_mask,
+                "past_key_values": past_key_values,
+                "position_ids": position_ids,
+            }
+        )
+
+        return model_inputs
+
+    def _reorder_cache(self, past_key_values, beam_idx):
+        reordered_past = ()
+        for layer_past in past_key_values:
+            reordered_past += (
+                tuple(past_state.index_select(0, beam_idx.to(past_state.device)) for past_state in layer_past[:2])
+                + layer_past[2:],
+            )
+        return reordered_past 
