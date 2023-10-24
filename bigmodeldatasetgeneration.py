@@ -16,6 +16,7 @@ import torch.nn.functional as F
 from src.transformers.generation.logits_process import LogitsProcessorList 
 import time 
 import numpy as np 
+cache_dir = "/rscratch/zhendong/yang_tasc" 
 
 onedataset = load_dataset('json', data_files = '/rscratch/zhendong/yang_tasc/downloads/c4_subset.json', split = 'train') 
 
