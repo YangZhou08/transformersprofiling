@@ -13,7 +13,7 @@ import tqdm
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 
 tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m", cache_dir = "/rscratch/zhendong/yang_tasc") 
-simple_small_model = SimpleSmallModel.from_pretrained("EleutherAI/pythia-70m", cache_dir = "/rscratch/zhendong/yang_tasc") 
+simple_small_model = SimpleSmallModel.from_pretrained("EleutherAI/pythia-70m", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
 simple_small_model.eval() 
 
 inputs_embeds = torch.randn(1, 2, 512).to(torch_device) 
