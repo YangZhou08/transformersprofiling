@@ -16,7 +16,7 @@ tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m", cache_dir = "
 simple_small_model = SimpleSmallModel.from_pretrained("EleutherAI/pythia-70m", cache_dir = "/rscratch/zhendong/yang_tasc") 
 simple_small_model.eval() 
 
-inputs_embeds = torch.randn(1, 2, 512) 
+inputs_embeds = torch.randn(1, 2, 512).to(torch_device) 
 word_seq = "Peter want to marry a German woman" 
 input_ids = tokenizer.encode(word_seq, return_tensors = "pt").to(torch_device) 
 
