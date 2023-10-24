@@ -1891,10 +1891,10 @@ class SimpleSmallModel(GPTNeoXPreTrainedModel):
         
         return CausalLMOutputWithPast(
             loss=lm_loss,
-            logits=lm_logits,
-            past_key_values=outputs.past_key_values,
-            hidden_states=outputs.hidden_states,
-            attentions=outputs.attentions,
+            logits=lm_logits, 
+            past_key_values=presents, 
+            hidden_states=all_hidden_states, 
+            attentions=all_attentions, 
         ) 
         
     def prepare_inputs_for_generation(
