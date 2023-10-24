@@ -6,4 +6,4 @@ onedataset = load_dataset("wikitext", "wikitext-103-v1", cache_dir = "/rscratch/
 train_dataset = onedataset["train"] 
 validation_dataset = onedataset["validation"] 
 
-print(train_dataset[0]) 
+print(train_dataset[1]) 
