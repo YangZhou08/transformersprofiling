@@ -45,7 +45,7 @@ print("the input ids is {}".format(input_ids.shape))
 print(input_ids) 
 print() 
 
-halfindex = input_ids.shape[-1]/2 
+halfindex = int(input_ids.shape[-1]/2) 
 input_first_part = input_ids[:, :halfindex] 
 
 outputs = small_model.generate(input_ids = input_first_part, max_length = halfindex * 2, do_sample = False) 
