@@ -143,7 +143,7 @@ def run():
     
     generated_sequence = input_ids 
     past_output = None 
-    while n < 23: 
+    while n < 50: 
         start_time = time.time() 
         # outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
         # outputs = small_model(**input_ids, past_key_values = past_key_values) 
