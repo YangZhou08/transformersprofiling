@@ -100,7 +100,7 @@ def run():
     # word_prefix = "summarize: " 
     # word_prefix = "translate English to German: " 
     # word_seq = "I am new to huggingface transformers" 
-    word_seq = "Peter want to marry a German woman" 
+    # word_seq = "Peter want to marry a German woman" 
     # word_seq = "I am a student." 
     # word_seq = "I am currently playing with chatGPT to write a furniture assembly plan to train a robot." 
     # word_seq = "Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equal. Now we are engaged in a great civil war, testing whether that nation, or any nation so conceived and so dedicated, can long endure. We are met on a great battlefield of that war. We have come to dedicate a portion of that field, as a final resting place for those who here gave their lives that that nation might live." 
@@ -108,6 +108,7 @@ def run():
     # word_seq = "The Apollo 11 mission in 1969 marked a monumental achievement for humanity. American astronauts Neil Armstrong and Buzz Aldrin became the first humans to walk on the moon, with Armstrong's famous words: 'That's one small step for man, one giant leap for mankind." 
     # word_suffix = " In the previous sentence, what did Neil Armstrong say?" 
     # word_seq = word_prefix + word_seq 
+    word_seq = "My name is Thomas and my main" 
     
     # input_ids = tokenizer.encode(word_seq, return_tensors = "pt").to(torch_device) 
     input_ids2 = tokenizer(word_seq, return_tensors = "pt").to(torch_device) 
