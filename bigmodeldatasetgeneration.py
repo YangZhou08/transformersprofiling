@@ -52,13 +52,13 @@ for i in range(10):
     # print(input_ids) 
     print() 
     
-    print("the original input first 100 tokens should be: \n{}".format(tokenizer.decode(input_ids[i][:100]))) 
+    print("the original input first 100 tokens should be: \n{}".format(tokenizer.decode(input_ids[0][:100]))) 
 
     # halfindex = int(input_ids.shape[-1]/2) 
     # input_first_part = input_ids[:, :halfindex] 
     input_first_part = input_ids[:, :50] 
 
-    n = 0 
+    # n = 0 
     top_k = 10
     top_p = 0.9 
 
