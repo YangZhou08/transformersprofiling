@@ -171,7 +171,7 @@ def run():
         start_time = time.time() 
         outputs = small_model(input_ids = experimental_ids, past_key_values = past_key_values, use_cache = True) 
         
-        print(outputs.logits.shape) # (batch_size, seq_len, vocab_size) 
+        # print(outputs.logits.shape) # (batch_size, seq_len, vocab_size) 
         '''
         if n == 0: 
             past_output = outputs.logits 
@@ -186,17 +186,17 @@ def run():
         next_token_logits = outputs.logits[:, -1, :] 
         next_tokens = torch.argmax(next_token_logits, dim = -1) 
         
-        print("****** {} iteration {} ******".format(n, next_tokens)) 
+        # print("****** {} iteration {} ******".format(n, next_tokens)) 
         # print("outputs.logits.shape: {}".format(outputs.logits.shape)) 
-        
-        past_key_values = outputs.past_key_values 
-        # idx_next = sample(last_p) 
         
         n += 1 
         # attention_mask = torch.cat((attention_mask, torch.ones(attention_mask.shape[0], 1, dtype = torch.long).to(torch_device)), dim = 1) 
         # position_ids = torch.tensor([generated_sequence.shape[-1] - 1]).to(torch_device).view(1, -1) 
         torch.cuda.synchronize() 
         measure_time_list.append(time.time() - start_time) 
+        
+        past_key_values = outputs.past_key_values 
+        # idx_next = sample(last_p) 
         print("kvcache sequence length: {}".format(past_key_values[0][0].shape[2])) 
         # fallback kvcache 
         new_past_key_values = [] 
