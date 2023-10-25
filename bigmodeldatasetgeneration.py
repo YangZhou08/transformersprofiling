@@ -19,6 +19,8 @@ import numpy as np
 
 from termcolor import colored 
 
+from src.transformers import BitsAndBytesConfig 
+
 cache_dir = "/home/bc20/yang/transformersprofiling" 
 
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
@@ -32,6 +34,10 @@ tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir 
 # small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-6.9b", revision = "step3000", cache_dir = cache_dir).to(torch_device) 
 # small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-2.8b", revision = "step3000", cache_dir = cache_dir).to(torch_device) 
 # small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir).to(torch_device) 
+quant_config = BitsAndBytesConfig( 
+    load_in_8bit = True, 
+    llm_int8_has_fp16_weight = True, 
+) 
 small_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir).to(torch_device) 
 small_model.eval() 
 
