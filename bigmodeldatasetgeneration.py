@@ -32,29 +32,40 @@ tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir 
 small_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir).to(torch_device) 
 small_model.eval() 
 
+weightmodelfirst = next(small_model.parameters()) 
+print(weightmodelfirst.dtype) 
+
 # train_dataset = onedataset["train"] 
 # validation_dataset = onedataset["validation"] 
 
-for i in range(10): 
-    print(onedataset[i]) 
-    
-print() 
+# for i in range(10): 
+#     print(onedataset[i]) 
+
 print("*** Below is the selected line to test ***") 
-word_seq = onedataset[0]["text"] 
-print(word_seq) 
+for i in range(10): 
+    word_seq = onedataset[i]["text"] 
+    # print(word_seq) 
 
-input_ids = tokenizer.encode(word_seq, return_tensors = 'pt').to(torch_device) 
+    input_ids = tokenizer.encode(word_seq, return_tensors = 'pt').to(torch_device) 
 
-print("the input ids is {}".format(input_ids.shape)) 
-print(input_ids) 
-print() 
+    print("the input ids is {}".format(input_ids.shape)) 
+    # print(input_ids) 
+    print() 
+    
+    print("the original input first 100 tokens should be: \n{}".format(tokenizer.decode(input_ids[i][:100]))) 
 
-# halfindex = int(input_ids.shape[-1]/2) 
-# input_first_part = input_ids[:, :halfindex] 
-input_first_part = input_ids[:, :50] 
+    # halfindex = int(input_ids.shape[-1]/2) 
+    # input_first_part = input_ids[:, :halfindex] 
+    input_first_part = input_ids[:, :50] 
 
-outputs = small_model.generate(input_ids = input_first_part, max_length = 200, do_sample = False) 
-print(outputs.shape) 
+    n = 0 
+    top_k = 10
+    top_p = 0.9 
 
-output_t = tokenizer.decode(outputs[0]) 
-print(output_t) 
+    temperature = 1 
+
+    outputs = small_model.generate(input_ids = input_first_part, max_length = 200, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature) 
+    print(outputs.shape) 
+
+    output_t = tokenizer.decode(outputs[0]) 
+    print(output_t) 
