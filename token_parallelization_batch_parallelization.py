@@ -163,7 +163,7 @@ def run():
     outputs = small_model(input_ids = prompt, past_key_values = past_key_values, use_cache = True) 
     past_key_values = outputs.past_key_values 
     print("kvcache sequence length: {}".format(past_key_values[0][0].shape[2])) 
-    k = 10 
+    k = 1 
     
     while n < 10: 
         print("iteration {}".format(n)) 
