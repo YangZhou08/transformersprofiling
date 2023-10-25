@@ -163,7 +163,7 @@ def run():
     outputs = small_model(input_ids = prompt, past_key_values = past_key_values, use_cache = True) 
     past_key_values = outputs.past_key_values 
     print("kvcache sequence length: {}".format(past_key_values[0][0].shape[2])) 
-    k = 1 
+    k = 3 
     
     while n < 10: 
         print("iteration {}".format(n)) 
@@ -202,7 +202,7 @@ def run():
         for i in range(len(past_key_values)): 
             new_layer_past = [] 
             for j in range(len(past_key_values[i])): 
-                new_layer_past.append(past_key_values[i][j][:, :, : -1, :]) # remove the generated one 
+                new_layer_past.append(past_key_values[i][j][:, :, : -k, :]) # remove the generated one 
             new_past_key_values.append(tuple(new_layer_past)) 
         past_key_values = tuple(new_past_key_values) 
         
