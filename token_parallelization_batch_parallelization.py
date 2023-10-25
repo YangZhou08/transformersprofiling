@@ -198,9 +198,14 @@ def run():
         measure_time_list.append(time.time() - start_time) 
         print("kvcache sequence length: {}".format(past_key_values[0][0].shape[2])) 
         # fallback kvcache 
+        new_past_key_values = [] 
         for i in range(len(past_key_values)): 
+            new_layer_past = [] 
             for j in range(len(past_key_values[i])): 
-                past_key_values[i][j] = past_key_values[i][j][:, :, : -1, :] # remove the generated one 
+                new_layer_past.append(past_key_values[i][j][:, :, : -1, :]) # remove the generated one 
+            new_past_key_values.append(tuple(new_layer_past)) 
+        past_key_values = tuple(new_past_key_values) 
+        
         print("after fallback kvcache, kvcache sequence length: {}".format(past_key_values[0][0].shape[2])) 
         print() 
     print("input: {}".format(word_seq)) 
