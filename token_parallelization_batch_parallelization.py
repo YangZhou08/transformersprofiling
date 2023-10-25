@@ -163,7 +163,7 @@ def run():
     outputs = small_model(input_ids = prompt, past_key_values = past_key_values, use_cache = True) 
     past_key_values = outputs.past_key_values 
     print("kvcache sequence length: {}".format(past_key_values[0][0].shape[2])) 
-    k = 1 
+    k = 10 
     
     while n < 10: 
         print("iteration {}".format(n)) 
@@ -184,7 +184,6 @@ def run():
         # print(outputs) 
         # last_p = outputs.logits.argmax(-1)[:, -1].unsqueeze(-1) # argmax (batch_size, seq_len), after [:, -1] -> (batch_size, ), after unsqueeze(-1) -> (batch_size, 1) 
         next_token_logits = outputs.logits[:, -1, :] 
-        next_tokens = torch.argmax(next_token_logits, dim = -1) 
         
         # print("****** {} iteration {} ******".format(n, next_tokens)) 
         # print("outputs.logits.shape: {}".format(outputs.logits.shape)) 
@@ -193,6 +192,7 @@ def run():
         # attention_mask = torch.cat((attention_mask, torch.ones(attention_mask.shape[0], 1, dtype = torch.long).to(torch_device)), dim = 1) 
         # position_ids = torch.tensor([generated_sequence.shape[-1] - 1]).to(torch_device).view(1, -1) 
         torch.cuda.synchronize() 
+        next_tokens = torch.argmax(next_token_logits, dim = -1) 
         measure_time_list.append(time.time() - start_time) 
         
         past_key_values = outputs.past_key_values 
