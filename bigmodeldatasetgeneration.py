@@ -57,7 +57,8 @@ for i in range(10):
     print() 
     
     print("the original input first 100 tokens should be: ") 
-    print(colored(tokenizer.decode(input_ids[0][:100]), "yellow")) 
+    print(colored(tokenizer.decode(input_ids[0][:50]), "yellow"), end = '') 
+    print(tokenizer.decode(input_ids[0][50:])) 
 
     # halfindex = int(input_ids.shape[-1]/2) 
     # input_first_part = input_ids[:, :halfindex] 
@@ -72,6 +73,8 @@ for i in range(10):
     outputs = small_model.generate(input_ids = input_first_part, max_length = 200, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature) 
     print(outputs.shape) 
 
-    output_t = tokenizer.decode(outputs[0]) 
-    print(output_t) 
+    output_t = tokenizer.decode(outputs[0][:50]) 
+    print(output_t, end = '') 
+    output_t = tokenizer.decode(outputs[0][50:]) 
+    print(colored(output_t, "green")) 
     print() 
