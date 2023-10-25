@@ -108,7 +108,8 @@ def run():
     # word_seq = "The Apollo 11 mission in 1969 marked a monumental achievement for humanity. American astronauts Neil Armstrong and Buzz Aldrin became the first humans to walk on the moon, with Armstrong's famous words: 'That's one small step for man, one giant leap for mankind." 
     # word_suffix = " In the previous sentence, what did Neil Armstrong say?" 
     # word_seq = word_prefix + word_seq 
-    word_seq = "My name is Thomas and my main" 
+    # word_seq = "My name is Thomas and my main" 
+    word_seq = "My name is Teven and I am" 
     
     # input_ids = tokenizer.encode(word_seq, return_tensors = "pt").to(torch_device) 
     input_ids2 = tokenizer(word_seq, return_tensors = "pt").to(torch_device) 
