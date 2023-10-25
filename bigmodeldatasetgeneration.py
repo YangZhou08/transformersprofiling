@@ -24,8 +24,8 @@ onedataset = load_dataset('json', data_files = '/rscratch/zhendong/yang_tasc/dow
 tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
     
 # small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-6.9b", revision = "step3000", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
-# small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-6.9b", revision = "step3000", cache_dir = cache_dir).to(torch_device) 
-small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-2.8b", revision = "step3000", cache_dir = cache_dir).to(torch_device) 
+small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-6.9b", revision = "step3000", cache_dir = cache_dir).to(torch_device) 
+# small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-2.8b", revision = "step3000", cache_dir = cache_dir).to(torch_device) 
 # small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir).to(torch_device) 
 small_model.eval() 
 
@@ -48,7 +48,7 @@ print()
 
 # halfindex = int(input_ids.shape[-1]/2) 
 # input_first_part = input_ids[:, :halfindex] 
-input_first_part = input_ids[:, :100] 
+input_first_part = input_ids[:, :50] 
 
 outputs = small_model.generate(input_ids = input_first_part, max_length = 200, do_sample = False) 
 print(outputs.shape) 
