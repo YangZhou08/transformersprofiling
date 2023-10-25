@@ -16,6 +16,9 @@ import torch.nn.functional as F
 from src.transformers.generation.logits_process import LogitsProcessorList 
 import time 
 import numpy as np 
+
+from termcolor import colored 
+
 cache_dir = "/home/bc20/yang/transformersprofiling" 
 
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
@@ -43,6 +46,7 @@ print(weightmodelfirst.dtype)
 
 print("*** Below is the selected line to test ***") 
 for i in range(10): 
+    print(colored("On the {}th line we print out the sequence".format(i), "green")) 
     word_seq = onedataset[i]["text"] 
     # print(word_seq) 
 
@@ -69,3 +73,4 @@ for i in range(10):
 
     output_t = tokenizer.decode(outputs[0]) 
     print(output_t) 
+    print() 
