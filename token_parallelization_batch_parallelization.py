@@ -128,14 +128,15 @@ def run():
     
     temperature = 1 
     past_key_values = None 
-    '''
-    print("--------- What should be the actual output ---------") 
+    
+    # print("--------- What should be the actual output ---------") 
     input_ids = small_model.generate(**input_ids2, max_length = 30) 
-    print("input: {}".format(word_seq)) 
+    # print("input: {}".format(word_seq)) 
     generatedText = tokenizer.decode(input_ids[0], skip_special_tokens = True) 
-    print("generatedText: {}".format(generatedText)) 
+    # print("generatedText: {}".format(generatedText)) 
+    print("--- warmup completed ---") 
     print() 
-    ''' 
+    
     if isinstance(input_ids2, torch.Tensor): 
         print("input_ids is a Tensor") 
         # input_ids = input_ids["input_ids"] 
@@ -149,17 +150,26 @@ def run():
     
     generated_sequence = input_ids 
     past_output = None 
-    while n < 2: 
+    
+    # outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
+    # outputs = small_model(**input_ids, past_key_values = past_key_values) 
+    # outputs = small_model(input_ids = input_ids, past_key_values = past_key_values) # , attention_mask = attention_mask) 
+    # outputs = small_model(**input_ids, past_key_values = past_key_values) 
+    print("input_ids get is {}".format(input_ids.shape)) 
+    # print("attention_mask get is {}".format(attention_mask)) 
+    # print("previous round posision_ids is {}".format(position_ids)) 
+    # outputs = small_model(input_ids = input_ids, past_key_values = past_key_values, use_cache = True, attention_mask = attention_mask, position_ids = position_ids) 
+    prompt = input_ids[:, :20] 
+    outputs = small_model(input_ids = prompt, past_key_values = past_key_values, use_cache = True) 
+    past_key_values = outputs.past_key_values 
+    print("kvcache sequence length: {}".format(past_key_values[0][0].shape[2])) 
+    k = 1 
+    
+    while n < 10: 
+        print("iteration {}".format(n)) 
+        experimental_ids = input_ids[:, 20: 20 + k] 
         start_time = time.time() 
-        # outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
-        # outputs = small_model(**input_ids, past_key_values = past_key_values) 
-        # outputs = small_model(input_ids = input_ids, past_key_values = past_key_values) # , attention_mask = attention_mask) 
-        # outputs = small_model(**input_ids, past_key_values = past_key_values) 
-        print("input_ids get is {}".format(input_ids.shape)) 
-        # print("attention_mask get is {}".format(attention_mask)) 
-        # print("previous round posision_ids is {}".format(position_ids)) 
-        # outputs = small_model(input_ids = input_ids, past_key_values = past_key_values, use_cache = True, attention_mask = attention_mask, position_ids = position_ids) 
-        outputs = small_model(input_ids = input_ids, past_key_values = past_key_values, use_cache = True) 
+        outputs = small_model(input_ids = experimental_ids, past_key_values = past_key_values, use_cache = True) 
         
         print(outputs.logits.shape) # (batch_size, seq_len, vocab_size) 
         '''
@@ -176,24 +186,22 @@ def run():
         next_token_logits = outputs.logits[:, -1, :] 
         next_tokens = torch.argmax(next_token_logits, dim = -1) 
         
-        # print("****** {} iteration {} ******".format(n, next_tokens)) 
+        print("****** {} iteration {} ******".format(n, next_tokens)) 
         
         past_key_values = outputs.past_key_values 
         # idx_next = sample(last_p) 
         
-        if next_tokens.item() == eos_token_id: 
-            break 
-        
-        # print("{}".format(tokenizer.decode(idx_next[0], skip_special_tokens = True))) 
-        # input_ids.input_ids = torch.cat(input_ids.input_ids, idx_next, dim = 1) 
-        # input_ids = torch.cat([input_ids, next_tokens[:, None]], dim = -1) 
-        generated_sequence = torch.cat([generated_sequence, next_tokens[:, None]], dim = -1) 
-        input_ids = next_tokens.unsqueeze(1) 
         n += 1 
         # attention_mask = torch.cat((attention_mask, torch.ones(attention_mask.shape[0], 1, dtype = torch.long).to(torch_device)), dim = 1) 
         # position_ids = torch.tensor([generated_sequence.shape[-1] - 1]).to(torch_device).view(1, -1) 
         torch.cuda.synchronize() 
         measure_time_list.append(time.time() - start_time) 
+        print("kvcache sequence length: {}".format(past_key_values[0][0].shape[2])) 
+        # fallback kvcache 
+        for i in range(len(past_key_values)): 
+            for j in range(len(past_key_values[i])): 
+                past_key_values[i][j] = past_key_values[i][j][:, :, : -1, :] # remove the generated one 
+        print("after fallback kvcache, kvcache sequence length: {}".format(past_key_values[0][0].shape[2])) 
         print() 
     print("input: {}".format(word_seq)) 
     generatedText = tokenizer.decode(generated_sequence[0], skip_special_tokens = True) 
