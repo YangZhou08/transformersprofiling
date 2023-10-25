@@ -19,8 +19,8 @@ import numpy as np
 cache_dir = "/home/bc20/yang/transformersprofiling" 
 
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
-# onedataset = load_dataset('json', data_files = '/rscratch/zhendong/yang_tasc/downloads/c4_subset.json', split = 'train') 
-onedataset = load_dataset("c4", "en", split = "train", cache_dir = cache_dir) 
+onedataset = load_dataset('json', data_files = "/home/bc20/yang/transformersprofiling/downloads/c4_subset.json", split = "train") 
+# onedataset = load_dataset("c4", "en", split = "train", cache_dir = cache_dir) 
 
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir) 
