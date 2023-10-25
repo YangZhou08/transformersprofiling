@@ -16,17 +16,20 @@ import torch.nn.functional as F
 from src.transformers.generation.logits_process import LogitsProcessorList 
 import time 
 import numpy as np 
-cache_dir = "/rscratch/zhendong/yang_tasc" 
+cache_dir = "/home/bc20/yang/transformersprofiling" 
 
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
-onedataset = load_dataset('json', data_files = '/rscratch/zhendong/yang_tasc/downloads/c4_subset.json', split = 'train') 
+# onedataset = load_dataset('json', data_files = '/rscratch/zhendong/yang_tasc/downloads/c4_subset.json', split = 'train') 
+onedataset = load_dataset("c4", "en", split = "train", cache_dir = cache_dir) 
 
-tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
+# tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir) 
     
 # small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-6.9b", revision = "step3000", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
-small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-6.9b", revision = "step3000", cache_dir = cache_dir).to(torch_device) 
+# small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-6.9b", revision = "step3000", cache_dir = cache_dir).to(torch_device) 
 # small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-2.8b", revision = "step3000", cache_dir = cache_dir).to(torch_device) 
 # small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir).to(torch_device) 
+small_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir).to(torch_device) 
 small_model.eval() 
 
 # train_dataset = onedataset["train"] 
