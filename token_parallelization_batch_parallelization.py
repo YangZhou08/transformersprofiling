@@ -187,6 +187,7 @@ def run():
         next_tokens = torch.argmax(next_token_logits, dim = -1) 
         
         print("****** {} iteration {} ******".format(n, next_tokens)) 
+        print("outputs.logits.shape: {}".format(outputs.logits.shape)) 
         
         past_key_values = outputs.past_key_values 
         # idx_next = sample(last_p) 
