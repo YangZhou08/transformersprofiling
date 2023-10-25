@@ -2445,7 +2445,9 @@ class GenerationMixin:
         ["It might be possible to get a better understanding of the nature of the problem, but it's not"]
         ```"""
         # init values
+        '''
         print("logits_processorr ", logits_processor) 
+        ''' 
         logits_processor = logits_processor if logits_processor is not None else LogitsProcessorList()
         stopping_criteria = stopping_criteria if stopping_criteria is not None else StoppingCriteriaList()
         if max_length is not None:
@@ -2499,11 +2501,11 @@ class GenerationMixin:
                 dist.all_reduce(this_peer_finished_flag, op=dist.ReduceOp.SUM)
                 # did all peers finish? the reduced sum will be 0.0 then
                 if this_peer_finished_flag.item() == 0.0:
-                    break
+                    break 
 
             # prepare model inputs
             model_inputs = self.prepare_inputs_for_generation(input_ids, **model_kwargs)
-            
+            '''
             for (k, v) in model_inputs.items(): 
                 if isinstance(v, (tuple, torch.Tensor)): 
                     # print("{}, shape of values is {}".format(k, v.shape if isinstance(v, torch.Tensor) else len(v))) 
@@ -2513,7 +2515,7 @@ class GenerationMixin:
                         print(k, len(v)) 
                 else: 
                     print(k, v) 
-            
+            ''' 
             # forward pass to get next token
             outputs = self(
                 **model_inputs,
@@ -2521,8 +2523,9 @@ class GenerationMixin:
                 output_attentions=output_attentions,
                 output_hidden_states=output_hidden_states,
             ) 
+            '''
             print("outputs.logits.shape", outputs.logits.shape) 
-
+            ''' 
             if synced_gpus and this_peer_finished:
                 continue  # don't waste resources running the code we don't need
 
@@ -2551,9 +2554,10 @@ class GenerationMixin:
 
             # argmax
             next_tokens = torch.argmax(next_tokens_scores, dim=-1) 
+            '''
             print(next_tokens) 
             print() 
-
+            ''' 
             # finished sentences should have their next token be a padding token
             if eos_token_id is not None:
                 if pad_token_id is None:
