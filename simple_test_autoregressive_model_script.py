@@ -109,7 +109,8 @@ def run():
     # word_suffix = " In the previous sentence, what did Neil Armstrong say?" 
     # word_seq = word_prefix + word_seq 
     # word_seq = "My name is Thomas and my main" 
-    word_seq = "My name is Teven and I am" 
+    # word_seq = "My name is Teven and I am" 
+    word_seq = "Once upon a time," 
     
     # input_ids = tokenizer.encode(word_seq, return_tensors = "pt").to(torch_device) 
     input_ids2 = tokenizer(word_seq, return_tensors = "pt").to(torch_device) 
