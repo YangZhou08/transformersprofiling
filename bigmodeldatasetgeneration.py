@@ -56,7 +56,8 @@ for i in range(10):
     # print(input_ids) 
     print() 
     
-    print("the original input first 100 tokens should be: \n{}".format(tokenizer.decode(input_ids[0][:100]))) 
+    print("the original input first 100 tokens should be: ") 
+    print(colored(tokenizer.decode(input_ids[0][:100]), "yellow")) 
 
     # halfindex = int(input_ids.shape[-1]/2) 
     # input_first_part = input_ids[:, :halfindex] 
