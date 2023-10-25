@@ -45,10 +45,11 @@ print("the input ids is {}".format(input_ids.shape))
 print(input_ids) 
 print() 
 
-halfindex = int(input_ids.shape[-1]/2) 
-input_first_part = input_ids[:, :halfindex] 
+# halfindex = int(input_ids.shape[-1]/2) 
+# input_first_part = input_ids[:, :halfindex] 
+input_first_part = input_ids[:, :100] 
 
-outputs = small_model.generate(input_ids = input_first_part, max_length = halfindex * 2, do_sample = False) 
+outputs = small_model.generate(input_ids = input_first_part, max_length = 200, do_sample = False) 
 print(outputs.shape) 
 
 output_t = tokenizer.decode(outputs[0]) 
