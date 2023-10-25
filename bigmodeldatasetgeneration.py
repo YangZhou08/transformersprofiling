@@ -38,7 +38,7 @@ quant_config = BitsAndBytesConfig(
     load_in_8bit = True, 
     llm_int8_has_fp16_weight = True, 
 ) 
-small_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir).to(torch_device) 
+small_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", quantization_config = quant_config).to(torch_device) 
 small_model.eval() 
 
 weightmodelfirst = next(small_model.parameters()) 
