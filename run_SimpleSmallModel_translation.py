@@ -39,6 +39,6 @@ else:
     position_ids = torch.arange(0, input_ids.shape[-1], dtype = torch.long, device = input_ids.device).view(1, -1) 
 
 simple_small_model.config.use_cache = False 
-outputs = simple_small_model(context_input_ids = input_ids, inputs_embeds = inputs_embeds, later_input_ids = None) 
+outputs = simple_small_model(context_input_ids = input_ids, inputs_embeds = inputs_embeds, later_input_ids = later_input_ids) 
 
 print(outputs.logits.shape) 
