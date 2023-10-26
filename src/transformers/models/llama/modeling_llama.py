@@ -1259,6 +1259,12 @@ class SimpleSmallModel(LlamaPreTrainedModel):
     
     def __init__(self, config): 
         super().__init__(config) 
+        # copied from LlamaModel 
+        self.padding_idx = config.pad_token_id 
+        self.vocab_size = config.vocab_size 
+        
+        # cross model projection of the hidden states dimension 
+        self.embed_projection = None 
         
         # copied from LlamaForCausalLM 
         self.vocab_size = config.vocab_size 
