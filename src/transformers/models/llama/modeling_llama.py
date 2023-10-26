@@ -1276,6 +1276,10 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         self.vocab_size = config.vocab_size 
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False) 
         
+        # needed to the deciphering thing 
+        self.iter_count = 0 
+        self.decipher_threshold = 4 
+        
         # Initialize weights and apply final processing
         self.post_init() 
     
@@ -1337,6 +1341,11 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
      ) -> Union[Tuple, CausalLMOutputWithPast]: 
+        
+        # detection 
+        if later_input_ids is not None: 
+            if later_input_ids.shape[1] <= self.iter_count: 
+                raise ValueError("We have processed this token already") 
         
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
@@ -1488,6 +1497,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             shift_labels = shift_labels.to(shift_logits.device)
             loss = loss_fct(shift_logits, shift_labels) 
         
+        self.iter_count += 1 
+        
         if not return_dict: 
             # output = (logits,) + outputs[1:] 
             output = (logits,) + tuple(v for v in [next_cache, all_hidden_states, all_self_attns] if v is not None) 
@@ -1543,7 +1554,21 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 "attention_mask": attention_mask,
             }
         )
-        return model_inputs
+        return model_inputs 
+    
+    def update_cache_for_new(self, past_key_values): 
+        if self.iter_count < self.decipher_threshold: 
+            raise ValueError("Note expected to roll back just yet") 
+        elif self.iter_count == self.decipher_threshold: 
+            new_past_key_values = [] 
+            for i in range(len(past_key_values)): 
+                new_layer_past = [] 
+                for j in range(len(past_key_values[i])): 
+                    new_layer_past.append(past_key_values[i][j][:, :, : -(self.decipher_threshold + 1), :]) # remove the generated one 
+                new_past_key_values.append(tuple(new_layer_past)) 
+            return new_past_key_values 
+        else: 
+            raise ValueError("We detected an error") 
 
     @staticmethod
     def _reorder_cache(past_key_values, beam_idx):

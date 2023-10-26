@@ -36,6 +36,6 @@ else:
     attention_mask = input_ids["attention_mask"] 
     position_ids = torch.arange(0, input_ids.shape[-1], dtype = torch.long, device = input_ids.device).view(1, -1) 
 
-outputs = simple_small_model(input_ids = input_ids, inputs_embeds = inputs_embeds) 
+outputs = simple_small_model(context_input_ids = input_ids, inputs_embeds = inputs_embeds, later_input_ids = None) 
 
 print(outputs.logits.shape) 
