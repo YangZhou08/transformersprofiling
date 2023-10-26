@@ -25,6 +25,8 @@ inputs_embeds = torch.randn(2, 2, 4096).to(torch_device)
 word_seq = "Peter want to marry a German woman" 
 input_ids = tokenizer.encode(word_seq, return_tensors = "pt").to(torch_device) 
 input_ids = torch.cat([input_ids, input_ids], dim = 0) 
+later_input_ids = "," 
+later_input_ids = torch.cat([later_input_ids, later_input_ids], dim = 0) 
 past_key_values = None 
 
 if isinstance(input_ids, torch.Tensor): 
