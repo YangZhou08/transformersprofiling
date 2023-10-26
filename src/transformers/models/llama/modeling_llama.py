@@ -1264,7 +1264,13 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         self.vocab_size = config.vocab_size 
         
         # cross model projection of the hidden states dimension 
-        self.embed_projection = None 
+        self.target_model_dim = 4096 
+        self.embed_projection = nn.Linear(self.target_model_dim, config.hidden_size, bias = False) 
+        self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx) 
+        self.layers = nn.ModuleList([LlamaDecoderLayer(config) for _ in range(config.num_hidden_layers)])
+        self.norm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps) 
+        
+        self.gradient_checkpointing = False 
         
         # copied from LlamaForCausalLM 
         self.vocab_size = config.vocab_size 
@@ -1273,23 +1279,48 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         # Initialize weights and apply final processing
         self.post_init() 
     
+    # input embeddings 
     def get_input_embeddings(self):
-        return self.model.embed_tokens 
+        # return self.model.embed_tokens 
+        return self.embed_tokens 
 
     def set_input_embeddings(self, value):
-        self.model.embed_tokens = value 
+        # self.model.embed_tokens = value 
+        self.embed_tokens = value 
 
+    # output embeddings 
     def get_output_embeddings(self):
         return self.lm_head
 
     def set_output_embeddings(self, new_embeddings):
         self.lm_head = new_embeddings
 
-    def set_decoder(self, decoder):
-        self.model = decoder
+    # def set_decoder(self, decoder):
+    #     self.model = decoder
 
-    def get_decoder(self):
-        return self.model 
+    # def get_decoder(self):
+    #     return self.model 
+
+    # this function happens after inputs_embeds has been made, so there shouldn't be problem related to condensed tokens 
+    def _prepare_decoder_attention_mask(self, attention_mask, input_shape, inputs_embeds, past_key_values_length): 
+        combined_attention_mask = None 
+        if input_shape[-1] > 1: 
+            combined_attention_mask = _make_causal_mask(
+                input_shape, 
+                inputs_embeds.dtype, 
+                device = inputs_embeds.device, 
+                past_key_values_length = past_key_values_length, 
+            ) 
+        
+        if attention_mask is not None: 
+            expanded_attn_mask = _expand_mask(attention_mask, inputs_embeds.dtype, tgt_len = input_shape[-1]).to( 
+                inputs_embeds.device 
+            ) 
+            combined_attention_mask = (
+                expanded_attn_mask if combined_attention_mask is None else expanded_attn_mask + combined_attention_mask 
+            ) 
+        
+        return combined_attention_mask 
     
     def forward(
         self,
@@ -1329,8 +1360,132 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 past_key_values_length, seq_length + past_key_values_length, dtype=torch.long, device = device 
             ) 
             position_ids = position_ids.unsqueeze(0) 
-            
         
+        # the important part 
+        # input_embeds should not be None 
+        if inputs_embeds is not None: 
+            inputs_embeds = self.embed_projection(inputs_embeds) 
+            ids_input_embeds = self.embed_tokens(input_ids) 
+            inputs_embeds = torch.cat([inputs_embeds, ids_input_embeds], dim = 0) 
+        else: 
+            inputs_embeds = self.embed_tokens(input_ids) 
+        
+        if attention_mask is None:
+            attention_mask = torch.ones(
+                (batch_size, seq_length_with_past), dtype=torch.bool, device=inputs_embeds.device
+            )
+            padding_mask = None
+        else:
+            if 0 in attention_mask:
+                padding_mask = attention_mask
+            else:
+                padding_mask = None 
+        
+        attention_mask = self._prepare_decoder_attention_mask(
+            attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length
+        ) 
+        
+        hidden_states = inputs_embeds 
+        
+        if self.gradient_checkpointing and self.training:
+            if use_cache:
+                logger.warning_once(
+                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
+                )
+                use_cache = False 
+        
+        # decoder layers
+        all_hidden_states = () if output_hidden_states else None
+        all_self_attns = () if output_attentions else None
+        next_decoder_cache = () if use_cache else None 
+        
+        for idx, decoder_layer in enumerate(self.layers):
+            if output_hidden_states:
+                all_hidden_states += (hidden_states,)
+
+            past_key_value = past_key_values[idx] if past_key_values is not None else None
+
+            if self.gradient_checkpointing and self.training:
+
+                def create_custom_forward(module):
+                    def custom_forward(*inputs):
+                        # None for past_key_value
+                        return module(*inputs, past_key_value, output_attentions, padding_mask=padding_mask)
+
+                    return custom_forward
+
+                layer_outputs = torch.utils.checkpoint.checkpoint(
+                    create_custom_forward(decoder_layer), hidden_states, attention_mask, position_ids
+                )
+            else:
+                layer_outputs = decoder_layer(
+                    hidden_states,
+                    attention_mask=attention_mask,
+                    position_ids=position_ids,
+                    past_key_value=past_key_value,
+                    output_attentions=output_attentions,
+                    use_cache=use_cache,
+                    padding_mask=padding_mask,
+                )
+
+            hidden_states = layer_outputs[0]
+
+            if use_cache:
+                next_decoder_cache += (layer_outputs[2 if output_attentions else 1],)
+
+            if output_attentions:
+                all_self_attns += (layer_outputs[1],)
+
+        hidden_states = self.norm(hidden_states)
+
+        # add hidden states from the last decoder layer
+        if output_hidden_states:
+            all_hidden_states += (hidden_states,)
+
+        next_cache = next_decoder_cache if use_cache else None
+        
+        # if not return_dict:
+        #     return tuple(v for v in [hidden_states, next_cache, all_hidden_states, all_self_attns] if v is not None)
+        # return BaseModelOutputWithPast(
+        #     last_hidden_state=hidden_states,
+        #     past_key_values=next_cache,
+        #     hidden_states=all_hidden_states,
+        #     attentions=all_self_attns,
+        # ) 
+        
+        if self.config.pretraining_tp > 1: 
+            lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
+            logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]
+            logits = torch.cat(logits, dim=-1) 
+        else: 
+            logits = self.lm_head(hidden_states) 
+        logits = logits.float() 
+
+        loss = None 
+        if labels is not None: 
+            # Shift so that tokens < n predict n
+            shift_logits = logits[..., :-1, :].contiguous()
+            shift_labels = labels[..., 1:].contiguous()
+            # Flatten the tokens
+            loss_fct = CrossEntropyLoss()
+            shift_logits = shift_logits.view(-1, self.config.vocab_size)
+            shift_labels = shift_labels.view(-1)
+            # Enable model parallelism
+            shift_labels = shift_labels.to(shift_logits.device)
+            loss = loss_fct(shift_logits, shift_labels) 
+        
+        if not return_dict: 
+            # output = (logits,) + outputs[1:] 
+            output = (logits,) + tuple(v for v in [next_cache, all_hidden_states, all_self_attns] if v is not None) 
+            return (loss,) + output if loss is not None else output 
+
+        return CausalLMOutputWithPast( 
+            loss = loss, 
+            logits = logits, 
+            past_key_values = next_cache, 
+            hidden_states = all_hidden_states, 
+            attentions = all_self_attns 
+        ) 
     
     def prepare_inputs_for_generation(
         self, input_ids, past_key_values=None, attention_mask=None, inputs_embeds=None, **kwargs
