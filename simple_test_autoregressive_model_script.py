@@ -159,7 +159,7 @@ def run():
         # print("attention_mask get is {}".format(attention_mask)) 
         # print("previous round posision_ids is {}".format(position_ids)) 
         # outputs = small_model(input_ids = input_ids, past_key_values = past_key_values, use_cache = True, attention_mask = attention_mask, position_ids = position_ids) 
-        outputs = small_model(input_ids = input_ids, past_key_values = past_key_values, use_cache = True) 
+        outputs = small_model(input_ids = input_ids, past_key_values = past_key_values, use_cache = True, output_hidden_states = True) 
         
         print(outputs.logits.shape) # (batch_size, seq_len, vocab_size) 
         '''
@@ -169,6 +169,7 @@ def run():
             print((outputs.logits[:, : -1, :] - past_output).norm()) 
             past_output = outputs.logits 
         ''' 
+        print(outputs.hidden_states[-1].shape) 
         # print(outputs.attention_mask) 
         # print(outputs.position_ids) 
         # print(outputs) 

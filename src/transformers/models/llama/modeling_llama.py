@@ -1268,10 +1268,10 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         self.post_init() 
     
     def get_input_embeddings(self):
-        return self.model.embed_tokens
+        return self.model.embed_tokens 
 
     def set_input_embeddings(self, value):
-        self.model.embed_tokens = value
+        self.model.embed_tokens = value 
 
     def get_output_embeddings(self):
         return self.lm_head
@@ -1298,12 +1298,40 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
     ) -> Union[Tuple, CausalLMOutputWithPast]: 
-        pass 
+        
+        output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
+        output_hidden_states = (
+            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
+        )
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict 
+        
+        assert input_ids.shape[0] == inputs_embeds.shape[0] 
+        
+        batch_size = input_ids.shape[0] 
+        seq_length = input_ids.shape[1] + inputs_embeds.shape[1] 
+        
+        seq_length_with_past = seq_length 
+        past_key_values_length = 0 
+        
+        if past_key_values is not None: 
+            past_key_values_length = past_key_values[0][0].shape[2] 
+            seq_length_with_past = seq_length_with_past + past_key_values_length 
+        
+        if position_ids is None: 
+            device = input_ids.device 
+            position_ids = torch.arange(
+                past_key_values_length, seq_length + past_key_values_length, dtype=torch.long, device = device 
+            ) 
+            position_ids = position_ids.unsqueeze(0) 
+            
+        
     
     def prepare_inputs_for_generation(
         self, input_ids, past_key_values=None, attention_mask=None, inputs_embeds=None, **kwargs
     ):
-        if past_key_values is not None:
+        if past_key_values is not None: 
+            # NOTE this problem is not a concern during training (kvcache isn't used) 
+            # inference would be fine because condensed token k v are also in the past_key_values 
             past_length = past_key_values[0][0].shape[2]
 
             # Some generation methods already pass only the last input ID
@@ -1324,11 +1352,14 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 position_ids = position_ids[:, -input_ids.shape[1] :]
 
         # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
+        '''
         if inputs_embeds is not None and past_key_values is None:
             model_inputs = {"inputs_embeds": inputs_embeds}
         else:
             model_inputs = {"input_ids": input_ids}
-
+        ''' 
+        model_inputs = {"input_embeds": inputs_embeds} 
+        model_inputs.update({"input_ids": input_ids}) 
         model_inputs.update(
             {
                 "position_ids": position_ids,
