@@ -1366,7 +1366,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         if inputs_embeds is not None: 
             inputs_embeds = self.embed_projection(inputs_embeds) 
             ids_input_embeds = self.embed_tokens(input_ids) 
-            inputs_embeds = torch.cat([inputs_embeds, ids_input_embeds], dim = 0) 
+            inputs_embeds = torch.cat([inputs_embeds, ids_input_embeds], dim = 1) 
         else: 
             inputs_embeds = self.embed_tokens(input_ids) 
         
