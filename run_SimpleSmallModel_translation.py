@@ -21,9 +21,10 @@ simple_small_model = SimpleSmallModel.from_pretrained("JackFram/llama-160m", cac
 
 simple_small_model.eval() 
 
-inputs_embeds = torch.randn(1, 2, 4096).to(torch_device) 
+inputs_embeds = torch.randn(2, 2, 4096).to(torch_device) 
 word_seq = "Peter want to marry a German woman" 
 input_ids = tokenizer.encode(word_seq, return_tensors = "pt").to(torch_device) 
+input_ids = torch.cat([input_ids, input_ids], dim = 0) 
 past_key_values = None 
 
 if isinstance(input_ids, torch.Tensor): 
