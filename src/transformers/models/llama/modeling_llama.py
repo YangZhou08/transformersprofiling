@@ -1373,7 +1373,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         
         if position_ids is None: 
             # device = input_ids.device 
-            device = inputs_embeds 
+            device = inputs_embeds.device 
             position_ids = torch.arange(
                 past_key_values_length, seq_length + past_key_values_length, dtype=torch.long, device = device 
             ) 
