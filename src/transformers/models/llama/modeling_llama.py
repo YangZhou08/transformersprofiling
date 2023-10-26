@@ -1324,17 +1324,19 @@ class SimpleSmallModel(LlamaPreTrainedModel):
     
     def forward(
         self,
-        input_ids: torch.LongTensor = None,
+        # input_ids: torch.LongTensor = None, 
+        context_input_ids: torch.LongTensor = None, 
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
         past_key_values: Optional[List[torch.FloatTensor]] = None,
-        inputs_embeds: Optional[torch.FloatTensor] = None,
+        inputs_embeds: Optional[torch.FloatTensor] = None, 
+        later_input_ids: torch.LongTensor = None, 
         labels: Optional[torch.LongTensor] = None,
         use_cache: Optional[bool] = None,
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
-    ) -> Union[Tuple, CausalLMOutputWithPast]: 
+     ) -> Union[Tuple, CausalLMOutputWithPast]: 
         
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
@@ -1342,10 +1344,16 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         )
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict 
         
-        assert input_ids.shape[0] == inputs_embeds.shape[0] 
+        # assert input_ids.shape[0] == inputs_embeds.shape[0] 
         
-        batch_size = input_ids.shape[0] 
-        seq_length = input_ids.shape[1] + inputs_embeds.shape[1] 
+        # batch_size = input_ids.shape[0] 
+        # seq_length = input_ids.shape[1] + inputs_embeds.shape[1] 
+        batch_size = inputs_embeds.shape[0] # NOTE inputs_embeds is the only tensor that will always be here 
+        seq_length = inputs_embeds.shape[1] 
+        if context_input_ids is not None: 
+            seq_length += context_input_ids.shape[1] 
+        if later_input_ids is not None: 
+            seq_length += later_input_ids.shape[1] 
         
         seq_length_with_past = seq_length 
         past_key_values_length = 0 
@@ -1355,7 +1363,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             seq_length_with_past = seq_length_with_past + past_key_values_length 
         
         if position_ids is None: 
-            device = input_ids.device 
+            # device = input_ids.device 
+            device = inputs_embeds 
             position_ids = torch.arange(
                 past_key_values_length, seq_length + past_key_values_length, dtype=torch.long, device = device 
             ) 
@@ -1365,10 +1374,15 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         # input_embeds should not be None 
         if inputs_embeds is not None: 
             inputs_embeds = self.embed_projection(inputs_embeds) 
-            ids_input_embeds = self.embed_tokens(input_ids) 
-            inputs_embeds = torch.cat([inputs_embeds, ids_input_embeds], dim = 1) 
+            # ids_input_embeds = self.embed_tokens(input_ids) 
+            if context_input_ids is not None: 
+                ids_input_embeds = self.embed_tokens(context_input_ids) 
+                inputs_embeds = torch.cat([ids_input_embeds, inputs_embeds], dim = 1) # sequence length lane 
+            if later_input_ids is not None: 
+                ids_input_embeds = self.embed_tokens(later_input_ids) 
+                inputs_embeds = torch.cat([inputs_embeds, ids_input_embeds], dim = 1) # sequence length lane 
         else: 
-            inputs_embeds = self.embed_tokens(input_ids) 
+            raise ValueError("We cannot have an inference or any forward propagation without the inputs_embeds") 
         
         if attention_mask is None:
             attention_mask = torch.ones(

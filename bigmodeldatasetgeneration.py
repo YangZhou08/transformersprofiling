@@ -45,7 +45,7 @@ quant_config = BitsAndBytesConfig(
     bnb_4bit_compute_dtype = "float16", 
     bnb_4bit_use_double_quant = False 
 )
-small_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", quantization_config = quant_config).to(torch_device) 
+small_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir).to(torch_device).half() 
 small_model.eval() 
 
 weightmodelfirst = next(small_model.parameters()) 
@@ -58,7 +58,7 @@ print(weightmodelfirst.dtype)
 #     print(onedataset[i]) 
 
 print("*** Below is the selected line to test ***") 
-for i in range(10): 
+for i in range(1): 
     print(colored("On the {}th line we print out the sequence".format(i), "green")) 
     word_seq = onedataset[i]["text"] 
     # print(word_seq) 
@@ -82,9 +82,8 @@ for i in range(10):
     top_p = 0.9 
 
     temperature = 1 
-
-    outputs = small_model.generate(input_ids = input_first_part, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature) 
-    print(outputs.shape) 
+    outputs = small_model.generate(input_ids = input_first_part, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True) 
+    print("output hidden states have shape {} and type {} and dimension of every element is {}".format(len(outputs.hidden_states), type(outputs.hidden_states), outputs.hidden_states[0].shape)) 
 
     output_t = tokenizer.decode(outputs[0][:64]) 
     print(output_t, end = '') 
