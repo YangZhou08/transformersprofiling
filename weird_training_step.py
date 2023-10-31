@@ -30,6 +30,13 @@ class CustomTrainer(Trainer):
 
     def compute_loss(self, model, inputs, return_outputs = False): 
         labels = None 
+        for k, v in inputs.items(): 
+            if isinstance(v, tuple): 
+                print(k, len(v)) 
+            elif isinstance(v, torch.Tensor): 
+                print(k, v.shape) 
+            else: 
+                print(k, v) 
         outputs = model(**inputs) 
         
         if isinstance(outputs, dict) and "loss" not in outputs:
