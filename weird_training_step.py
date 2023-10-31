@@ -51,6 +51,7 @@ print(d["train"], d["test"])
 
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir) 
+tokenizer.add_special_tokens({"pad_token":"<pad>"}) 
 
 '''
 quant_config = BitsAndBytesConfig(
@@ -91,7 +92,8 @@ training_args = TrainingArguments(
 ) 
 
 small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
-small_model.eval() 
+small_model.config.pad_token_id = tokenizer.pad_token_id 
+small_model.train() 
 
 weightmodelfirst = next(small_model.parameters()) 
 print(weightmodelfirst.dtype) 
