@@ -54,7 +54,7 @@ from src.transformers import BitsAndBytesConfig
 cache_dir = "/home/bc20/yang/transformersprofiling" 
 
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
-onedataset = load_dataset('json', data_files = "/home/bc20/yang/transformersprofiling/downloads/c4_subset.json", split = "train") 
+onedataset = load_dataset('json', data_files = "/home/bc20/yang/transformersprofiling/downloads/c4_subset.json", split = "train[:1000]")  
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = cache_dir) 
 
 d = onedataset.train_test_split(test_size = 0.1) 
