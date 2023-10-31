@@ -82,7 +82,8 @@ small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
 small_model.train() 
 
-max_length = small_model.config.max_position_embeddings 
+# max_length = small_model.config.max_position_embeddings 
+max_length = 64 
 # def encode_with_truncation(examples): 
     # return tokenizer(examples["text"], truncation=True, padding="max_length",
                 #    max_length=max_length, return_special_tokens_mask=True) 
@@ -90,7 +91,7 @@ def encode_with_truncation(examples):
     return tokenizer(examples["text"], truncation = True, padding = "max_length", 
                      max_length = small_model.config.max_position_embeddings, return_special_tokens_mask = True) 
 
-train_dataset = d['train'].map(encode_with_truncation, batched = True, num_proc = 4) 
+train_dataset = d['train'].map(encode_with_truncation, batched = True, num_proc = 8) 
 test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
 
 print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
