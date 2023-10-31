@@ -24,7 +24,11 @@ from src.transformers import DataCollatorForLanguageModeling
 from src.transformers.models.llama.modeling_llama import LlamaForCausalLM 
 
 class CustomTrainer(Trainer): 
-    def compute_loss(self, model, large_model, inputs, return_outputs = False): 
+    def __init__(self, large_model = None, *args, **kwargs): 
+        super().__init__(*args, **kwargs) 
+        self.large_model = large_model 
+
+    def compute_loss(self, model, inputs, return_outputs = False): 
         labels = None 
         outputs = model(**inputs) 
         
