@@ -37,6 +37,7 @@ class CustomTrainer(Trainer):
                 print(k, v.shape) 
             else: 
                 print(k, v) 
+        print("input_ids and labels are equal: {}".format(torch.equal(inputs["input_ids"], inputs["labels"]))) 
         outputs = model(**inputs) 
         
         if isinstance(outputs, dict) and "loss" not in outputs:
