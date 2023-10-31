@@ -67,7 +67,7 @@ tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir 
 # tokenizer.add_special_tokens({"pad_token":"<pad>"}) 
 # print("the tokenizer pad token id is {}".format(tokenizer.pad_token_id)) 
 tokenizer.pad_token = tokenizer.eos_token 
-tokenizer.padding_side = "left" 
+# tokenizer.padding_side = "left" 
 
 '''
 quant_config = BitsAndBytesConfig(
