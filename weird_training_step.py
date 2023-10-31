@@ -18,6 +18,25 @@ import time
 import numpy as np 
 
 from termcolor import colored 
+from src.transformers import Trainer, TrainingArguments 
+from torch import nn 
+from src.transformers import DataCollatorForLanguageModeling 
+from src.transformers.models.llama.modeling_llama import LlamaForCausalLM 
+
+class CustomTrainer(Trainer): 
+    def compute_loss(self, model, large_model, inputs, return_outputs = False): 
+        labels = None 
+        outputs = model(**inputs) 
+        
+        if isinstance(outputs, dict) and "loss" not in outputs:
+            raise ValueError(
+                "The model did not return a loss from the inputs, only the following keys: "
+                f"{','.join(outputs.keys())}. For reference, the inputs it received are {','.join(inputs.keys())}."
+            ) 
+        loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
+        print("the loss is {}".format(loss)) 
+
+        return (loss, outputs) if return_outputs else loss 
 
 from src.transformers import BitsAndBytesConfig 
 
@@ -27,17 +46,12 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 onedataset = load_dataset('json', data_files = "/home/bc20/yang/transformersprofiling/downloads/c4_subset.json", split = "train") 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = cache_dir) 
 
+d = onedataset.train_test_split(test_size = 0.1) 
+print(d["train"], d["test"]) 
+
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir) 
-    
-# small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-6.9b", revision = "step3000", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
-# small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-6.9b", revision = "step3000", cache_dir = cache_dir).to(torch_device) 
-# small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-2.8b", revision = "step3000", cache_dir = cache_dir).to(torch_device) 
-# small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir).to(torch_device) 
-# quant_config = BitsAndBytesConfig( 
-#     load_in_8bit = True, 
-#     llm_int8_has_fp16_weight = True, 
-# ) 
+
 '''
 quant_config = BitsAndBytesConfig(
     load_in_4bit = True, 
@@ -47,49 +61,83 @@ quant_config = BitsAndBytesConfig(
     bnb_4bit_use_double_quant = False 
 ) 
 ''' 
-small_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf").to(torch_device) 
+max_length = 64 
+
+def encode_with_truncation(examples): 
+    return tokenizer(examples["text"], truncation=True, padding="max_length",
+                   max_length=max_length, return_special_tokens_mask=True) 
+
+train_dataset = d['train'].map(encode_with_truncation, batched = True) 
+test_dataset = d['test'].map(encode_with_truncation, batched = True) 
+
+train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+
+data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
+
+model_path = "/home/bc20/yang" 
+training_args = TrainingArguments(
+    output_dir=model_path,          # output directory to where save model checkpoint
+    evaluation_strategy="steps",    # evaluate each `logging_steps` steps
+    overwrite_output_dir=True,      
+    num_train_epochs=10,            # number of training epochs, feel free to tweak
+    per_device_train_batch_size=10, # the training batch size, put it as high as your GPU memory fits
+    gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
+    per_device_eval_batch_size=64,  # evaluation batch size
+    logging_steps=1000,             # evaluate, log and save model checkpoints every 1000 step
+    save_steps=1000,
+    # load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
+    # save_total_limit=3,           # whether you don't have much space so you let only 3 model weights saved in the disk
+) 
+
+small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_model.eval() 
 
 weightmodelfirst = next(small_model.parameters()) 
 print(weightmodelfirst.dtype) 
 
-# train_dataset = onedataset["train"] 
-# validation_dataset = onedataset["validation"] 
+trainer = CustomTrainer(
+    model = small_model, 
+    args = training_args, 
+    train_dataset = train_dataset, 
+    eval_dataset = test_dataset, 
+    data_collator = data_collator 
+) 
 
-# for i in range(10): 
-#     print(onedataset[i]) 
+trainer.train() 
 
+'''
 print("*** Below is the selected line to test ***") 
-for i in range(10): 
-    print(colored("On the {}th line we print out the sequence".format(i), "green")) 
-    word_seq = onedataset[i]["text"] 
-    # print(word_seq) 
+print(colored("On the {}th line we print out the sequence".format(i), "green")) 
+word_seq = onedataset[i]["text"] 
+# print(word_seq) 
 
-    input_ids = tokenizer.encode(word_seq, return_tensors = 'pt').to(torch_device) 
+input_ids = tokenizer.encode(word_seq, return_tensors = 'pt').to(torch_device) 
 
-    print("the input ids is {}".format(input_ids.shape)) 
-    # print(input_ids) 
-    print() 
-    
-    print("the original input first 100 tokens should be: ") 
-    print(colored(tokenizer.decode(input_ids[0][:64]), "yellow"), end = '') 
-    print(tokenizer.decode(input_ids[0][64:])) 
+print("the input ids is {}".format(input_ids.shape)) 
+# print(input_ids) 
+print() 
 
-    # halfindex = int(input_ids.shape[-1]/2) 
-    # input_first_part = input_ids[:, :halfindex] 
-    input_first_part = input_ids[:, :64] 
+print("the original input first 100 tokens should be: ") 
+print(colored(tokenizer.decode(input_ids[0][:64]), "yellow"), end = '') 
+print(tokenizer.decode(input_ids[0][64:])) 
 
-    # n = 0 
-    top_k = 10
-    top_p = 0.9 
+# halfindex = int(input_ids.shape[-1]/2) 
+# input_first_part = input_ids[:, :halfindex] 
+input_first_part = input_ids[:, :64] 
 
-    temperature = 1 
+# n = 0 
+top_k = 10
+top_p = 0.9 
 
-    outputs = small_model.generate(input_ids = input_first_part, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature) 
-    print(outputs.shape) 
+temperature = 1 
 
-    output_t = tokenizer.decode(outputs[0][:64]) 
-    print(output_t, end = '') 
-    output_t = tokenizer.decode(outputs[0][64:]) 
-    print(colored(output_t, "green")) 
-    print() 
+outputs = small_model.generate(input_ids = input_first_part, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature) 
+print(outputs.shape) 
+
+output_t = tokenizer.decode(outputs[0][:64]) 
+print(output_t, end = '') 
+output_t = tokenizer.decode(outputs[0][64:]) 
+print(colored(output_t, "green")) 
+print() 
+''' 
