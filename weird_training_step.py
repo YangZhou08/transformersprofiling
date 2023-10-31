@@ -37,7 +37,12 @@ class CustomTrainer(Trainer):
                 print(k, v.shape) 
             else: 
                 print(k, v) 
-        print("input_ids and labels are equal: {}".format(torch.equal(inputs["input_ids"], inputs["labels"]))) 
+        error_flag = torch.equal(inputs["input_ids"], inputs["labels"]) 
+        if not error_flag: 
+            print("input_ids: {}".format(inputs["input_ids"])) 
+            print("labels: {}".format(inputs["labels"])) 
+            print("input_ids differs from labels: {}".format(inputs["input_ids"] == inputs["labels"])) 
+        print("input_ids and labels are equal: {}".format(error_flag)) 
         outputs = model(**inputs) 
         
         if isinstance(outputs, dict) and "loss" not in outputs:
