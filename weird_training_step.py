@@ -60,6 +60,8 @@ onedataset = load_dataset('json', data_files = "/home/bc20/yang/transformersprof
 d = onedataset.train_test_split(test_size = 0.1) 
 print(d["train"], d["test"]) 
 
+print() 
+
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir) 
 tokenizer.add_special_tokens({"pad_token":"<pad>"}) 
@@ -73,14 +75,22 @@ quant_config = BitsAndBytesConfig(
     bnb_4bit_use_double_quant = False 
 ) 
 ''' 
-max_length = 64 
+small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
+small_model.config.pad_token_id = tokenizer.pad_token_id 
+small_model.train() 
 
+max_length = small_model.config.max_position_embeddings 
+# def encode_with_truncation(examples): 
+    # return tokenizer(examples["text"], truncation=True, padding="max_length",
+                #    max_length=max_length, return_special_tokens_mask=True) 
 def encode_with_truncation(examples): 
-    return tokenizer(examples["text"], truncation=True, padding="max_length",
-                   max_length=max_length, return_special_tokens_mask=True) 
+    return tokenizer(examples["text"], truncation = True, padding = "max_length", 
+                     max_length = small_model.config.max_position_embeddings, return_special_tokens_mask = True) 
 
 train_dataset = d['train'].map(encode_with_truncation, batched = True) 
 test_dataset = d['test'].map(encode_with_truncation, batched = True) 
+
+print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
 
 train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
@@ -101,10 +111,6 @@ training_args = TrainingArguments(
     # load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
     # save_total_limit=3,           # whether you don't have much space so you let only 3 model weights saved in the disk
 ) 
-
-small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
-small_model.config.pad_token_id = tokenizer.pad_token_id 
-small_model.train() 
 
 weightmodelfirst = next(small_model.parameters()) 
 print(weightmodelfirst.dtype) 
