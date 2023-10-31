@@ -89,7 +89,7 @@ max_length = 64
                 #    max_length=max_length, return_special_tokens_mask=True) 
 def encode_with_truncation(examples): 
     return tokenizer(examples["text"], truncation = True, padding = "max_length", 
-                     max_length = small_model.config.max_position_embeddings, return_special_tokens_mask = True) 
+                     max_length = max_length, return_special_tokens_mask = True) 
 
 train_dataset = d['train'].map(encode_with_truncation, batched = True, num_proc = 4) 
 test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
