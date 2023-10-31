@@ -64,7 +64,8 @@ print()
 
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir) 
-tokenizer.add_special_tokens({"pad_token":"<pad>"}) 
+# tokenizer.add_special_tokens({"pad_token":"<pad>"}) 
+print("the tokenizer pad token id is {}".format(tokenizer.pad_token_id)) 
 
 '''
 quant_config = BitsAndBytesConfig(
@@ -87,8 +88,8 @@ def encode_with_truncation(examples):
     return tokenizer(examples["text"], truncation = True, padding = "max_length", 
                      max_length = small_model.config.max_position_embeddings, return_special_tokens_mask = True) 
 
-train_dataset = d['train'].map(encode_with_truncation, batched = True) 
-test_dataset = d['test'].map(encode_with_truncation, batched = True) 
+train_dataset = d['train'].map(encode_with_truncation, batched = True, num_proc = 4) 
+test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
 
 print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
 
