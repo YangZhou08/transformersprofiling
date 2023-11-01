@@ -39,8 +39,11 @@ class CustomTrainer(Trainer):
                 print(k, v) 
         
         print("attention_mask: {}".format(inputs["attention_mask"])) 
+        input_ids = inputs["input_ids"] 
+        attention_mask = inputs["attention_mask"] 
+        labels = inputs["labels"] 
         
-        outputs = model(**inputs) 
+        outputs = model(input_ids = input_ids, attention_mask = attention_mask, labels = labels) 
         
         if isinstance(outputs, dict) and "loss" not in outputs:
             raise ValueError(
@@ -82,6 +85,7 @@ quant_config = BitsAndBytesConfig(
 ) 
 ''' 
 small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
+large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir).to(torch_device) 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
 small_model.train() 
 
@@ -122,12 +126,13 @@ training_args = TrainingArguments(
 weightmodelfirst = next(small_model.parameters()) 
 print(weightmodelfirst.dtype) 
 
-trainer = CustomTrainer(
+trainer = CustomTrainer( 
+    large_model = large_model, 
     model = small_model, 
     args = training_args, 
     train_dataset = train_dataset, 
     eval_dataset = test_dataset, 
-    data_collator = data_collator 
+    data_collator = data_collator, 
 ) 
 
 trainer.train() 
