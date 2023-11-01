@@ -94,7 +94,7 @@ quant_config = BitsAndBytesConfig(
 ) 
 ''' 
 small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
-large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir, dtype = torch.float16).to(torch_device).half() 
+large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir).to(torch_device).half() 
 large_model.eval() 
 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
