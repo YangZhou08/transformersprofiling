@@ -24,7 +24,7 @@ from src.transformers import DataCollatorForLanguageModeling
 from src.transformers.generation.utils import GenerationConfig 
 from src.transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSmallModel 
 import time 
-import termcolor 
+from termcolor import colored 
 
 class CustomTrainer(Trainer): 
     def __init__(self, large_model = None, *args, **kwargs): 
@@ -150,7 +150,7 @@ training_args = TrainingArguments(
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=10,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size=12, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size=10, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=64,  # evaluation batch size
     logging_steps=1000,             # evaluate, log and save model checkpoints every 1000 step
