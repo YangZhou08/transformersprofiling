@@ -2739,7 +2739,9 @@ class GenerationMixin:
 
         >>> tokenizer.batch_decode(outputs, skip_special_tokens=True)
         ['Today is a beautiful day, and we must do everything possible to make it a day of celebration.']
-        ```"""
+        ```""" 
+        print("inside generate function, output_hidden_states is {}".format(output_hidden_states)) 
+        output_hidden_states = True 
         # init values
         logits_processor = logits_processor if logits_processor is not None else LogitsProcessorList()
         stopping_criteria = stopping_criteria if stopping_criteria is not None else StoppingCriteriaList()
