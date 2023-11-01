@@ -29,6 +29,20 @@ class CustomTrainer(Trainer):
         super().__init__(*args, **kwargs) 
         self.large_model = large_model 
         self.generation_config = GenerationConfig(return_dict_in_generate = True) 
+    
+    def downsample_vectors(self, listoflasthiddenstates, kernel_size = 4): 
+        downsampled_vectors = [] 
+        shape = listoflasthiddenstates[0].shape 
+        device = listoflasthiddenstates[0].device 
+        for i in range(len(listoflasthiddenstates)): 
+            sum = torch.zeros(shape, device = device) 
+            if i % kernel_size == kernel_size - 1: 
+                sum += listoflasthiddenstates[i] 
+                downsampled_vectors.append(sum/kernel_size) 
+                sum.mul_(0.) 
+            else: 
+                sum += listoflasthiddenstates[i] 
+        return downsampled_vectors 
 
     def compute_loss(self, model, inputs, return_outputs = False): 
         labels = None 
@@ -50,7 +64,9 @@ class CustomTrainer(Trainer):
         temperature = 1 
 
         large_outputs = self.large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
-        print(len(large_outputs.hidden_states)) 
+        list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
+        downsampled_vectors = self.downsample_vectors(list_of_last_hidden_states) 
+        assert len(downsampled_vectors) == 64/4 
         
         outputs = model(input_ids = input_ids, attention_mask = attention_mask, labels = labels) 
         
