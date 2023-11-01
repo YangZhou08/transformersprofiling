@@ -42,6 +42,13 @@ class CustomTrainer(Trainer):
         input_ids = inputs["input_ids"] 
         attention_mask = inputs["attention_mask"] 
         labels = inputs["labels"] 
+        top_k = 10
+        top_p = 0.9 
+
+        temperature = 1 
+
+        large_outputs = self.large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True) 
+        print(len(large_outputs.hidden_states)) 
         
         outputs = model(input_ids = input_ids, attention_mask = attention_mask, labels = labels) 
         
@@ -73,7 +80,7 @@ tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir 
 # tokenizer.add_special_tokens({"pad_token":"<pad>"}) 
 # print("the tokenizer pad token id is {}".format(tokenizer.pad_token_id)) 
 tokenizer.pad_token = tokenizer.eos_token 
-# tokenizer.padding_side = "left" 
+tokenizer.padding_side = "left" 
 
 '''
 quant_config = BitsAndBytesConfig(
@@ -86,6 +93,8 @@ quant_config = BitsAndBytesConfig(
 ''' 
 small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir).to(torch_device) 
+large_model.eval() 
+
 small_model.config.pad_token_id = tokenizer.pad_token_id 
 small_model.train() 
 
