@@ -121,7 +121,7 @@ quant_config = BitsAndBytesConfig(
 small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 # small_model = SimpleSmallModel.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir).to(torch_device) 
-large_model = LlamaForCausalLM.from_pretrained("TheBloke/Llama-2-7B-fp16", cache_dir = cache_dir).to(torch_device) 
+large_model = LlamaForCausalLM.from_pretrained("TheBloke/Llama-2-7B-fp16", cache_dir = cache_dir).to(torch_device).half() 
 large_model.eval() 
 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
@@ -151,7 +151,7 @@ training_args = TrainingArguments(
     output_dir=model_path,          # output directory to where save model checkpoint
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
-    num_train_epochs=10,            # number of training epochs, feel free to tweak
+    num_train_epochs=50,            # number of training epochs, feel free to tweak
     per_device_train_batch_size=10, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=64,  # evaluation batch size
