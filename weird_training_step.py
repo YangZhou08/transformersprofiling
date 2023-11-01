@@ -62,19 +62,20 @@ class CustomTrainer(Trainer):
                 print(k, v) 
         
         print("attention_mask: {}".format(inputs["attention_mask"])) 
-        input_ids = inputs["input_ids"] 
-        attention_mask = inputs["attention_mask"] 
-        labels = inputs["labels"] 
-        top_k = 10
-        top_p = 0.9 
+        with torch.no_grad(): 
+            input_ids = inputs["input_ids"] 
+            attention_mask = inputs["attention_mask"] 
+            labels = inputs["labels"] 
+            top_k = 10
+            top_p = 0.9 
 
-        temperature = 1 
+            temperature = 1 
 
-        large_outputs = self.large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
-        list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
-        downsampled_vectors = self.downsample_vectors(list_of_last_hidden_states) 
-        assert len(downsampled_vectors) == 64/4 
-        print("shape of the downsampled vectors is {} hidden states dim {}".format(len(downsampled_vectors), downsampled_vectors[0].shape)) 
+            large_outputs = self.large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
+            list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
+            downsampled_vectors = self.downsample_vectors(list_of_last_hidden_states) 
+            assert len(downsampled_vectors) == 64/4 
+            print("shape of the downsampled vectors is {} hidden states dim {}".format(len(downsampled_vectors), downsampled_vectors[0].shape)) 
         
         outputs = model(input_ids = input_ids, attention_mask = attention_mask, labels = labels) 
         
@@ -119,7 +120,8 @@ quant_config = BitsAndBytesConfig(
 ''' 
 small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 # small_model = SimpleSmallModel.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
-large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir).to(torch_device) 
+# large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir).to(torch_device) 
+large_model = LlamaForCausalLM.from_pretrained("TheBloke/Llama-2-7B-fp16", cache_dir = cache_dir).to(torch_device) 
 large_model.eval() 
 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
