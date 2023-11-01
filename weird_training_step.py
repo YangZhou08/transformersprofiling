@@ -21,14 +21,18 @@ from termcolor import colored
 from src.transformers import Trainer, TrainingArguments 
 from torch import nn 
 from src.transformers import DataCollatorForLanguageModeling 
-from src.transformers.models.llama.modeling_llama import LlamaForCausalLM 
 from src.transformers.generation.utils import GenerationConfig 
+from src.transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSmallModel 
+import time 
+import termcolor 
 
 class CustomTrainer(Trainer): 
     def __init__(self, large_model = None, *args, **kwargs): 
         super().__init__(*args, **kwargs) 
         self.large_model = large_model 
         self.generation_config = GenerationConfig(return_dict_in_generate = True) 
+        # self.time_checkpoint = time.time() 
+        self.time_checkpoint = 0 
     
     def downsample_vectors(self, listoflasthiddenstates, kernel_size = 4): 
         downsampled_vectors = [] 
@@ -45,6 +49,9 @@ class CustomTrainer(Trainer):
         return downsampled_vectors 
 
     def compute_loss(self, model, inputs, return_outputs = False): 
+        torch.cuda.synchronize() 
+        print(colored("time elasped in the last iteration is {}".format(time.time() - self.time_checkpoint)), "red") 
+        self.time_checkpoint = time.time() 
         labels = None 
         for k, v in inputs.items(): 
             if isinstance(v, tuple): 
@@ -111,6 +118,7 @@ quant_config = BitsAndBytesConfig(
 ) 
 ''' 
 small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
+# small_model = SimpleSmallModel.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir).to(torch_device).half() 
 large_model.eval() 
 
