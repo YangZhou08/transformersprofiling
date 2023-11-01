@@ -22,11 +22,13 @@ from src.transformers import Trainer, TrainingArguments
 from torch import nn 
 from src.transformers import DataCollatorForLanguageModeling 
 from src.transformers.models.llama.modeling_llama import LlamaForCausalLM 
+from src.transformers.generation.utils import GenerationConfig 
 
 class CustomTrainer(Trainer): 
     def __init__(self, large_model = None, *args, **kwargs): 
         super().__init__(*args, **kwargs) 
         self.large_model = large_model 
+        self.generation_config = GenerationConfig(return_dict_in_generate = True) 
 
     def compute_loss(self, model, inputs, return_outputs = False): 
         labels = None 
@@ -47,7 +49,7 @@ class CustomTrainer(Trainer):
 
         temperature = 1 
 
-        large_outputs = self.large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True) 
+        large_outputs = self.large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
         print(len(large_outputs.hidden_states)) 
         
         outputs = model(input_ids = input_ids, attention_mask = attention_mask, labels = labels) 
@@ -92,7 +94,7 @@ quant_config = BitsAndBytesConfig(
 ) 
 ''' 
 small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
-large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir).to(torch_device) 
+large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir, dtype = torch.float16).to(torch_device) 
 large_model.eval() 
 
 small_model.config.pad_token_id = tokenizer.pad_token_id 

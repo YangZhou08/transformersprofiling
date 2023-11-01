@@ -1710,7 +1710,7 @@ class GenerationMixin:
                 pad_token_id=generation_config.pad_token_id,
                 eos_token_id=generation_config.eos_token_id,
                 output_scores=generation_config.output_scores,
-                return_dict_in_generate=generation_config.return_dict_in_generate,
+                return_dict_in_generate=generation_config.return_dict_in_generate, 
                 synced_gpus=synced_gpus,
                 streamer=streamer,
                 **model_kwargs,
@@ -2741,7 +2741,7 @@ class GenerationMixin:
         ['Today is a beautiful day, and we must do everything possible to make it a day of celebration.']
         ```""" 
         print("inside generate function, output_hidden_states is {}".format(output_hidden_states)) 
-        output_hidden_states = True 
+        # output_hidden_states = True 
         # init values
         logits_processor = logits_processor if logits_processor is not None else LogitsProcessorList()
         stopping_criteria = stopping_criteria if stopping_criteria is not None else StoppingCriteriaList()
