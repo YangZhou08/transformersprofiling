@@ -24,7 +24,6 @@ from src.transformers import DataCollatorForLanguageModeling
 from src.transformers.generation.utils import GenerationConfig 
 from src.transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSmallModel 
 import time 
-from termcolor import colored 
 
 class CustomTrainer(Trainer): 
     def __init__(self, large_model = None, *args, **kwargs): 
@@ -91,7 +90,7 @@ class CustomTrainer(Trainer):
 
 from src.transformers import BitsAndBytesConfig 
 
-cache_dir = "/home/bc20/yang/transformersprofiling" 
+cache_dir = "/home/bc20/yang/" 
 
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 onedataset = load_dataset('json', data_files = "/home/bc20/yang/transformersprofiling/downloads/c4_subset.json", split = "train[:1000]")  
@@ -120,8 +119,8 @@ quant_config = BitsAndBytesConfig(
 ''' 
 small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 # small_model = SimpleSmallModel.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
-large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir).to(torch_device) 
-# large_model = LlamaForCausalLM.from_pretrained("TheBloke/Llama-2-7B-fp16", cache_dir = cache_dir).to(torch_device).half() 
+# large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir).to(torch_device) 
+large_model = LlamaForCausalLM.from_pretrained("TheBloke/Llama-2-7B-fp16", cache_dir = cache_dir).to(torch_device) 
 large_model.eval() 
 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
@@ -152,7 +151,7 @@ training_args = TrainingArguments(
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=50,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size=10, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size=50, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=64,  # evaluation batch size
     logging_steps=1000,             # evaluate, log and save model checkpoints every 1000 step
