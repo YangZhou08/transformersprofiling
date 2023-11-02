@@ -826,7 +826,6 @@ class LlamaModel(LlamaPreTrainedModel):
             combined_attention_mask = (
                 expanded_attn_mask if combined_attention_mask is None else expanded_attn_mask + combined_attention_mask
             )
-
         return combined_attention_mask
 
     @add_start_docstrings_to_model_forward(LLAMA_INPUTS_DOCSTRING)
@@ -1257,7 +1256,7 @@ class LlamaForSequenceClassification(LlamaPreTrainedModel):
 class SimpleSmallModel(LlamaPreTrainedModel): 
     _tied_weights_keys = ["lm_head.weight"] 
     
-    def __init__(self, config): 
+    def __init__(self, config, sliding_window_length = 4, start_idx = 64): 
         super().__init__(config) 
         # copied from LlamaModel 
         self.padding_idx = config.pad_token_id 
@@ -1279,6 +1278,11 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         # needed to the deciphering thing 
         self.iter_count = 0 
         self.decipher_threshold = 4 
+
+        # needed to be used for the interleaving embeddings 
+        self.sliding_window_length = sliding_window_length 
+        self.start_idx = start_idx 
+        self.mask_list_pos = None 
         
         # Initialize weights and apply final processing
         self.post_init() 
@@ -1325,27 +1329,51 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             ) 
         
         return combined_attention_mask 
+
+    def _modify_decoder_attention_mask(self, combined_attention_mask, dtype, start_idx = None, kernel_size = None): 
+        mask_shape = combined_attention_mask.shape # (batch_size, 1, tgt_seq_len, src_seq_len) 
+        seq_len = mask_shape[-1] 
+        start_idx = start_idx if start_idx is not None else self.start_idx 
+        kernel_size = kernel_size if kernel_size is not None else self.sliding_window_length 
+        
+        # row dimensional masking 
+        row_idx_masked_out = [start_idx + i * (kernel_size + 1) for i in range((seq_len - start_idx) / (kernel_size + 1))] 
+        row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) 
+        row_mask[row_idx_masked_out] = 1 
+
+        # column dimensional masking 
+        condensed_token_idx_list = row_idx_masked_out 
+        for i in range(len(condensed_token_idx_list) - 1): 
+            row_mask[:, :, condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
+        row_mask = row_mask.to(device = combined_attention_mask.device) 
+
+        combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
+    
+    def interleaving_embeddings_inputs(self, input_embeds, condensed_embeds, kernel_size = 4, start_idx = 64): 
+        assert (input_embeds.shape[1] - start_idx)/kernel_size == condensed_embeds.shape[1] 
+        combined_embeds = input_embeds[:, : start_idx, :] 
+        input_embeds_count = start_idx 
+        for i in range(condensed_embeds.shape[1]): 
+            combined_embeds = torch.cat([combined_embeds, condensed_embeds[:, i, :].unsqueeze(1)], dim = 1) 
+            combined_embeds = torch.cat([combined_embeds, input_embeds[:, input_embeds_count : input_embeds_count + kernel_size, :]], dim = 1) 
+            input_embeds_count += kernel_size 
+        return combined_embeds 
     
     def forward(
         self,
-        # input_ids: torch.LongTensor = None, 
-        context_input_ids: torch.LongTensor = None, 
+        input_ids: torch.LongTensor = None, 
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
         past_key_values: Optional[List[torch.FloatTensor]] = None,
-        inputs_embeds: Optional[torch.FloatTensor] = None, 
-        later_input_ids: torch.LongTensor = None, 
+        # inputs_embeds: Optional[torch.FloatTensor] = None, 
+        condensed_embeds: Optional[torch.FloatTensor] = None, 
+        # later_input_ids: torch.LongTensor = None, 
         labels: Optional[torch.LongTensor] = None,
         use_cache: Optional[bool] = None,
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
-     ) -> Union[Tuple, CausalLMOutputWithPast]: 
-        
-        # detection 
-        if later_input_ids is not None: 
-            if later_input_ids.shape[1] <= self.iter_count: 
-                raise ValueError("We have processed this token already") 
+        ) -> Union[Tuple, CausalLMOutputWithPast]: 
         
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
@@ -1355,14 +1383,16 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         
         # assert input_ids.shape[0] == inputs_embeds.shape[0] 
         
-        # batch_size = input_ids.shape[0] 
+        batch_size = input_ids.shape[0] 
+        seq_length = input_ids.shape[1] 
         # seq_length = input_ids.shape[1] + inputs_embeds.shape[1] 
-        batch_size = inputs_embeds.shape[0] # NOTE inputs_embeds is the only tensor that will always be here 
-        seq_length = inputs_embeds.shape[1] 
-        if context_input_ids is not None: 
-            seq_length += context_input_ids.shape[1] 
-        if later_input_ids is not None: 
-            seq_length += later_input_ids.shape[1] 
+        # batch_size = inputs_embeds.shape[0] # NOTE inputs_embeds is the only tensor that will always be here 
+        # seq_length = inputs_embeds.shape[1] 
+        # if context_input_ids is not None: 
+            # seq_length += context_input_ids.shape[1] 
+        # if later_input_ids is not None: 
+            # seq_length += later_input_ids.shape[1] 
+        seq_length += condensed_embeds.shape[1] 
         
         seq_length_with_past = seq_length 
         past_key_values_length = 0 
@@ -1370,33 +1400,41 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         if past_key_values is not None: 
             past_key_values_length = past_key_values[0][0].shape[2] 
             seq_length_with_past = seq_length_with_past + past_key_values_length 
+        self.mask_list_pos = [self.start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - self.start_idx) // (self.sliding_window_length + 1))] 
         
         if position_ids is None: 
-            # device = input_ids.device 
-            device = inputs_embeds.device 
-            position_ids = torch.arange(
-                past_key_values_length, seq_length + past_key_values_length, dtype=torch.long, device = device 
-            ) 
+            device = input_ids.device 
+            # device = inputs_embeds.device 
+            # position_ids = torch.arange(
+            #     past_key_values_length, seq_length + past_key_values_length, dtype=torch.long, device = device 
+            # ) 
+            position_list = [] 
+            pos_count = past_key_values_length 
+            for i in range(seq_length): 
+                if i in self.mask_list_pos: 
+                    position_list.append(pos_count) 
+                else: 
+                    pos_count += 1 
+                    position_list.append(pos_count) 
+            position_ids = torch.tensor(position_list, dtype = torch.long, device = device) 
             position_ids = position_ids.unsqueeze(0) 
         
         # the important part 
         # input_embeds should not be None 
-        if inputs_embeds is not None: 
-            inputs_embeds = self.embed_projection(inputs_embeds) 
+        input_embeds = None 
+        if condensed_embeds is not None: 
+            # inputs_embeds = self.embed_projection(inputs_embeds) 
+            condensed_embeds = self.embed_projection(condensed_embeds) 
             # ids_input_embeds = self.embed_tokens(input_ids) 
-            if context_input_ids is not None: 
-                ids_input_embeds = self.embed_tokens(context_input_ids) 
-                inputs_embeds = torch.cat([ids_input_embeds, inputs_embeds], dim = 1) # sequence length lane 
-            if later_input_ids is not None: 
-                ids_input_embeds = self.embed_tokens(later_input_ids) 
-                inputs_embeds = torch.cat([inputs_embeds, ids_input_embeds], dim = 1) # sequence length lane 
+            input_embeds = self.embed_tokens(input_ids) 
+            input_embeds = self.interleaving_embeddings_inputs(input_embeds, condensed_embeds, kernel_size = self.sliding_window_length, start_idx = self.start_idx) 
         else: 
             raise ValueError("We cannot have an inference or any forward propagation without the inputs_embeds") 
         
         if attention_mask is None:
             attention_mask = torch.ones(
-                (batch_size, seq_length_with_past), dtype=torch.bool, device=inputs_embeds.device
-            )
+                (batch_size, seq_length_with_past), dtype=torch.bool, device = input_embeds.device 
+            ) 
             padding_mask = None
         else:
             if 0 in attention_mask:
@@ -1405,10 +1443,13 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 padding_mask = None 
         
         attention_mask = self._prepare_decoder_attention_mask(
-            attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length
+            # attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length 
+            attention_mask, (batch_size, seq_length), input_embeds, past_key_values_length 
         ) 
+        self._modify_decoder_attention_mask(attention_mask, dtype = input_embeds.dtype, start_idx = self.start_idx, kernel_size = self.sliding_window_length) 
         
-        hidden_states = inputs_embeds 
+        # hidden_states = inputs_embeds 
+        hidden_states = input_embeds 
         
         if self.gradient_checkpointing and self.training:
             if use_cache:
