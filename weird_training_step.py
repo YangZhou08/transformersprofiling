@@ -76,7 +76,7 @@ class CustomTrainer(Trainer):
             assert len(downsampled_vectors) == 64/4 
             print("shape of the downsampled vectors is {} hidden states dim {}".format(len(downsampled_vectors), downsampled_vectors[0].shape)) 
         
-        outputs = model(input_ids = input_ids, attention_mask = attention_mask, labels = labels) 
+        outputs = model(input_ids = input_ids, attention_mask = attention_mask, labels = labels, condensed_embeds = downsampled_vectors) 
         
         if isinstance(outputs, dict) and "loss" not in outputs:
             raise ValueError(

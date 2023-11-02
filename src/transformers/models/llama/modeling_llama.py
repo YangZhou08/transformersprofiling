@@ -1374,6 +1374,10 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
         ) -> Union[Tuple, CausalLMOutputWithPast]: 
+
+        # dimension matching 
+        assert input_ids.shape[0] == condensed_embeds.shape[0] # batch size has to match 
+        assert (input_ids.shape[1] - self.start_idx)/self.sliding_window_length == condensed_embeds.shape[1] # number of condensed tokens should have desired mapping with sequence length 
         
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
