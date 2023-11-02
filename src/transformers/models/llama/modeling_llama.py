@@ -1377,7 +1377,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
 
         # dimension matching 
         assert input_ids.shape[0] == condensed_embeds.shape[0] # batch size has to match 
-        print("input_ids.shape[1] : {} condensed_embeds.shape[1] : {}".format(input_ids.shape[1], condensed_embeds.shape[1])) 
+        print("input_ids.shape[1] : {} condensed_embeds.shape".format(input_ids.shape[1], condensed_embeds.shape)) 
         assert (input_ids.shape[1] - self.start_idx)/self.sliding_window_length == condensed_embeds.shape[1] # number of condensed tokens should have desired mapping with sequence length 
         
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
