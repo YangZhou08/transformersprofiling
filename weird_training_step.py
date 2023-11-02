@@ -74,6 +74,7 @@ class CustomTrainer(Trainer):
             list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
             downsampled_vectors = self.downsample_vectors(list_of_last_hidden_states) 
             assert len(downsampled_vectors) == 64/4 
+            print("each dim of downsampled_vectors is {}".format(downsampled_vectors[0].shape)) 
             downsampled_vectors = torch.cat(downsampled_vectors, dim = 1) 
             print("downsampled vector dimension is {}".format(downsampled_vectors.shape)) 
             print("shape of the downsampled vectors is {} hidden states dim {}".format(len(downsampled_vectors), downsampled_vectors[0].shape)) 
