@@ -135,11 +135,11 @@ print(len(small_state_dict_for_model.keys()))
 
 for key in small_state_dict_for_model.keys(): 
     new_key = key 
-    print(new_key) 
     if 'lm_head' in key: 
         print("got here found the following key {}".format(key)) 
-    if key == "lm_head.weight": 
-        new_key = 'model.' + key 
+    if 'model.' in key: 
+        new_key = key[6 :] 
+    print(new_key) 
     new_state_dict[new_key] = small_state_dict_for_model[key] 
 
 small_model.load_state_dict(new_state_dict) 
