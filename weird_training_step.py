@@ -130,6 +130,7 @@ new_state_dict = {}
 print() 
 print("from the pretrained model, we found the following keys") 
 print(type(small_state_dict_for_model)) 
+print(len(small_state_dict_for_model.keys())) 
 
 for key in small_state_dict_for_model.keys(): 
     new_key = key 
