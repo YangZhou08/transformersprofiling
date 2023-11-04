@@ -110,18 +110,10 @@ print()
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir) 
 # tokenizer.add_special_tokens({"pad_token":"<pad>"}) 
 # print("the tokenizer pad token id is {}".format(tokenizer.pad_token_id)) 
-tokenizer.pad_token = "[PAD]" 
+# tokenizer.pad_token = "[PAD]" 
+tokenizer.pad_token = tokenizer.eos_token 
 tokenizer.padding_side = "left" 
 
-'''
-quant_config = BitsAndBytesConfig(
-    load_in_4bit = True, 
-    llm_int4_has_fp16_weight = True, 
-    bnb_4bit_quant_type = "nf4", 
-    bnb_4bit_compute_dtype = "float16", 
-    bnb_4bit_use_double_quant = False 
-) 
-''' 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_model = SimpleSmallModel.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir).to(torch_device) 
@@ -178,39 +170,3 @@ trainer = CustomTrainer(
 ) 
 
 trainer.train() 
-
-'''
-print("*** Below is the selected line to test ***") 
-print(colored("On the {}th line we print out the sequence".format(i), "green")) 
-word_seq = onedataset[i]["text"] 
-# print(word_seq) 
-
-input_ids = tokenizer.encode(word_seq, return_tensors = 'pt').to(torch_device) 
-
-print("the input ids is {}".format(input_ids.shape)) 
-# print(input_ids) 
-print() 
-
-print("the original input first 100 tokens should be: ") 
-print(colored(tokenizer.decode(input_ids[0][:64]), "yellow"), end = '') 
-print(tokenizer.decode(input_ids[0][64:])) 
-
-# halfindex = int(input_ids.shape[-1]/2) 
-# input_first_part = input_ids[:, :halfindex] 
-input_first_part = input_ids[:, :64] 
-
-# n = 0 
-top_k = 10
-top_p = 0.9 
-
-temperature = 1 
-
-outputs = small_model.generate(input_ids = input_first_part, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature) 
-print(outputs.shape) 
-
-output_t = tokenizer.decode(outputs[0][:64]) 
-print(output_t, end = '') 
-output_t = tokenizer.decode(outputs[0][64:]) 
-print(colored(output_t, "green")) 
-print() 
-''' 
