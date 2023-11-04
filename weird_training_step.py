@@ -123,6 +123,7 @@ small_state_dict_for_model = LlamaForCausalLM.from_pretrained("JackFram/llama-16
 small_model = SimpleSmallModel(small_config) 
 
 print("we expect the following keys") 
+print(len(small_model.state_dict().keys())) 
 for key, _ in small_model.named_parameters(): 
     print(key) 
 
