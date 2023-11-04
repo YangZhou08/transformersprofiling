@@ -144,7 +144,8 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
-model_path = "/home/bc20/yang" 
+# model_path = "/home/bc20/yang" 
+model_path = "/home/yangzho6/model_checkpoints" 
 training_args = TrainingArguments(
     output_dir=model_path,          # output directory to where save model checkpoint
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
