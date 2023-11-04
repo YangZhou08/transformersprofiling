@@ -142,7 +142,10 @@ for key in small_state_dict_for_model.keys():
     print(new_key) 
     new_state_dict[new_key] = small_state_dict_for_model[key] 
 
-small_model.load_state_dict(new_state_dict) 
+try: 
+    small_model.load_state_dict(new_state_dict) 
+except RuntimeError as r: 
+    print(r) 
 small_model = small_model.to(torch_device) 
 
 large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch_device) 
