@@ -7,6 +7,7 @@ from datasets import load_dataset
 
 from src.transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM 
 from src.transformers import GPTNeoXForCausalLM 
+from src.transformers import LlamaConfig, LlamaPreTrainedModel 
 
 from tqdm import tqdm
 # from sampling.utils import norm_logits, sample 
@@ -113,11 +114,25 @@ tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir 
 # tokenizer.add_special_tokens({"pad_token":"<pad>"}) 
 # print("the tokenizer pad token id is {}".format(tokenizer.pad_token_id)) 
 # tokenizer.pad_token = "[PAD]" 
-tokenizer.pad_token = tokenizer.eos_token 
+tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "left" 
 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
-small_model = SimpleSmallModel.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
+small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+small_state_dict_for_model = LlamaPreTrainedModel.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).state_dict() 
+small_model = SimpleSmallModel.from_pretrained(small_config) 
+new_state_dict = {} 
+for key in small_state_dict_for_model: 
+    new_key = key 
+    if 'lm_head' in key: 
+        print("got here found the following key {}".format(key)) 
+    if key == "lm_head.weight": 
+        new_key = 'model.' + key 
+    
+    new_state_dict[new_key] = small_state_dict_for_model[key] 
+
+small_model.load_state_dict(new_state_dict) 
+
 large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch_device) 
 # large_model = LlamaForCausalLM.from_pretrained("TheBloke/Llama-2-7B-fp16", cache_dir = cache_dir).to(torch.bfloat16).to(torch_device) 
 large_model.eval() 
