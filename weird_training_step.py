@@ -127,11 +127,12 @@ print(len(small_model.state_dict().keys()))
 for key, _ in small_model.named_parameters(): 
     print(key) 
 
-new_state_dict = {} 
 print() 
 print("from the pretrained model, we found the following keys") 
 print(type(small_state_dict_for_model)) 
 print(len(small_state_dict_for_model.keys())) 
+
+new_state_dict = {} 
 
 for key in small_state_dict_for_model.keys(): 
     new_key = key 
@@ -145,7 +146,7 @@ for key in small_state_dict_for_model.keys():
 try: 
     small_model.load_state_dict(new_state_dict) 
 except RuntimeError as r: 
-    print(r) 
+    print(colored(r, "yellow")) 
 small_model = small_model.to(torch_device) 
 
 large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch_device) 
