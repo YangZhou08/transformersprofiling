@@ -132,6 +132,7 @@ for key in small_state_dict_for_model:
     new_state_dict[new_key] = small_state_dict_for_model[key] 
 
 small_model.load_state_dict(new_state_dict) 
+small_model = small_model.to(torch_device) 
 
 large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch_device) 
 # large_model = LlamaForCausalLM.from_pretrained("TheBloke/Llama-2-7B-fp16", cache_dir = cache_dir).to(torch.bfloat16).to(torch_device) 
