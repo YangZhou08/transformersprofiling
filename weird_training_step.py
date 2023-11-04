@@ -121,14 +121,21 @@ tokenizer.padding_side = "left"
 small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 small_state_dict_for_model = LlamaPreTrainedModel.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).state_dict() 
 small_model = SimpleSmallModel(small_config) 
+
+print("we expect the following keys") 
+for key, _ in small_model.named_parameters(): 
+    print(key) 
+
 new_state_dict = {} 
+print() 
+print("from the pretrained model, we found the following keys") 
 for key in small_state_dict_for_model: 
     new_key = key 
     if 'lm_head' in key: 
         print("got here found the following key {}".format(key)) 
     if key == "lm_head.weight": 
         new_key = 'model.' + key 
-    
+    print(new_key) 
     new_state_dict[new_key] = small_state_dict_for_model[key] 
 
 small_model.load_state_dict(new_state_dict) 
