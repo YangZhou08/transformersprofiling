@@ -119,7 +119,7 @@ tokenizer.padding_side = "left"
 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
-small_state_dict_for_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", force_download = True).state_dict() 
+small_state_dict_for_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).state_dict() 
 small_model = SimpleSmallModel(small_config) 
 
 print("we expect the following keys") 
