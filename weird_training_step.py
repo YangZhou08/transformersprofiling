@@ -120,7 +120,7 @@ tokenizer.padding_side = "left"
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 small_state_dict_for_model = LlamaPreTrainedModel.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).state_dict() 
-small_model = SimpleSmallModel.from_pretrained(small_config) 
+small_model = SimpleSmallModel(small_config) 
 new_state_dict = {} 
 for key in small_state_dict_for_model: 
     new_key = key 
