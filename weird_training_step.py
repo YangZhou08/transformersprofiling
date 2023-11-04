@@ -95,7 +95,8 @@ class CustomTrainer(Trainer):
 
 from src.transformers import BitsAndBytesConfig 
 
-cache_dir = "/home/bc20/yang/" 
+# cache_dir = "/home/bc20/yang/" 
+cache_dir = "/home/yangzho6/c4_parts" 
 
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 # onedataset = load_dataset('json', data_files = "/home/bc20/yang/downloads/c4_subset.json", split = "train[:1000]") 
