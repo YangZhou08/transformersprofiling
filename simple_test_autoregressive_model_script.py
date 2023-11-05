@@ -157,7 +157,7 @@ def run():
     generated_sequence = input_ids 
     past_output = None 
 
-    input_ids = torch.randint(0, 32000, (i, 100)).to(torch_device) 
+    input_ids = torch.randint(0, 32000, (5, 100)).to(torch_device) 
     print("Warming up ...") 
     for i in range(10): 
         print("Warm up iteration {}".format(i)) 
