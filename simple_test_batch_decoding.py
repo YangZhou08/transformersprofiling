@@ -54,7 +54,7 @@ def run():
     
     measure_time_list = [] 
     
-    generated_sequence = input_ids 
+    # generated_sequence = input_ids 
     past_output = None 
 
     input_ids = torch.randint(0, 32000, (5, 100)).to(torch_device) 
