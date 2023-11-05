@@ -18,7 +18,7 @@ import numpy as np
 # set_logger("/rscratch/zhendong/yang_tasc/transformersprofiling/simple_tb3b_log.txt") 
 # cache_dir = "/home/bc20/yang/transformersprofiling" 
 # cache_dir = "/home/yangzho6/model_checkpoints" 
-cache_dir = "/home/yangzho6/c4_parts" 
+cache_dir = "/home/yangzho6/model_checkpoints" 
 
 # copy from https://github.com/LeeSinLiang/microGPT/blob/ed40cf9780dbeb180adfe94c227d4aa97e69250e/gpt.py
 def top_k_top_p_filter(logits: torch.Tensor, top_k: int = 0, top_p: float = 0.0):
