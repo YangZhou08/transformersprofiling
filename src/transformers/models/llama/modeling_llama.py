@@ -38,7 +38,8 @@ from ...utils import (
     logging,
     replace_return_docstrings,
 )
-from .configuration_llama import LlamaConfig
+from .configuration_llama import LlamaConfig 
+from termcolor import colored 
 
 
 if is_flash_attn_2_available():
@@ -1359,6 +1360,17 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             input_embeds_count += kernel_size 
         return combined_embeds 
     
+    def visualize_position_ids(self, position_ids, mask_idx): 
+        # for debugging purposes 
+        position_ids = position_ids.squeeze(0) 
+        outputline = "" 
+        for i in range(position_ids.shape[0]): 
+            if i in mask_idx: 
+                outputline += colored(str(position_ids[i].item()), "red") + " "
+            else: 
+                outputline += str(position_ids[i].item()) + " " 
+        return outputline 
+
     def forward(
         self,
         input_ids: torch.LongTensor = None, 
@@ -1398,7 +1410,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         # if later_input_ids is not None: 
             # seq_length += later_input_ids.shape[1] 
         seq_length += condensed_embeds.shape[1] 
-        
+        print("batch size is {} seq length is {}".format(batch_size, seq_length)) 
         seq_length_with_past = seq_length 
         past_key_values_length = 0 
         
@@ -1423,6 +1435,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                     position_list.append(pos_count) 
             position_ids = torch.tensor(position_list, dtype = torch.long, device = device) 
             position_ids = position_ids.unsqueeze(0) 
+        print("mask list pos : {}".format(self.mask_list_pos)) 
+        print("position ids found is {}".format(self.visualize_position_ids(position_ids, self.mask_list_pos))) 
         
         # the important part 
         # input_embeds should not be None 
@@ -1435,6 +1449,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             input_embeds = self.interleaving_embeddings_inputs(input_embeds, condensed_embeds, kernel_size = self.sliding_window_length, start_idx = self.start_idx) 
         else: 
             raise ValueError("We cannot have an inference or any forward propagation without the inputs_embeds") 
+        print("input_embeds has shape {}".format(input_embeds.shape)) 
         
         if attention_mask is None:
             attention_mask = torch.ones(
