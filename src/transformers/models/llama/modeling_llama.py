@@ -1354,7 +1354,9 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         assert (input_embeds.shape[1] - start_idx)/kernel_size == condensed_embeds.shape[1] 
         combined_embeds = input_embeds[:, : start_idx, :] 
         input_embeds_count = start_idx 
+        print("combined embeds shape {}".format(combined_embeds.shape)) 
         for i in range(condensed_embeds.shape[1]): 
+            print("i is {}".format(i)) 
             combined_embeds = torch.cat([combined_embeds, condensed_embeds[:, i, :].unsqueeze(1)], dim = 1) 
             combined_embeds = torch.cat([combined_embeds, input_embeds[:, input_embeds_count : input_embeds_count + kernel_size, :]], dim = 1) 
             input_embeds_count += kernel_size 
@@ -1427,12 +1429,19 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             # ) 
             position_list = [] 
             pos_count = past_key_values_length 
+            following_flag = False 
             for i in range(seq_length): 
                 if i in self.mask_list_pos: 
-                    position_list.append(pos_count) 
-                else: 
                     pos_count += 1 
                     position_list.append(pos_count) 
+                    following_flag = True 
+                else: 
+                    if following_flag: 
+                        following_flag = False 
+                        position_list.append(pos_count) 
+                    else: 
+                        pos_count += 1 
+                        position_list.append(pos_count) 
             position_ids = torch.tensor(position_list, dtype = torch.long, device = device) 
             position_ids = position_ids.unsqueeze(0) 
         print("mask list pos : {}".format(self.mask_list_pos)) 
@@ -1446,6 +1455,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             condensed_embeds = self.embed_projection(condensed_embeds) 
             # ids_input_embeds = self.embed_tokens(input_ids) 
             input_embeds = self.embed_tokens(input_ids) 
+            print() 
             input_embeds = self.interleaving_embeddings_inputs(input_embeds, condensed_embeds, kernel_size = self.sliding_window_length, start_idx = self.start_idx) 
         else: 
             raise ValueError("We cannot have an inference or any forward propagation without the inputs_embeds") 
