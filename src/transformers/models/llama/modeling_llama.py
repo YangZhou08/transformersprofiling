@@ -1396,7 +1396,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         tensor[mask] = 0.0
         ''' 
         # Convert to numpy for visualization
-        tensor_np = tensor.numpy()
+        tensor_np = tensor.cpu().clone().numpy() 
 
         # Replace -inf with 1 and 0 with 0 for visualization purposes
         visual_tensor = np.where(tensor_np == float('-inf'), 1, 0)
