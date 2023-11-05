@@ -1320,11 +1320,13 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 device = inputs_embeds.device, 
                 past_key_values_length = past_key_values_length, 
             ) 
+            print("combined attention mask shape {}".format(combined_attention_mask.shape)) 
         
         if attention_mask is not None: 
             expanded_attn_mask = _expand_mask(attention_mask, inputs_embeds.dtype, tgt_len = input_shape[-1]).to( 
                 inputs_embeds.device 
             ) 
+            print("expanded attention mask shape {}".format(expanded_attn_mask.shape)) 
             combined_attention_mask = (
                 expanded_attn_mask if combined_attention_mask is None else expanded_attn_mask + combined_attention_mask 
             ) 
