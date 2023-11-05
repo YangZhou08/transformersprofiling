@@ -41,6 +41,10 @@ from ...utils import (
 from .configuration_llama import LlamaConfig 
 from termcolor import colored 
 
+import torch
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 if is_flash_attn_2_available():
     from flash_attn import flash_attn_func, flash_attn_varlen_func
@@ -1324,7 +1328,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         
         if attention_mask is not None: 
 
-            expanded_attn_mask = _expand_mask(attention_mask, inputs_embeds.dtype, tgt_len = input_shape[-1]).to( 
+            expanded_attn_mask = _expand_mask(attention_mask, inputs_embeds.dtype, tgt_len = input_shape[-1]).to( #008000 
                 inputs_embeds.device 
             ) 
             print("expanded attention mask shape {}".format(expanded_attn_mask.shape)) 

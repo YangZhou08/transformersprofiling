@@ -82,7 +82,7 @@ class CustomTrainer(Trainer):
             # print("each dim of downsampled_vectors is {}".format(downsampled_vectors[0].shape)) 
             downsampled_vectors = torch.stack(downsampled_vectors, dim = 1) 
             print("downsampled vector dimension is {}".format(downsampled_vectors.shape)) 
-            attention_mask = torch.cat((attention_mask, torch.ones((attention_mask.shape[0], 64), device = attention_mask.device)), dim = 1) 
+            attention_mask = torch.cat((attention_mask, torch.ones((attention_mask.shape[0], 80), device = attention_mask.device)), dim = 1) #TODO make it more general 
             # print("shape of the downsampled vectors is {} hidden states dim {}".format(len(downsampled_vectors), downsampled_vectors[0].shape)) 
         
         outputs = model(input_ids = large_outputs.sequences, attention_mask = attention_mask, labels = labels, condensed_embeds = downsampled_vectors) 
