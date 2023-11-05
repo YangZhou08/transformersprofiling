@@ -1399,7 +1399,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         tensor_np = tensor.cpu().clone().numpy() 
 
         # Replace -inf with 1 and 0 with 0 for visualization purposes
-        visual_tensor = np.where(tensor_np == float('-inf'), 1, 0) 
+        # visual_tensor = np.where(tensor_np == float('-inf'), 1, 0) 
+        visual_tensor = np.where(tensor_np < 0, 1, 0) 
         print(visual_tensor) 
 
         # Create the plot
