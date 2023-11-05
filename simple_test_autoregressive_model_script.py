@@ -164,7 +164,7 @@ def run():
         outputs = small_model.generate(input_ids = input_ids, max_length = 500, do_sample = False) 
     
     print("warm up done") 
-    for i in range(10): 
+    for i in range(1, 11): 
         print("using batch size of {}".format(i)) 
         input_ids = torch.randint(0, 32000, (i, 100)).to(torch_device) 
         print("input_ids shape is {}".format(input_ids.shape)) 
