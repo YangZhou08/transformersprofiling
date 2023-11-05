@@ -2059,7 +2059,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                         if matches_pattern and name in state_dict:
                             found += 1
                             if found < len(names):
-                                del state_dict[name]
+                                del state_dict[name] 
 
                 # When not all duplicates have been cleaned, still remove those keys, but put a clear warning.
                 # If the link between tensors was done at runtime then `from_pretrained` will not get
