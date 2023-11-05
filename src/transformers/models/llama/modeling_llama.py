@@ -1345,12 +1345,14 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         kernel_size = kernel_size if kernel_size is not None else self.sliding_window_length 
         
         # row dimensional masking 
-        row_idx_masked_out = [start_idx + i * (kernel_size + 1) for i in range((seq_len - start_idx) / (kernel_size + 1))] 
+        # row_idx_masked_out = [start_idx + i * (kernel_size + 1) for i in range((seq_len - start_idx) / (kernel_size + 1))] 
         row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) 
-        row_mask[row_idx_masked_out] = 1 
+        # row_mask[row_idx_masked_out] = 1 
+        row_mask[self.mask_list_pos] = 1 
 
         # column dimensional masking 
-        condensed_token_idx_list = row_idx_masked_out 
+        # condensed_token_idx_list = row_idx_masked_out 
+        condensed_token_idx_list = self.mask_list_pos 
         for i in range(len(condensed_token_idx_list) - 1): 
             row_mask[:, :, condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
         row_mask = row_mask.to(device = combined_attention_mask.device) 
