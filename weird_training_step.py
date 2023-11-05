@@ -71,7 +71,8 @@ class CustomTrainer(Trainer):
 
             temperature = 1 
 
-            large_outputs = self.large_model.generate(input_ids = input_ids, max_length = 130, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
+            large_outputs = self.large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
+            print("the shape of the sequence is {}".format(large_outputs.sequences.shape)) 
             print("output last hidden states list has length {}".format(len(large_outputs.hidden_states))) 
             print("output last hidden states list first element has shape {}".format([len(large_outputs.hidden_states[i]) for i in range(len(large_outputs.hidden_states))])) 
             print("each token output hiddens states has shape {}".format(large_outputs.hidden_states[-1][-1].shape)) 
@@ -83,7 +84,7 @@ class CustomTrainer(Trainer):
             print("downsampled vector dimension is {}".format(downsampled_vectors.shape)) 
             print("shape of the downsampled vectors is {} hidden states dim {}".format(len(downsampled_vectors), downsampled_vectors[0].shape)) 
         
-        outputs = model(input_ids = input_ids, attention_mask = attention_mask, labels = labels, condensed_embeds = downsampled_vectors) 
+        outputs = model(input_ids = large_outputs.sequences, attention_mask = attention_mask, labels = labels, condensed_embeds = downsampled_vectors) 
         
         if isinstance(outputs, dict) and "loss" not in outputs:
             raise ValueError(
