@@ -1354,7 +1354,9 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         # condensed_token_idx_list = row_idx_masked_out 
         condensed_token_idx_list = self.mask_list_pos 
         for i in range(len(condensed_token_idx_list) - 1): 
-            row_mask[:, :, condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
+            # row_mask[:, :, condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
+            row_mask[condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
+        print("row mask shape {}".format(row_mask.shape)) 
         row_mask = row_mask.to(device = combined_attention_mask.device) 
 
         combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
