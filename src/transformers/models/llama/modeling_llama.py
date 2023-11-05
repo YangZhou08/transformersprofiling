@@ -1377,7 +1377,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
 
         # dimension matching 
         assert input_ids.shape[0] == condensed_embeds.shape[0] # batch size has to match 
-        print("input_ids.shape[1] : {} condensed_embeds.shape".format(input_ids.shape[1], condensed_embeds.shape)) 
+        print("input_ids shape {} condensed_embeds shape {}".format(input_ids.shape, condensed_embeds.shape)) 
         assert (input_ids.shape[1] - self.start_idx)/self.sliding_window_length == condensed_embeds.shape[1] # number of condensed tokens should have desired mapping with sequence length 
         
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
@@ -1405,8 +1405,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         if past_key_values is not None: 
             past_key_values_length = past_key_values[0][0].shape[2] 
             seq_length_with_past = seq_length_with_past + past_key_values_length 
-        self.mask_list_pos = [self.start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - self.start_idx) // (self.sliding_window_length + 1))] 
         
+        self.mask_list_pos = [self.start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - self.start_idx) // (self.sliding_window_length + 1))] 
         if position_ids is None: 
             device = input_ids.device 
             # device = inputs_embeds.device 
