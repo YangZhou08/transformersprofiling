@@ -156,6 +156,23 @@ def run():
     
     generated_sequence = input_ids 
     past_output = None 
+
+    input_ids = torch.randn((5, 100, 32000)).to(torch_device) 
+    print("Warming up ...") 
+    for i in range(10): 
+        print("Warm up iteration {}".format(i)) 
+        outputs = small_model.generate(input_ids = input_ids, max_length = 500, do_sample = False) 
+    
+    print("warm up done") 
+    for i in range(10): 
+        print("using batch size of {}".format(i)) 
+        input_ids = torch.randn((i, 100, 32000)).to(torch_device) 
+        start_time = time.time() 
+        outputs = small_model.generate(input_ids = input_ids, max_length = 500, do_sample = False) 
+        torch.cuda.synchronize() 
+        end_time = time.time() 
+        print("time for batch size of {} is {}".format(i, end_time - start_time)) 
+    '''
     while n < 2: 
         start_time = time.time() 
         # outputs = small_model(decoder_input_ids = x, encoder_outputs = encoder_outputs, past_key_values = past_key_values) 
@@ -169,13 +186,7 @@ def run():
         outputs = small_model(input_ids = input_ids, past_key_values = past_key_values, use_cache = True, output_hidden_states = True) 
         
         print(outputs.logits.shape) # (batch_size, seq_len, vocab_size) 
-        '''
-        if n == 0: 
-            past_output = outputs.logits 
-        else: 
-            print((outputs.logits[:, : -1, :] - past_output).norm()) 
-            past_output = outputs.logits 
-        ''' 
+        
         print(outputs.hidden_states[-1].shape) 
         # print(outputs.attention_mask) 
         # print(outputs.position_ids) 
@@ -213,6 +224,7 @@ def run():
     print() 
     
     # last_p = norm_logits(outputs.logits[::, -1, :], temperature, top_k, top_p) 
+    ''' 
 
 if __name__ == "__main__": 
     run() 
