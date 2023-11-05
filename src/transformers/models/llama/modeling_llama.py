@@ -1357,6 +1357,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             # row_mask[:, :, condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
             row_mask[condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
         print("row mask shape {}".format(row_mask.shape)) 
+        row_mask = row_mask[None, None, :, :].expand(mask_shape).to(torch.bool) 
         row_mask = row_mask.to(device = combined_attention_mask.device) 
 
         combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
