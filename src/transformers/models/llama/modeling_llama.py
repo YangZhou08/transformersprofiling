@@ -1438,7 +1438,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         plt.colorbar(cbar, ticks=[0, 1], orientation='vertical', shrink=0.8, aspect=20)
 
         # Save the plot
-        plt.savefig(filename, format='jpg', bbox_inches='tight')
+        plt.savefig(filename, format='jpg', bbox_inches='tight') 
+        print("we got here") 
         plt.close() 
 
     def forward(
@@ -1545,9 +1546,10 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             # attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length 
             attention_mask, (batch_size, seq_length), input_embeds, past_key_values_length 
         ) 
-        self.visualize_attention_mask(seq_length, attention_mask, "attention_mask_before_modification.jpg") 
+        working_dir = "/home/yangzho6/" 
+        self.visualize_attention_mask(seq_length, attention_mask, working_dir + "attention_mask_before_modification.jpg") 
         self._modify_decoder_attention_mask(attention_mask, dtype = input_embeds.dtype, start_idx = self.start_idx, kernel_size = self.sliding_window_length) 
-        self.visualize_attention_mask(seq_length, attention_mask, "attention_mask_after_modification.jpg") 
+        self.visualize_attention_mask(seq_length, attention_mask, working_dir + "attention_mask_after_modification.jpg") 
         
         # hidden_states = inputs_embeds 
         hidden_states = input_embeds 
