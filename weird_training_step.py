@@ -120,12 +120,14 @@ tokenizer.padding_side = "left"
 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+'''
 print("print out configurations") 
 for k, v in small_config.__dict__.items(): 
     print(k, v) 
+''' 
 small_state_dict_for_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).state_dict() 
 small_model = SimpleSmallModel(small_config) 
-
+'''
 print("we expect the following keys") 
 print(len(small_model.state_dict().keys())) 
 for key, _ in small_model.named_parameters(): 
@@ -135,7 +137,7 @@ print()
 print("from the pretrained model, we found the following keys") 
 print(type(small_state_dict_for_model)) 
 print(len(small_state_dict_for_model.keys())) 
-
+''' 
 new_state_dict = {} 
 
 for key in small_state_dict_for_model.keys(): 
@@ -152,8 +154,12 @@ try:
 except RuntimeError as r: 
     print(colored(r, "yellow")) 
 small_model = small_model.to(torch_device) 
+small_model.train() 
 
 large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch_device) 
+configs = large_model.config 
+for k, v in configs.__dict__.items(): 
+    print(k, v) 
 # large_model = LlamaForCausalLM.from_pretrained("TheBloke/Llama-2-7B-fp16", cache_dir = cache_dir).to(torch.bfloat16).to(torch_device) 
 large_model.eval() 
 
