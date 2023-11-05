@@ -1323,6 +1323,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             print("combined attention mask shape {}".format(combined_attention_mask.shape)) 
         
         if attention_mask is not None: 
+
             expanded_attn_mask = _expand_mask(attention_mask, inputs_embeds.dtype, tgt_len = input_shape[-1]).to( 
                 inputs_embeds.device 
             ) 
@@ -1474,6 +1475,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 padding_mask = attention_mask
             else:
                 padding_mask = None 
+        print("attention mask shape {}".format(attention_mask.shape)) 
         
         attention_mask = self._prepare_decoder_attention_mask(
             # attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length 
