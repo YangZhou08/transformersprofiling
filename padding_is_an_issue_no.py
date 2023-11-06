@@ -45,7 +45,8 @@ tokenizer.padding_side = "left"
 large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 large_model.eval() 
 
-batch_size = 50 
+# batch_size = 50 
+batch_size = 100 
 generated_input_data = torch.randint(low = 0, high = tokenizer.vocab_size, size = (batch_size, 60), dtype = torch.long).to(torch_device) 
 # generated_input_data = torch.cat((generated_input_data, torch.full((2, 4), tokenizer.pad_token_id, dtype = torch.long).to(torch_device)), dim = 1) 
 generated_input_data = torch.cat((torch.full((batch_size, 4), tokenizer.pad_token_id).to(torch_device), generated_input_data), dim = 1) 
