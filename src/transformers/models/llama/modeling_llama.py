@@ -1637,6 +1637,11 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             # Shift so that tokens < n predict n
             shift_logits = logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()
+            selected_indices = list(range(self.start_idx)) 
+            for i in range(self.start_idx, seq_length): 
+                if i not in self.mask_list_pos: 
+                    selected_indices.append(i) 
+            shift_logits = shift_logits[:, selected_indices, :] 
             # expecting 143 sequence length 
             print("shift_logits have sequence length to be {}".format(shift_logits.shape)) 
             # expecting 127 sequence length 
