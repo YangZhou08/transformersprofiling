@@ -45,12 +45,13 @@ tokenizer.padding_side = "left"
 large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).half().to(torch_device) 
 large_model.eval() 
 
-generated_input_data = torch.randint(low = 0, high = tokenizer.vocab_size, size = (2, 60), dtype = torch.long).to(torch_device) 
+batch_size = 50 
+generated_input_data = torch.randint(low = 0, high = tokenizer.vocab_size, size = (batch_size, 60), dtype = torch.long).to(torch_device) 
 # generated_input_data = torch.cat((generated_input_data, torch.full((2, 4), tokenizer.pad_token_id, dtype = torch.long).to(torch_device)), dim = 1) 
-generated_input_data = torch.cat((torch.full((2, 4), tokenizer.pad_token_id).to(torch_device), generated_input_data), dim = 1) 
+generated_input_data = torch.cat((torch.full((batch_size, 4), tokenizer.pad_token_id).to(torch_device), generated_input_data), dim = 1) 
 
 # attention_mask = torch.cat((torch.ones((2, 60), dtype = torch.long).to(torch_device), torch.zeros((2, 4), dtype = torch.long).to(torch_device)), dim = 1) 
-attention_mask = torch.cat((torch.zeros((2, 4), dtype = torch.long).to(torch_device), torch.ones((2, 60), dtype = torch.long).to(torch_device)), dim = 1) 
+attention_mask = torch.cat((torch.zeros((batch_size, 4), dtype = torch.long).to(torch_device), torch.ones((batch_size, 60), dtype = torch.long).to(torch_device)), dim = 1) 
 n = 0 
 top_k = 10
 top_p = 0.9 
@@ -64,7 +65,7 @@ for i in range(5):
 
 print("start measuring time ...") 
 latency_timelist = [] 
-for i in range(5): 
+for i in range(100): 
     start_time = time.time() 
     output_seqences = large_model.generate(input_ids = generated_input_data, attention_mask = attention_mask, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, max_length = 128) 
     torch.cuda.synchronize() 
