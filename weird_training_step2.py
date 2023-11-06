@@ -6,8 +6,8 @@ import datasets
 from datasets import load_dataset 
 
 from src.transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM 
-from src.transformers.models.llama.modeling_llama import LlamaForCausalLM 
 from src.transformers import GPTNeoXForCausalLM 
+from src.transformers import LlamaConfig, LlamaPreTrainedModel 
 
 from tqdm import tqdm
 # from sampling.utils import norm_logits, sample 
@@ -19,29 +19,12 @@ import time
 import numpy as np 
 
 from termcolor import colored 
-
-from src.transformers import BitsAndBytesConfig 
 from src.transformers import Trainer, TrainingArguments 
+from torch import nn 
 from src.transformers import DataCollatorForLanguageModeling 
 from src.transformers.generation.utils import GenerationConfig 
-
-import os 
-
-cache_dir = "/home/bc20/yang/transformersprofiling" 
-
-torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
-onedataset = load_dataset('json', data_files = "/home/bc20/yang/transformersprofiling/downloads/c4_subset.json", split = "train") 
-# onedataset = load_dataset("c4", "en", split = "train", cache_dir = cache_dir) 
-
-# tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
-# small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-6.9b", revision = "step3000", cache_dir = "/rscratch/zhendong/yang_tasc").to(torch_device) 
-# small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-6.9b", revision = "step3000", cache_dir = cache_dir).to(torch_device) 
-# small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-2.8b", revision = "step3000", cache_dir = cache_dir).to(torch_device) 
-# small_model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir).to(torch_device) 
-# quant_config = BitsAndBytesConfig( 
-#     load_in_8bit = True, 
-#     llm_int8_has_fp16_weight = True, 
-# ) 
+from src.transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSmallModel 
+import time 
 
 class CustomTrainer(Trainer): 
     def __init__(self, large_model = None, *args, **kwargs): 
@@ -115,17 +98,7 @@ class CustomTrainer(Trainer):
 
         return (loss, outputs) if return_outputs else loss 
 
-small_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir).to(torch_device).half() 
-small_model.eval() 
-
-weightmodelfirst = next(small_model.parameters()) 
-print(weightmodelfirst.dtype) 
-
-# train_dataset = onedataset["train"] 
-# validation_dataset = onedataset["validation"] 
-
-# for i in range(10): 
-#     print(onedataset[i]) 
+from src.transformers import BitsAndBytesConfig 
 
 # cache_dir = "/home/bc20/yang/" 
 dir_dataset = "/home/yangzho6/c4_parts" 
@@ -148,8 +121,53 @@ tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir 
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "left" 
 
+# small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
+small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+'''
+print("print out configurations") 
+for k, v in small_config.__dict__.items(): 
+    print(k, v) 
+''' 
+small_state_dict_for_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).state_dict() 
+small_model = SimpleSmallModel(small_config) 
+'''
+print("we expect the following keys") 
+print(len(small_model.state_dict().keys())) 
+for key, _ in small_model.named_parameters(): 
+    print(key) 
+
+print() 
+print("from the pretrained model, we found the following keys") 
+print(type(small_state_dict_for_model)) 
+print(len(small_state_dict_for_model.keys())) 
+''' 
+new_state_dict = {} 
+
+for key in small_state_dict_for_model.keys(): 
+    new_key = key 
+    if 'lm_head' in key: 
+        print("got here found the following key {}".format(key)) 
+    if 'model.' in key: 
+        new_key = key[6 :] 
+    print(new_key) 
+    new_state_dict[new_key] = small_state_dict_for_model[key] 
+
+try: 
+    small_model.load_state_dict(new_state_dict) 
+except RuntimeError as r: 
+    print(colored(r, "yellow")) 
+small_model = small_model.to(torch_device) 
+small_model.train() 
+
 large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch_device) 
+configs = large_model.config 
+for k, v in configs.__dict__.items(): 
+    print(k, v) 
+# large_model = LlamaForCausalLM.from_pretrained("TheBloke/Llama-2-7B-fp16", cache_dir = cache_dir).to(torch.bfloat16).to(torch_device) 
 large_model.eval() 
+
+small_model.config.pad_token_id = tokenizer.pad_token_id 
+small_model.train() 
 
 # max_length = small_model.config.max_position_embeddings 
 max_length = 64 
@@ -177,7 +195,7 @@ training_args = TrainingArguments(
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=50,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size= 1, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size=1, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=64,  # evaluation batch size
     logging_steps=1000,             # evaluate, log and save model checkpoints every 1000 step
@@ -185,6 +203,9 @@ training_args = TrainingArguments(
     # load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
     # save_total_limit=3,           # whether you don't have much space so you let only 3 model weights saved in the disk
 ) 
+
+weightmodelfirst = next(small_model.parameters()) 
+print(weightmodelfirst.dtype) 
 
 trainer = CustomTrainer( 
     large_model = large_model, 
@@ -194,13 +215,6 @@ trainer = CustomTrainer(
     eval_dataset = test_dataset, 
     data_collator = data_collator, 
 ) 
-
-synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/" 
-synthesized_data_path = "/home/yangzho6/c4llm_synthesized/tensor_dir/" 
-
-os.makedirs(synthesized_data_path, exist_ok = True) 
-json_file_name = "c4synthesized_file1.json" 
-json_file1 = open(synthesized_dir_path + json_file_name, "a") 
 
 train_dataloader = trainer.get_train_dataloader() 
 for step, inputs in enumerate(train_dataloader): 
@@ -214,15 +228,4 @@ for step, inputs in enumerate(train_dataloader):
     temperature = 1 
 
     large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
-    tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step)) 
-    list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
-    downsampled_vectors = trainer.downsample_vectors(list_of_last_hidden_states) 
-    downsampled_vectors = torch.stack(downsampled_vectors, dim = 1) 
-    print("downampled_vector has shape {}".format(downsampled_vectors.shape)) 
-    downsampled_vectors = downsampled_vectors.squeeze(0) 
-    print("downampled_vector has shape {}".format(downsampled_vectors.shape)) 
-    textsynthesized = tokenizer.batch_decode(large_outputs.sequences) 
-    print("the text synthesized is {}".format(textsynthesized)) 
-    break 
 
-json_file1.close() 

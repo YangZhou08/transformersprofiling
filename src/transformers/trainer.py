@@ -685,7 +685,8 @@ class Trainer:
         if not self.args.remove_unused_columns:
             return dataset
         self._set_signature_columns_if_needed()
-        signature_columns = self._signature_columns
+        signature_columns = self._signature_columns 
+        print("signature_columns", signature_columns) # NOTE debug print 
 
         ignored_columns = list(set(dataset.column_names) - set(signature_columns))
         if len(ignored_columns) > 0:
