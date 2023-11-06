@@ -27,10 +27,14 @@ from src.transformers.generation.utils import GenerationConfig
 
 import os 
 
-cache_dir = "/home/bc20/yang/transformersprofiling" 
+# cache_dir = "/home/bc20/yang/transformersprofiling" 
+dir_dataset = "/home/yangzho6/c4_parts" 
+dir_models = "/home/yangzho6/model_checkpoints" 
 
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
-onedataset = load_dataset('json', data_files = "/home/bc20/yang/transformersprofiling/downloads/c4_subset.json", split = "train") 
+onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train[:1000]") 
+# onedataset = load_dataset('json', data_files = "/home/bc20/yang/transformersprofiling/downloads/c4_subset.json", split = "train") 
+
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = cache_dir) 
 
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
@@ -126,14 +130,6 @@ print(weightmodelfirst.dtype)
 
 # for i in range(10): 
 #     print(onedataset[i]) 
-
-# cache_dir = "/home/bc20/yang/" 
-dir_dataset = "/home/yangzho6/c4_parts" 
-dir_models = "/home/yangzho6/model_checkpoints" 
-
-torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
-onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train[:1000]") 
-# onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 
 d = onedataset.train_test_split(test_size = 0.1) 
 print(d["train"], d["test"]) 
