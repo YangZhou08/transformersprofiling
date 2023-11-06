@@ -1641,6 +1641,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                     selected_indices.append(i) 
             # shift_logits = shift_logits[:, selected_indices, :] 
             logits = logits[:, selected_indices, :] 
+            print("selected indices are : {}".format(selected_indices)) 
             shift_logits = logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()
             # expecting 143 sequence length 
