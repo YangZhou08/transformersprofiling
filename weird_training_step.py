@@ -158,7 +158,7 @@ except RuntimeError as r:
 small_model = small_model.to(torch_device) 
 small_model.train() 
 
-large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch_device) 
+large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 configs = large_model.config 
 for k, v in configs.__dict__.items(): 
     print(k, v) 
