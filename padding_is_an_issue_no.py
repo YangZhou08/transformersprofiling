@@ -60,6 +60,7 @@ past_key_values = None
 print("warming up ...") 
 for i in range(5): 
     output_seqences = large_model.generate(input_ids = generated_input_data, attention_mask = attention_mask, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, max_length = 128) 
+    print(output_seqences.sequences.dtype) 
 
 print("start measuring time ...") 
 latency_timelist = [] 
