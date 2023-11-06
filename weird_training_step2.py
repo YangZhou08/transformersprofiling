@@ -98,6 +98,8 @@ class CustomTrainer(Trainer):
 
         return (loss, outputs) if return_outputs else loss 
 
+
+
 from src.transformers import BitsAndBytesConfig 
 
 # cache_dir = "/home/bc20/yang/" 
@@ -216,16 +218,4 @@ trainer = CustomTrainer(
     data_collator = data_collator, 
 ) 
 
-train_dataloader = trainer.get_train_dataloader() 
-for step, inputs in enumerate(train_dataloader): 
-    inputs = trainer._prepare_inputs(inputs) 
-    input_ids = inputs["input_ids"] 
-    attention_mask = inputs["attention_mask"] 
-    labels = inputs["labels"] 
-    top_k = 10
-    top_p = 0.9 
-
-    temperature = 1 
-
-    large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
 
