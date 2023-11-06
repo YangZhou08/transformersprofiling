@@ -47,7 +47,7 @@ large_model.eval()
 
 generated_input_data = torch.randint(low = 0, high = tokenizer.vocab_size, size = (2, 60), dtype = torch.long).to(torch_device) 
 # generated_input_data = torch.cat((generated_input_data, torch.full((2, 4), tokenizer.pad_token_id, dtype = torch.long).to(torch_device)), dim = 1) 
-generated_input_data = torch.cat((torch.fill((2, 4), tokenizer.pad_token_id).to(torch_device), generated_input_data), dim = 1) 
+generated_input_data = torch.cat((torch.full((2, 4), tokenizer.pad_token_id).to(torch_device), generated_input_data), dim = 1) 
 
 # attention_mask = torch.cat((torch.ones((2, 60), dtype = torch.long).to(torch_device), torch.zeros((2, 4), dtype = torch.long).to(torch_device)), dim = 1) 
 attention_mask = torch.cat((torch.zeros((2, 4), dtype = torch.long).to(torch_device), torch.ones((2, 60), dtype = torch.long).to(torch_device)), dim = 1) 
