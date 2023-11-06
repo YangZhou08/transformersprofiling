@@ -119,11 +119,8 @@ class CustomTrainer(Trainer):
 
         return (loss, outputs) if return_outputs else loss 
 
-small_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = cache_dir).to(torch_device).half() 
+small_model = LlamaForCausalLM.from_pretrained("JackFrame/llama-160m", cache_dir = dir_models).to(torch_device) 
 small_model.eval() 
-
-weightmodelfirst = next(small_model.parameters()) 
-print(weightmodelfirst.dtype) 
 
 # train_dataset = onedataset["train"] 
 # validation_dataset = onedataset["validation"] 
