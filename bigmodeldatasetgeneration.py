@@ -26,6 +26,7 @@ from src.transformers import DataCollatorForLanguageModeling
 from src.transformers.generation.utils import GenerationConfig 
 
 import os 
+import json 
 
 # cache_dir = "/home/bc20/yang/transformersprofiling" 
 dir_dataset = "/home/yangzho6/c4_parts" 
@@ -217,5 +218,11 @@ for step, inputs in enumerate(train_dataloader):
     textsynthesized = tokenizer.batch_decode(large_outputs.sequences) 
     print("the text synthesized is {}".format(textsynthesized)) 
     break 
+    torch.save(downsampled_vectors, tensor_file_path) 
+    example_data = {
+        "text": textsynthesized, 
+        "condensed_token_path": tensor_file_path, 
+    } 
+    json_file1.write(json.dumps(example_data) + "\n") 
 
 json_file1.close() 
