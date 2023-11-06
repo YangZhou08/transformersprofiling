@@ -49,7 +49,7 @@ class CustomTrainer(Trainer):
 
     def compute_loss(self, model, inputs, return_outputs = False): 
         torch.cuda.synchronize() 
-        print(colored("time elasped in the last iteration is {}".format(time.time() - self.time_checkpoint)), "red") 
+        print(colored("time elasped in the last iteration is {}".format(time.time() - self.time_checkpoint), "red")) 
         self.time_checkpoint = time.time() 
         labels = None 
         for k, v in inputs.items(): 
