@@ -42,7 +42,7 @@ tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir 
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "left" 
 
-large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch_device) 
+large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models, dtype = torch.bfloat16).to(torch_device) 
 large_model.eval() 
 
 generated_input_data = torch.randint(low = 0, high = tokenizer.vocab_size, size = (2, 60), dtype = torch.long).to(torch_device) 
