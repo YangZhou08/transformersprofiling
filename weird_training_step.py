@@ -77,6 +77,7 @@ class CustomTrainer(Trainer):
             # print("output last hidden states list first element has shape {}".format([len(large_outputs.hidden_states[i]) for i in range(len(large_outputs.hidden_states))])) 
             # print("each token output hiddens states has shape {}".format(large_outputs.hidden_states[-1][-1].shape)) 
             list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
+            print(colored("sequences of the large model output sequence has shape {}".format(large_outputs.sequences.shape), "yellow")) 
             downsampled_vectors = self.downsample_vectors(list_of_last_hidden_states) 
             assert len(downsampled_vectors) == 64/4 
             # print("each dim of downsampled_vectors is {}".format(downsampled_vectors[0].shape)) 
