@@ -223,7 +223,7 @@ for step, inputs in enumerate(train_dataloader):
     print("shape of condensed_token shape is {}".format(downsampled_vectors[0].shape)) 
     # break 
     
-    for i in range(len(downsampled_vectors.shape[0])): 
+    for i in range(downsampled_vectors.shape[0]): 
         example_downsampled_vector = downsampled_vectors[i] 
         tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step * 50 + i)) 
         torch.save(example_downsampled_vector, tensor_file_path) 
