@@ -900,12 +900,12 @@ class Trainer:
         print(f"State Dictionary: {scheduler.state_dict()}") 
         # ... and so on for the other fields 
 
-# If your scheduler is metric-based like ReduceLROnPlateau
-if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
-    print(f"Metrics: {scheduler.last_epoch_metric}")
-    print(f"Best Metric: {scheduler.best}")
-    print(f"Cooldown Period: {scheduler.cooldown_counter}")
-    print(f"Patience: {scheduler.patience}")
+        # If your scheduler is metric-based like ReduceLROnPlateau
+        if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+            print(f"Metrics: {scheduler.last_epoch_metric}")
+            print(f"Best Metric: {scheduler.best}")
+            print(f"Cooldown Period: {scheduler.cooldown_counter}")
+            print(f"Patience: {scheduler.patience}") 
 
     def get_decay_parameter_names(self, model) -> List[str]:
         """
