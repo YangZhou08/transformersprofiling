@@ -125,8 +125,11 @@ class CustomTrainer(Trainer):
         print("attention_mask: {}".format(inputs["attention_mask"])) 
         input_ids = inputs["input_ids"] 
         attention_mask = inputs["attention_mask"] 
+        batch_size, seq_len = attention_mask.shape 
+        addedon_length = condensed_embeds.shape[1] 
         labels = inputs["labels"] 
         condensed_embeds = inputs["condensed_embeds"] 
+        attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
         
         # outputs = model(input_ids = large_outputs.sequences, attention_mask = attention_mask, labels = large_outputs.sequences, condensed_embeds = downsampled_vectors) 
         outputs = model(input_ids = input_ids, attention_mask = attention_mask, labels = labels, condensed_embeds = condensed_embeds) 
