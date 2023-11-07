@@ -215,8 +215,8 @@ for step, inputs in enumerate(train_dataloader):
     # print("downampled_vector has shape {}".format(downsampled_vectors.shape)) 
     print("downampled_vector has shape {}".format(downsampled_vectors.shape)) 
     textsynthesized = tokenizer.batch_decode(large_outputs.sequences) 
-    print("the text synthesized is {}".format(textsynthesized[49])) 
-    break 
+    print(colored("the text synthesized is {}".format(textsynthesized[49]), "yellow")) 
+    # break 
     '''
     for i in range(len(downsampled_vectors.shape[0])): 
         example_downsampled_vector = downsampled_vectors[i] 
@@ -227,7 +227,7 @@ for step, inputs in enumerate(train_dataloader):
             "text": example_synthesized, 
             "condensed_token_path": tensor_file_path, 
         } 
-    ''' 
+    
     json_file1.write(json.dumps(example_data) + "\n") 
-
+    ''' 
 json_file1.close() 
