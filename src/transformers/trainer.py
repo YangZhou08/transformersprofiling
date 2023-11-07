@@ -890,6 +890,7 @@ class Trainer:
         self.create_scheduler(num_training_steps=num_training_steps, optimizer=optimizer) 
         print("inside create_optimizer_and_scheduler function call, self.lr_scheduler is {}".format(self.lr_scheduler)) 
         # code generated from GPT-4 
+        scheduler = self.lr_scheduler 
         print(f"Scheduler Type: {scheduler.__class__.__name__}")
         print(f"Initial Learning Rate: {scheduler.base_lrs}")
         print(f"Current Learning Rate: {scheduler.get_last_lr()}")
