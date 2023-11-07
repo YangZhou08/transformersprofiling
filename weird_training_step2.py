@@ -59,10 +59,10 @@ if is_apex_available():
     from apex import amp 
 
 class CustomTrainer(Trainer): 
-    def __init__(self, large_model = None, *args, **kwargs): 
+    def __init__(self, *args, **kwargs): 
         super().__init__(*args, **kwargs) 
-        self.large_model = large_model 
-        self.generation_config = GenerationConfig(return_dict_in_generate = True) 
+        # self.large_model = large_model 
+        # self.generation_config = GenerationConfig(return_dict_in_generate = True) 
         # self.time_checkpoint = time.time() 
         self.time_checkpoint = 0 
     
@@ -249,13 +249,6 @@ except RuntimeError as r:
 small_model = small_model.to(torch_device) 
 small_model.train() 
 
-large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch_device) 
-configs = large_model.config 
-for k, v in configs.__dict__.items(): 
-    print(k, v) 
-# large_model = LlamaForCausalLM.from_pretrained("TheBloke/Llama-2-7B-fp16", cache_dir = cache_dir).to(torch.bfloat16).to(torch_device) 
-large_model.eval() 
-
 small_model.config.pad_token_id = tokenizer.pad_token_id 
 small_model.train() 
 
@@ -298,7 +291,6 @@ weightmodelfirst = next(small_model.parameters())
 print(weightmodelfirst.dtype) 
 
 trainer = CustomTrainer( 
-    large_model = large_model, 
     model = small_model, 
     args = training_args, 
     # train_dataset = train_dataset, 
