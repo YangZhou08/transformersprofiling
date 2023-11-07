@@ -191,6 +191,7 @@ from src.transformers import BitsAndBytesConfig
 # cache_dir = "/home/bc20/yang/" 
 dir_dataset = "/home/yangzho6/c4_parts" 
 dir_models = "/home/yangzho6/model_checkpoints" 
+dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
 
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train[:1000]") 
@@ -208,7 +209,7 @@ tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir 
 # tokenizer.pad_token = "[PAD]" 
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "left" 
-datasetnew = CustomDataset(data_dir = "/home/yangzho6/c4llmsynthesized/", tokenizer = tokenizer) 
+datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
