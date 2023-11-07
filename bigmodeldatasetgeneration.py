@@ -155,7 +155,8 @@ def encode_with_truncation(examples):
     return tokenizer(examples["text"], truncation = True, padding = "max_length", 
                      max_length = max_length, return_special_tokens_mask = True) 
 
-train_dataset = onedataset["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
+# train_dataset = onedataset["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
+train_dataset = onedataset.map(encode_with_truncation, batched = True, num_proc = 4) 
 # train_dataset = d['train'].map(encode_with_truncation, batched = True, num_proc = 4) 
 # test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
 
