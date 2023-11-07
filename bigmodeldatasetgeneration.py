@@ -222,7 +222,7 @@ for step, inputs in enumerate(train_dataloader):
     print(colored("the text synthesized is {}".format(textsynthesized[49]), "yellow")) 
     print("shape of condensed_token shape is {}".format(downsampled_vectors[0].shape)) 
     # break 
-    '''
+    
     for i in range(len(downsampled_vectors.shape[0])): 
         example_downsampled_vector = downsampled_vectors[i] 
         tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step * 50 + i)) 
@@ -232,7 +232,6 @@ for step, inputs in enumerate(train_dataloader):
             "text": example_synthesized, 
             "condensed_token_path": tensor_file_path, 
         } 
+        json_file1.write(json.dumps(example_data) + "\n") 
     
-    json_file1.write(json.dumps(example_data) + "\n") 
-    ''' 
 json_file1.close() 
