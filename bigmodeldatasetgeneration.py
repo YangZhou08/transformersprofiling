@@ -142,7 +142,7 @@ tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir 
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "left" 
 
-large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch_device) 
+large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 large_model.eval() 
 
 # max_length = small_model.config.max_position_embeddings 
@@ -171,7 +171,7 @@ training_args = TrainingArguments(
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=50,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size= 1, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size= 150, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=64,  # evaluation batch size
     logging_steps=1000,             # evaluate, log and save model checkpoints every 1000 step
@@ -218,11 +218,17 @@ for step, inputs in enumerate(train_dataloader):
     textsynthesized = tokenizer.batch_decode(large_outputs.sequences) 
     print("the text synthesized is {}".format(textsynthesized)) 
     break 
-    torch.save(downsampled_vectors, tensor_file_path) 
-    example_data = {
-        "text": textsynthesized, 
-        "condensed_token_path": tensor_file_path, 
-    } 
+    '''
+    for i in range(len(downsampled_vectors.shape[0])): 
+        example_downsampled_vector = downsampled_vectors[i] 
+        tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step * 50 + i)) 
+        torch.save(example_downsampled_vector, tensor_file_path) 
+        example_synthesized = textsynthesized[i] 
+        example_data = {
+            "text": example_synthesized, 
+            "condensed_token_path": tensor_file_path, 
+        } 
+    ''' 
     json_file1.write(json.dumps(example_data) + "\n") 
 
 json_file1.close() 

@@ -47,6 +47,8 @@ large_model.eval()
 
 # batch_size = 50 
 batch_size = 150 
+# word_input = "His signature speed, explosiveness and quickness for transition, attacking downhill, finishing and defense were evident during two games versus the Perth Wildcats and three during the Intercontinental Cup in Singapore. But the flashes of self-creation and shot-making appeared earlier than expected. And though he’s likely to go through stretches of cold shooting or inefficient one-on-one execution, Holland — who’ll still be 18 years old by the 2024 draft — has looked competent enough with his off-the-dribble footwork, pull-up, floater and rhythm threes for scouts to buy gradual improvement moving forward." 
+
 generated_input_data = torch.randint(low = 0, high = tokenizer.vocab_size, size = (batch_size, 60), dtype = torch.long).to(torch_device) 
 # generated_input_data = torch.cat((generated_input_data, torch.full((2, 4), tokenizer.pad_token_id, dtype = torch.long).to(torch_device)), dim = 1) 
 generated_input_data = torch.cat((torch.full((batch_size, 4), tokenizer.pad_token_id).to(torch_device), generated_input_data), dim = 1) 
