@@ -1324,14 +1324,14 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 device = inputs_embeds.device, 
                 past_key_values_length = past_key_values_length, 
             ) 
-            print("combined attention mask shape {}".format(combined_attention_mask.shape)) 
+            # print("combined attention mask shape {}".format(combined_attention_mask.shape)) 
         
         if attention_mask is not None: 
 
             expanded_attn_mask = _expand_mask(attention_mask, inputs_embeds.dtype, tgt_len = input_shape[-1]).to( #008000 
                 inputs_embeds.device 
             ) 
-            print("expanded attention mask shape {}".format(expanded_attn_mask.shape)) 
+            # print("expanded attention mask shape {}".format(expanded_attn_mask.shape)) 
             combined_attention_mask = (
                 expanded_attn_mask if combined_attention_mask is None else expanded_attn_mask + combined_attention_mask 
             ) 
@@ -1356,7 +1356,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         for i in range(len(condensed_token_idx_list) - 1): 
             # row_mask[:, :, condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
             row_mask[condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
-        print("row mask shape {}".format(row_mask.shape)) 
+        # print("row mask shape {}".format(row_mask.shape)) 
         row_mask = row_mask[None, None, :, :].expand(mask_shape).to(torch.bool) 
         row_mask = row_mask.to(device = combined_attention_mask.device) 
 
@@ -1366,13 +1366,13 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         assert (input_embeds.shape[1] - start_idx)/kernel_size == condensed_embeds.shape[1] 
         combined_embeds = input_embeds[:, : start_idx, :] 
         input_embeds_count = start_idx 
-        print("combined embeds shape {}".format(combined_embeds.shape)) 
+        # print("combined embeds shape {}".format(combined_embeds.shape)) 
         for i in range(condensed_embeds.shape[1]): 
-            print("i is {}".format(i)) 
+            # print("i is {}".format(i)) 
             combined_embeds = torch.cat([combined_embeds, condensed_embeds[:, i, :].unsqueeze(1)], dim = 1) 
             combined_embeds = torch.cat([combined_embeds, input_embeds[:, input_embeds_count : input_embeds_count + kernel_size, :]], dim = 1) 
             input_embeds_count += kernel_size 
-            print("combined embeds shape {}".format(combined_embeds.shape)) 
+            # print("combined embeds shape {}".format(combined_embeds.shape)) 
         return combined_embeds 
     
     def visualize_position_ids(self, position_ids, mask_idx): 
@@ -1401,7 +1401,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         # Replace -inf with 1 and 0 with 0 for visualization purposes
         # visual_tensor = np.where(tensor_np == float('-inf'), 1, 0) 
         visual_tensor = np.where(tensor_np < 0, 1, 0) 
-        print(visual_tensor) 
+        # print(visual_tensor) 
 
         # Create the plot
         fig, ax = plt.subplots(figsize=(30, 30)) 
@@ -1441,7 +1441,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
 
         # Save the plot
         plt.savefig(filename, format='jpg', bbox_inches='tight') 
-        print("we got here") 
+        # print("we got here") 
         plt.close() 
 
     def forward(
@@ -1462,7 +1462,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
 
         # dimension matching 
         assert input_ids.shape[0] == condensed_embeds.shape[0] # batch size has to match 
-        print("input_ids shape {} condensed_embeds shape {}".format(input_ids.shape, condensed_embeds.shape)) 
+        # print("input_ids shape {} condensed_embeds shape {}".format(input_ids.shape, condensed_embeds.shape)) 
         assert (input_ids.shape[1] - self.start_idx)/self.sliding_window_length == condensed_embeds.shape[1] # number of condensed tokens should have desired mapping with sequence length 
         
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
@@ -1483,7 +1483,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         # if later_input_ids is not None: 
             # seq_length += later_input_ids.shape[1] 
         seq_length += condensed_embeds.shape[1] 
-        print("batch size is {} seq length is {}".format(batch_size, seq_length)) 
+        # print("batch size is {} seq length is {}".format(batch_size, seq_length)) 
         seq_length_with_past = seq_length 
         past_key_values_length = 0 
         
@@ -1515,8 +1515,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                         position_list.append(pos_count) 
             position_ids = torch.tensor(position_list, dtype = torch.long, device = device) 
             position_ids = position_ids.unsqueeze(0) 
-        print("mask list pos : {}".format(self.mask_list_pos)) 
-        print("position ids found is {}".format(self.visualize_position_ids(position_ids, self.mask_list_pos))) 
+        # print("mask list pos : {}".format(self.mask_list_pos)) 
+        # print("position ids found is {}".format(self.visualize_position_ids(position_ids, self.mask_list_pos))) 
         
         # the important part 
         # input_embeds should not be None 
@@ -1526,11 +1526,11 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             condensed_embeds = self.embed_projection(condensed_embeds) 
             # ids_input_embeds = self.embed_tokens(input_ids) 
             input_embeds = self.embed_tokens(input_ids) 
-            print() 
+            # print() 
             input_embeds = self.interleaving_embeddings_inputs(input_embeds, condensed_embeds, kernel_size = self.sliding_window_length, start_idx = self.start_idx) 
         else: 
             raise ValueError("We cannot have an inference or any forward propagation without the inputs_embeds") 
-        print("input_embeds has shape {}".format(input_embeds.shape)) 
+        # print("input_embeds has shape {}".format(input_embeds.shape)) 
         
         if attention_mask is None:
             attention_mask = torch.ones(
@@ -1542,18 +1542,18 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 padding_mask = attention_mask
             else:
                 padding_mask = None 
-        print("attention mask shape {}".format(attention_mask.shape)) 
+        # print("attention mask shape {}".format(attention_mask.shape)) 
         
         attention_mask = self._prepare_decoder_attention_mask(
             # attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length 
             attention_mask, (batch_size, seq_length), input_embeds, past_key_values_length 
         ) 
         working_dir = "/home/yangzho6/" 
-        self.visualize_attention_mask(seq_length, attention_mask[0][0], working_dir + "attention_mask_before_modification.jpg") 
-        print(attention_mask[0][0]) 
+        # self.visualize_attention_mask(seq_length, attention_mask[0][0], working_dir + "attention_mask_before_modification.jpg") 
+        # print(attention_mask[0][0]) 
         self._modify_decoder_attention_mask(attention_mask, dtype = input_embeds.dtype, start_idx = self.start_idx, kernel_size = self.sliding_window_length) 
-        self.visualize_attention_mask(seq_length, attention_mask[0][0], working_dir + "attention_mask_after_modification.jpg") 
-        print(attention_mask[0][0]) 
+        # self.visualize_attention_mask(seq_length, attention_mask[0][0], working_dir + "attention_mask_after_modification.jpg") 
+        # print(attention_mask[0][0]) 
         
         # hidden_states = inputs_embeds 
         hidden_states = input_embeds 
@@ -1641,13 +1641,13 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                     selected_indices.append(i) 
             # shift_logits = shift_logits[:, selected_indices, :] 
             logits = logits[:, selected_indices, :] 
-            print("selected indices are : {}".format(selected_indices)) 
+            # print("selected indices are : {}".format(selected_indices)) 
             shift_logits = logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()
             # expecting 143 sequence length 
-            print("shift_logits have sequence length to be {}".format(shift_logits.shape)) 
+            # print("shift_logits have sequence length to be {}".format(shift_logits.shape)) 
             # expecting 127 sequence length 
-            print("shift_labels have sequence length to be {}".format(shift_labels.shape)) 
+            # print("shift_labels have sequence length to be {}".format(shift_labels.shape)) 
             # Flatten the tokens
             loss_fct = CrossEntropyLoss()
             shift_logits = shift_logits.view(-1, self.config.vocab_size)
