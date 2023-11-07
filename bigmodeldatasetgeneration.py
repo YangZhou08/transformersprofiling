@@ -129,8 +129,9 @@ small_model.eval()
 # for i in range(10): 
 #     print(onedataset[i]) 
 
-d = onedataset.train_test_split(test_size = 0.1) 
-print(d["train"], d["test"]) 
+# d = onedataset.train_test_split(test_size = 0.1) 
+# print(d["train"], d["test"]) 
+print(d["train"]) 
 
 print() 
 
