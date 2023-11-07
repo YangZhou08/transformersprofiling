@@ -123,31 +123,13 @@ class CustomTrainer(Trainer):
                 print(k, v) 
         
         print("attention_mask: {}".format(inputs["attention_mask"])) 
-        with torch.no_grad(): 
-            input_ids = inputs["input_ids"] 
-            attention_mask = inputs["attention_mask"] 
-            labels = inputs["labels"] 
-            top_k = 10
-            top_p = 0.9 
-
-            temperature = 1 
-
-            large_outputs = self.large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
-            # print("the shape of the sequence is {}".format(large_outputs.sequences.shape)) 
-            # print("output last hidden states list has length {}".format(len(large_outputs.hidden_states))) 
-            # print("output last hidden states list first element has shape {}".format([len(large_outputs.hidden_states[i]) for i in range(len(large_outputs.hidden_states))])) 
-            # print("each token output hiddens states has shape {}".format(large_outputs.hidden_states[-1][-1].shape)) 
-            list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
-            print(colored("sequences of the large model output sequence has shape {}".format(large_outputs.sequences.shape), "yellow")) 
-            downsampled_vectors = self.downsample_vectors(list_of_last_hidden_states) 
-            assert len(downsampled_vectors) == 64/4 
-            # print("each dim of downsampled_vectors is {}".format(downsampled_vectors[0].shape)) 
-            downsampled_vectors = torch.stack(downsampled_vectors, dim = 1) 
-            print("downsampled vector dimension is {}".format(downsampled_vectors.shape)) 
-            attention_mask = torch.cat((attention_mask, torch.ones((attention_mask.shape[0], 80), device = attention_mask.device)), dim = 1) #TODO make it more general 
-            # print("shape of the downsampled vectors is {} hidden states dim {}".format(len(downsampled_vectors), downsampled_vectors[0].shape)) 
+        input_ids = inputs["input_ids"] 
+        attention_mask = inputs["attention_mask"] 
+        labels = inputs["labels"] 
+        condensed_embeds = inputs["condensed_embeds"] 
         
-        outputs = model(input_ids = large_outputs.sequences, attention_mask = attention_mask, labels = large_outputs.sequences, condensed_embeds = downsampled_vectors) 
+        # outputs = model(input_ids = large_outputs.sequences, attention_mask = attention_mask, labels = large_outputs.sequences, condensed_embeds = downsampled_vectors) 
+        outputs = model(input_ids = input_ids, attention_mask = attention_mask, labels = labels, condensed_embeds = condensed_embeds) 
         
         if isinstance(outputs, dict) and "loss" not in outputs:
             raise ValueError(
@@ -284,7 +266,7 @@ training_args = TrainingArguments(
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=50,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size=1, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size=10, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=64,  # evaluation batch size
     logging_steps=1000,             # evaluate, log and save model checkpoints every 1000 step
