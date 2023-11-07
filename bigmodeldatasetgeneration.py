@@ -216,6 +216,7 @@ for step, inputs in enumerate(train_dataloader):
     print("downampled_vector has shape {}".format(downsampled_vectors.shape)) 
     textsynthesized = tokenizer.batch_decode(large_outputs.sequences) 
     print(colored("the text synthesized is {}".format(textsynthesized[49]), "yellow")) 
+    print(colored("the text synthesized is {}".format(textsynthesized[100]), "purple")) 
     # break 
     '''
     for i in range(len(downsampled_vectors.shape[0])): 
