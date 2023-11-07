@@ -159,6 +159,7 @@ class CustomDataset:
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
         self.synthesize_dir = data_dir 
         self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json") 
+        self.dataset = self.dataset["train"] 
 
         self.tokenizer = tokenizer 
         self.max_length = max_length 
@@ -293,8 +294,6 @@ print(weightmodelfirst.dtype)
 trainer = CustomTrainer( 
     model = small_model, 
     args = training_args, 
-    # train_dataset = train_dataset, 
-    # eval_dataset = test_dataset, 
     train_dataset = datasetnew, 
     data_collator = data_collator, 
 ) 
