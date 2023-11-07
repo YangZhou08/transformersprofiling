@@ -26,6 +26,9 @@ from src.transformers.generation.utils import GenerationConfig
 from src.transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSmallModel 
 import time 
 
+if is_apex_available():
+    from apex import amp 
+
 class CustomTrainer(Trainer): 
     def __init__(self, large_model = None, *args, **kwargs): 
         super().__init__(*args, **kwargs) 
@@ -33,6 +36,30 @@ class CustomTrainer(Trainer):
         self.generation_config = GenerationConfig(return_dict_in_generate = True) 
         # self.time_checkpoint = time.time() 
         self.time_checkpoint = 0 
+    
+    def training_step(self, model, inputs): 
+        model.train() 
+        inputs = self._prepare_inputs(inputs) 
+        for k, v in inputs.items(): 
+            print(k) 
+        '''
+        if is_sagemaker_mp_enabled():
+            loss_mb = smp_forward_backward(model, inputs, self.args.gradient_accumulation_steps)
+            return loss_mb.reduce_mean().detach().to(self.args.device)
+        ''' 
+        with self.compute_loss_context_manager():
+            loss = self.compute_loss(model, inputs)
+
+        if self.args.n_gpu > 1:
+            loss = loss.mean()  # mean() to average on multi-gpu parallel training
+        
+        if self.use_apex:
+            with amp.scale_loss(loss, self.optimizer) as scaled_loss:
+                scaled_loss.backward()
+        else:
+            self.accelerator.backward(loss)
+
+        return loss.detach() / self.args.gradient_accumulation_steps 
     
     def downsample_vectors(self, listoflasthiddenstates, kernel_size = 4): 
         downsampled_vectors = [] 
@@ -98,7 +125,37 @@ class CustomTrainer(Trainer):
 
         return (loss, outputs) if return_outputs else loss 
 
+class CustomDataset: 
+    def __init__(self, data_dir, tokenizer = None, max_length = 128): 
+        # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
+        self.synthesize_dir = data_dir 
+        self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json") 
 
+        self.tokenizer = tokenizer 
+        self.max_length = max_length 
+    
+    def __len__(self): 
+        return len(self.dataset) 
+    
+    def __getitem__(self, idx): 
+        item = self.dataset[idx] 
+        tensor = torch.load(item["condensed_token_path"]) 
+
+        if self.tokenizer is not None: 
+            encoded_text = self.tokenizer(
+                item['text'],
+                padding='max_length',
+                truncation=True,
+                max_length=self.max_length,
+                return_tensors='pt', 
+                return_special_tokens_mask = True 
+            ) 
+            item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension
+            item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
+        
+        item["condensed_embeds"] = tensor 
+
+        return item 
 
 from src.transformers import BitsAndBytesConfig 
 
@@ -110,8 +167,8 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train[:1000]") 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 
-d = onedataset.train_test_split(test_size = 0.1) 
-print(d["train"], d["test"]) 
+# d = onedataset.train_test_split(test_size = 0.1) 
+# print(d["train"], d["test"]) 
 
 print() 
 
@@ -122,6 +179,7 @@ tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir 
 # tokenizer.pad_token = "[PAD]" 
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "left" 
+datasetnew = CustomDataset(data_dir = "/home/yangzho6/c4llmsynthesized/", tokenizer = tokenizer) 
 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
@@ -180,13 +238,13 @@ def encode_with_truncation(examples):
     return tokenizer(examples["text"], truncation = True, padding = "max_length", 
                      max_length = max_length, return_special_tokens_mask = True) 
 
-train_dataset = d['train'].map(encode_with_truncation, batched = True, num_proc = 4) 
-test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
+# train_dataset = d['train'].map(encode_with_truncation, batched = True, num_proc = 4) 
+# test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
 
 print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
 
-train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
-test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+# train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+# test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
@@ -213,9 +271,10 @@ trainer = CustomTrainer(
     large_model = large_model, 
     model = small_model, 
     args = training_args, 
-    train_dataset = train_dataset, 
-    eval_dataset = test_dataset, 
+    # train_dataset = train_dataset, 
+    # eval_dataset = test_dataset, 
+    train_dataset = datasetnew, 
     data_collator = data_collator, 
 ) 
 
-
+trainer.train() 

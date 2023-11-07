@@ -97,6 +97,37 @@ class CustomTrainer(Trainer):
 
         return (loss, outputs) if return_outputs else loss 
 
+class CustomDataset: 
+    def __init__(self, data_dir, tokenizer = None, max_length = 128): 
+        # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
+        self.synthesize_dir = data_dir 
+        self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json") 
+
+        self.tokenizer = tokenizer 
+        self.max_length = max_length 
+    
+    def __len__(self): 
+        return len(self.dataset) 
+    
+    def __getitem__(self, idx): 
+        item = self.dataset[idx] 
+        tensor = torch.load(item["condensed_token_path"]) 
+
+        if self.tokenizer is not None: 
+            encoded_text = self.tokenizer(
+                item['text'],
+                padding='max_length',
+                truncation=True,
+                max_length=self.max_length,
+                return_tensors='pt'
+            )
+            item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension
+            item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
+        
+        item["condensed_embeds"] = tensor 
+
+        return item 
+
 from src.transformers import BitsAndBytesConfig 
 
 # cache_dir = "/home/bc20/yang/" 
