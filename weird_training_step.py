@@ -93,7 +93,7 @@ class CustomTrainer(Trainer):
                 f"{','.join(outputs.keys())}. For reference, the inputs it received are {','.join(inputs.keys())}."
             ) 
         loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
-        print("the loss is {}".format(loss)) 
+        print(colored("the loss is {}".format(loss), "yellow")) 
 
         return (loss, outputs) if return_outputs else loss 
 
