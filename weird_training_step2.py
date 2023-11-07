@@ -26,7 +26,7 @@ from src.transformers.generation.utils import GenerationConfig
 from src.transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSmallModel 
 import time 
 
-from .utils import (
+from src.transformers.utils import ( 
     ADAPTER_CONFIG_NAME,
     ADAPTER_SAFE_WEIGHTS_NAME,
     ADAPTER_WEIGHTS_NAME,
