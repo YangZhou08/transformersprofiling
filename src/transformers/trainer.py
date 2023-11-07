@@ -889,6 +889,22 @@ class Trainer:
             optimizer = self.optimizer
         self.create_scheduler(num_training_steps=num_training_steps, optimizer=optimizer) 
         print("inside create_optimizer_and_scheduler function call, self.lr_scheduler is {}".format(self.lr_scheduler)) 
+        # code generated from GPT-4 
+        print(f"Scheduler Type: {scheduler.__class__.__name__}")
+        print(f"Initial Learning Rate: {scheduler.base_lrs}")
+        print(f"Current Learning Rate: {scheduler.get_last_lr()}")
+        print(f"Step Size: {scheduler.step_size if hasattr(scheduler, 'step_size') else 'N/A'}")
+        print(f"Gamma: {scheduler.gamma if hasattr(scheduler, 'gamma') else 'N/A'}")
+        print(f"Last Epoch: {scheduler.last_epoch}")
+        print(f"State Dictionary: {scheduler.state_dict()}") 
+        # ... and so on for the other fields 
+
+# If your scheduler is metric-based like ReduceLROnPlateau
+if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+    print(f"Metrics: {scheduler.last_epoch_metric}")
+    print(f"Best Metric: {scheduler.best}")
+    print(f"Cooldown Period: {scheduler.cooldown_counter}")
+    print(f"Patience: {scheduler.patience}")
 
     def get_decay_parameter_names(self, model) -> List[str]:
         """
