@@ -70,7 +70,12 @@ class CustomTrainer(Trainer):
         model.train() 
         inputs = self._prepare_inputs(inputs) 
         for k, v in inputs.items(): 
-            print(k) 
+            if isinstance(v, tuple): 
+                print(k, len(v)) 
+            elif isinstance(v, torch.Tensor): 
+                print(k, v.shape) 
+            else: 
+                print(k, v) 
         '''
         if is_sagemaker_mp_enabled():
             loss_mb = smp_forward_backward(model, inputs, self.args.gradient_accumulation_steps)
