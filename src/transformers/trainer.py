@@ -887,7 +887,8 @@ class Trainer:
             optimizer = self.optimizer.optimizer
         else:
             optimizer = self.optimizer
-        self.create_scheduler(num_training_steps=num_training_steps, optimizer=optimizer)
+        self.create_scheduler(num_training_steps=num_training_steps, optimizer=optimizer) 
+        print("inside create_optimizer_and_scheduler function call, self.lr_scheduler is {}".format(self.lr_scheduler)) 
 
     def get_decay_parameter_names(self, model) -> List[str]:
         """
