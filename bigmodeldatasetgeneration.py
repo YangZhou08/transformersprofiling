@@ -131,7 +131,7 @@ small_model.eval()
 
 # d = onedataset.train_test_split(test_size = 0.1) 
 # print(d["train"], d["test"]) 
-print(d["train"]) 
+# print(d["train"]) 
 
 print() 
 
@@ -155,13 +155,14 @@ def encode_with_truncation(examples):
     return tokenizer(examples["text"], truncation = True, padding = "max_length", 
                      max_length = max_length, return_special_tokens_mask = True) 
 
-train_dataset = d['train'].map(encode_with_truncation, batched = True, num_proc = 4) 
-test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
+train_dataset = onedataset["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
+# train_dataset = d['train'].map(encode_with_truncation, batched = True, num_proc = 4) 
+# test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
 
 print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
 
 train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
-test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+# test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
@@ -186,7 +187,7 @@ trainer = CustomTrainer(
     model = small_model, 
     args = training_args, 
     train_dataset = train_dataset, 
-    eval_dataset = test_dataset, 
+    # eval_dataset = test_dataset, 
     data_collator = data_collator, 
 ) 
 
