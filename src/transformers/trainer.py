@@ -880,7 +880,8 @@ class Trainer:
         Trainer's init through `optimizers`, or subclass and override this method (or `create_optimizer` and/or
         `create_scheduler`) in a subclass.
         """
-        self.create_optimizer()
+        self.create_optimizer() 
+        print("inside create_optimier_and_scheduler function call, self.optimizer is {}".format(self.optimizer)) 
         if IS_SAGEMAKER_MP_POST_1_10 and smp.state.cfg.fp16:
             # If smp >= 1.10 and fp16 is enabled, we unwrap the optimizer
             optimizer = self.optimizer.optimizer
@@ -2695,7 +2696,7 @@ class Trainer:
             # We don't use .loss here since the model may return tuples instead of ModelOutput.
             loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0]
 
-        return (loss, outputs) if return_outputs else loss
+        return (loss, outputs) if return_outputs else loss 
 
     def is_local_process_zero(self) -> bool:
         """
