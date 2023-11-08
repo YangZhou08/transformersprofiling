@@ -290,7 +290,8 @@ training_args = TrainingArguments(
     per_device_eval_batch_size=64,  # evaluation batch size
     logging_steps=1000,             # evaluate, log and save model checkpoints every 1000 step
     save_steps=1000, 
-    learning_rate=5e-7, 
+    # learning_rate=5e-7, 
+    learning_rate = 0, 
     # load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
     # save_total_limit=3,           # whether you don't have much space so you let only 3 model weights saved in the disk 
 ) 
