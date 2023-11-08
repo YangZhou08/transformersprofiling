@@ -295,7 +295,8 @@ training_args = TrainingArguments(
 ) 
 
 weightmodelfirst = next(small_model.parameters()) 
-print(weightmodelfirst.dtype) 
+# print(weightmodelfirst.dtype) 
+print(colored(weightmodelfirst, "red")) 
 
 trainer = CustomTrainer( 
     model = small_model, 
