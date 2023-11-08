@@ -1559,8 +1559,10 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         if condensed_embeds is not None: 
             # inputs_embeds = self.embed_projection(inputs_embeds) 
             condensed_embeds = self.embed_projection(condensed_embeds) 
+            print("condensed_embeds first ten numbers: {}".format(condensed_embeds.view(-1)[: 10])) 
             # ids_input_embeds = self.embed_tokens(input_ids) 
             input_embeds = self.embed_tokens(input_ids) 
+            print("input_embeds first ten numbers: {}".format(input_embeds.view(-1)[: 10])) 
             # print() 
             input_embeds = self.interleaving_embeddings_inputs(input_embeds, condensed_embeds, kernel_size = self.sliding_window_length, start_idx = self.start_idx) 
             print("input_embeds first ten numbers: {}".format(input_embeds[0][0][: 10])) 
