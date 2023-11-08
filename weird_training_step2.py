@@ -147,7 +147,7 @@ class CustomTrainer(Trainer):
         print(outputs.hidden_states[0].shape) 
         print(outputs.hidden_states[0][0][0][: 10]) 
         print(len(outputs.hidden_states)) 
-        print(outputs.attentions[0][0]) 
+        # print(outputs.attentions[0][0]) 
         
         if isinstance(outputs, dict) and "loss" not in outputs:
             raise ValueError(
@@ -256,7 +256,9 @@ small_model = small_model.to(torch_device)
 small_model.train() 
 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
-small_model.train() 
+# small_model.train() 
+for name, parameter in small_model.named_paramters(): 
+    print(name, parameter.dtype) 
 
 # max_length = small_model.config.max_position_embeddings 
 max_length = 64 
