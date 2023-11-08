@@ -69,6 +69,7 @@ class CustomTrainer(Trainer):
     def training_step(self, model, inputs): 
         model.train() 
         inputs = self._prepare_inputs(inputs) 
+        '''
         for k, v in inputs.items(): 
             if isinstance(v, tuple): 
                 print(k, len(v)) 
@@ -76,6 +77,7 @@ class CustomTrainer(Trainer):
                 print(k, v.shape) 
             else: 
                 print(k, v) 
+        ''' 
         '''
         if is_sagemaker_mp_enabled():
             loss_mb = smp_forward_backward(model, inputs, self.args.gradient_accumulation_steps)
@@ -117,6 +119,7 @@ class CustomTrainer(Trainer):
         print(colored("time elasped in the last iteration is {}".format(time.time() - self.time_checkpoint)), "red") 
         self.time_checkpoint = time.time() 
         labels = None 
+        '''
         for k, v in inputs.items(): 
             if isinstance(v, tuple): 
                 print(k, len(v)) 
@@ -124,7 +127,7 @@ class CustomTrainer(Trainer):
                 print(k, v.shape) 
             else: 
                 print(k, v) 
-        
+        ''' 
         # print("attention_mask: {}".format(inputs["attention_mask"])) 
         input_ids = inputs["input_ids"] 
         attention_mask = inputs["attention_mask"] 
@@ -136,6 +139,7 @@ class CustomTrainer(Trainer):
         
         print("condensed_embeds dtype is {}".format(condensed_embeds.dtype)) 
         print("condensed_embeds is {}".format(condensed_embeds)) 
+        print("input_ids are {}".format(input_ids)) 
         # outputs = model(input_ids = large_outputs.sequences, attention_mask = attention_mask, labels = large_outputs.sequences, condensed_embeds = downsampled_vectors) 
         outputs = model(
             input_ids = input_ids, 
@@ -147,7 +151,7 @@ class CustomTrainer(Trainer):
             return_dict = True 
         ) 
 
-        print(outputs.hidden_states[0].shape) 
+        # print(outputs.hidden_states[0].shape) 
         # print(outputs.hidden_states[0][0][0][: 10]) 
         # print(len(outputs.hidden_states)) 
         # print(outputs.attentions[0][0]) 
@@ -274,7 +278,7 @@ def encode_with_truncation(examples):
 # train_dataset = d['train'].map(encode_with_truncation, batched = True, num_proc = 4) 
 # test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
 
-print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
+# print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
 
 # train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 # test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
