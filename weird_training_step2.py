@@ -96,7 +96,7 @@ class CustomTrainer(Trainer):
             self.accelerator.backward(loss) 
         
         for name, parameters in model.named_parameters(): 
-            print(name, parameters.grad.data.view(-1)[: 10]) 
+            print(colored("{} has gradient {}".format(name, parameters.grad.data.view(-1)[: 10]), "blue")) 
 
         return loss.detach() / self.args.gradient_accumulation_steps 
     
