@@ -1655,6 +1655,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             # Enable model parallelism
             shift_labels = shift_labels.to(shift_logits.device)
             loss = loss_fct(shift_logits, shift_labels) 
+            print(loss) 
         
         self.iter_count += 1 
         
