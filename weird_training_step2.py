@@ -137,6 +137,7 @@ class CustomTrainer(Trainer):
         outputs = model(input_ids = input_ids, attention_mask = attention_mask, labels = labels, condensed_embeds = condensed_embeds, output_hidden_states = True, return_dict = True) 
 
         print(outputs.hidden_states[0].shape) 
+        print(outputs.hidden_states[0][0][0][: 10]) 
         
         if isinstance(outputs, dict) and "loss" not in outputs:
             raise ValueError(
