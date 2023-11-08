@@ -257,8 +257,7 @@ small_model.train()
 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
 # small_model.train() 
-for name, parameter in small_model.named_paramters(): 
-    print(name, parameter.dtype) 
+# print(small_model.embed_projection.weight.dtype) 
 
 # max_length = small_model.config.max_position_embeddings 
 max_length = 64 
