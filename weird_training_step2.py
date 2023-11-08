@@ -134,7 +134,9 @@ class CustomTrainer(Trainer):
         print("condensed_embeds dtype is {}".format(condensed_embeds.dtype)) 
         print("condensed_embeds is {}".format(condensed_embeds)) 
         # outputs = model(input_ids = large_outputs.sequences, attention_mask = attention_mask, labels = large_outputs.sequences, condensed_embeds = downsampled_vectors) 
-        outputs = model(input_ids = input_ids, attention_mask = attention_mask, labels = labels, condensed_embeds = condensed_embeds) 
+        outputs = model(input_ids = input_ids, attention_mask = attention_mask, labels = labels, condensed_embeds = condensed_embeds, output_hidden_states = True, return_dict = True) 
+
+        print(outputs.hidden_states[0].shape) 
         
         if isinstance(outputs, dict) and "loss" not in outputs:
             raise ValueError(
