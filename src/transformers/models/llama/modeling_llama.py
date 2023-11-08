@@ -1563,6 +1563,9 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             input_embeds = self.embed_tokens(input_ids) 
             # print() 
             input_embeds = self.interleaving_embeddings_inputs(input_embeds, condensed_embeds, kernel_size = self.sliding_window_length, start_idx = self.start_idx) 
+            print("input_embeds first ten numbers: {}".format(input_embeds[0][0][: 10])) 
+            print("weights in embed_tokens first ten numbers: {}".format(self.embed_tokens.weight[0][: 10])) 
+            print("weights in embed_projection first ten numbers: {}".format(self.embed_projection.weight[0][: 10])) 
         else: 
             raise ValueError("We cannot have an inference or any forward propagation without the inputs_embeds") 
         # print("input_embeds has shape {}".format(input_embeds.shape)) 

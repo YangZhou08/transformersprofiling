@@ -145,8 +145,8 @@ class CustomTrainer(Trainer):
         ) 
 
         print(outputs.hidden_states[0].shape) 
-        print(outputs.hidden_states[0][0][0][: 10]) 
-        print(len(outputs.hidden_states)) 
+        # print(outputs.hidden_states[0][0][0][: 10]) 
+        # print(len(outputs.hidden_states)) 
         # print(outputs.attentions[0][0]) 
         
         if isinstance(outputs, dict) and "loss" not in outputs:
