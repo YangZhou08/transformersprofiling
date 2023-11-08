@@ -40,17 +40,16 @@ from ...utils import (
     logging,
     replace_return_docstrings,
 )
-<<<<<<< HEAD
+
 from .configuration_llama import LlamaConfig 
 from termcolor import colored 
 
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
-=======
+
 from ...utils.import_utils import is_torch_fx_available
-from .configuration_llama import LlamaConfig
->>>>>>> a5bee89c9d5ec2402cb72e819860d51cc2ca35fc
+from .configuration_llama import LlamaConfig 
 
 
 if is_flash_attn_2_available():
@@ -842,7 +841,6 @@ class LlamaModel(LlamaPreTrainedModel):
     def set_input_embeddings(self, value):
         self.embed_tokens = value
 
-<<<<<<< HEAD
     # Copied from transformers.models.bart.modeling_bart.BartDecoder._prepare_decoder_attention_mask
     def _prepare_decoder_attention_mask(self, attention_mask, input_shape, inputs_embeds, past_key_values_length):
         # create causal mask
@@ -866,8 +864,6 @@ class LlamaModel(LlamaPreTrainedModel):
             )
         return combined_attention_mask
 
-=======
->>>>>>> a5bee89c9d5ec2402cb72e819860d51cc2ca35fc
     @add_start_docstrings_to_model_forward(LLAMA_INPUTS_DOCSTRING)
     def forward(
         self,
@@ -985,7 +981,7 @@ class LlamaModel(LlamaPreTrainedModel):
             past_key_values=next_cache,
             hidden_states=all_hidden_states,
             attentions=all_self_attns,
-        )
+        ) 
 
 
 class LlamaForCausalLM(LlamaPreTrainedModel):
