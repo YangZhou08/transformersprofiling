@@ -270,7 +270,7 @@ except RuntimeError as r:
 small_model = small_model.to(torch_device) 
 small_model.train() 
 
-small_model.config.pad_token_id = tokenizer.pad_token_id 
+# small_model.config.pad_token_id = tokenizer.pad_token_id 
 # small_model.train() 
 # print(small_model.embed_projection.weight.dtype) 
 
