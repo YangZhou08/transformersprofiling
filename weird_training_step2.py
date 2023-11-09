@@ -313,5 +313,6 @@ trainer = CustomTrainer(
     train_dataset = datasetnew, 
     data_collator = data_collator, 
 ) 
+torch.autograd.set_detect_anomaly(True) 
 
 trainer.train() 
