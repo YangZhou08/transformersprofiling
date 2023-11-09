@@ -1565,7 +1565,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             print("embed_tokens dtype: {}".format(self.embed_tokens.weight.dtype)) 
             input_embeds = self.embed_tokens(input_ids) 
             # print("input_embeds first ten numbers: {}".format(input_embeds.view(-1)[: 10])) 
-            print("input_embeds: {}".format(input_embeds)) 
+            print("input_embeds: {}".format(input_embeds[0, : 5, : 40])) 
             # print() 
             input_embeds = self.interleaving_embeddings_inputs(input_embeds, condensed_embeds, kernel_size = self.sliding_window_length, start_idx = self.start_idx) 
             print("input_embeds first ten numbers: {}".format(input_embeds[0][0][: 200])) 
