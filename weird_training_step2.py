@@ -96,7 +96,11 @@ class CustomTrainer(Trainer):
             self.accelerator.backward(loss) 
         
         for name, parameters in model.named_parameters(): 
-            print(colored("{} has gradient {}".format(name, parameters.grad.data.view(-1)[: 10]), "blue")) 
+            if name == "embed_tokens.weight": 
+                print(colored("{} has gradient {}".format(name, parameters.grad.data[1][: 100]), "light_magenta")) 
+            else: 
+                print(colored("{} has gradient {}".format(name, parameters.grad.data.view(-1)[: 10]), "light_magenta")) 
+            print("the gradient of {} contains nan or not Ture or False: {}".format(name, torch.isnan(parameters.grad.data.view(-1).any()))) 
 
         return loss.detach() / self.args.gradient_accumulation_steps 
     
