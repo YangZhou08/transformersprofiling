@@ -142,6 +142,7 @@ class CustomTrainer(Trainer):
         condensed_embeds = inputs["condensed_embeds"] 
         batch_size, seq_len = attention_mask.shape 
         addedon_length = condensed_embeds.shape[1] 
+        print("get the input sentence: {}".format(tokenizer.decode(input_ids[0]))) 
         attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
         
         print("condensed_embeds dtype is {}".format(condensed_embeds.dtype)) 
