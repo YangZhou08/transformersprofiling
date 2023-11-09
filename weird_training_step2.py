@@ -97,7 +97,10 @@ class CustomTrainer(Trainer):
         
         for name, parameters in model.named_parameters(): 
             if name == "embed_tokens.weight": 
-                print(colored("{} has gradient {}".format(name, parameters.grad.data[1][: 100]), "light_magenta")) 
+                # print(colored("{} has gradient {}".format(name, parameters.grad.data[1][: 100]), "light_magenta")) 
+                for i in range(parameters.grad.data.shape[0]): 
+                    if (parameters.grad.data[i] != 0).any(): 
+                        print(colored("row {} has gradient that is numerically not zero {}".format(i, parameters.grad.data[i][: 100]), "light_magenta")) 
             else: 
                 print(colored("{} has gradient {}".format(name, parameters.grad.data.view(-1)[: 10]), "light_magenta")) 
             print("the gradient of {} contains nan or not Ture or False: {}".format(name, torch.isnan(parameters.grad.data.view(-1).any()))) 
