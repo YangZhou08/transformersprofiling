@@ -240,7 +240,7 @@ for step, inputs in enumerate(train_dataloader):
         print("the input_ids after the tokenizer is {}".format(outputs)) 
         seq_len = len(outputs) 
         for i in range(seq_len): 
-            if i == "<s>": 
+            if outputs[i] == 1: 
                 outputs = outputs[i :] 
                 break 
         print("the input_ids that should be adjusted is {}".format(outputs)) 
