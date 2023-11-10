@@ -222,6 +222,7 @@ for step, inputs in enumerate(train_dataloader):
     print("shape of condensed_token shape is {}".format(downsampled_vectors[0].shape)) 
     # break 
     
+    count = 0 
     for step in range(downsampled_vectors.shape[0]): 
         print(step) 
         example_downsampled_vector = downsampled_vectors[step].clone() 
@@ -261,7 +262,8 @@ for step, inputs in enumerate(train_dataloader):
         } 
         json_file1.write(json.dumps(example_data) + "\n") 
         ''' 
-        if step == 2: 
+        if count == 2: 
             exit(0) 
+        count += 1 
     
 json_file1.close() 
