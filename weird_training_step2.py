@@ -196,13 +196,13 @@ class CustomDataset:
         tensor = torch.load(item["condensed_token_path"]) 
 
         if self.tokenizer is not None: 
-            encoded_text = self.tokenizer(
-                item['text'],
-                padding='max_length',
-                truncation=True,
-                max_length=self.max_length,
-                return_tensors='pt', 
-                return_special_tokens_mask = True 
+            encoded_text = self.tokenizer( 
+                item["text"], 
+                add_special_tokens = False, 
+                padding = "max_length", 
+                max_length = 128, 
+                return_attention_mask = True, 
+                return_tensors = "pt" 
             ) 
             item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension
             item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
