@@ -104,9 +104,8 @@ class CustomTrainer(Trainer):
             else: 
                 print(colored("{} has gradient {}".format(name, parameters.grad.data.view(-1)[: 10]), "light_magenta")) 
             print("the gradient of {} contains nan or not Ture or False: {}".format(name, torch.isnan(parameters.grad.data.view(-1).any()))) 
-
-        return loss.detach() / self.args.gradient_accumulation_steps 
         ''' 
+        return loss.detach() / self.args.gradient_accumulation_steps 
     
     def downsample_vectors(self, listoflasthiddenstates, kernel_size = 4): 
         downsampled_vectors = [] 
