@@ -235,13 +235,15 @@ for step, inputs in enumerate(train_dataloader):
         print(colored("the text synthesized is {}".format(textsynthesized[i]), "green")) 
         outputs = tokenizer.encode(textsynthesized[i], add_special_tokens = False, padding = False) 
         print("the input_ids after the tokenizer is {}".format(outputs)) 
-        seq_len = outputs.shape(-1) 
+        seq_len = len(outputs) 
         for i in range(seq_len): 
             if i == "<s>": 
                 outputs = outputs[i :] 
                 break 
         print("the input_ids that should be adjusted is {}".format(outputs)) 
-        print("the input setence is {}".format(tokenizer.encode_plus(outputs, add_special_tokens = False, padding = "max_length", max_length = 128, return_attention_mask = True, return_tensors = 'pt'))) 
+        new_output = tokenizer.encode_plus(outputs, add_special_tokens = False, padding = "max_length", max_length = 128, return_attention_mask = True, return_tensors = 'pt') 
+        print("the input setence is {}".format(new_output["input_ids"])) 
+        print("the attention mask we got is {}".format(new_output["attention_mask"])) 
         '''
         example_data = {
             "text": example_synthesized, 
