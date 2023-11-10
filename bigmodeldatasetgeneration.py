@@ -249,7 +249,7 @@ for step, inputs in enumerate(train_dataloader):
         print("the input setence is {}".format(new_output)) 
 
         # what should be loaded in from the dataset after tokenizer 
-        new_output = tokenizer.encode_plus(new_output, add_special_tokens = False, padding = False, return_attention_mask = True, return_tensors = "pt") 
+        new_output = tokenizer.encode_plus(new_output, add_special_tokens = False, padding = "max_length", max_length = 128, return_attention_mask = True, return_tensors = "pt") 
         print("the input_ids that is corrected is {}".format(new_output["input_ids"])) 
         print("the attention mask we got is {}".format(new_output["attention_mask"])) 
         '''
