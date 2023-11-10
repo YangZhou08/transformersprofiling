@@ -1487,13 +1487,14 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         use_cache: Optional[bool] = None,
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
-        return_dict: Optional[bool] = None,
-        ) -> Union[Tuple, CausalLMOutputWithPast]: 
+        return_dict: Optional[bool] = None, 
+        start_idx = 64, 
+     ) -> Union[Tuple, CausalLMOutputWithPast]: 
 
         # dimension matching 
         assert input_ids.shape[0] == condensed_embeds.shape[0] # batch size has to match 
         # print("input_ids shape {} condensed_embeds shape {}".format(input_ids.shape, condensed_embeds.shape)) 
-        assert (input_ids.shape[1] - self.start_idx)/self.sliding_window_length == condensed_embeds.shape[1] # number of condensed tokens should have desired mapping with sequence length 
+        assert (input_ids.shape[1] - start_idx)/self.sliding_window_length == condensed_embeds.shape[1] # number of condensed tokens should have desired mapping with sequence length 
         
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
@@ -1522,7 +1523,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             seq_length_with_past = seq_length_with_past + past_key_values_length 
         
         # self.mask_list_pos = [self.start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - self.start_idx) // (self.sliding_window_length + 1))] 
-        mask_list_pos = [self.start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - self.start_idx) // (self.sliding_window_length + 1))] 
+        # mask_list_pos = [self.start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - self.start_idx) // (self.sliding_window_length + 1))] 
+        mask_list_pos = [start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - start_idx) // (self.sliding_window_length + 1))] 
         if position_ids is None: 
             device = input_ids.device 
             # device = inputs_embeds.device 
@@ -1568,7 +1570,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             for i in range(input_embeds.shape[1]): 
                 print("input_id for it is {} does it has nan number {}".format(input_ids[0][i], torch.isnan(input_embeds[0][i]).any())) 
             # print() 
-            input_embeds = self.interleaving_embeddings_inputs(input_embeds, condensed_embeds, kernel_size = self.sliding_window_length, start_idx = self.start_idx) 
+            input_embeds = self.interleaving_embeddings_inputs(input_embeds, condensed_embeds, kernel_size = self.sliding_window_length, start_idx = start_idx) 
             print("input_embeds first ten numbers: {}".format(input_embeds[0][0][: 200])) 
             print("weights in embed_tokens first ten numbers: {}".format(self.embed_tokens.weight[0][: 10])) 
             print("weights in embed_projection first ten numbers: {}".format(self.embed_projection.weight[0][: 10])) 
@@ -1595,7 +1597,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         working_dir = "/home/yangzho6/" 
         # self.visualize_attention_mask(seq_length, attention_mask[0][0], working_dir + "attention_mask_before_modification.jpg") 
         # print(attention_mask[0][0]) 
-        self._modify_decoder_attention_mask(attention_mask, dtype = input_embeds.dtype, start_idx = self.start_idx, kernel_size = self.sliding_window_length) 
+        # self._modify_decoder_attention_mask(attention_mask, dtype = input_embeds.dtype, start_idx = self.start_idx, kernel_size = self.sliding_window_length) 
+        self._modify_decoder_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
         # self.visualize_attention_mask(seq_length, attention_mask[0][0], working_dir + "attention_mask_after_modification.jpg") 
         # print(attention_mask[0][0]) 
         
@@ -1679,8 +1682,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         loss = None 
         if labels is not None: 
             # Shift so that tokens < n predict n 
-            selected_indices = list(range(self.start_idx)) 
-            for i in range(self.start_idx, seq_length): 
+            selected_indices = list(range(start_idx)) 
+            for i in range(start_idx, seq_length): 
                 # if i not in self.mask_list_pos: 
                 if i not in mask_list_pos: 
                     selected_indices.append(i) 
