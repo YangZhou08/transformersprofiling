@@ -1706,7 +1706,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             loss = loss_fct(shift_logits, shift_labels) 
             # print(loss) 
         
-        self.iter_count += 1 
+        # self.iter_count += 1 
         
         if not return_dict: 
             # output = (logits,) + outputs[1:] 
