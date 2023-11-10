@@ -94,7 +94,7 @@ class CustomTrainer(Trainer):
                 scaled_loss.backward()
         else:
             self.accelerator.backward(loss) 
-        
+        '''
         for name, parameters in model.named_parameters(): 
             if name == "embed_tokens.weight": 
                 # print(colored("{} has gradient {}".format(name, parameters.grad.data[1][: 100]), "light_magenta")) 
@@ -106,6 +106,7 @@ class CustomTrainer(Trainer):
             print("the gradient of {} contains nan or not Ture or False: {}".format(name, torch.isnan(parameters.grad.data.view(-1).any()))) 
 
         return loss.detach() / self.args.gradient_accumulation_steps 
+        ''' 
     
     def downsample_vectors(self, listoflasthiddenstates, kernel_size = 4): 
         downsampled_vectors = [] 
@@ -126,7 +127,7 @@ class CustomTrainer(Trainer):
         print(colored("time elasped in the last iteration is {}".format(time.time() - self.time_checkpoint)), "red") 
         self.time_checkpoint = time.time() 
         labels = None 
-        
+        '''
         for k, v in inputs.items(): 
             if isinstance(v, tuple): 
                 print(k, len(v)) 
@@ -137,7 +138,7 @@ class CustomTrainer(Trainer):
                     print(k, v) 
             else: 
                 print(k, v) 
-        
+        ''' 
         # print("attention_mask: {}".format(inputs["attention_mask"])) 
         input_ids = inputs["input_ids"] 
         attention_mask = inputs["attention_mask"] 
@@ -145,12 +146,12 @@ class CustomTrainer(Trainer):
         condensed_embeds = inputs["condensed_embeds"] 
         batch_size, seq_len = attention_mask.shape 
         addedon_length = condensed_embeds.shape[1] 
-        print("get the input sentence: {}".format(tokenizer.decode(input_ids[0]))) 
+        # print("get the input sentence: {}".format(tokenizer.decode(input_ids[0]))) 
         attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
         
-        print("condensed_embeds dtype is {}".format(condensed_embeds.dtype)) 
-        print("condensed_embeds is {}".format(condensed_embeds)) 
-        print("input_ids are {}".format(input_ids)) 
+        # print("condensed_embeds dtype is {}".format(condensed_embeds.dtype)) 
+        # print("condensed_embeds is {}".format(condensed_embeds)) 
+        # print("input_ids are {}".format(input_ids)) 
         # outputs = model(input_ids = large_outputs.sequences, attention_mask = attention_mask, labels = large_outputs.sequences, condensed_embeds = downsampled_vectors) 
         outputs = model(
             input_ids = input_ids, 
