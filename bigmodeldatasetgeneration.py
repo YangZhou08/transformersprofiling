@@ -246,7 +246,7 @@ for step, inputs in enumerate(train_dataloader):
         print("the input_ids that should be adjusted is {}".format(outputs)) 
         # what should be stored in the dataset 
         new_output = tokenizer.decode(outputs) 
-        print("the input setence is {}".format(new_output["input_ids"])) 
+        print("the input setence is {}".format(new_output)) 
 
         # what should be loaded in from the dataset after tokenizer 
         new_output = tokenizer.encode_plus(new_output, add_special_tokens = False, padding = False, return_attention_mask = True, return_tensors = "pt") 
