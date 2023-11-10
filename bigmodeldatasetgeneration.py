@@ -218,9 +218,6 @@ for step, inputs in enumerate(train_dataloader):
     # print("downampled_vector has shape {}".format(downsampled_vectors.shape)) 
     print("downampled_vector has shape {}".format(downsampled_vectors.shape)) 
     textsynthesized = tokenizer.batch_decode(large_outputs.sequences) 
-    for i in range(50): 
-        print(tokenizer.decode(input_ids[i], add_special_tokens = False, paddng = True)) 
-        print(colored("the text synthesized is {}".format(textsynthesized[i]), "green")) 
     # print(colored("the text synthesized is {}".format(textsynthesized[49]), "yellow")) 
     print("shape of condensed_token shape is {}".format(downsampled_vectors[0].shape)) 
     # break 
@@ -234,7 +231,17 @@ for step, inputs in enumerate(train_dataloader):
         ''' 
         example_synthesized = textsynthesized[i] 
         # print("the text synthesized is {}".format(example_synthesized)) 
-        # print("the input_ids after the tokenizer is {}".format(tokenizer.encode(example_synthesized))) 
+        print(tokenizer.decode(input_ids[i], add_special_tokens = False, paddng = True)) 
+        print(colored("the text synthesized is {}".format(textsynthesized[i]), "green")) 
+        outputs = tokenizer.encode(textsynthesized[i], add_special_tokens = False, padding = False) 
+        print("the input_ids after the tokenizer is {}".format(outputs)) 
+        seq_len = outputs.shape(-1) 
+        for i in range(seq_len): 
+            if i == "<s>": 
+                outputs = outputs[i :] 
+                break 
+        print("the input_ids that should be adjusted is {}".format(outputs)) 
+        print("the input setence is {}".format(tokenizer.encode_plus(outputs, add_special_tokens = False, padding = "max_length", max_length = 128, return_attention_mask = True, return_tensors = 'pt'))) 
         '''
         example_data = {
             "text": example_synthesized, 
