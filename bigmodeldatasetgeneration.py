@@ -237,6 +237,7 @@ for step, inputs in enumerate(train_dataloader):
         print(colored("the text synthesized is {}".format(textsynthesized[i]), "green")) 
         # outputs = tokenizer.encode(textsynthesized[i], add_special_tokens = False, padding = False) 
         outputs = large_outputs.sequences[i] 
+        print("length of the input_ids is {}".format(outputs.shape)) 
         print("the input_ids after the tokenizer is {}".format(outputs)) 
         seq_len = len(outputs) 
         for i in range(seq_len): 
@@ -251,6 +252,7 @@ for step, inputs in enumerate(train_dataloader):
         # what should be loaded in from the dataset after tokenizer 
         new_output = tokenizer.encode_plus(new_output, add_special_tokens = False, padding = "max_length", max_length = 128, return_attention_mask = True, return_tensors = "pt") 
         print("the input_ids that is corrected is {}".format(new_output["input_ids"])) 
+        print("the length of the input_ids is {}".format(new_output["input_ids"].shape)) 
         print("the attention mask we got is {}".format(new_output["attention_mask"])) 
         '''
         example_data = {
