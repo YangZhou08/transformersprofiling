@@ -231,9 +231,12 @@ for step, inputs in enumerate(train_dataloader):
         ''' 
         example_synthesized = textsynthesized[i] 
         # print("the text synthesized is {}".format(example_synthesized)) 
-        print(tokenizer.decode(input_ids[i], add_special_tokens = False, paddng = True)) 
+        # print input sequences 
+        print(tokenizer.decode(input_ids[i])) 
+        # print("raw output in text") 
         print(colored("the text synthesized is {}".format(textsynthesized[i]), "green")) 
-        outputs = tokenizer.encode(textsynthesized[i], add_special_tokens = False, padding = False) 
+        # outputs = tokenizer.encode(textsynthesized[i], add_special_tokens = False, padding = False) 
+        outputs = large_outputs.sequences[i] 
         print("the input_ids after the tokenizer is {}".format(outputs)) 
         seq_len = len(outputs) 
         for i in range(seq_len): 
@@ -241,8 +244,13 @@ for step, inputs in enumerate(train_dataloader):
                 outputs = outputs[i :] 
                 break 
         print("the input_ids that should be adjusted is {}".format(outputs)) 
-        new_output = tokenizer.encode_plus(outputs, add_special_tokens = False, padding = "max_length", max_length = 128, return_attention_mask = True, return_tensors = 'pt') 
+        # what should be stored in the dataset 
+        new_output = tokenizer.decode(outputs) 
         print("the input setence is {}".format(new_output["input_ids"])) 
+
+        # what should be loaded in from the dataset after tokenizer 
+        new_output = tokenizer.encode_plus(new_output, add_special_tokens = False, padding = False, return_attention_mask = True, return_tensors = "pt") 
+        print("the input_ids that is corrected is {}".format(new_output["input_ids"])) 
         print("the attention mask we got is {}".format(new_output["attention_mask"])) 
         '''
         example_data = {
