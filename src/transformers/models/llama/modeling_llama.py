@@ -1296,7 +1296,7 @@ class LlamaForSequenceClassification(LlamaPreTrainedModel):
 class SimpleSmallModel(LlamaPreTrainedModel): 
     _tied_weights_keys = ["lm_head.weight"] 
     
-    def __init__(self, config, sliding_window_length = 4, start_idx = 64): 
+    def __init__(self, config, sliding_window_length = 4): 
         super().__init__(config) 
         # copied from LlamaModel 
         self.padding_idx = config.pad_token_id 
@@ -1314,15 +1314,9 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         # copied from LlamaForCausalLM 
         self.vocab_size = config.vocab_size 
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False) 
-        
-        # needed to the deciphering thing 
-        self.iter_count = 0 
-        self.decipher_threshold = 4 
 
         # needed to be used for the interleaving embeddings 
         self.sliding_window_length = sliding_window_length 
-        self.start_idx = start_idx 
-        self.mask_list_pos = None 
         
         # Initialize weights and apply final processing
         self.post_init() 
@@ -1373,7 +1367,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         
         return combined_attention_mask 
 
-    def _modify_decoder_attention_mask(self, combined_attention_mask, dtype, start_idx = None, kernel_size = None): 
+    # def _modify_decoder_attention_mask(self, combined_attention_mask, dtype, start_idx = None, kernel_size = None): 
+    def _modify_decoder_attention_mask(self, combined_attention_mask, dtype, mask_list_pos, start_idx = None, kernel_size = None): 
         mask_shape = combined_attention_mask.shape # (batch_size, 1, tgt_seq_len, src_seq_len) 
         seq_len = mask_shape[-1] 
         start_idx = start_idx if start_idx is not None else self.start_idx 
@@ -1381,13 +1376,13 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         
         # row dimensional masking 
         # row_idx_masked_out = [start_idx + i * (kernel_size + 1) for i in range((seq_len - start_idx) / (kernel_size + 1))] 
-        row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) 
+        row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) # NOTE currently, this line only works for training 
         # row_mask[row_idx_masked_out] = 1 
-        row_mask[self.mask_list_pos] = 1 
+        row_mask[mask_list_pos] = 1 
 
         # column dimensional masking 
         # condensed_token_idx_list = row_idx_masked_out 
-        condensed_token_idx_list = self.mask_list_pos 
+        condensed_token_idx_list = mask_list_pos 
         for i in range(len(condensed_token_idx_list) - 1): 
             # row_mask[:, :, condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
             row_mask[condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
@@ -1526,7 +1521,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             past_key_values_length = past_key_values[0][0].shape[2] 
             seq_length_with_past = seq_length_with_past + past_key_values_length 
         
-        self.mask_list_pos = [self.start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - self.start_idx) // (self.sliding_window_length + 1))] 
+        # self.mask_list_pos = [self.start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - self.start_idx) // (self.sliding_window_length + 1))] 
+        mask_list_pos = [self.start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - self.start_idx) // (self.sliding_window_length + 1))] 
         if position_ids is None: 
             device = input_ids.device 
             # device = inputs_embeds.device 
@@ -1537,7 +1533,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             pos_count = past_key_values_length 
             following_flag = False 
             for i in range(seq_length): 
-                if i in self.mask_list_pos: 
+                # if i in self.mask_list_pos: 
+                if i in mask_list_pos: 
                     pos_count += 1 
                     position_list.append(pos_count) 
                     following_flag = True 
@@ -1683,7 +1680,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             # Shift so that tokens < n predict n 
             selected_indices = list(range(self.start_idx)) 
             for i in range(self.start_idx, seq_length): 
-                if i not in self.mask_list_pos: 
+                # if i not in self.mask_list_pos: 
+                if i not in mask_list_pos: 
                     selected_indices.append(i) 
             # shift_logits = shift_logits[:, selected_indices, :] 
             logits = logits[:, selected_indices, :] 

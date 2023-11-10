@@ -227,12 +227,18 @@ for step, inputs in enumerate(train_dataloader):
         print(i) 
         example_downsampled_vector = downsampled_vectors[i].clone() 
         tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step * 100 + i)) 
+        '''
         torch.save(example_downsampled_vector, tensor_file_path) 
+        ''' 
         example_synthesized = textsynthesized[i] 
+        print("the text synthesized is {}".format(example_synthesized)) 
+        print("the input_ids after the tokenizer is {}".format(tokenizer.encode(example_synthesized))) 
+        '''
         example_data = {
             "text": example_synthesized, 
             "condensed_token_path": tensor_file_path, 
         } 
         json_file1.write(json.dumps(example_data) + "\n") 
+        ''' 
     
 json_file1.close() 
