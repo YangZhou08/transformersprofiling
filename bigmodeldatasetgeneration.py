@@ -223,43 +223,43 @@ for step, inputs in enumerate(train_dataloader):
     # break 
     
     for i in range(downsampled_vectors.shape[0]): 
-        print(i) 
+        # print(i) 
         example_downsampled_vector = downsampled_vectors[i].clone() 
         tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step * 100 + i)) 
-        '''
+        
         torch.save(example_downsampled_vector, tensor_file_path) 
-        ''' 
+        
         example_synthesized = textsynthesized[i] 
         # print("the text synthesized is {}".format(example_synthesized)) 
         # print input sequences 
-        print(tokenizer.decode(input_ids[i])) 
+        # print(tokenizer.decode(input_ids[i])) 
         # print("raw output in text") 
-        print(colored("the text synthesized is {}".format(textsynthesized[i]), "green")) 
+        # print(colored("the text synthesized is {}".format(textsynthesized[i]), "green")) 
         # outputs = tokenizer.encode(textsynthesized[i], add_special_tokens = False, padding = False) 
         outputs = large_outputs.sequences[i] 
-        print("length of the input_ids is {}".format(outputs.shape)) 
-        print("the input_ids after the tokenizer is {}".format(outputs)) 
+        # print("length of the input_ids is {}".format(outputs.shape)) 
+        # print("the input_ids after the tokenizer is {}".format(outputs)) 
         seq_len = len(outputs) 
         for j in range(seq_len): 
             if outputs[j] == 1: 
                 outputs = outputs[(j + 1) :] 
                 break 
-        print("the input_ids that should be adjusted is {}".format(outputs)) 
+        # print("the input_ids that should be adjusted is {}".format(outputs)) 
         # what should be stored in the dataset 
         new_output = tokenizer.decode(outputs) 
-        print("the input setence is {}".format(new_output)) 
+        # print("the input setence is {}".format(new_output)) 
 
         # what should be loaded in from the dataset after tokenizer 
-        new_output = tokenizer.encode_plus(new_output, add_special_tokens = True, padding = "max_length", max_length = 128, return_attention_mask = True, return_tensors = "pt") 
-        print("the input_ids that is corrected is {}".format(new_output["input_ids"])) 
-        print("the length of the input_ids is {}".format(new_output["input_ids"].shape)) 
-        print("the attention mask we got is {}".format(new_output["attention_mask"])) 
-        '''
+        # new_output = tokenizer.encode_plus(new_output, add_special_tokens = True, padding = "max_length", max_length = 128, return_attention_mask = True, return_tensors = "pt") 
+        # print("the input_ids that is corrected is {}".format(new_output["input_ids"])) 
+        # print("the length of the input_ids is {}".format(new_output["input_ids"].shape)) 
+        # print("the attention mask we got is {}".format(new_output["attention_mask"])) 
+        
         example_data = {
-            "text": example_synthesized, 
+            "text": new_output, 
             "condensed_token_path": tensor_file_path, 
         } 
         json_file1.write(json.dumps(example_data) + "\n") 
-        ''' 
+        
     
 json_file1.close() 
