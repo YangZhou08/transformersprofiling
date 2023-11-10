@@ -33,7 +33,7 @@ dir_dataset = "/home/yangzho6/c4_parts"
 dir_models = "/home/yangzho6/model_checkpoints" 
 
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
-onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train[:1000]") 
+onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
 # onedataset = load_dataset('json', data_files = "/home/bc20/yang/transformersprofiling/downloads/c4_subset.json", split = "train") 
 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = cache_dir) 
