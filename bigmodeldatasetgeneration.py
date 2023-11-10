@@ -226,7 +226,7 @@ for step, inputs in enumerate(train_dataloader):
     for step in range(downsampled_vectors.shape[0]): 
         print(step) 
         example_downsampled_vector = downsampled_vectors[step].clone() 
-        tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step * 100 + i)) 
+        tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step * 100 + step)) 
         '''
         torch.save(example_downsampled_vector, tensor_file_path) 
         ''' 
