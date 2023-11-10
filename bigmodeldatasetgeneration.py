@@ -261,7 +261,5 @@ for step, inputs in enumerate(train_dataloader):
         } 
         json_file1.write(json.dumps(example_data) + "\n") 
         ''' 
-        if i == 2: 
-            break 
     
 json_file1.close() 
