@@ -222,9 +222,9 @@ for step, inputs in enumerate(train_dataloader):
     print("shape of condensed_token shape is {}".format(downsampled_vectors[0].shape)) 
     # break 
     
-    for i in range(downsampled_vectors.shape[0]): 
-        print(i) 
-        example_downsampled_vector = downsampled_vectors[i].clone() 
+    for step in range(downsampled_vectors.shape[0]): 
+        print(step) 
+        example_downsampled_vector = downsampled_vectors[step].clone() 
         tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step * 100 + i)) 
         '''
         torch.save(example_downsampled_vector, tensor_file_path) 
@@ -261,7 +261,7 @@ for step, inputs in enumerate(train_dataloader):
         } 
         json_file1.write(json.dumps(example_data) + "\n") 
         ''' 
-        if i == 2: 
+        if step == 2: 
             exit(0) 
     
 json_file1.close() 
