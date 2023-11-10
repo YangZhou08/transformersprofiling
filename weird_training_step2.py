@@ -182,7 +182,7 @@ class CustomTrainer(Trainer):
             ) 
         loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
         print(colored("the loss is {}".format(loss), "yellow")) 
-        if has_wandb: 
+        if has_wandb and self.iteration_count % 50 == 0: 
             wandb.log({"loss": loss}) 
 
         return (loss, outputs) if return_outputs else loss 
@@ -321,8 +321,8 @@ training_args = TrainingArguments(
     logging_steps=1000,             # evaluate, log and save model checkpoints every 1000 step
     save_steps=1000, 
     # learning_rate=5e-7, 
-    # learning_rate=5e-5, 
-    learning_rate = 5e-4, 
+    learning_rate=5e-5, 
+    # learning_rate = 5e-4, 
     # learning_rate = 0, 
     # load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
     # save_total_limit=3,           # whether you don't have much space so you let only 3 model weights saved in the disk 
