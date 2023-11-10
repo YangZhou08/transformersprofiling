@@ -1564,6 +1564,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             input_embeds = self.embed_tokens(input_ids) 
             # print("input_embeds first ten numbers: {}".format(input_embeds.view(-1)[: 10])) 
             print("input_embeds: {}".format(input_embeds[0, : 5, : 40])) 
+            print("attention_mask: {}".format(attention_mask)) 
             for i in range(input_embeds.shape[1]): 
                 print("input_id for it is {} does it has nan number {}".format(input_ids[0][i], torch.isnan(input_embeds[0][i]).any())) 
             # print() 
