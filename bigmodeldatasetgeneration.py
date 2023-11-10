@@ -242,7 +242,7 @@ for step, inputs in enumerate(train_dataloader):
         seq_len = len(outputs) 
         for j in range(seq_len): 
             if outputs[j] == 1: 
-                outputs = outputs[j :] 
+                outputs = outputs[(j + 1) :] 
                 break 
         print("the input_ids that should be adjusted is {}".format(outputs)) 
         # what should be stored in the dataset 
