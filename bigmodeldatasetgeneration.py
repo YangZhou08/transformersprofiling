@@ -223,10 +223,10 @@ for step, inputs in enumerate(train_dataloader):
     # break 
     
     count = 0 
-    for step in range(downsampled_vectors.shape[0]): 
+    for i in range(downsampled_vectors.shape[0]): 
         print(step) 
         example_downsampled_vector = downsampled_vectors[step].clone() 
-        tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step * 100 + step)) 
+        tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step * 100 + i)) 
         '''
         torch.save(example_downsampled_vector, tensor_file_path) 
         ''' 
@@ -241,9 +241,9 @@ for step, inputs in enumerate(train_dataloader):
         print("length of the input_ids is {}".format(outputs.shape)) 
         print("the input_ids after the tokenizer is {}".format(outputs)) 
         seq_len = len(outputs) 
-        for i in range(seq_len): 
-            if outputs[i] == 1: 
-                outputs = outputs[i :] 
+        for j in range(seq_len): 
+            if outputs[j] == 1: 
+                outputs = outputs[j :] 
                 break 
         print("the input_ids that should be adjusted is {}".format(outputs)) 
         # what should be stored in the dataset 
@@ -264,6 +264,5 @@ for step, inputs in enumerate(train_dataloader):
         ''' 
         if count == 2: 
             exit(0) 
-        count += 1 
     
 json_file1.close() 
