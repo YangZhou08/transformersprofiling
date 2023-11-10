@@ -329,7 +329,7 @@ training_args = TrainingArguments(
 ) 
 
 if has_wandb: 
-    wandb.init(project = "llm160m", config = training_args, name="sequencelength{}kernelsize{}".format(128, 4)) 
+    wandb.init(project = "llm160m", config = training_args, name="sequencelength{}kernelsize{}learning_rate{}".format(max_length, 4, training_args.learning_rate)) 
 
 weightmodelfirst = next(small_model.parameters()) 
 # print(weightmodelfirst.dtype) 
