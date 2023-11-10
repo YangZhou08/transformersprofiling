@@ -26,6 +26,12 @@ from src.transformers.generation.utils import GenerationConfig
 from src.transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSmallModel 
 import time 
 
+try:
+    import wandb
+    has_wandb = True
+except ImportError:
+    has_wandb = False
+
 from src.transformers.utils import ( 
     ADAPTER_CONFIG_NAME,
     ADAPTER_SAFE_WEIGHTS_NAME,
@@ -65,9 +71,11 @@ class CustomTrainer(Trainer):
         # self.generation_config = GenerationConfig(return_dict_in_generate = True) 
         # self.time_checkpoint = time.time() 
         self.time_checkpoint = 0 
+        self.iteration_count = 0 
     
     def training_step(self, model, inputs): 
         model.train() 
+        self.iteration_count += 1 
         inputs = self._prepare_inputs(inputs) 
         '''
         for k, v in inputs.items(): 
@@ -174,6 +182,8 @@ class CustomTrainer(Trainer):
             ) 
         loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
         print(colored("the loss is {}".format(loss), "yellow")) 
+        if has_wandb and self.iteration_count % 20 == 0: 
+            wandb.log({"loss": loss}) 
 
         return (loss, outputs) if return_outputs else loss 
 
@@ -317,6 +327,9 @@ training_args = TrainingArguments(
     # load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
     # save_total_limit=3,           # whether you don't have much space so you let only 3 model weights saved in the disk 
 ) 
+
+if has_wandb: 
+    wandb.init(project = "llm160m", config = training_args, name="sequencelength{}kernelsize{}".format(128, 4)) 
 
 weightmodelfirst = next(small_model.parameters()) 
 # print(weightmodelfirst.dtype) 

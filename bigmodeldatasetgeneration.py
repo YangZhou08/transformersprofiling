@@ -200,6 +200,7 @@ json_file_name = "c4synthesized_file1.json"
 json_file1 = open(synthesized_dir_path + json_file_name, "a") 
 
 train_dataloader = trainer.get_train_dataloader() 
+print("the length of the train dataloader is {}".format(len(train_dataloader))) 
 for step, inputs in enumerate(train_dataloader): 
     inputs = trainer._prepare_inputs(inputs) 
     input_ids = inputs["input_ids"] 
