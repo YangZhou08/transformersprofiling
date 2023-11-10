@@ -104,7 +104,6 @@ class CustomTrainer(Trainer):
             else: 
                 print(colored("{} has gradient {}".format(name, parameters.grad.data.view(-1)[: 10]), "light_magenta")) 
             print("the gradient of {} contains nan or not Ture or False: {}".format(name, torch.isnan(parameters.grad.data.view(-1).any()))) 
-        exit(0) 
 
         return loss.detach() / self.args.gradient_accumulation_steps 
     
