@@ -126,15 +126,18 @@ class CustomTrainer(Trainer):
         print(colored("time elasped in the last iteration is {}".format(time.time() - self.time_checkpoint)), "red") 
         self.time_checkpoint = time.time() 
         labels = None 
-        '''
+        
         for k, v in inputs.items(): 
             if isinstance(v, tuple): 
                 print(k, len(v)) 
             elif isinstance(v, torch.Tensor): 
-                print(k, v.shape) 
+                if k == "condensed_embeds": 
+                    print(k, v.shape) 
+                else: 
+                    print(k, v) 
             else: 
                 print(k, v) 
-        ''' 
+        
         # print("attention_mask: {}".format(inputs["attention_mask"])) 
         input_ids = inputs["input_ids"] 
         attention_mask = inputs["attention_mask"] 
@@ -302,7 +305,7 @@ training_args = TrainingArguments(
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=50,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size=2, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size=1, # the training batch size, put it as high as your GPU memory fits
     # gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=64,  # evaluation batch size
     logging_steps=1000,             # evaluate, log and save model checkpoints every 1000 step
