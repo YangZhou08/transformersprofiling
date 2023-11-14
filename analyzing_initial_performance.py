@@ -130,7 +130,7 @@ dir_dataset = "/home/yangzho6/c4_parts"
 dir_models = "/home/yangzho6/model_checkpoints" 
 dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
 
-onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train[:1000]") 
+# onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train[:1000]") 
 
 # tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 # tokenizer = AutoTokenizer.from_pretrained("facebook/opt-125m", cache_dir = dir_models) 
