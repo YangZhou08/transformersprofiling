@@ -162,6 +162,7 @@ class CustomTrainer(Trainer):
         # print("condensed_embeds is {}".format(condensed_embeds)) 
         # print("input_ids are {}".format(input_ids)) 
         # outputs = model(input_ids = large_outputs.sequences, attention_mask = attention_mask, labels = large_outputs.sequences, condensed_embeds = downsampled_vectors) 
+        '''
         outputs = model(
             input_ids = input_ids, 
             attention_mask = attention_mask, 
@@ -172,7 +173,7 @@ class CustomTrainer(Trainer):
             return_dict = True, 
             eval_mode = True, 
         ) 
-        '''
+        ''' 
         outputs = model(
             input_ids = input_ids, 
             attention_mask = attention_mask, 
@@ -182,7 +183,6 @@ class CustomTrainer(Trainer):
             output_attentions = True, 
             return_dict = True 
         ) 
-        '''
         # print(outputs.hidden_states[0].shape) 
         # print(outputs.hidden_states[0][0][0][: 10]) 
         # print(len(outputs.hidden_states)) 
@@ -197,6 +197,8 @@ class CustomTrainer(Trainer):
         print(colored("the loss is {}".format(loss), "yellow")) 
         if has_wandb and self.iteration_count % 50 == 0: 
             wandb.log({"loss": loss}) 
+
+        # inspect the hidden states here 
 
         return (loss, outputs) if return_outputs else loss 
 
