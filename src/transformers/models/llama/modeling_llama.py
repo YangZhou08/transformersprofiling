@@ -1534,7 +1534,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             assert (input_ids.shape[1] - start_idx)/self.sliding_window_length == condensed_embeds.shape[1] # number of condensed tokens should have desired mapping with sequence length 
         else: 
             # for the eval mode we simply ignore the condensed_embeds 
-            condensed_length = (input_ids.shape[1] - start_idx)/self.sliding_window_length 
+            condensed_length = int((input_ids.shape[1] - start_idx)/self.sliding_window_length) 
             condensed_embeds = torch.zeros((batch_size, condensed_length, self.target_model_dim)).to(input_ids.device) 
         # seq_length = input_ids.shape[1] + inputs_embeds.shape[1] 
         # batch_size = inputs_embeds.shape[0] # NOTE inputs_embeds is the only tensor that will always be here 
