@@ -1320,6 +1320,9 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         
         # Initialize weights and apply final processing
         self.post_init() 
+
+        # add an evaluation mode 
+        self.eval_mode = False 
     
     # input embeddings 
     def get_input_embeddings(self):
@@ -1366,6 +1369,26 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             ) 
         
         return combined_attention_mask 
+
+    def _convert_to_normal_attention_mask(self, combined_attention_mask, dtype, mask_list_pos, start_idx = None, kernel_size = None): 
+        mask_shape = combined_attention_mask.shape # (batch_size, 1, tgt_seq_len, src_seq_len) 
+        seq_len = mask_shape[-1] 
+        start_idx = start_idx if start_idx is not None else self.start_idx 
+        kernel_size = kernel_size if kernel_size is not None else self.sliding_window_length 
+        
+        # row dimensional masking 
+        # row_idx_masked_out = [start_idx + i * (kernel_size + 1) for i in range((seq_len - start_idx) / (kernel_size + 1))] 
+        row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) # NOTE currently, this line only works for training 
+        # row_mask[row_idx_masked_out] = 1 
+        row_mask[mask_list_pos] = 1 
+
+        condensed_token_idx_list = mask_list_pos 
+        for i in range(len(condensed_token_idx_list) - 1): 
+            row_mask[condensed_token_idx_list[i]: , condensed_token_idx_list[i]] = 1 
+        row_mask = row_mask[None, None, :, :].expand(mask_shape).to(torch.bool) 
+        row_mask = row_mask.to(device = combined_attention_mask.device) 
+
+        combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
 
     # def _modify_decoder_attention_mask(self, combined_attention_mask, dtype, start_idx = None, kernel_size = None): 
     def _modify_decoder_attention_mask(self, combined_attention_mask, dtype, mask_list_pos, start_idx = None, kernel_size = None): 
@@ -1598,8 +1621,11 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         # self.visualize_attention_mask(seq_length, attention_mask[0][0], working_dir + "attention_mask_before_modification.jpg") 
         # print(attention_mask[0][0]) 
         # self._modify_decoder_attention_mask(attention_mask, dtype = input_embeds.dtype, start_idx = self.start_idx, kernel_size = self.sliding_window_length) 
-        self._modify_decoder_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
-        # self.visualize_attention_mask(seq_length, attention_mask[0][0], working_dir + "attention_mask_after_modification.jpg") 
+        if self.eval_mode: 
+            self._convert_to_normal_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+        else: 
+            self._modify_decoder_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+        self.visualize_attention_mask(seq_length, attention_mask[0][0], working_dir + "attention_mask_after_modification.jpg") 
         # print(attention_mask[0][0]) 
         
         # hidden_states = inputs_embeds 
@@ -1720,6 +1746,78 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             hidden_states = all_hidden_states, 
             attentions = all_self_attns 
         ) 
+    
+    @staticmethod 
+    # copy from https://github.com/LeeSinLiang/microGPT/blob/ed40cf9780dbeb180adfe94c227d4aa97e69250e/gpt.py
+    def top_k_top_p_filter(logits: torch.Tensor, top_k: int = 0, top_p: float = 0.0):
+        """
+        Args:
+            logits (torch.Tensorpe_): 2D tensor with shape (batch, vocab)
+            top_k (int, optional): top_k. Defaults to 0.
+            top_p (float, optional): top_p. Defaults to 0.0.
+
+        Returns:
+            torch.Tensor: a renormalized logits
+        """
+        if top_k > 0:
+            filter = torch.topk(logits, min(top_k, logits.size(-1)))[0]
+            logits[logits < filter[:, [-1]]] = float('-inf')
+        if top_p > 0.0:
+            sorted_logits, sorted_indices = torch.sort(logits, descending=True)
+            cumulative_probs = torch.cumsum(
+                F.softmax(sorted_logits, dim=-1), dim=-1)
+            filter = cumulative_probs > top_p
+            filter[..., 1:] = filter[..., :-1].clone()
+            filter[..., 0] = 0
+            indices_to_remove = filter.scatter(1, sorted_indices, filter)
+            logits[indices_to_remove] = float('-inf')
+        return logits 
+    
+    @staticmethod 
+    def norm_logits(logits : torch.Tensor, temperature : float, top_k : float, top_p : float) -> torch.Tensor:
+        """
+        Args:
+            logits (torch.Tensor): shape (1, vocab)
+            temperature (float): temperature
+            top_k (float): top_k
+            top_p (float): top_p
+
+        Returns:
+            torch.Tensor: next token with shape as (batch,  1)
+        """
+        assert logits.dim() == 2
+        logits = logits / temperature
+        # logits = self.top_k_top_p_filter(logits, top_k=top_k, top_p=top_p) 
+        logits = SimpleSmallModel.top_k_top_p_filter(logits, top_k=top_k, top_p=top_p) 
+        probs = F.softmax(logits, dim=1)
+        return probs 
+
+    @staticmethod 
+    def sample(probs : torch.Tensor, num_samples: int = 1, random_seed = None):
+        if random_seed:
+            torch.manual_seed(random_seed)
+        idx_next = torch.multinomial(probs, num_samples=num_samples)
+        if (idx_next.item() == 0):
+            raise RuntimeError
+        return idx_next 
+
+    @staticmethod 
+    def logitsToText(logits, topk, topp, temperature, tokenizer, use_sample = True): 
+        # this function goes from logits to the actual decoded text 
+        seq_len = logits.shape[-2] 
+        print("sequence length is {}".format(seq_len)) 
+        decoded_index = [] 
+        for n in range(seq_len): 
+            if use_sample: 
+                probs = SimpleSmallModel.norm_logits(logits[:, n, :], temperature, topk, topp) 
+                idx_next = SimpleSmallModel.sample(probs) 
+            else: 
+                idx_next = torch.argmax(logits[:, n, :], dim = -1) 
+                # dimension of idx_next is (batch_size, 1) 
+        decoded_index.append(idx_next) 
+        output = torch.cat(decoded_index, dim = -1) 
+        text = tokenizer.batch_decode(output) 
+        return text 
     
     def prepare_inputs_for_generation(
         self, input_ids, past_key_values=None, attention_mask=None, inputs_embeds=None, **kwargs
