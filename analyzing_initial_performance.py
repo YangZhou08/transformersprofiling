@@ -171,7 +171,7 @@ small_model.eval_mode = True
 small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
 # small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
 
-batch_size = 1024 
+batch_size = 100 
 dataloader = DataLoader(datasetnew, batch_size = batch_size) 
 
 # generated using GPT-4 
