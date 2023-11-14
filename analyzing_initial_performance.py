@@ -142,7 +142,7 @@ else:
 tokenizer.padding_side = "left" 
 
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
-'''
+
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 
@@ -167,8 +167,10 @@ except RuntimeError as r:
 small_model = small_model.to(torch_device) 
 small_model.eval_mode = True 
 # small_model.train() 
-''' 
+
+'''
 small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
+''' 
 # small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
 
 batch_size = 100 
