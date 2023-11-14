@@ -207,12 +207,14 @@ class CustomDataset:
         if self.tokenizer is not None: 
             encoded_text = self.tokenizer( 
                 item["text"], 
-                add_special_tokens = False, 
+                add_special_tokens = True, 
                 padding = "max_length", 
                 max_length = 128, 
                 return_attention_mask = True, 
-                return_tensors = "pt" 
+                return_tensors = "pt", 
+                truncation = True, 
             ) 
+            
             item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension
             item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
         
@@ -237,12 +239,17 @@ onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/download
 print() 
 
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
-tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
-small_tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+# tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 # tokenizer.add_special_tokens({"pad_token":"<pad>"}) 
 # print("the tokenizer pad token id is {}".format(tokenizer.pad_token_id)) 
 # tokenizer.pad_token = "[PAD]" 
-tokenizer.pad_token = tokenizer.eos_token
+# tokenizer.pad_token = tokenizer.eos_token 
+if tokenizer.pad_token is not None: 
+    print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
+else: 
+    tokenizer.pad_token = tokenizer.eos_token 
+    print("We now use eos_token as pad token") 
 tokenizer.padding_side = "left" 
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
 

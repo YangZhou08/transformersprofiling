@@ -1323,6 +1323,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
 
         # add an evaluation mode 
         self.eval_mode = False 
+        self.condensed_fashion = "projection_mode" 
+        self.all_list_condensed = ["projection_mode", "ground_truth"] 
     
     # input embeddings 
     def get_input_embeddings(self):
@@ -1516,7 +1518,11 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         start_idx = 64, 
         eval_mode = False, 
         iteration_count = None, 
-     ) -> Union[Tuple, CausalLMOutputWithPast]: 
+        condensed_fashion = "projection_mode", 
+    ) -> Union[Tuple, CausalLMOutputWithPast]: 
+        
+        assert condensed_fashion in self.all_list_condensed 
+        self.condensed_fashion = condensed_fashion 
 
         self.eval_mode = eval_mode 
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
