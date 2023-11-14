@@ -134,27 +134,13 @@ else:
     print("We now use eos_token as pad token") 
 
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
-
+'''
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
-'''
-print("print out configurations") 
-for k, v in small_config.__dict__.items(): 
-    print(k, v) 
-''' 
+
 small_state_dict_for_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).state_dict() 
 small_model = SimpleSmallModel(small_config) 
-'''
-print("we expect the following keys") 
-print(len(small_model.state_dict().keys())) 
-for key, _ in small_model.named_parameters(): 
-    print(key) 
 
-print() 
-print("from the pretrained model, we found the following keys") 
-print(type(small_state_dict_for_model)) 
-print(len(small_state_dict_for_model.keys())) 
-''' 
 new_state_dict = {} 
 
 for key in small_state_dict_for_model.keys(): 
@@ -173,6 +159,8 @@ except RuntimeError as r:
 small_model = small_model.to(torch_device) 
 small_model.eval_mode = True 
 # small_model.train() 
+''' 
+small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
 
 dataloader = DataLoader(datasetnew, batch_size = 8) 
 
@@ -185,15 +173,19 @@ count = 0
 for batch in dataloader: 
     input_ids = batch["input_ids"].to(torch_device) 
     attention_mask = batch["attention_mask"].to(torch_device) 
-    condensed_embeds = batch["condensed_embeds"].to(torch_device) 
-    batch_size, seq_len = attention_mask.shape 
-    addedon_length = condensed_embeds.shape[1] 
-    # print("get the input sentence: {}".format(tokenizer.decode(input_ids[0]))) 
-    attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
-    
     labels = input_ids.clone() 
     labels[labels == tokenizer.pad_token_id] = -100 
-    outputs = small_model(input_ids = input_ids, attention_mask = attention_mask, labels = labels, eval_mode = True, iteration_count = count) 
+    
+    if isinstance(small_model, SimpleSmallModel): 
+        condensed_embeds = batch["condensed_embeds"].to(torch_device) 
+        batch_size, seq_len = attention_mask.shape 
+        addedon_length = condensed_embeds.shape[1] 
+        # print("get the input sentence: {}".format(tokenizer.decode(input_ids[0]))) 
+        attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
+        
+        outputs = small_model(input_ids = input_ids, attention_mask = attention_mask, labels = labels, eval_mode = True, iteration_count = count) 
+    else: 
+        outputs = small_model(input_ids = input_ids, attention_mask = attention_mask, labels = labels) 
     loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
     perplexity = torch.exp(loss).mean().item() 
     print(colored("perplexity is {}".format(perplexity), "yellow")) 
