@@ -175,7 +175,7 @@ dataloader = DataLoader(datasetnew, batch_size = 8)
 # generated using GPT-4 
 # Compute perplexity over the dataset
 total_perplexity = 0 
-total_loss = 0 
+total_loss = torch.zeros(1).to(torch_device) 
 num_batches = 0 
 count = 0 
 
@@ -196,7 +196,7 @@ for batch in dataloader:
     else: 
         outputs = small_model(input_ids = input_ids, attention_mask = attention_mask, labels = labels) 
     loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
-    total_loss += loss.mean().item() 
+    total_loss += loss.mean() 
     perplexity = torch.exp(loss).mean().item() 
     print(colored("perplexity is {}".format(perplexity), "yellow")) 
     print() 
