@@ -179,7 +179,7 @@ large_model.eval()
 
 small_model = large_model 
 
-batch_size = 100 
+batch_size = 50 
 dataloader = DataLoader(datasetnew, batch_size = batch_size) 
 
 # generated using GPT-4 
@@ -190,31 +190,32 @@ total_loss = 0
 num_batches = 0 
 count = 0 
 
-for batch in dataloader: 
-    input_ids = batch["input_ids"].to(torch_device) 
-    attention_mask = batch["attention_mask"].to(torch_device) 
-    labels = input_ids.clone() 
-    labels[labels == tokenizer.pad_token_id] = -100 
-    
-    if isinstance(small_model, SimpleSmallModel): 
-        condensed_embeds = batch["condensed_embeds"].to(torch_device) 
-        batch_size, seq_len = attention_mask.shape 
-        addedon_length = condensed_embeds.shape[1] 
-        # print("get the input sentence: {}".format(tokenizer.decode(input_ids[0]))) 
-        attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
+with torch.no_grad(): 
+    for batch in dataloader: 
+        input_ids = batch["input_ids"].to(torch_device) 
+        attention_mask = batch["attention_mask"].to(torch_device) 
+        labels = input_ids.clone() 
+        labels[labels == tokenizer.pad_token_id] = -100 
         
-        outputs = small_model(input_ids = input_ids, attention_mask = attention_mask, labels = labels, eval_mode = True, iteration_count = count) 
-    else: 
-        outputs = small_model(input_ids = input_ids, attention_mask = attention_mask, labels = labels) 
-    loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
-    print("size of loss is {}".format(loss)) 
-    total_loss += loss.item() 
-    perplexity = torch.exp(loss).mean().item() 
-    print(colored("perplexity is {}".format(perplexity), "yellow")) 
-    print() 
-    total_perplexity += perplexity 
-    num_batches += 1 
-    count += 1 
+        if isinstance(small_model, SimpleSmallModel): 
+            condensed_embeds = batch["condensed_embeds"].to(torch_device) 
+            batch_size, seq_len = attention_mask.shape 
+            addedon_length = condensed_embeds.shape[1] 
+            # print("get the input sentence: {}".format(tokenizer.decode(input_ids[0]))) 
+            attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
+            
+            outputs = small_model(input_ids = input_ids, attention_mask = attention_mask, labels = labels, eval_mode = True, iteration_count = count) 
+        else: 
+            outputs = small_model(input_ids = input_ids, attention_mask = attention_mask, labels = labels) 
+        loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
+        print("size of loss is {}".format(loss)) 
+        total_loss += loss.item() 
+        perplexity = torch.exp(loss).mean().item() 
+        print(colored("perplexity is {}".format(perplexity), "yellow")) 
+        print() 
+        total_perplexity += perplexity 
+        num_batches += 1 
+        count += 1 
 
 average_perplexity = total_perplexity / num_batches 
 reference_perplexity = np.exp(total_loss / num_batches) 
