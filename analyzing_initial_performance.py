@@ -185,6 +185,12 @@ count = 0
 for batch in dataloader: 
     input_ids = batch["input_ids"].to(torch_device) 
     attention_mask = batch["attention_mask"].to(torch_device) 
+    condensed_embeds = batch["condensed_embeds"].to(torch_device) 
+    batch_size, seq_len = attention_mask.shape 
+    addedon_length = condensed_embeds.shape[1] 
+    # print("get the input sentence: {}".format(tokenizer.decode(input_ids[0]))) 
+    attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
+    
     labels = input_ids.clone() 
     labels[labels == tokenizer.pad_token_id] = -100 
     outputs = small_model(input_ids = input_ids, attention_mask = attention_mask, labels = labels, eval_mode = True, iteration_count = count) 
