@@ -180,16 +180,18 @@ dataloader = DataLoader(datasetnew, batch_size = 8)
 # Compute perplexity over the dataset
 total_perplexity = 0
 num_batches = 0 
+count = 0 
 
 for batch in dataloader: 
     input_ids = batch["input_ids"].to(torch_device) 
     attention_mask = batch["attention_mask"].to(torch_device) 
     labels = input_ids.clone() 
     labels[labels == tokenizer.pad_token_id] = -100 
-    outputs = small_model(input_ids = input_ids, attention_mask = attention_mask, labels = labels) 
+    outputs = small_model(input_ids = input_ids, attention_mask = attention_mask, labels = labels, eval_mode = True, iteration_count = count) 
     loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
     perplexity = torch.exp(loss).mean().item() 
     total_perplexity += perplexity 
     num_batches += 1 
+    count += 1 
 
 average_perplexity = total_perplexity / num_batches 

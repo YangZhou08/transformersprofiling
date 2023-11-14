@@ -1512,13 +1512,11 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None, 
         start_idx = 64, 
+        eval_mode = False, 
+        iteration_count = None, 
      ) -> Union[Tuple, CausalLMOutputWithPast]: 
 
-        # dimension matching 
-        assert input_ids.shape[0] == condensed_embeds.shape[0] # batch size has to match 
-        # print("input_ids shape {} condensed_embeds shape {}".format(input_ids.shape, condensed_embeds.shape)) 
-        assert (input_ids.shape[1] - start_idx)/self.sliding_window_length == condensed_embeds.shape[1] # number of condensed tokens should have desired mapping with sequence length 
-        
+        self.eval_mode = eval_mode 
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
@@ -1529,6 +1527,15 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         
         batch_size = input_ids.shape[0] 
         seq_length = input_ids.shape[1] 
+        if not self.eval_mode: 
+            # dimension matching 
+            assert input_ids.shape[0] == condensed_embeds.shape[0] # batch size has to match 
+            # print("input_ids shape {} condensed_embeds shape {}".format(input_ids.shape, condensed_embeds.shape)) 
+            assert (input_ids.shape[1] - start_idx)/self.sliding_window_length == condensed_embeds.shape[1] # number of condensed tokens should have desired mapping with sequence length 
+        else: 
+            # for the eval mode we simply ignore the condensed_embeds 
+            condensed_length = (input_ids.shape[1] - start_idx)/self.sliding_window_length 
+            condensed_embeds = torch.zeros(batch_size, condensed_length, self.target_model_dim).to(input_ids.device) 
         # seq_length = input_ids.shape[1] + inputs_embeds.shape[1] 
         # batch_size = inputs_embeds.shape[0] # NOTE inputs_embeds is the only tensor that will always be here 
         # seq_length = inputs_embeds.shape[1] 
@@ -1622,10 +1629,12 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         # print(attention_mask[0][0]) 
         # self._modify_decoder_attention_mask(attention_mask, dtype = input_embeds.dtype, start_idx = self.start_idx, kernel_size = self.sliding_window_length) 
         if self.eval_mode: 
+            # the attention_mask ignores the condensed tokens 
             self._convert_to_normal_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
         else: 
             self._modify_decoder_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
-        self.visualize_attention_mask(seq_length, attention_mask[0][0], working_dir + "attention_mask_after_modification.jpg") 
+        if iteration_count is not None and iteration_count == 1: 
+            self.visualize_attention_mask(seq_length, attention_mask[0][0], working_dir + "attention_mask_after_modification.jpg") 
         # print(attention_mask[0][0]) 
         
         # hidden_states = inputs_embeds 
