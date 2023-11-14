@@ -87,8 +87,10 @@ class CustomDataset:
                 padding = "max_length", 
                 max_length = 128, 
                 return_attention_mask = True, 
-                return_tensors = "pt" 
+                return_tensors = "pt", 
+                truncation = True, 
             ) 
+            
             item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
             if item["input_ids"].shape[0] > 128: 
                 print("shape is {}".format(item["input_ids"].shape)) 
