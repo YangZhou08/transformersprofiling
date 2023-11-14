@@ -89,7 +89,11 @@ class CustomDataset:
                 return_attention_mask = True, 
                 return_tensors = "pt" 
             ) 
-            item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension
+            item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
+            if item["input_ids"].shape[0] > 128: 
+                print("shape is {}".format(item["input_ids"].shape)) 
+                print("this example is {}".format(item["text"])) 
+                print("the tokenizer after output is {}".format(item["input_ids"])) 
             item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
         
         item["condensed_embeds"] = tensor 
@@ -132,6 +136,7 @@ if tokenizer.pad_token is not None:
 else: 
     tokenizer.pad_token = tokenizer.eos_token 
     print("We now use eos_token as pad token") 
+tokenizer.padding_side = "left" 
 
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
 '''
