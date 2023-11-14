@@ -150,6 +150,8 @@ class CustomTrainer(Trainer):
         input_ids = inputs["input_ids"] 
         attention_mask = inputs["attention_mask"] 
         labels = inputs["labels"] 
+        print("the input ids are {}".format(input_ids[0])) 
+        print("labels are {}".format(labels[0])) 
         condensed_embeds = inputs["condensed_embeds"] 
         batch_size, seq_len = attention_mask.shape 
         addedon_length = condensed_embeds.shape[1] 
