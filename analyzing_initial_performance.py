@@ -171,7 +171,8 @@ small_model.eval_mode = True
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
 small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
 
-dataloader = DataLoader(datasetnew, batch_size = 8) 
+batch_size = 1024 
+dataloader = DataLoader(datasetnew, batch_size = batch_size) 
 
 # generated using GPT-4 
 # Compute perplexity over the dataset
@@ -208,6 +209,6 @@ for batch in dataloader:
     count += 1 
 
 average_perplexity = total_perplexity / num_batches 
-reference_perplexity = torch.exp(torch.Tensor(total_loss / num_batches)).item() 
+reference_perplexity = np.exp(total_loss / num_batches) 
 print(colored("reference perplexity is {}".format(reference_perplexity), "yellow")) 
 print("average perplexity is {}".format(average_perplexity)) 
