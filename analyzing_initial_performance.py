@@ -195,3 +195,4 @@ for batch in dataloader:
     count += 1 
 
 average_perplexity = total_perplexity / num_batches 
+print("average perplexity is {}".format(average_perplexity)) 
