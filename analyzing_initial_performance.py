@@ -196,6 +196,8 @@ for batch in dataloader:
     outputs = small_model(input_ids = input_ids, attention_mask = attention_mask, labels = labels, eval_mode = True, iteration_count = count) 
     loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
     perplexity = torch.exp(loss).mean().item() 
+    print(colored("perplexity is {}".format(perplexity), "yellow")) 
+    print() 
     total_perplexity += perplexity 
     num_batches += 1 
     count += 1 
