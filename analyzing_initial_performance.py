@@ -195,7 +195,7 @@ for batch in dataloader:
     else: 
         outputs = small_model(input_ids = input_ids, attention_mask = attention_mask, labels = labels) 
     loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
-    print("size of loss is {}".format(loss.shape)) 
+    print("size of loss is {}".format(loss)) 
     total_loss += loss.mean() 
     perplexity = torch.exp(loss).mean().item() 
     print(colored("perplexity is {}".format(perplexity), "yellow")) 
