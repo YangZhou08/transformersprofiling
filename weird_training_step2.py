@@ -164,12 +164,23 @@ class CustomTrainer(Trainer):
             input_ids = input_ids, 
             attention_mask = attention_mask, 
             labels = labels, 
+            # condensed_embeds = condensed_embeds, 
+            output_hidden_states = True, 
+            output_attentions = True, 
+            return_dict = True, 
+            eval_mode = True, 
+        ) 
+        '''
+        outputs = model(
+            input_ids = input_ids, 
+            attention_mask = attention_mask, 
+            labels = labels, 
             condensed_embeds = condensed_embeds, 
             output_hidden_states = True, 
             output_attentions = True, 
             return_dict = True 
         ) 
-
+        '''
         # print(outputs.hidden_states[0].shape) 
         # print(outputs.hidden_states[0][0][0][: 10]) 
         # print(len(outputs.hidden_states)) 
@@ -207,7 +218,7 @@ class CustomDataset:
         if self.tokenizer is not None: 
             encoded_text = self.tokenizer( 
                 item["text"], 
-                add_special_tokens = False, 
+                add_special_tokens = True, 
                 padding = "max_length", 
                 max_length = 128, 
                 return_attention_mask = True, 
