@@ -1515,6 +1515,16 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 sum += listoflasthiddenstates[i] 
         return downsampled_vectors 
 
+    def downsample_vectors2(self, cat_tokens, kernel_size = 4): 
+        downsampled_vectors = [] 
+        device = cat_tokens.device 
+        assert cat_tokens.shape[1] == kernel_size 
+        sum = torch.zeros((cat_tokens.shape[0], cat_tokens.shape[-1]), device = device) 
+        for i in range(cat_tokens.shape[1]): 
+            sum += cat_tokens[:, i, :] 
+        sum /= kernel_size 
+        return sum 
+
     def forward(
         self,
         input_ids: torch.LongTensor = None, 
@@ -1559,6 +1569,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 with torch.no_grad(): 
                     condensed_embeds = [self.embed_tokens(input_ids[:, start_idx + i * self.sliding_window_length : start_idx + (i + 1) * self.sliding_window_length]) for i in range((seq_length - start_idx)//self.sliding_window_length)] 
                     print("shape of every entry of the condensed tokens: {}".format(condensed_embeds[0].shape)) 
+                    condensed_embeds = [self.downsample_vectors2(condensed_embeds[i]) for i in range(len(condensed_embeds))] 
                     condensed_embeds = torch.cat(condensed_embeds, dim = 1) 
                     print("shape of condensed_embeds: {}".format(condensed_embeds.shape)) 
                 exit(0) 
