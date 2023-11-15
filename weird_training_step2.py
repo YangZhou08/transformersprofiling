@@ -152,16 +152,6 @@ class CustomTrainer(Trainer):
         labels = inputs["labels"] 
         # print("the input ids are {}".format(input_ids[0])) 
         # print("labels are {}".format(labels[0])) 
-        condensed_embeds = inputs["condensed_embeds"] 
-        batch_size, seq_len = attention_mask.shape 
-        addedon_length = condensed_embeds.shape[1] 
-        # print("get the input sentence: {}".format(tokenizer.decode(input_ids[0]))) 
-        attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
-        
-        # print("condensed_embeds dtype is {}".format(condensed_embeds.dtype)) 
-        # print("condensed_embeds is {}".format(condensed_embeds)) 
-        # print("input_ids are {}".format(input_ids)) 
-        # outputs = model(input_ids = large_outputs.sequences, attention_mask = attention_mask, labels = large_outputs.sequences, condensed_embeds = downsampled_vectors) 
         if not isinstance(model, SimpleSmallModel): 
             outputs = model(
                 input_ids = input_ids, 
@@ -174,6 +164,16 @@ class CustomTrainer(Trainer):
                 eval_mode = True, 
             ) 
         else: 
+            condensed_embeds = inputs["condensed_embeds"] 
+            batch_size, seq_len = attention_mask.shape 
+            addedon_length = condensed_embeds.shape[1] 
+            # print("get the input sentence: {}".format(tokenizer.decode(input_ids[0]))) 
+            attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
+            
+            # print("condensed_embeds dtype is {}".format(condensed_embeds.dtype)) 
+            # print("condensed_embeds is {}".format(condensed_embeds)) 
+            # print("input_ids are {}".format(input_ids)) 
+            # outputs = model(input_ids = large_outputs.sequences, attention_mask = attention_mask, labels = large_outputs.sequences, condensed_embeds = downsampled_vectors) 
             outputs = model(
                 input_ids = input_ids, 
                 attention_mask = attention_mask, 
