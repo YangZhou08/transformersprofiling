@@ -272,7 +272,7 @@ else:
     print("We now use eos_token as pad token") 
 tokenizer.padding_side = "left" 
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
-'''
+
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 
@@ -296,8 +296,8 @@ except RuntimeError as r:
     print(colored(r, "yellow")) 
 small_model = small_model.to(torch_device) 
 small_model.train() 
-''' 
-small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
+
+# small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
 # small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
 # small_model.config.pad_token_id = tokenizer.pad_token_id 
 # small_model.train() 
@@ -339,8 +339,8 @@ training_args = TrainingArguments(
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     # learning_rate = 5e-4, 
-    # learning_rate = 1e-5, 
-    learning_rate = 5e-6, 
+    learning_rate = 1e-5, 
+    # learning_rate = 5e-6, 
     # learning_rate = 0, 
     # load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
     # save_total_limit=3,           # whether you don't have much space so you let only 3 model weights saved in the disk 
