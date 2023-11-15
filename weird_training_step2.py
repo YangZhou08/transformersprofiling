@@ -196,7 +196,11 @@ class CustomTrainer(Trainer):
         loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
         print(colored("the loss is {}".format(loss), "yellow")) 
         if has_wandb and self.iteration_count % 50 == 0: 
-            wandb.log({"loss": loss}) 
+            wandb.log({"loss": loss, 
+                       "group1.lr": self.optimizer.param_groups[0]["lr"], 
+                       "group2.lr": self.optimizer.param_groups[1]["lr"], 
+                       "iteration_count": self.iteration_count, 
+            }) 
 
         # inspect the hidden states here 
 
@@ -267,27 +271,13 @@ else:
     print("We now use eos_token as pad token") 
 tokenizer.padding_side = "left" 
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
-
+'''
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
-'''
-print("print out configurations") 
-for k, v in small_config.__dict__.items(): 
-    print(k, v) 
-''' 
+
 small_state_dict_for_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).state_dict() 
 small_model = SimpleSmallModel(small_config) 
-'''
-print("we expect the following keys") 
-print(len(small_model.state_dict().keys())) 
-for key, _ in small_model.named_parameters(): 
-    print(key) 
 
-print() 
-print("from the pretrained model, we found the following keys") 
-print(type(small_state_dict_for_model)) 
-print(len(small_state_dict_for_model.keys())) 
-''' 
 new_state_dict = {} 
 
 for key in small_state_dict_for_model.keys(): 
@@ -305,7 +295,8 @@ except RuntimeError as r:
     print(colored(r, "yellow")) 
 small_model = small_model.to(torch_device) 
 small_model.train() 
-
+''' 
+small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
 # small_model.config.pad_token_id = tokenizer.pad_token_id 
 # small_model.train() 
 # print(small_model.embed_projection.weight.dtype) 
