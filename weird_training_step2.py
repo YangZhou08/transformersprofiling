@@ -161,7 +161,7 @@ class CustomTrainer(Trainer):
                 output_hidden_states = True, 
                 output_attentions = True, 
                 return_dict = True, 
-                eval_mode = True, 
+                # eval_mode = True, 
             ) 
         else: 
             condensed_embeds = inputs["condensed_embeds"] 
