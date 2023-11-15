@@ -1519,7 +1519,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         downsampled_vectors = [] 
         device = cat_tokens.device 
         assert cat_tokens.shape[1] == kernel_size 
-        sum = torch.zeros((cat_tokens.shape[0], cat_tokens.shape[-1]), device = device) 
+        sum = torch.zeros((cat_tokens[0], cat_tokens[-1]) , device = device) 
         for i in range(cat_tokens.shape[1]): 
             sum += cat_tokens[:, i, :] 
         sum /= kernel_size 
@@ -1570,7 +1570,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                     condensed_embeds = [self.embed_tokens(input_ids[:, start_idx + i * self.sliding_window_length : start_idx + (i + 1) * self.sliding_window_length]) for i in range((seq_length - start_idx)//self.sliding_window_length)] 
                     print("shape of every entry of the condensed tokens: {}".format(condensed_embeds[0].shape)) 
                     condensed_embeds = [self.downsample_vectors2(condensed_embeds[i]) for i in range(len(condensed_embeds))] 
-                    condensed_embeds = torch.cat(condensed_embeds, dim = 1) 
+                    condensed_embeds = torch.stack(condensed_embeds, dim = 1) 
                     print("shape of condensed_embeds: {}".format(condensed_embeds.shape)) 
                 exit(0) 
                 assert (condensed_embeds.shape[0] == batch_size) and (condensed_embeds.shape[-1] == self.config.hidden_size) 
