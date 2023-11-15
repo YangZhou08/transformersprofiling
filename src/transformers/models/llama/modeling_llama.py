@@ -1540,6 +1540,12 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             assert input_ids.shape[0] == condensed_embeds.shape[0] # batch size has to match 
             # print("input_ids shape {} condensed_embeds shape {}".format(input_ids.shape, condensed_embeds.shape)) 
             assert (input_ids.shape[1] - start_idx)/self.sliding_window_length == condensed_embeds.shape[1] # number of condensed tokens should have desired mapping with sequence length 
+
+            if self.condensed_fashion == "ground_truth": 
+                with torch.no_grad(): 
+                    condensed_embeds = [self.embed_tokens(input_ids[:, start_idx + i * self.sliding_window_length : start_idx + (i + 1) * self.sliding_window_length]) for i in range((seq_length - start_idx)/self.sliding_window_length)] 
+                    condensed_embeds = torch.cat(condensed_embeds, dim = 1) 
+                assert (condensed_embeds.shape[0] == batch_size) and (condensed_embeds.shape[-1] == self.config.hidden_size) 
         else: 
             # for the eval mode we simply ignore the condensed_embeds 
             condensed_length = int((input_ids.shape[1] - start_idx)/self.sliding_window_length) 
@@ -1596,7 +1602,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         input_embeds = None 
         if condensed_embeds is not None: 
             # inputs_embeds = self.embed_projection(inputs_embeds) 
-            condensed_embeds = self.embed_projection(condensed_embeds) 
+            if self.condensed_fashion == "projection_mode": 
+                condensed_embeds = self.embed_projection(condensed_embeds) 
             # print("condensed_embeds first ten numbers: {}".format(condensed_embeds.view(-1)[: 100])) 
             # print("condensed_embeds has nan numbers: {}".format(torch.isnan(condensed_embeds.view(-1)).any())) 
             # ids_input_embeds = self.embed_tokens(input_ids) 

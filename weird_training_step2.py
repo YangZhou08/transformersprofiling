@@ -162,6 +162,7 @@ class CustomTrainer(Trainer):
                 output_attentions = True, 
                 return_dict = True, 
                 # eval_mode = True, 
+                condensed_fashion = "ground_truth", 
             ) 
         else: 
             condensed_embeds = inputs["condensed_embeds"] 
