@@ -1516,7 +1516,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         return downsampled_vectors 
 
     def downsample_vectors2(self, cat_tokens, kernel_size = 4): 
-        downsampled_vectors = [] 
+        # downsampled_vectors = [] 
         device = cat_tokens.device 
         assert cat_tokens.shape[1] == kernel_size 
         sum = torch.zeros((cat_tokens.shape[0], cat_tokens.shape[-1]), device = device) 
@@ -1572,7 +1572,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                     condensed_embeds = [self.downsample_vectors2(condensed_embeds[i]) for i in range(len(condensed_embeds))] 
                     condensed_embeds = torch.stack(condensed_embeds, dim = 1) 
                     print("shape of condensed_embeds: {}".format(condensed_embeds.shape)) 
-                exit(0) 
+                # exit(0) 
                 assert (condensed_embeds.shape[0] == batch_size) and (condensed_embeds.shape[-1] == self.config.hidden_size) 
         else: 
             # for the eval mode we simply ignore the condensed_embeds 
