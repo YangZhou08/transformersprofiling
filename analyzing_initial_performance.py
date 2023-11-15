@@ -83,7 +83,7 @@ class CustomDataset:
             # the following line is under investigation 
             encoded_text = self.tokenizer( 
                 item["text"], 
-                add_special_tokens = True, 
+                add_special_tokens = False, 
                 padding = "max_length", 
                 max_length = 128, 
                 return_attention_mask = True, 
