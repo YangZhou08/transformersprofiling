@@ -1500,6 +1500,20 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         plt.savefig(filename, format='jpg', bbox_inches='tight') 
         # print("we got here") 
         plt.close() 
+    
+    def downsample_vectors(self, listoflasthiddenstates, kernel_size = 4): 
+        downsampled_vectors = [] 
+        shape = listoflasthiddenstates[0].shape 
+        device = listoflasthiddenstates[0].device 
+        for i in range(len(listoflasthiddenstates)): 
+            sum = torch.zeros(shape, device = device) 
+            if i % kernel_size == kernel_size - 1: 
+                sum += listoflasthiddenstates[i] 
+                downsampled_vectors.append(sum/kernel_size) 
+                sum.mul_(0.) 
+            else: 
+                sum += listoflasthiddenstates[i] 
+        return downsampled_vectors 
 
     def forward(
         self,
@@ -1543,7 +1557,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
 
             if self.condensed_fashion == "ground_truth": 
                 with torch.no_grad(): 
-                    condensed_embeds = [self.embed_tokens(input_ids[:, start_idx + i * self.sliding_window_length : start_idx + (i + 1) * self.sliding_window_length]) for i in range((seq_length - start_idx)/self.sliding_window_length)] 
+                    condensed_embeds = [self.embed_tokens(input_ids[:, start_idx + i * self.sliding_window_length : start_idx + (i + 1) * self.sliding_window_length]) for i in range((seq_length - start_idx)//self.sliding_window_length)] 
                     print("shape of every entry of the condensed tokens: {}".format(condensed_embeds[0].shape)) 
                     condensed_embeds = torch.cat(condensed_embeds, dim = 1) 
                     print("shape of condensed_embeds: {}".format(condensed_embeds.shape)) 
