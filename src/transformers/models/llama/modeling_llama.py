@@ -1519,7 +1519,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         downsampled_vectors = [] 
         device = cat_tokens.device 
         assert cat_tokens.shape[1] == kernel_size 
-        sum = torch.zeros((cat_tokens[0], cat_tokens[-1]) , device = device) 
+        sum = torch.zeros((cat_tokens.shape[0], cat_tokens.shape[-1]), device = device) 
         for i in range(cat_tokens.shape[1]): 
             sum += cat_tokens[:, i, :] 
         sum /= kernel_size 
