@@ -30,7 +30,9 @@ try:
     import wandb
     has_wandb = True
 except ImportError:
-    has_wandb = False
+    has_wandb = False 
+
+has_wandb = False # disable for debugging 
 
 from src.transformers.utils import ( 
     ADAPTER_CONFIG_NAME,
@@ -162,7 +164,6 @@ class CustomTrainer(Trainer):
                 output_attentions = True, 
                 return_dict = True, 
                 # eval_mode = True, 
-                condensed_fashion = "ground_truth", 
             ) 
         else: 
             condensed_embeds = inputs["condensed_embeds"] 
@@ -182,8 +183,10 @@ class CustomTrainer(Trainer):
                 condensed_embeds = condensed_embeds, 
                 output_hidden_states = True, 
                 output_attentions = True, 
-                return_dict = True 
+                return_dict = True, 
+                condensed_fashion = "ground_truth", 
             ) 
+            
         # print(outputs.hidden_states[0].shape) 
         # print(outputs.hidden_states[0][0][0][: 10]) 
         # print(len(outputs.hidden_states)) 

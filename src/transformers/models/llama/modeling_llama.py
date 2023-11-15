@@ -1544,7 +1544,10 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             if self.condensed_fashion == "ground_truth": 
                 with torch.no_grad(): 
                     condensed_embeds = [self.embed_tokens(input_ids[:, start_idx + i * self.sliding_window_length : start_idx + (i + 1) * self.sliding_window_length]) for i in range((seq_length - start_idx)/self.sliding_window_length)] 
+                    print("shape of every entry of the condensed tokens: {}".format(condensed_embeds[0].shape)) 
                     condensed_embeds = torch.cat(condensed_embeds, dim = 1) 
+                    print("shape of condensed_embeds: {}".format(condensed_embeds.shape)) 
+                exit(0) 
                 assert (condensed_embeds.shape[0] == batch_size) and (condensed_embeds.shape[-1] == self.config.hidden_size) 
         else: 
             # for the eval mode we simply ignore the condensed_embeds 
