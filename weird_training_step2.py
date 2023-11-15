@@ -200,8 +200,9 @@ class CustomTrainer(Trainer):
             wandb.log({"loss": loss, 
                        "group1.lr": self.optimizer.param_groups[0]["lr"], 
                        "group2.lr": self.optimizer.param_groups[1]["lr"], 
-                       "iteration_count": self.iteration_count, 
+                       "iteration_count": self.iteration_count * 50 
             }) 
+            
 
         # inspect the hidden states here 
 
