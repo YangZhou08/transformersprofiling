@@ -1586,30 +1586,33 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         colors[midpoint] = (0, 0, 0, 1)
         new_colormap = mcolors.LinearSegmentedColormap.from_list('custom_colormap', colors, N=256)
         ''' 
+        # Define a new color dictionary
         cdict = {
-            'red':   ((0.0, 0.0, 0.0),   # Blue
-                    (0.5, 0.0, 0.0),   # Black
-                    (1.0, 1.0, 1.0)),  # Red
+            'red':   ((0.0, 0.0, 0.0),   # Black
+                    (0.25, 1.0, 1.0),  # Red
+                    (0.5, 1.0, 1.0),   # Yellow (1.0, 1.0, 0.0) -> Red + Green
+                    (0.75, 0.0, 0.0),  # Green
+                    (1.0, 0.0, 0.0)),  # Blue
 
             'green': ((0.0, 0.0, 0.0),
-                    (0.5, 0.0, 0.0),
+                    (0.25, 0.0, 0.0),
+                    (0.5, 1.0, 1.0),   # Yellow
+                    (0.75, 1.0, 1.0),  # Green
                     (1.0, 0.0, 0.0)),
 
-            'blue':  ((0.0, 1.0, 1.0),
-                    (0.5, 0.0, 0.0),
-                    (1.0, 0.0, 0.0))
+            'blue':  ((0.0, 0.0, 0.0),
+                    (0.25, 0.0, 0.0),
+                    (0.5, 0.0, 0.0),   # Yellow has no blue component
+                    (0.75, 0.0, 0.0),  # Green
+                    (1.0, 1.0, 1.0))   # Blue
         }
 
         custom_cmap = mcolors.LinearSegmentedColormap('custom_colormap', cdict)
         new_colormap = custom_cmap 
-        '''
-        exponent = 0.3
-        norm = mcolors.PowerNorm(gamma=exponent, vmin=np.min(attention_map), vmax=np.max(attention_map))
-        ''' 
-        
+
         # Normalization
-        max_val = np.max(np.abs(attention_map))
-        norm = mcolors.TwoSlopeNorm(vmin=-max_val, vcenter=0, vmax=max_val) 
+        max_val = np.max(attention_map)
+        norm = mcolors.Normalize(vmin=0, vmax=max_val)
         '''
         # Normalization
         max_val = np.max(np.abs(attention_map))
@@ -1628,7 +1631,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         # Plotting
         # cbar = ax.imshow(attention_map, norm = norm, cmap=new_colormap, aspect='auto', interpolation='nearest', vmin=-1, vmax=1) 
         cbar = ax.imshow(attention_map, cmap=new_colormap, norm=norm, aspect='auto', interpolation='nearest') 
-        ax.imshow(zero_mask, cmap=mcolors.ListedColormap(['none', 'gold']), aspect='auto', interpolation='nearest', alpha=0.5) 
+        # ax.imshow(zero_mask, cmap=mcolors.ListedColormap(['none', 'gold']), aspect='auto', interpolation='nearest', alpha=0.5) 
         ax.set_title(f'Attention Map: Layer {layer_num}, Head {head_num}')
         ax.set_xlabel('Sequence Position')
         ax.set_ylabel('Sequence Position')
