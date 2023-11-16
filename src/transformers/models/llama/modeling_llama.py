@@ -431,7 +431,7 @@ class LlamaAttention(nn.Module):
         if "mask_list_pos" in kwargs: 
             # print("found it") 
             mask = torch.ones((attn_weights.shape[-2], attn_weights.shape[-1]), device = attn_weights.device) 
-            mask[:, kwargs["mask_list_pos"]] = 0.0 
+            mask[kwargs["mask_list_pos"], :] = 0.0 
             # attn_weights[:, :, kwargs["mask_list_pos"], :] = 0.0 
             attn_weights = attn_weights * mask 
         
