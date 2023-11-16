@@ -1579,11 +1579,15 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         midpoint = np.abs(np.linspace(-1, 1, 256)).argmin() 
         colors[midpoint] = (0, 0, 0, 1)
         new_colormap = mcolors.LinearSegmentedColormap.from_list('custom_colormap', colors, N=256)
-
+        
+        # Normalization
+        max_val = np.max(np.abs(attention_map))
+        norm = mcolors.TwoSlopeNorm(vmin=-max_val, vcenter=0, vmax=max_val) 
+        ''' 
         # Normalization
         max_val = np.max(np.abs(attention_map))
         norm = mcolors.TwoSlopeNorm(vmin=-max_val, vcenter=0, vmax=max_val)
-        
+        '''
         # Create a custom colormap
         fig, ax = plt.subplots(figsize=(30, 30)) 
         '''
