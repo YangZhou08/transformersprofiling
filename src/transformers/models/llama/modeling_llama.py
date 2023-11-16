@@ -1580,13 +1580,14 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         attention_map = np.where(attention_map == -np.inf, -np.finfo(np.float32).max, attention_map)
 
         # Plotting
-        ax.imshow(attention_map, cmap=new_colormap, aspect='auto', interpolation='nearest', vmin=-1, vmax=1)
-        plt.colorbar()
+        cbar = ax.imshow(attention_map, cmap=new_colormap, aspect='auto', interpolation='nearest', vmin=-1, vmax=1) 
         ax.set_title(f'Attention Map: Layer {layer_num}, Head {head_num}')
         ax.set_xlabel('Sequence Position')
         ax.set_ylabel('Sequence Position')
         ax.set_xticks(range(seq_length))
         ax.set_yticks(range(seq_length))
+
+        plt.colorbar(cbar, orientation = "vertical") 
 
         # Save to file
         plt.savefig(filename, bbox_inches='tight')
