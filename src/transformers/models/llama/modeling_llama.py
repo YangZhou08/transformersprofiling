@@ -1449,7 +1449,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         
         # adding blocking to force attention 
         for i in range(len(condensed_token_idx_list) - 1): 
-            if i < len(condensed_token_idx_list) - 1: 
+            if i < len(condensed_token_idx_list) - 2: 
                 row_mask[condensed_token_idx_list[i + 1] + 1: condensed_token_idx_list[i + 2], condensed_token_idx_list[i] + 1 : condensed_token_idx_list[i + 1]] = 1 
             else: 
                 row_mask[condensed_token_idx_list[i + 1] + 1 :, condensed_token_idx_list[i] + 1 : condensed_token_idx_list[i + 1]] = 1 
