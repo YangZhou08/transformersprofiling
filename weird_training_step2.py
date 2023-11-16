@@ -222,7 +222,7 @@ class CustomDataset:
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
         self.synthesize_dir = data_dir 
         # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json") 
-        self.dataset = load_dataset('json', data_files = self.synthesized_dir + "c4synthesized_file1copy.json") 
+        self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1copy.json") 
         self.dataset = self.dataset["train"] 
 
         self.tokenizer = tokenizer 
