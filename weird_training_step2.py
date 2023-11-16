@@ -217,7 +217,15 @@ class CustomTrainer(Trainer):
                        "group2.lr": self.optimizer.param_groups[1]["lr"], 
                        "iteration_count": self.iteration_count * 50 
             }) 
-            
+        if self.iteration_count % 100 == 0: 
+            if isinstance(outputs.attentions, tuple): 
+                print("the attention mask have shape {}".format(len(outputs.attentions))) 
+                print("the attention mask first element has shape {}".format(outputs.attentions[0].shape)) 
+            else: 
+                print("the attention mask has shape {}".format(outputs.attentions.shape)) 
+            SimpleSmallModel.plot_attention_map(outputs.attentions, 0, 0, 144, "testing_attention_map.jpg") 
+            print(outputs.attentions[0][0][0][64]) 
+            wandb.log({"example_attention_map": wandb.Image("testing_attention_map.jpg")}) 
 
         # inspect the hidden states here 
 
@@ -379,3 +387,5 @@ trainer = CustomTrainer(
 torch.autograd.set_detect_anomaly(True) 
 
 trainer.train() 
+
+wandb.finish() 
