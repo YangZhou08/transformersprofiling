@@ -186,6 +186,12 @@ class CustomTrainer(Trainer):
                 return_dict = True, 
                 condensed_fashion = "ground_truth", 
             ) 
+
+            # visualize attention map 
+            # print("the input ids are {}".format(input_ids))
+            print("the attention mask have shape {}".format(attention_mask.shape)) 
+            exit(0) 
+            # SimpleSmallModel.plot_attention_map(outputs.attentions) 
             
         # print(outputs.hidden_states[0].shape) 
         # print(outputs.hidden_states[0][0][0][: 10]) 
@@ -215,7 +221,8 @@ class CustomDataset:
     def __init__(self, data_dir, tokenizer = None, max_length = 128): 
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
         self.synthesize_dir = data_dir 
-        self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json") 
+        # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json") 
+        self.dataset = load_dataset('json', data_files = self.synthesized_dir + "c4synthesized_file1copy.json") 
         self.dataset = self.dataset["train"] 
 
         self.tokenizer = tokenizer 
@@ -276,9 +283,7 @@ else:
     tokenizer.pad_token = tokenizer.eos_token 
     print("We now use eos_token as pad token") 
 tokenizer.padding_side = "left" 
-'''
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
-''' 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 
@@ -302,8 +307,6 @@ except RuntimeError as r:
     print(colored(r, "yellow")) 
 small_model = small_model.to(torch_device) 
 small_model.train() 
-
-exit() 
 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
 # small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 

@@ -1697,8 +1697,10 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         torch.set_printoptions(threshold = 500) 
         input_embeds = None 
         if condensed_embeds is not None: 
+            '''
             print("this is only for debugging purposes, if you see this in the commandline output, this is not for anything else ohter than debugging") 
             self.embed_projection.weight.data.mul_(0.) # only for debugging purposes 
+            ''' 
             # inputs_embeds = self.embed_projection(inputs_embeds) 
             if self.condensed_fashion == "projection_mode": 
                 condensed_embeds = self.embed_projection(condensed_embeds) 
@@ -1717,6 +1719,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             # print("input_embeds first ten numbers: {}".format(input_embeds[0][0][: 200])) 
             # print("weights in embed_tokens first ten numbers: {}".format(self.embed_tokens.weight[0][: 10])) 
             # print("weights in embed_projection first ten numbers: {}".format(self.embed_projection.weight[0][: 10])) 
+            '''
             # debugging only 
             for i in range(input_embeds.shape[1]): 
                 if input_embeds[0][i][0] == 0: 
@@ -1724,6 +1727,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 else: 
                     print("sequence position {} first 20 of the embedding values: {}".format(i, input_embeds[0][i][: 10])) 
             exit(0) 
+            ''' 
         else: 
             raise ValueError("We cannot have an inference or any forward propagation without the inputs_embeds") 
         # print("input_embeds has shape {}".format(input_embeds.shape)) 
