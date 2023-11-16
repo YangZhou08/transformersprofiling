@@ -305,6 +305,7 @@ else:
     print("We now use eos_token as pad token") 
 tokenizer.padding_side = "left" 
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
+'''
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 
@@ -328,8 +329,8 @@ except RuntimeError as r:
     print(colored(r, "yellow")) 
 small_model = small_model.to(torch_device) 
 small_model.train() 
-
-# small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
+''' 
+small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
 # small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
 # small_model.config.pad_token_id = tokenizer.pad_token_id 
 # small_model.train() 
@@ -364,13 +365,13 @@ training_args = TrainingArguments(
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
     per_device_train_batch_size=128, # the training batch size, put it as high as your GPU memory fits
-    # gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
+    gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=64,  # evaluation batch size
     logging_steps=200000,             # evaluate, log and save model checkpoints every 1000 step
     save_steps=1000, 
     # learning_rate=5e-7, 
-    learning_rate=5e-5, 
-    # learning_rate = 5e-4, 
+    # learning_rate=5e-5, 
+    learning_rate = 5e-4, 
     # learning_rate = 1e-4, 
     # learning_rate = 5e-6, 
     # learning_rate = 0, 
