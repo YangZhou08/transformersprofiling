@@ -426,7 +426,11 @@ class LlamaAttention(nn.Module):
             attn_weights = attn_weights + attention_mask
 
         # upcast attention to fp32
-        attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query_states.dtype)
+        attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query_states.dtype) 
+        # Note the next line is critical, since right now the softmax of all the values -inf is a very strange number 
+        if "mask_list_pos" in kwargs: 
+            attn_weights[:, :, kwargs["mask_list_pos"], :].mul_(0.0) 
+        
         attn_output = torch.matmul(attn_weights, value_states)
 
         if attn_output.size() != (bsz, self.num_heads, q_len, self.head_dim):
@@ -1846,8 +1850,9 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                     past_key_value=past_key_value,
                     output_attentions=output_attentions,
                     use_cache=use_cache,
-                    padding_mask=padding_mask,
-                )
+                    padding_mask=padding_mask, 
+                    mask_list_pos = mask_list_pos, 
+                ) 
 
             hidden_states = layer_outputs[0]
 
