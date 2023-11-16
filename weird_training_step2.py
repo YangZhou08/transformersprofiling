@@ -189,7 +189,11 @@ class CustomTrainer(Trainer):
 
             # visualize attention map 
             # print("the input ids are {}".format(input_ids))
-            print("the attention mask have shape {}".format(attention_mask.shape)) 
+            if isinstance(outputs.attentions, list): 
+                print("the attention mask have shape {}".format(len(outputs.attentions))) 
+                print("the attention mask first element has shape {}".format(outputs.attentions[0].shape)) 
+            else: 
+                print("the attention mask has shape {}".format(outputs.attentions.shape)) 
             exit(0) 
             # SimpleSmallModel.plot_attention_map(outputs.attentions) 
             
