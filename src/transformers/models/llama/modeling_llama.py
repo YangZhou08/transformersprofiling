@@ -1572,14 +1572,30 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         
         # Create a mask for exact zeros
         zero_mask = attention_map == 0
-
+        '''
         # Create a custom colormap
         colors = [(plt.cm.bwr(i)) for i in range(256)]
         # midpoint = np.where(np.linspace(-1, 1, 256) == 0)[0][0] 
         midpoint = np.abs(np.linspace(-1, 1, 256)).argmin() 
         colors[midpoint] = (0, 0, 0, 1)
         new_colormap = mcolors.LinearSegmentedColormap.from_list('custom_colormap', colors, N=256)
-        
+        ''' 
+        cdict = {
+            'red':   ((0.0, 0.0, 0.0),   # Blue
+                    (0.5, 0.0, 0.0),   # Black
+                    (1.0, 1.0, 1.0)),  # Red
+
+            'green': ((0.0, 0.0, 0.0),
+                    (0.5, 0.0, 0.0),
+                    (1.0, 0.0, 0.0)),
+
+            'blue':  ((0.0, 1.0, 1.0),
+                    (0.5, 0.0, 0.0),
+                    (1.0, 0.0, 0.0))
+        }
+
+        custom_cmap = mcolors.LinearSegmentedColormap('custom_colormap', cdict)
+        new_colormap = custom_cmap 
         # Normalization
         max_val = np.max(np.abs(attention_map))
         norm = mcolors.TwoSlopeNorm(vmin=-max_val, vcenter=0, vmax=max_val) 
