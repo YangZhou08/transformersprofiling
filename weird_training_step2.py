@@ -189,7 +189,7 @@ class CustomTrainer(Trainer):
 
             # visualize attention map 
             # print("the input ids are {}".format(input_ids))
-            if isinstance(outputs.attentions, list): 
+            if isinstance(outputs.attentions, tuple): 
                 print("the attention mask have shape {}".format(len(outputs.attentions))) 
                 print("the attention mask first element has shape {}".format(outputs.attentions[0].shape)) 
             else: 
