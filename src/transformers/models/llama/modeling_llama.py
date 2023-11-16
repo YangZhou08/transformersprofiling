@@ -1571,6 +1571,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         attention_map = attention_maps[layer_num][0][head_num].cpu().detach().numpy() 
 
         # Create a custom colormap
+        fig, ax = plt.subplots(figsize=(30, 30)) 
         colors = [(0, 0, 0)] + [(plt.cm.bwr(i)) for i in range(256)]
         new_colormap = mcolors.LinearSegmentedColormap.from_list('custom_colormap', colors, N=257)
         new_colormap.set_under('black')  # for values under the min value
@@ -1579,13 +1580,13 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         attention_map = np.where(attention_map == -np.inf, -np.finfo(np.float32).max, attention_map)
 
         # Plotting
-        plt.imshow(attention_map, cmap=new_colormap, aspect='auto', interpolation='nearest', vmin=-1, vmax=1)
+        ax.imshow(attention_map, cmap=new_colormap, aspect='auto', interpolation='nearest', vmin=-1, vmax=1)
         plt.colorbar()
-        plt.title(f'Attention Map: Layer {layer_num}, Head {head_num}')
-        plt.xlabel('Sequence Position')
-        plt.ylabel('Sequence Position')
-        plt.xticks(range(seq_length))
-        plt.yticks(range(seq_length))
+        ax.set_title(f'Attention Map: Layer {layer_num}, Head {head_num}')
+        ax.set_xlabel('Sequence Position')
+        ax.set_ylabel('Sequence Position')
+        ax.set_xticks(range(seq_length))
+        ax.set_yticks(range(seq_length))
 
         # Save to file
         plt.savefig(filename, bbox_inches='tight')
