@@ -202,6 +202,8 @@ class CustomTrainer(Trainer):
             if isinstance(outputs.hidden_states, tuple): 
                 print("the hidden states have shape {}".format(len(outputs.hidden_states))) 
                 print("the hidden states first element has shape {}".format(outputs.hidden_states[0].shape)) 
+            for i in range(len(outputs.hidden_states[0].shape[1])): 
+                print(outputs.hidden_states[0][0][i][: 10]) 
             exit(0) 
             
         # print(outputs.hidden_states[0].shape) 
