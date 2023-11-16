@@ -276,8 +276,9 @@ else:
     tokenizer.pad_token = tokenizer.eos_token 
     print("We now use eos_token as pad token") 
 tokenizer.padding_side = "left" 
+'''
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
-
+''' 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 
@@ -301,6 +302,8 @@ except RuntimeError as r:
     print(colored(r, "yellow")) 
 small_model = small_model.to(torch_device) 
 small_model.train() 
+
+exit() 
 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
 # small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
