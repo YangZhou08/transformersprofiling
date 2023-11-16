@@ -1589,7 +1589,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         norm = mcolors.TwoSlopeNorm(vmin=-max_val, vcenter=0, vmax=max_val)
         '''
         # Create a custom colormap
-        fig, ax = plt.subplots(figsize=(30, 30)) 
+        fig, ax = plt.subplots(figsize=(30, 50)) 
         '''
         colors = [(0, 0, 0)] + [(plt.cm.bwr(i)) for i in range(256)]
         new_colormap = mcolors.LinearSegmentedColormap.from_list('custom_colormap', colors, N=257)
