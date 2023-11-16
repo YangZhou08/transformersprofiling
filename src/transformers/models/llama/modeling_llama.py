@@ -429,7 +429,7 @@ class LlamaAttention(nn.Module):
         attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query_states.dtype) 
         # Note the next line is critical, since right now the softmax of all the values -inf is a very strange number 
         if "mask_list_pos" in kwargs: 
-            print("found it") 
+            # print("found it") 
             attn_weights[:, :, kwargs["mask_list_pos"], :] = 0.0 
         
         attn_output = torch.matmul(attn_weights, value_states)
