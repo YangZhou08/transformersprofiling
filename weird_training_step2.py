@@ -198,13 +198,14 @@ class CustomTrainer(Trainer):
                 print("the attention mask has shape {}".format(outputs.attentions.shape)) 
             SimpleSmallModel.plot_attention_map(outputs.attentions, 0, 0, 144, "testing_attention_map.jpg") 
             print(outputs.attentions[0][0][0][64]) 
-            ''' 
+            
             if isinstance(outputs.hidden_states, tuple): 
                 print("the hidden states have shape {}".format(len(outputs.hidden_states))) 
                 print("the hidden states first element has shape {}".format(outputs.hidden_states[0].shape)) 
             for i in range(len(outputs.hidden_states)): 
                 print(outputs.hidden_states[i][0][64][: 10]) 
             exit(0) 
+            ''' 
             
         # print(outputs.hidden_states[0].shape) 
         # print(outputs.hidden_states[0][0][0][: 10]) 
