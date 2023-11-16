@@ -184,7 +184,8 @@ class CustomTrainer(Trainer):
                 output_hidden_states = True, 
                 output_attentions = True, 
                 return_dict = True, 
-                condensed_fashion = "ground_truth", 
+                # condensed_fashion = "ground_truth", 
+                iteration_count = self.iteration_count, 
             ) 
 
             # visualize attention map 

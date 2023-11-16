@@ -1405,7 +1405,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         # row_idx_masked_out = [start_idx + i * (kernel_size + 1) for i in range((seq_len - start_idx) / (kernel_size + 1))] 
         row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) # NOTE currently, this line only works for training 
         # row_mask[row_idx_masked_out] = 1 
-        row_mask[mask_list_pos] = 1 
+        # row_mask[mask_list_pos] = 1 
+        row_mask[mask_list_pos, :] = 1 
 
         # column dimensional masking 
         # condensed_token_idx_list = row_idx_masked_out 
