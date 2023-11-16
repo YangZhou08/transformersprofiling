@@ -1569,18 +1569,33 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         # Extract the specific attention map
         # attention_map = attention_maps[layer_num][head_num] 
         attention_map = attention_maps[layer_num][0][head_num].cpu().detach().numpy() 
+        
+        # Create a mask for exact zeros
+        zero_mask = attention_map == 0
 
         # Create a custom colormap
+        colors = [(plt.cm.bwr(i)) for i in range(256)]
+        midpoint = np.where(np.linspace(-1, 1, 256) == 0)[0][0]
+        colors[midpoint] = (0, 0, 0, 1)
+        new_colormap = mcolors.LinearSegmentedColormap.from_list('custom_colormap', colors, N=256)
+
+        # Normalization
+        max_val = np.max(np.abs(attention_map))
+        norm = mcolors.TwoSlopeNorm(vmin=-max_val, vcenter=0, vmax=max_val)
+        
+        # Create a custom colormap
         fig, ax = plt.subplots(figsize=(30, 30)) 
+        '''
         colors = [(0, 0, 0)] + [(plt.cm.bwr(i)) for i in range(256)]
         new_colormap = mcolors.LinearSegmentedColormap.from_list('custom_colormap', colors, N=257)
         new_colormap.set_under('black')  # for values under the min value
-
+        
         # Replace -inf with a value smaller than the minimum of the colormap
         attention_map = np.where(attention_map == -np.inf, -np.finfo(np.float32).max, attention_map)
-
+        ''' 
         # Plotting
-        cbar = ax.imshow(attention_map, cmap=new_colormap, aspect='auto', interpolation='nearest', vmin=-1, vmax=1) 
+        cbar = ax.imshow(attention_map, norm = norm, cmap=new_colormap, aspect='auto', interpolation='nearest', vmin=-1, vmax=1) 
+        ax.imshow(zero_mask, cmap=mcolors.ListedColormap(['none', 'gold']), aspect='auto', interpolation='nearest', alpha=0.5) 
         ax.set_title(f'Attention Map: Layer {layer_num}, Head {head_num}')
         ax.set_xlabel('Sequence Position')
         ax.set_ylabel('Sequence Position')
