@@ -1419,6 +1419,33 @@ class SimpleSmallModel(LlamaPreTrainedModel):
 
         combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
     
+    def _modify_decoder_attention_mask_for_harder(self, combined_attention_mask, dtype, mask_list_pos, start_idx = None, kernel_size = None): 
+        mask_shape = combined_attention_mask.shape # (batch_size, 1, tgt_seq_len, src_seq_len) 
+        seq_len = mask_shape[-1] 
+        start_idx = start_idx if start_idx is not None else self.start_idx 
+        kernel_size = kernel_size if kernel_size is not None else self.sliding_window_length 
+        
+        # row dimensional masking 
+        # row_idx_masked_out = [start_idx + i * (kernel_size + 1) for i in range((seq_len - start_idx) / (kernel_size + 1))] 
+        row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) # NOTE currently, this line only works for training 
+        # row_mask[row_idx_masked_out] = 1 
+        row_mask[mask_list_pos] = 1 
+
+        # column dimensional masking 
+        # condensed_token_idx_list = row_idx_masked_out 
+        condensed_token_idx_list = mask_list_pos 
+        for i in range(len(condensed_token_idx_list) - 2): 
+            # row_mask[:, :, condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
+            row_mask[condensed_token_idx_list[i + 2] :, condensed_token_idx_list[i]] = 1 
+        
+        # adding blocking to force attention 
+
+        # print("row mask shape {}".format(row_mask.shape)) 
+        row_mask = row_mask[None, None, :, :].expand(mask_shape).to(torch.bool) 
+        row_mask = row_mask.to(device = combined_attention_mask.device) 
+
+        combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
+    
     def interleaving_embeddings_inputs(self, input_embeds, condensed_embeds, kernel_size = 4, start_idx = 64): 
         assert (input_embeds.shape[1] - start_idx)/kernel_size == condensed_embeds.shape[1] 
         combined_embeds = input_embeds[:, : start_idx, :] 
@@ -1525,6 +1552,47 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         sum /= kernel_size 
         return sum 
 
+    @staticmethod 
+    def plot_attention_map(attention_maps, layer_num, head_num, seq_length, filename):
+        """
+        Plots the attention map for a specific layer and head and saves it to a file.
+
+        :param attention_maps: A nested list or array of attention maps from the transformer model.
+        :param layer_num: The layer number to visualize.
+        :param head_num: The head number to visualize.
+        :param seq_length: The sequence length of the model.
+        :param filename: The filename to save the plot.
+        """
+
+        import matplotlib.colors as mcolors
+        
+        # Extract the specific attention map
+        attention_map = attention_maps[layer_num][head_num]
+
+        # Create a custom colormap
+        colors = [(0, 0, 0)] + [(plt.cm.bwr(i)) for i in range(256)]
+        new_colormap = mcolors.LinearSegmentedColormap.from_list('custom_colormap', colors, N=257)
+        new_colormap.set_under('black')  # for values under the min value
+
+        # Replace -inf with a value smaller than the minimum of the colormap
+        attention_map = np.where(attention_map == -np.inf, -np.finfo(np.float32).max, attention_map)
+
+        # Plotting
+        plt.imshow(attention_map, cmap=new_colormap, aspect='auto', interpolation='nearest', vmin=-1, vmax=1)
+        plt.colorbar()
+        plt.title(f'Attention Map: Layer {layer_num}, Head {head_num}')
+        plt.xlabel('Sequence Position')
+        plt.ylabel('Sequence Position')
+        plt.xticks(range(seq_length))
+        plt.yticks(range(seq_length))
+
+        # Save to file
+        plt.savefig(filename, bbox_inches='tight')
+        plt.close() 
+
+# Example usage
+# plot_attention_map(attention_maps, layer_num=0, head_num=0, seq_length=128, filename='attention_map.png')
+
     def forward(
         self,
         input_ids: torch.LongTensor = None, 
@@ -1629,6 +1697,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         torch.set_printoptions(threshold = 500) 
         input_embeds = None 
         if condensed_embeds is not None: 
+            print("this is only for debugging purposes, if you see this in the commandline output, this is not for anything else ohter than debugging") 
+            self.embed_projection.weight.data.mul_(0.) # only for debugging purposes 
             # inputs_embeds = self.embed_projection(inputs_embeds) 
             if self.condensed_fashion == "projection_mode": 
                 condensed_embeds = self.embed_projection(condensed_embeds) 
@@ -1647,6 +1717,10 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             # print("input_embeds first ten numbers: {}".format(input_embeds[0][0][: 200])) 
             # print("weights in embed_tokens first ten numbers: {}".format(self.embed_tokens.weight[0][: 10])) 
             # print("weights in embed_projection first ten numbers: {}".format(self.embed_projection.weight[0][: 10])) 
+            # debugging only 
+            for i in range(input_embeds.shape[1]): 
+                print("sequence position {} first 20 of the embedding values: {}".format(i, input_embeds[0][i][: 20])) 
+            exit(0) 
         else: 
             raise ValueError("We cannot have an inference or any forward propagation without the inputs_embeds") 
         # print("input_embeds has shape {}".format(input_embeds.shape)) 
