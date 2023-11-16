@@ -187,7 +187,7 @@ class CustomTrainer(Trainer):
                 # condensed_fashion = "ground_truth", 
                 # iteration_count = self.iteration_count, 
             ) 
-            
+            '''
             # visualize attention map 
             # print("the input ids are {}".format(input_ids))
             if isinstance(outputs.attentions, tuple): 
@@ -198,7 +198,7 @@ class CustomTrainer(Trainer):
             SimpleSmallModel.plot_attention_map(outputs.attentions, 0, 0, 144, "testing_attention_map.jpg") 
             print(outputs.attentions[0][0][0][64]) 
             exit(0) 
-            
+            ''' 
         # print(outputs.hidden_states[0].shape) 
         # print(outputs.hidden_states[0][0][0][: 10]) 
         # print(len(outputs.hidden_states)) 
