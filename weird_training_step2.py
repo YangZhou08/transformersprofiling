@@ -32,7 +32,7 @@ try:
 except ImportError:
     has_wandb = False 
 
-has_wandb = False # disable for debugging 
+# has_wandb = False # disable for debugging 
 
 from src.transformers.utils import ( 
     ADAPTER_CONFIG_NAME,
@@ -187,7 +187,7 @@ class CustomTrainer(Trainer):
                 # condensed_fashion = "ground_truth", 
                 iteration_count = self.iteration_count, 
             ) 
-
+            '''
             # visualize attention map 
             # print("the input ids are {}".format(input_ids))
             if isinstance(outputs.attentions, tuple): 
@@ -198,7 +198,7 @@ class CustomTrainer(Trainer):
             SimpleSmallModel.plot_attention_map(outputs.attentions, 0, 0, 144, "testing_attention_map.jpg") 
             print(outputs.attentions[0][0][0][64]) 
             exit(0) 
-            
+            ''' 
         # print(outputs.hidden_states[0].shape) 
         # print(outputs.hidden_states[0][0][0][: 10]) 
         # print(len(outputs.hidden_states)) 
@@ -227,8 +227,8 @@ class CustomDataset:
     def __init__(self, data_dir, tokenizer = None, max_length = 128): 
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
         self.synthesize_dir = data_dir 
-        # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json") 
-        self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1copy.json") 
+        self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json") 
+        # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1copy.json") 
         self.dataset = self.dataset["train"] 
 
         self.tokenizer = tokenizer 
@@ -348,15 +348,15 @@ training_args = TrainingArguments(
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size=50, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size=128, # the training batch size, put it as high as your GPU memory fits
     # gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=64,  # evaluation batch size
     logging_steps=200000,             # evaluate, log and save model checkpoints every 1000 step
     save_steps=1000, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
-    # learning_rate = 5e-4, 
-    learning_rate = 1e-5, 
+    learning_rate = 5e-4, 
+    # learning_rate = 1e-4, 
     # learning_rate = 5e-6, 
     # learning_rate = 0, 
     # load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
