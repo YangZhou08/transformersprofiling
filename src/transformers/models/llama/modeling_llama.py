@@ -1600,7 +1600,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         ''' 
         # Plotting
         # cbar = ax.imshow(attention_map, norm = norm, cmap=new_colormap, aspect='auto', interpolation='nearest', vmin=-1, vmax=1) 
-        ax.imshow(attention_map, cmap=new_colormap, norm=norm, aspect='auto', interpolation='nearest') 
+        cbar = ax.imshow(attention_map, cmap=new_colormap, norm=norm, aspect='auto', interpolation='nearest') 
         ax.imshow(zero_mask, cmap=mcolors.ListedColormap(['none', 'gold']), aspect='auto', interpolation='nearest', alpha=0.5) 
         ax.set_title(f'Attention Map: Layer {layer_num}, Head {head_num}')
         ax.set_xlabel('Sequence Position')
