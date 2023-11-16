@@ -430,7 +430,10 @@ class LlamaAttention(nn.Module):
         # Note the next line is critical, since right now the softmax of all the values -inf is a very strange number 
         if "mask_list_pos" in kwargs: 
             # print("found it") 
-            attn_weights[:, :, kwargs["mask_list_pos"], :] = 0.0 
+            mask = torch.ones((attn_weights.shape[-2], attn_weights.shape[-1]), device = attn_weights.device) 
+            mask[:, kwargs["mask_list_pos"]] = 0.0 
+            # attn_weights[:, :, kwargs["mask_list_pos"], :] = 0.0 
+            attn_weights = attn_weights * mask 
         
         attn_output = torch.matmul(attn_weights, value_states)
 
