@@ -1565,7 +1565,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         """
 
         import matplotlib.colors as mcolors
-        
+
         # Extract the specific attention map
         attention_map = attention_maps[layer_num][head_num]
 
@@ -1719,7 +1719,10 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             # print("weights in embed_projection first ten numbers: {}".format(self.embed_projection.weight[0][: 10])) 
             # debugging only 
             for i in range(input_embeds.shape[1]): 
-                print("sequence position {} first 20 of the embedding values: {}".format(i, input_embeds[0][i][: 20])) 
+                if input_embeds[0][i][0] == 0: 
+                    print(colored("sequence position {} first 20 of the embedding values: {}".format(i, input_embeds[0][i][: 20])), "green") 
+                else: 
+                    print("sequence position {} first 20 of the embedding values: {}".format(i, input_embeds[0][i][: 20])) 
             exit(0) 
         else: 
             raise ValueError("We cannot have an inference or any forward propagation without the inputs_embeds") 
