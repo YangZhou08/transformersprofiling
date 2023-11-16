@@ -1575,7 +1575,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
 
         # Create a custom colormap
         colors = [(plt.cm.bwr(i)) for i in range(256)]
-        midpoint = np.where(np.linspace(-1, 1, 256) == 0)[0][0]
+        # midpoint = np.where(np.linspace(-1, 1, 256) == 0)[0][0] 
+        midpoint = np.abs(np.linspace(-1, 1, 256)).argmin() 
         colors[midpoint] = (0, 0, 0, 1)
         new_colormap = mcolors.LinearSegmentedColormap.from_list('custom_colormap', colors, N=256)
 
