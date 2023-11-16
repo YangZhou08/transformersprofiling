@@ -1602,17 +1602,19 @@ class SimpleSmallModel(LlamaPreTrainedModel):
 
         custom_cmap = mcolors.LinearSegmentedColormap('custom_colormap', cdict)
         new_colormap = custom_cmap 
-        
+        '''
         exponent = 0.3
         norm = mcolors.PowerNorm(gamma=exponent, vmin=np.min(attention_map), vmax=np.max(attention_map))
-        '''
+        ''' 
+        
         # Normalization
         max_val = np.max(np.abs(attention_map))
         norm = mcolors.TwoSlopeNorm(vmin=-max_val, vcenter=0, vmax=max_val) 
+        '''
         # Normalization
         max_val = np.max(np.abs(attention_map))
         norm = mcolors.TwoSlopeNorm(vmin=-max_val, vcenter=0, vmax=max_val)
-        '''
+        ''' 
         # Create a custom colormap
         fig, ax = plt.subplots(figsize=(50, 30)) 
         '''
