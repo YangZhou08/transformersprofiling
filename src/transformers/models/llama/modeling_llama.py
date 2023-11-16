@@ -1720,9 +1720,9 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             # debugging only 
             for i in range(input_embeds.shape[1]): 
                 if input_embeds[0][i][0] == 0: 
-                    print(colored("sequence position {} first 20 of the embedding values: {}".format(i, input_embeds[0][i][: 20])), "green") 
+                    print(colored("sequence position {} first 20 of the embedding values: {}".format(i, input_embeds[0][i][: 10]), "red")) 
                 else: 
-                    print("sequence position {} first 20 of the embedding values: {}".format(i, input_embeds[0][i][: 20])) 
+                    print("sequence position {} first 20 of the embedding values: {}".format(i, input_embeds[0][i][: 10])) 
             exit(0) 
         else: 
             raise ValueError("We cannot have an inference or any forward propagation without the inputs_embeds") 
