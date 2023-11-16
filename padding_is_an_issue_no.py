@@ -6,11 +6,8 @@ import datasets
 from datasets import load_dataset 
 
 from src.transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM 
-from src.transformers.models.llama.modeling_llama import LlamaForCausalLM 
 from src.transformers import GPTNeoXForCausalLM 
-from src.transformers import LlamaConfig 
-
-from transformers.models.llama.modeling_llama import SimpleSmallModel 
+from src.transformers import LlamaConfig, LlamaPreTrainedModel 
 
 from tqdm import tqdm
 # from sampling.utils import norm_logits, sample 
@@ -22,20 +19,62 @@ import time
 import numpy as np 
 
 from termcolor import colored 
-
-from src.transformers import BitsAndBytesConfig 
 from src.transformers import Trainer, TrainingArguments 
+from torch import nn 
 from src.transformers import DataCollatorForLanguageModeling 
 from src.transformers.generation.utils import GenerationConfig 
+from src.transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSmallModel 
+import time 
 
-import os 
-import json 
+try:
+    import wandb
+    has_wandb = True
+except ImportError:
+    has_wandb = False 
+
+has_wandb = False # disable for debugging 
+
+from src.transformers.utils import ( 
+    ADAPTER_CONFIG_NAME,
+    ADAPTER_SAFE_WEIGHTS_NAME,
+    ADAPTER_WEIGHTS_NAME,
+    CONFIG_NAME,
+    SAFE_WEIGHTS_INDEX_NAME,
+    SAFE_WEIGHTS_NAME,
+    WEIGHTS_INDEX_NAME,
+    WEIGHTS_NAME,
+    PushInProgress,
+    can_return_loss,
+    find_labels,
+    is_accelerate_available,
+    is_apex_available,
+    is_bitsandbytes_available,
+    is_datasets_available,
+    is_in_notebook,
+    is_ipex_available,
+    is_peft_available,
+    is_safetensors_available,
+    is_sagemaker_dp_enabled,
+    is_sagemaker_mp_enabled,
+    is_torch_compile_available,
+    is_torch_neuroncore_available,
+    is_torch_tpu_available,
+    logging,
+    strtobool,
+) 
+
+if is_apex_available():
+    from apex import amp 
+
+from src.transformers import BitsAndBytesConfig 
 
 # cache_dir = "/home/bc20/yang/transformersprofiling" 
 dir_dataset = "/home/yangzho6/c4_parts" 
 dir_models = "/home/yangzho6/model_checkpoints" 
 
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
+
+print() 
 
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
 # tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
