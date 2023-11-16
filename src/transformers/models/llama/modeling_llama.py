@@ -1568,7 +1568,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
 
         # Extract the specific attention map
         # attention_map = attention_maps[layer_num][head_num] 
-        attention_map = attention_maps[layer_num][0][head_num] 
+        attention_map = attention_maps[layer_num][0][head_num].cpu().detach().numpy() 
 
         # Create a custom colormap
         colors = [(0, 0, 0)] + [(plt.cm.bwr(i)) for i in range(256)]
