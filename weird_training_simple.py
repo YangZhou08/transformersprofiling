@@ -336,7 +336,7 @@ print(colored("length of newly initialized weights group is {}".format(len(newly
 
 custom_optimizer = AdamW([
     {"params": pretraining_weights_group, "lr": 5e-4}, 
-    {"params": newly_initialized_group, "lr": 1e-3}, 
+    {"params": newly_initialized_group, "lr": 1}, 
 ]) 
 
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(custom_optimizer, T_max = 100, eta_min = 1e-6) 
