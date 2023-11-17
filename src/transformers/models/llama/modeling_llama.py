@@ -1287,13 +1287,13 @@ class LlamaForCausalLMWeird(LlamaPreTrainedModel):
             logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]
             logits = torch.cat(logits, dim=-1)
         else: 
-            '''
-            hidden_states[:, -1, :] += self.embed_projection(added_condensed_token) 
-            hidden_states[:, -1, :] /= 2.0 
-            logits = self.lm_head(hidden_states) 
-            ''' 
-            hidden_states_needed = torch.cat((hidden_states[:, -1, :], self.embed_projection(added_condensed_token)), dim = -1) 
-            logits = self.lm_head_different(hidden_states_needed) 
+            if self.adding_mode == "average": 
+                hidden_states[:, -1, :] += self.embed_projection(added_condensed_token) 
+                hidden_states[:, -1, :] /= 2.0 
+                logits = self.lm_head(hidden_states) 
+            else: 
+                hidden_states_needed = torch.cat((hidden_states[:, -1, :], self.embed_projection(added_condensed_token)), dim = -1) 
+                logits = self.lm_head_different(hidden_states_needed) 
         logits = logits.float()
 
         loss = None
