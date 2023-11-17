@@ -26,6 +26,12 @@ from src.transformers.models.llama.modeling_llama import LlamaForCausalLM, Simpl
 from src.transformers.models.llama.modeling_llama import LlamaForCausalLMWeird 
 import time 
 
+try:
+    import wandb
+    has_wandb = True
+except ImportError:
+    has_wandb = False 
+
 class CustomTrainer(Trainer): 
     def __init__(self, large_model = None, *args, **kwargs): 
         super().__init__(*args, **kwargs) 
@@ -109,8 +115,7 @@ class CustomTrainer(Trainer):
         print("shape of the smll model logits: {}".format(outputs.logits.shape)) 
         loss = torch.nn.CrossEntropyLoss()(outputs.logits[:, -1, :], large_outputs.sequences[:, -1]) 
         # outputs = model(input_ids = large_outputs.sequences, attention_mask = attention_mask, labels = large_outputs.sequences, condensed_embeds = downsampled_vectors) 
-        # outputs = model(input_ids = large_outputs.sequences[:, :-1], attention_mask = attention_mask, added_condensed_token = 
-        exit(0) 
+        # outputs = model(input_ids = large_outputs.sequences[:, :-1], attention_mask = attention_mask, added_condensed_token = None) 
         '''
         if isinstance(outputs, dict) and "loss" not in outputs:
             raise ValueError(
@@ -120,6 +125,13 @@ class CustomTrainer(Trainer):
         loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
         ''' 
         print(colored("the loss is {}".format(loss), "yellow")) 
+
+        if has_wandb: 
+            wandb.log({"loss": loss, 
+                       "group1.lr": self.optimizer.param_groups[0]["lr"], 
+                       "group2.lr": self.optimizer.param_groups[1]["lr"], 
+                       "iteration_count": self.iteration_count * 50 
+            }) 
 
         return (loss, outputs) if return_outputs else loss 
 
@@ -216,17 +228,22 @@ training_args = TrainingArguments(
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=50,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size=10, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size=50, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=64,  # evaluation batch size
     logging_steps=1000,             # evaluate, log and save model checkpoints every 1000 step
     save_steps=1000,
     # load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
-    # save_total_limit=3,           # whether you don't have much space so you let only 3 model weights saved in the disk
+    # save_total_limit=3,           # whether you don't have much space so you let only 3 model weights saved in the disk 
+    learning_rate = 5e-1, 
+    lr_scheduler_type = "cosine", 
 ) 
 
 weightmodelfirst = next(small_model.parameters()) 
 print(weightmodelfirst.dtype) 
+
+if has_wandb: 
+    wandb.init(project = "llm160m", config = training_args, name="sequencelength{}kernelsize{}learning_rate{}".format(max_length, 4, training_args.learning_rate)) 
 
 trainer = CustomTrainer( 
     large_model = large_model, 
