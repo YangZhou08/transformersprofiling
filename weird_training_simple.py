@@ -175,7 +175,7 @@ dir_dataset = "/home/yangzho6/c4_parts"
 dir_models = "/home/yangzho6/model_checkpoints" 
 
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
-onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train[:1000]") 
+onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 
 d = onedataset.train_test_split(test_size = 0.1) 
@@ -229,7 +229,7 @@ training_args = TrainingArguments(
     output_dir=model_path,          # output directory to where save model checkpoint
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
-    num_train_epochs=50,            # number of training epochs, feel free to tweak
+    num_train_epochs=10,            # number of training epochs, feel free to tweak
     per_device_train_batch_size=50, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=64,  # evaluation batch size
