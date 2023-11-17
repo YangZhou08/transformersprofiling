@@ -356,7 +356,7 @@ for k, v in small_model.named_parameters():
 print(colored("length of pretraining weights group is {}".format(len(pretraining_weights_group)), "red")) 
 print(colored("length of newly initialized weights group is {}".format(len(newly_initialized_group)), "red")) 
 
-if args.freqeze_pretrained: 
+if args.freeze_pretrained: 
     custom_optimizer = AdamW([
         {"params": newly_initialized_group, "lr": args.group2lr}, 
     ]) 
