@@ -41,6 +41,7 @@ class CustomTrainer(Trainer):
         self.time_checkpoint = 0 
         if "tokenizer" in kwargs: 
             self.tokenizer = kwargs["tokenizer"] 
+        self.iteration_count = 0 
     
     def downsample_vectors(self, listoflasthiddenstates, kernel_size = 4): 
         downsampled_vectors = [] 
@@ -58,6 +59,7 @@ class CustomTrainer(Trainer):
 
     def compute_loss(self, model, inputs, return_outputs = False): 
         torch.cuda.synchronize() 
+        self.iteration_count += 1 
         print(colored("time elasped in the last iteration is {}".format(time.time() - self.time_checkpoint), "red")) 
         self.time_checkpoint = time.time() 
         labels = None 
