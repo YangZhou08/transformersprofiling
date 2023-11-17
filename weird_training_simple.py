@@ -104,6 +104,7 @@ class CustomTrainer(Trainer):
             print("we should have : {}".format(large_outputs.sequences[:, -1])) 
             ''' 
         attention_mask = torch.cat((attention_mask, torch.ones((attention_mask.shape[0], 127 - attention_mask.shape[1]), device = attention_mask.device)), dim = 1) 
+        hidden_states_of_interest = hidden_states_of_interest.to(torch.float) 
         outputs = model(input_ids = large_outputs.sequences[:, :-1], attention_mask = attention_mask, added_condensed_token = hidden_states_of_interest, return_dict = True) 
         print("shape of the smll model logits: {}".format(outputs.logits.shape)) 
         loss = torch.nn.CrossEntropyLoss()(outputs.logits[:, -1, :], large_outputs.sequences[:, -1]) 
