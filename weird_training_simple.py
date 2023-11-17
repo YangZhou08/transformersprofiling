@@ -237,7 +237,7 @@ training_args = TrainingArguments(
     save_steps=1000,
     # load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
     # save_total_limit=3,           # whether you don't have much space so you let only 3 model weights saved in the disk 
-    learning_rate = 5e-1, 
+    learning_rate = 5e-4, 
     lr_scheduler_type = "cosine", 
 ) 
 
