@@ -1279,6 +1279,7 @@ class LlamaForCausalLMWeird(LlamaPreTrainedModel):
             logits = torch.cat(logits, dim=-1)
         else: 
             hidden_states[:, -1, :] += self.embed_projection(added_condensed_token) 
+            hidden_states[:, -1, :] /= 2.0 
             logits = self.lm_head(hidden_states) 
         logits = logits.float()
 
