@@ -76,7 +76,7 @@ class CustomTrainer(Trainer):
             # print("output last hidden states list has length {}".format(len(large_outputs.hidden_states))) 
             # print("output last hidden states list first element has shape {}".format([len(large_outputs.hidden_states[i]) for i in range(len(large_outputs.hidden_states))])) 
             # print("each token output hiddens states has shape {}".format(large_outputs.hidden_states[-1][-1].shape)) 
-            '''
+            
             list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
             print(colored("sequences of the large model output sequence has shape {}".format(large_outputs.sequences.shape), "yellow")) 
             downsampled_vectors = self.downsample_vectors(list_of_last_hidden_states) 
@@ -86,7 +86,6 @@ class CustomTrainer(Trainer):
             print("downsampled vector dimension is {}".format(downsampled_vectors.shape)) 
             attention_mask = torch.cat((attention_mask, torch.ones((attention_mask.shape[0], 80), device = attention_mask.device)), dim = 1) #TODO make it more general 
             # print("shape of the downsampled vectors is {} hidden states dim {}".format(len(downsampled_vectors), downsampled_vectors[0].shape)) 
-            '''
         
         # outputs = model(input_ids = large_outputs.sequences, attention_mask = attention_mask, labels = large_outputs.sequences, condensed_embeds = downsampled_vectors) 
         # outputs = model(input_ids = large_outputs.sequences[:, :-1], attention_mask = attention_mask, added_condensed_token = 
