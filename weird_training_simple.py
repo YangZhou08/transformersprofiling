@@ -67,11 +67,8 @@ from src.transformers.utils import (
 if is_apex_available():
     from apex import amp 
 
-togetherForming = "concatenation" 
-# togetherForming = "average" 
-
 class CustomTrainer(Trainer): 
-    def __init__(self, large_model = None, *args, **kwargs): 
+    def __init__(self, large_model, togetherForming, *args, **kwargs): 
         super().__init__(*args, **kwargs) 
         self.large_model = large_model 
         self.generation_config = GenerationConfig(return_dict_in_generate = True) 
@@ -80,6 +77,7 @@ class CustomTrainer(Trainer):
         if "tokenizer" in kwargs: 
             self.tokenizer = kwargs["tokenizer"] 
         self.iteration_count = 0 
+        self.togetherForming = togetherForming 
     
     def downsample_vectors(self, listoflasthiddenstates, kernel_size = 4): 
         downsampled_vectors = [] 
@@ -197,9 +195,9 @@ class CustomTrainer(Trainer):
         hidden_states_of_interest = hidden_states_of_interest.to(torch.float) 
         outputs = model(input_ids = large_outputs.sequences[:, :-1], attention_mask = attention_mask, added_condensed_token = hidden_states_of_interest, return_dict = True) 
         print("shape of the smll model logits: {}".format(outputs.logits.shape)) 
-        if togetherForming == "average": 
+        if self.togetherForming == "average": 
             loss = torch.nn.CrossEntropyLoss()(outputs.logits[:, -1, :], large_outputs.sequences[:, -1]) 
-        elif togetherForming == "concatenation": 
+        elif self.togetherForming == "concatenation": 
             loss = torch.nn.CrossEntropyLoss()(outputs.logits, large_outputs.sequences[:, -1]) 
         else: 
             raise ValueError("togetherForming must be either average or concatenation") 
@@ -258,6 +256,18 @@ class CustomDataset:
 
 from src.transformers import BitsAndBytesConfig 
 
+parser = argparse.ArgumentParser(
+                    prog='ProgramName',
+                    description='What the program does',
+                    epilog='Text at the bottom of help') 
+
+parser.add_argument("--group1lr", type = float, default = 5e-4) 
+parser.add_argument("--group2lr", type = float, default = 1) 
+parser.add_argument("--togetherforming", type = str, default = "concatenation") 
+
+args = parser.parse_args() 
+print(args) 
+
 # cache_dir = "/home/bc20/yang/" 
 dir_dataset = "/home/yangzho6/c4_parts" 
 dir_models = "/home/yangzho6/model_checkpoints" 
@@ -279,7 +289,7 @@ tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir 
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "left" 
 
-small_model = LlamaForCausalLMWeird.from_pretrained("JackFram/llama-160m", cache_dir = dir_models, adding_mode = "average" if togetherForming == "average" else "concatenate").to(torch_device) 
+small_model = LlamaForCausalLMWeird.from_pretrained("JackFram/llama-160m", cache_dir = dir_models, adding_mode = "average" if args.togetherforming == "average" else "concatenate").to(torch_device) 
 # small_model.adding_mode = "concatenate" 
 small_model.train() 
 
@@ -342,9 +352,10 @@ print(colored("length of pretraining weights group is {}".format(len(pretraining
 print(colored("length of newly initialized weights group is {}".format(len(newly_initialized_group)), "red")) 
 
 custom_optimizer = AdamW([
-    {"params": pretraining_weights_group, "lr": 5e-4}, 
-    {"params": newly_initialized_group, "lr": 1}, 
+    {"params": pretraining_weights_group, "lr": args.group1lr}, 
+    {"params": newly_initialized_group, "lr": args.group2lr}, 
 ]) 
+
 
 max_st = training_args.num_train_epochs * (len(train_dataset)//training_args.per_device_train_batch_size) 
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(custom_optimizer, T_max = max_st, eta_min = 1e-6) 
@@ -354,7 +365,7 @@ print(weightmodelfirst.dtype)
 
 if has_wandb: 
     # wandb.init(project = "llm160m", config = training_args, name="sequencelength{}kernelsize{}learning_rate{}".format(max_length, 4, training_args.learning_rate)) 
-    wandb.init(project = "llm160m", config = training_args, name = "weirdtaskwithgroup1learningrate{}group2learningrate{}togetherform{}".format(custom_optimizer.param_groups[0]["lr"], custom_optimizer.param_groups[1]["lr"], togetherForming)) 
+    wandb.init(project = "llm160m", config = training_args, name = "weirdtaskwithgroup1learningrate{}group2learningrate{}togetherform{}".format(custom_optimizer.param_groups[0]["lr"], custom_optimizer.param_groups[1]["lr"], args.togetherforming)) 
 
 trainer = CustomTrainer( 
     large_model = large_model, 
