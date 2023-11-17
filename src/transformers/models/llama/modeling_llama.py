@@ -1190,8 +1190,8 @@ class LlamaForCausalLMWeird(LlamaPreTrainedModel):
         if adding_mode in ["average", "concatenate"]: 
             self.adding_mode = adding_mode 
         
-        self.adding_mode = "concatenate" 
-        # self.adding_mode = "average" 
+        # self.adding_mode = "concatenate" 
+        self.adding_mode = "average" 
         if self.adding_mode == "concatenate": 
             self.lm_head_different = nn.Linear(config.hidden_size * 2, config.vocab_size, bias = False) 
         else: 
@@ -1290,7 +1290,8 @@ class LlamaForCausalLMWeird(LlamaPreTrainedModel):
             if self.adding_mode == "average": 
                 hidden_states[:, -1, :] += self.embed_projection(added_condensed_token) 
                 hidden_states[:, -1, :] /= 2.0 
-                logits = self.lm_head(hidden_states) 
+                # logits = self.lm_head(hidden_states) 
+                logits = self.lm_head_different(hidden_states) 
             else: 
                 hidden_states_needed = torch.cat((hidden_states[:, -1, :], self.embed_projection(added_condensed_token)), dim = -1) 
                 logits = self.lm_head_different(hidden_states_needed) 

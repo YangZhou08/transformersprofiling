@@ -67,6 +67,9 @@ from src.transformers.utils import (
 if is_apex_available():
     from apex import amp 
 
+# togetherForming = "concatenation" 
+togetherForming = "average" 
+
 class CustomTrainer(Trainer): 
     def __init__(self, large_model = None, *args, **kwargs): 
         super().__init__(*args, **kwargs) 
@@ -194,8 +197,12 @@ class CustomTrainer(Trainer):
         hidden_states_of_interest = hidden_states_of_interest.to(torch.float) 
         outputs = model(input_ids = large_outputs.sequences[:, :-1], attention_mask = attention_mask, added_condensed_token = hidden_states_of_interest, return_dict = True) 
         print("shape of the smll model logits: {}".format(outputs.logits.shape)) 
-        # loss = torch.nn.CrossEntropyLoss()(outputs.logits[:, -1, :], large_outputs.sequences[:, -1]) 
-        loss = torch.nn.CrossEntropyLoss()(outputs.logits, large_outputs.sequences[:, -1]) 
+        if togetherForming == "average": 
+            loss = torch.nn.CrossEntropyLoss()(outputs.logits[:, -1, :], large_outputs.sequences[:, -1]) 
+        elif togetherForming == "concatenation": 
+            loss = torch.nn.CrossEntropyLoss()(outputs.logits, large_outputs.sequences[:, -1]) 
+        else: 
+            raise ValueError("togetherForming must be either average or concatenation") 
 
         # outputs = model(input_ids = large_outputs.sequences, attention_mask = attention_mask, labels = large_outputs.sequences, condensed_embeds = downsampled_vectors) 
         # outputs = model(input_ids = large_outputs.sequences[:, :-1], attention_mask = attention_mask, added_condensed_token = None) 
@@ -346,7 +353,7 @@ print(weightmodelfirst.dtype)
 
 if has_wandb: 
     # wandb.init(project = "llm160m", config = training_args, name="sequencelength{}kernelsize{}learning_rate{}".format(max_length, 4, training_args.learning_rate)) 
-    wandb.init(project = "llm160m", config = training_args, name = "weirdtaskwithgroup1learningrate{}group2learningrate{}togetherform{}".format(custom_optimizer.param_groups[0]["lr"], custom_optimizer.param_groups[1]["lr"], "concatenation")) 
+    wandb.init(project = "llm160m", config = training_args, name = "weirdtaskwithgroup1learningrate{}group2learningrate{}togetherform{}".format(custom_optimizer.param_groups[0]["lr"], custom_optimizer.param_groups[1]["lr"], togetherForming)) 
 
 trainer = CustomTrainer( 
     large_model = large_model, 
