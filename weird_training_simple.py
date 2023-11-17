@@ -115,7 +115,9 @@ class CustomTrainer(Trainer):
         hidden_states_of_interest = hidden_states_of_interest.to(torch.float) 
         outputs = model(input_ids = large_outputs.sequences[:, :-1], attention_mask = attention_mask, added_condensed_token = hidden_states_of_interest, return_dict = True) 
         print("shape of the smll model logits: {}".format(outputs.logits.shape)) 
-        loss = torch.nn.CrossEntropyLoss()(outputs.logits[:, -1, :], large_outputs.sequences[:, -1]) 
+        # loss = torch.nn.CrossEntropyLoss()(outputs.logits[:, -1, :], large_outputs.sequences[:, -1]) 
+        loss = torch.nn.CrossEntropyLoss()(outputs.logits, large_outputs.sequences[:, -1]) 
+
         # outputs = model(input_ids = large_outputs.sequences, attention_mask = attention_mask, labels = large_outputs.sequences, condensed_embeds = downsampled_vectors) 
         # outputs = model(input_ids = large_outputs.sequences[:, :-1], attention_mask = attention_mask, added_condensed_token = None) 
         '''
