@@ -32,6 +32,38 @@ try:
 except ImportError:
     has_wandb = False 
 
+from src.transformers.utils import ( 
+    ADAPTER_CONFIG_NAME,
+    ADAPTER_SAFE_WEIGHTS_NAME,
+    ADAPTER_WEIGHTS_NAME,
+    CONFIG_NAME,
+    SAFE_WEIGHTS_INDEX_NAME,
+    SAFE_WEIGHTS_NAME,
+    WEIGHTS_INDEX_NAME,
+    WEIGHTS_NAME,
+    PushInProgress,
+    can_return_loss,
+    find_labels,
+    is_accelerate_available,
+    is_apex_available,
+    is_bitsandbytes_available,
+    is_datasets_available,
+    is_in_notebook,
+    is_ipex_available,
+    is_peft_available,
+    is_safetensors_available,
+    is_sagemaker_dp_enabled,
+    is_sagemaker_mp_enabled,
+    is_torch_compile_available,
+    is_torch_neuroncore_available,
+    is_torch_tpu_available,
+    logging,
+    strtobool,
+) 
+
+if is_apex_available():
+    from apex import amp 
+
 class CustomTrainer(Trainer): 
     def __init__(self, large_model = None, *args, **kwargs): 
         super().__init__(*args, **kwargs) 
@@ -56,6 +88,51 @@ class CustomTrainer(Trainer):
             else: 
                 sum += listoflasthiddenstates[i] 
         return downsampled_vectors 
+    
+    def training_step(self, model, inputs): 
+        model.train() 
+        self.iteration_count += 1 
+        inputs = self._prepare_inputs(inputs) 
+        '''
+        for k, v in inputs.items(): 
+            if isinstance(v, tuple): 
+                print(k, len(v)) 
+            elif isinstance(v, torch.Tensor): 
+                print(k, v.shape) 
+            else: 
+                print(k, v) 
+        ''' 
+        '''
+        if is_sagemaker_mp_enabled():
+            loss_mb = smp_forward_backward(model, inputs, self.args.gradient_accumulation_steps)
+            return loss_mb.reduce_mean().detach().to(self.args.device)
+        ''' 
+        with self.compute_loss_context_manager():
+            loss = self.compute_loss(model, inputs)
+
+        if self.args.n_gpu > 1:
+            loss = loss.mean()  # mean() to average on multi-gpu parallel training
+        
+        if self.use_apex:
+            with amp.scale_loss(loss, self.optimizer) as scaled_loss:
+                scaled_loss.backward()
+        else:
+            self.accelerator.backward(loss) 
+        
+        for name, parameters in model.named_parameters(): 
+            # if name == "embed_tokens.weight": 
+            print(name) 
+            if name == "lm_head_different.weight": 
+                # print(colored("{} has gradient {}".format(name, parameters.grad.data[1][: 100]), "light_magenta")) 
+                for i in range(parameters.grad.data.shape[0]): 
+                    if (parameters.grad.data[i] != 0).any(): 
+                        print(colored("row {} has gradient that is numerically not zero {}".format(i, parameters.grad.data[i][: 20]), "light_magenta")) 
+            else: 
+                # print(colored("{} has gradient {}".format(name, parameters.grad.data.view(-1)[: 10]), "light_magenta")) 
+                continue 
+            # print("the gradient of {} contains nan or not Ture or False: {}".format(name, torch.isnan(parameters.grad.data.view(-1).any()))) 
+        
+        return loss.detach() / self.args.gradient_accumulation_steps 
 
     def compute_loss(self, model, inputs, return_outputs = False): 
         torch.cuda.synchronize() 
@@ -194,12 +271,13 @@ tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "left" 
 
 small_model = LlamaForCausalLMWeird.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
+# small_model.adding_mode = "concatenate" 
 small_model.train() 
 
 large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 configs = large_model.config 
-for k, v in configs.__dict__.items(): 
-    print(k, v) 
+# for k, v in configs.__dict__.items(): 
+    # print(k, v) 
 # large_model = LlamaForCausalLM.from_pretrained("TheBloke/Llama-2-7B-fp16", cache_dir = cache_dir).to(torch.bfloat16).to(torch_device) 
 large_model.eval() 
 

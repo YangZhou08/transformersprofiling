@@ -1182,12 +1182,19 @@ class LlamaForCausalLM(LlamaPreTrainedModel):
 class LlamaForCausalLMWeird(LlamaPreTrainedModel):
     _tied_weights_keys = ["lm_head.weight"]
 
-    def __init__(self, config):
+    def __init__(self, config, adding_mode = "average"): 
         super().__init__(config)
         self.model = LlamaModel(config)
         self.vocab_size = config.vocab_size
         # self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False) 
-        self.lm_head_different = nn.Linear(config.hidden_size * 2, config.vocab_size, bias = False) 
+        if adding_mode in ["average", "concatenate"]: 
+            self.adding_mode = adding_mode 
+        
+        self.adding_mode = "concatenate" 
+        if self.adding_mode == "concatenate": 
+            self.lm_head_different = nn.Linear(config.hidden_size * 2, config.vocab_size, bias = False) 
+        else: 
+            self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias = False) 
         self.target_model_dim = 4096 
         self.embed_projection = nn.Linear(self.target_model_dim, config.hidden_size, bias = False) 
 
