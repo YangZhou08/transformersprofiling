@@ -67,8 +67,8 @@ from src.transformers.utils import (
 if is_apex_available():
     from apex import amp 
 
-# togetherForming = "concatenation" 
-togetherForming = "average" 
+togetherForming = "concatenation" 
+# togetherForming = "average" 
 
 class CustomTrainer(Trainer): 
     def __init__(self, large_model = None, *args, **kwargs): 
