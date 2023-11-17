@@ -32,6 +32,9 @@ try:
 except ImportError:
     has_wandb = False 
 
+from torch.optim import AdamW 
+import torch.optim as optim 
+
 from src.transformers.utils import ( 
     ADAPTER_CONFIG_NAME,
     ADAPTER_SAFE_WEIGHTS_NAME,
@@ -121,7 +124,7 @@ class CustomTrainer(Trainer):
         
         for name, parameters in model.named_parameters(): 
             # if name == "embed_tokens.weight": 
-            print(name) 
+            # print(name) 
             if name == "lm_head_different.weight": 
                 # print(colored("{} has gradient {}".format(name, parameters.grad.data[1][: 100]), "light_magenta")) 
                 print(colored("{} has gradient {}".format(name, parameters.grad.data.view(-1)[: 10]), "light_magenta")) 
@@ -314,9 +317,23 @@ training_args = TrainingArguments(
     save_steps=1000,
     # load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
     # save_total_limit=3,           # whether you don't have much space so you let only 3 model weights saved in the disk 
-    learning_rate = 5e-4, 
-    lr_scheduler_type = "cosine", 
 ) 
+
+pretraining_weights_group = []
+newly_initialized_group = [] 
+
+for k, v in small_model.named_parameters(): 
+    if k == "lm_head_different.weight" or k == "embed_projection.weight": 
+        newly_initialized_group.append(v) 
+    else: 
+        pretraining_weights_group.append(v) 
+
+custom_optimizer = AdamW([
+    {"params": pretraining_weights_group, "lr": 5e-4}, 
+    {"params": newly_initialized_group, "lr": 1e-3}, 
+]) 
+
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(custom_optimizer, T_max = 100, eta_min = 1e-6) 
 
 weightmodelfirst = next(small_model.parameters()) 
 print(weightmodelfirst.dtype) 
@@ -332,6 +349,7 @@ trainer = CustomTrainer(
     eval_dataset = test_dataset, 
     data_collator = data_collator, 
     tokenizer = tokenizer, 
+    optimizers = (custom_optimizer, scheduler), 
 ) 
 
 trainer.train() 
