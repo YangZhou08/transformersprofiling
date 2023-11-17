@@ -33,6 +33,8 @@ class CustomTrainer(Trainer):
         self.generation_config = GenerationConfig(return_dict_in_generate = True) 
         # self.time_checkpoint = time.time() 
         self.time_checkpoint = 0 
+        if "tokenizer" in kwargs: 
+            self.tokenizer = kwargs["tokenizer"] 
     
     def downsample_vectors(self, listoflasthiddenstates, kernel_size = 4): 
         downsampled_vectors = [] 
@@ -56,6 +58,9 @@ class CustomTrainer(Trainer):
         for k, v in inputs.items(): 
             if isinstance(v, tuple): 
                 print(k, len(v)) 
+                if k == "input_ids": 
+                    print("the first batch contains element {}".format(self.tokenizer.decode(v[0]))) 
+                print("the first batch contains element {}".format(v[0])) 
             elif isinstance(v, torch.Tensor): 
                 print(k, v.shape) 
             else: 
@@ -213,6 +218,7 @@ trainer = CustomTrainer(
     train_dataset = train_dataset, 
     eval_dataset = test_dataset, 
     data_collator = data_collator, 
+    tokenizer = tokenizer, 
 ) 
 
 trainer.train() 
