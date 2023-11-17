@@ -384,6 +384,7 @@ trainer = CustomTrainer(
     data_collator = data_collator, 
     tokenizer = tokenizer, 
     optimizers = (custom_optimizer, scheduler), 
+    togetherForming = args.togetherforming, 
 ) 
 
 trainer.train() 
