@@ -279,7 +279,7 @@ tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir 
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "left" 
 
-small_model = LlamaForCausalLMWeird.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
+small_model = LlamaForCausalLMWeird.from_pretrained("JackFram/llama-160m", cache_dir = dir_models, adding_mode = "average" if togetherForming == "average" else "concatenate").to(torch_device) 
 # small_model.adding_mode = "concatenate" 
 small_model.train() 
 
