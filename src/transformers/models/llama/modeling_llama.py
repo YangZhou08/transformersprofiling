@@ -1190,12 +1190,12 @@ class LlamaForCausalLMWeird(LlamaPreTrainedModel):
         if adding_mode in ["average", "concatenate"]: 
             self.adding_mode = adding_mode 
         
-        self.adding_mode = "concatenate" 
-        # self.adding_mode = "average" 
+        # self.adding_mode = "concatenate" 
+        self.adding_mode = "average" 
         if self.adding_mode == "concatenate": 
             self.lm_head_different = nn.Linear(config.hidden_size * 2, config.vocab_size, bias = False) 
         else: 
-            self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias = False) 
+            self.lm_head_different = nn.Linear(config.hidden_size, config.vocab_size, bias = False) 
         self.target_model_dim = 4096 
         self.embed_projection = nn.Linear(self.target_model_dim, config.hidden_size, bias = False) 
 
