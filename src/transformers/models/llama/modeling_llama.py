@@ -1186,7 +1186,9 @@ class LlamaForCausalLMWeird(LlamaPreTrainedModel):
         super().__init__(config)
         self.model = LlamaModel(config)
         self.vocab_size = config.vocab_size
-        self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
+        self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False) 
+        self.target_model_dim = 4096 
+        self.embed_projection = nn.Linear(self.target_model_dim, config.hidden_size, bias = False) 
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -1275,8 +1277,9 @@ class LlamaForCausalLMWeird(LlamaPreTrainedModel):
             lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
             logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]
             logits = torch.cat(logits, dim=-1)
-        else:
-            logits = self.lm_head(hidden_states)
+        else: 
+            hidden_states[:, -1, :] += self.embed_projection(added_condensed_token) 
+            logits = self.lm_head(hidden_states) 
         logits = logits.float()
 
         loss = None

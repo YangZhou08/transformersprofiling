@@ -98,19 +98,26 @@ class CustomTrainer(Trainer):
             # print("shape of the downsampled vectors is {} hidden states dim {}".format(len(downsampled_vectors), downsampled_vectors[0].shape)) 
             ''' 
             hidden_states_of_interest = large_outputs.hidden_states[-1][-1][:, -1, :] 
+            '''
             large_model_output = self.large_model.lm_head(hidden_states_of_interest) 
             print("we got here : {}".format(torch.argmax(large_model_output, dim = -1))) 
             print("we should have : {}".format(large_outputs.sequences[:, -1])) 
+            ''' 
+        attention_mask = torch.cat((attention_mask, torch.ones((attention_mask.shape[0], 128 - attention_mask.shape[1]), device = attention_mask.device)), dim = 1) 
+        outputs = model(input_ids = large_outputs.sequences[:, :-1], attention_mask = attention_mask, added_condensed_token = hidden_states_of_interest, return_dict = True) 
+        print("shape of the smll model logits: {}".format(outputs.logits.shape)) 
+        loss = torch.nn.CrossEntropyLoss()(outputs.logits[:, -1, :], large_outputs.sequences[:, -1]) 
         # outputs = model(input_ids = large_outputs.sequences, attention_mask = attention_mask, labels = large_outputs.sequences, condensed_embeds = downsampled_vectors) 
         # outputs = model(input_ids = large_outputs.sequences[:, :-1], attention_mask = attention_mask, added_condensed_token = 
         exit(0) 
-        
+        '''
         if isinstance(outputs, dict) and "loss" not in outputs:
             raise ValueError(
                 "The model did not return a loss from the inputs, only the following keys: "
                 f"{','.join(outputs.keys())}. For reference, the inputs it received are {','.join(inputs.keys())}."
             ) 
         loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
+        ''' 
         print(colored("the loss is {}".format(loss), "yellow")) 
 
         return (loss, outputs) if return_outputs else loss 
