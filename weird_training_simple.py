@@ -82,8 +82,9 @@ class CustomTrainer(Trainer):
             print("the large model output sequence is: ", end = "") 
             print(colored(self.tokenizer.decode(large_outputs.sequences[0]), "green")) 
             
-            print("the shape of {}".format(len(large_outputs.hidden_states))) 
-            print("the shape of first element of hidden states is {}".format(large_outputs.hidden_states[0].shape)) 
+            print("the shape of {}".format(len(large_outputs.hidden_states))) # 64 
+            print("the shape of first element of hidden states is {}".format(len(large_outputs.hidden_states[0]))) 
+            print("the shape of the first element of the first element of hidden states is {}".format(large_outputs.hidden_states[0][0].shape)) 
             list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
             # print(colored("sequences of the large model output sequence has shape {}".format(large_outputs.sequences.shape), "yellow")) 
             downsampled_vectors = self.downsample_vectors(list_of_last_hidden_states) 
