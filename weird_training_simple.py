@@ -376,7 +376,8 @@ if has_wandb:
     # wandb.init(project = "llm160m", config = training_args, name="sequencelength{}kernelsize{}learning_rate{}".format(max_length, 4, training_args.learning_rate)) 
     wandb.init(project = "llm160m",
             #    config = training_args + args, 
-               config = {**training_args, **args}, 
+            #    config = {**training_args, **args}, 
+               config = {**(training_args.to_dict()), **(args.__dict__)}, 
                name = "weirdtaskwithgroup1learningrate{}group2learningrate{}togetherform{}".format(custom_optimizer.param_groups[0]["lr"], custom_optimizer.param_groups[1]["lr"], args.togetherforming), 
     ) 
 trainer = CustomTrainer( 
