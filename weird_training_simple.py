@@ -57,7 +57,8 @@ class CustomTrainer(Trainer):
         labels = None 
         for k, v in inputs.items(): 
             if k == "input_ids": 
-                print("the first batch contains element {}".format(self.tokenizer.decode(v[0]))) 
+                print("the first batch contains elements: ", end = "") 
+                print(colored(self.tokenizer.decode(v[0]), "yellow")) 
                 print("the first batch contains element {}".format(v[0])) 
             
             if isinstance(v, tuple): 
