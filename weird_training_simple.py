@@ -346,7 +346,8 @@ custom_optimizer = AdamW([
     {"params": newly_initialized_group, "lr": 1}, 
 ]) 
 
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(custom_optimizer, T_max = 100, eta_min = 1e-6) 
+max_st = training_args.num_train_epochs * (len(train_dataset)//training_args.per_device_train_batch_size) 
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(custom_optimizer, T_max = max_st, eta_min = 1e-6) 
 
 weightmodelfirst = next(small_model.parameters()) 
 print(weightmodelfirst.dtype) 
