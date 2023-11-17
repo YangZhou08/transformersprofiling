@@ -56,11 +56,12 @@ class CustomTrainer(Trainer):
         self.time_checkpoint = time.time() 
         labels = None 
         for k, v in inputs.items(): 
+            if k == "input_ids": 
+                print("the first batch contains element {}".format(self.tokenizer.decode(v[0]))) 
+                print("the first batch contains element {}".format(v[0])) 
+            
             if isinstance(v, tuple): 
                 print(k, len(v)) 
-                if k == "input_ids": 
-                    print("the first batch contains element {}".format(self.tokenizer.decode(v[0]))) 
-                print("the first batch contains element {}".format(v[0])) 
             elif isinstance(v, torch.Tensor): 
                 print(k, v.shape) 
             else: 
