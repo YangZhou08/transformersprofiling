@@ -330,6 +330,9 @@ for k, v in small_model.named_parameters():
     else: 
         pretraining_weights_group.append(v) 
 
+print(colored("length of pretraining weights group is {}".format(len(pretraining_weights_group)), "red")) 
+print(colored("length of newly initialized weights group is {}".format(len(newly_initialized_group)), "red")) 
+
 custom_optimizer = AdamW([
     {"params": pretraining_weights_group, "lr": 5e-4}, 
     {"params": newly_initialized_group, "lr": 1e-3}, 
