@@ -128,8 +128,10 @@ class CustomTrainer(Trainer):
             if name == "lm_head_different.weight": 
                 # print(colored("{} has gradient {}".format(name, parameters.grad.data[1][: 100]), "light_magenta")) 
                 print(colored("{} has gradient {}".format(name, parameters.grad.data.view(-1)[: 10]), "light_magenta")) 
+                print(colored("{} has weights {}".format(name, parameters.data.view(-1)[: 10]), "light_magenta")) 
             elif name == "embed_projection.weight": 
                 print(colored("{} has gradient {}".format(name, parameters.grad.data.view(-1)[: 10]), "light_magenta")) 
+                print(colored("{} has weights {}".format(name, parameters.data.view(-1)[: 10]), "light_magenta")) 
             # print("the gradient of {} contains nan or not Ture or False: {}".format(name, torch.isnan(parameters.grad.data.view(-1).any()))) 
         
         return loss.detach() / self.args.gradient_accumulation_steps 
