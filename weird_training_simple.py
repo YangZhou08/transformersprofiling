@@ -80,10 +80,12 @@ class CustomTrainer(Trainer):
 
             large_outputs = self.large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
             print("the large model output sequence is: ", end = "") 
-            print(colored(self.tokenizer.decode(large_outputs.sequences[0]), "yellow")) 
+            print(colored(self.tokenizer.decode(large_outputs.sequences[0]), "green")) 
             
+            print("the shape of {}".format(len(large_outputs.hidden_states))) 
+            print("the shape of first element of hidden states is {}".format(large_outputs.hidden_states[0].shape)) 
             list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
-            print(colored("sequences of the large model output sequence has shape {}".format(large_outputs.sequences.shape), "yellow")) 
+            # print(colored("sequences of the large model output sequence has shape {}".format(large_outputs.sequences.shape), "yellow")) 
             downsampled_vectors = self.downsample_vectors(list_of_last_hidden_states) 
             assert len(downsampled_vectors) == 64/4 
             # print("each dim of downsampled_vectors is {}".format(downsampled_vectors[0].shape)) 
