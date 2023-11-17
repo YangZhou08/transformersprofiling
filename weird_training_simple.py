@@ -325,6 +325,7 @@ pretraining_weights_group = []
 newly_initialized_group = [] 
 
 for k, v in small_model.named_parameters(): 
+    print(k) 
     if k == "lm_head_different.weight" or k == "embed_projection.weight": 
         newly_initialized_group.append(v) 
     else: 
