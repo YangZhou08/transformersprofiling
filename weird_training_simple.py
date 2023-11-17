@@ -264,6 +264,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument("--group1lr", type = float, default = 5e-4) 
 parser.add_argument("--group2lr", type = float, default = 1) 
 parser.add_argument("--togetherforming", type = str, default = "concatenation") 
+parser.add_argument("--freeze_pretrained", type = bool, default = False) 
 
 args = parser.parse_args() 
 print(args) 
@@ -346,16 +347,23 @@ for k, v in small_model.named_parameters():
     if k == "lm_head_different.weight" or k == "embed_projection.weight": 
         newly_initialized_group.append(v) 
     else: 
-        pretraining_weights_group.append(v) 
+        if args.freeze_pretrained: 
+            v.requires_grad = False 
+        else: 
+            pretraining_weights_group.append(v) 
 
 print(colored("length of pretraining weights group is {}".format(len(pretraining_weights_group)), "red")) 
 print(colored("length of newly initialized weights group is {}".format(len(newly_initialized_group)), "red")) 
 
-custom_optimizer = AdamW([
-    {"params": pretraining_weights_group, "lr": args.group1lr}, 
-    {"params": newly_initialized_group, "lr": args.group2lr}, 
-]) 
-
+if args.freeze_pretrained: 
+    custom_optimizer = AdamW([
+        {"params": newly_initialized_group, "lr": args.group2lr}, 
+    ]) 
+else: 
+    custom_optimizer = AdamW([
+        {"params": pretraining_weights_group, "lr": args.group1lr}, 
+        {"params": newly_initialized_group, "lr": args.group2lr}, 
+    ]) 
 
 max_st = training_args.num_train_epochs * (len(train_dataset)//training_args.per_device_train_batch_size) 
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(custom_optimizer, T_max = max_st, eta_min = 1e-6) 
