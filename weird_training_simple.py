@@ -31,6 +31,7 @@ try:
     has_wandb = True
 except ImportError:
     has_wandb = False 
+# has_wandb = False 
 
 from torch.optim import AdamW 
 import torch.optim as optim 
@@ -383,6 +384,9 @@ if len(custom_optimizer.param_groups) == 1:
     name = "weirdtaskwithgroup1learningrate{}togetherform{}".format(custom_optimizer.param_groups[0]["lr"], args.togetherforming),
 else: 
     name = "weirdtaskwithgroup1learningrate{}group2learningrate{}togetherform{}".format(custom_optimizer.param_groups[0]["lr"], custom_optimizer.param_groups[1]["lr"], args.togetherforming), 
+
+global has_wandb 
+has_wandb = False 
 
 if has_wandb: 
     # wandb.init(project = "llm160m", config = training_args, name="sequencelength{}kernelsize{}learning_rate{}".format(max_length, 4, training_args.learning_rate)) 
