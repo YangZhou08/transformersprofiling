@@ -54,7 +54,7 @@ trainer = transformers.Trainer(
         learning_rate=2e-4, 
         fp16=True,
         logging_steps=1, 
-        output_dir='outputs'
+        output_dir='outputs', 
         report_to='wandb' if has_wandb else 'none', 
         run_name=wandbrunname if has_wandb else None, 
     ) 
