@@ -388,13 +388,21 @@ if has_wandb:
 weightmodelfirst = next(small_model.parameters()) 
 # print(weightmodelfirst.dtype) 
 print(colored(weightmodelfirst.dtype, "red")) 
-
+'''
 trainer = CustomTrainer( 
     model = small_model, 
     args = training_args, 
     train_dataset = datasetnew, 
     data_collator = data_collator, 
 ) 
+''' 
+trainer = Trainer(
+    model = small_model, 
+    args = training_args, 
+    train_dataset = datasetnew, 
+    data_collator = data_collator, 
+) 
+
 torch.autograd.set_detect_anomaly(True) 
 
 trainer.train() 

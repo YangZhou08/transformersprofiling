@@ -380,6 +380,7 @@ if has_wandb:
                config = {**(training_args.to_dict()), **(args.__dict__)}, 
                name = "weirdtaskwithgroup1learningrate{}group2learningrate{}togetherform{}".format(custom_optimizer.param_groups[0]["lr"], custom_optimizer.param_groups[1]["lr"], args.togetherforming), 
     ) 
+'''
 trainer = CustomTrainer( 
     large_model = large_model, 
     model = small_model, 
@@ -391,5 +392,6 @@ trainer = CustomTrainer(
     optimizers = (custom_optimizer, scheduler), 
     togetherForming = args.togetherforming, 
 ) 
+''' 
 
 trainer.train() 

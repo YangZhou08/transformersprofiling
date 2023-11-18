@@ -1928,9 +1928,8 @@ class Trainer:
                             )
 
                     # Optimizer step
-                    self.optimizer.step()
+                    self.optimizer.step() 
                     optimizer_was_run = not self.accelerator.optimizer_step_was_skipped 
-                    print("optimizer has run and checking the optimizer_was_run {}".format(optimizer_was_run)) 
                     if optimizer_was_run:
                         # Delay optimizer scheduling until metrics are generated
                         if not isinstance(self.lr_scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
