@@ -359,7 +359,6 @@ train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask
 # test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 
 print(train_dataset[0]) 
-exit(0) 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
 # model_path = "/home/bc20/yang" 
