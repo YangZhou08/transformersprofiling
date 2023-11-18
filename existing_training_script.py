@@ -16,6 +16,13 @@ model = AutoModelForCausalLM.from_pretrained(
 # tokenizer = AutoTokenizer.from_pretrained("Cheng98/llama-160m") 
 tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m") 
 
+if tokenizer.pad_token is not None: 
+    print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
+else: 
+    tokenizer.pad_token = tokenizer.eos_token 
+    print("We now use eos_token as pad token") 
+tokenizer.padding_side = "left" 
+
 import transformers
 from datasets import load_dataset
 # data = load_dataset("Abirate/english_quotes") 
