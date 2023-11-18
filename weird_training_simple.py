@@ -265,7 +265,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument("--group1lr", type = float, default = 5e-4) 
 parser.add_argument("--group2lr", type = float, default = 1) 
 parser.add_argument("--togetherforming", type = str, default = "concatenation") 
-parser.add_argument("--freeze_pretrained", type = bool, store_true = True, default = False) 
+parser.add_argument("--freeze_pretrained", type = bool, action = "store_true", default = False) 
 
 args = parser.parse_args() 
 print(args) 
