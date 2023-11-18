@@ -149,10 +149,6 @@ class CustomTrainer(Trainer):
             input_ids = inputs["input_ids"] 
             attention_mask = inputs["attention_mask"] 
             labels = inputs["labels"] 
-            top_k = 10
-            top_p = 0.9 
-
-            temperature = 1 
 
             # large_outputs = self.large_model.generate(input_ids = input_ids, max_length = 128) 
             large_outputs = self.large_model.generate(input_ids = input_ids, attention_mask = attention_mask, do_sample = False, output_hidden_states = True, return_dict_in_generate = True, max_length = 128) 
@@ -273,11 +269,13 @@ print(d["train"], d["test"])
 
 print() 
 
-tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+# tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "left" 
 
-small_model = LlamaForCausalLMWeird.from_pretrained("JackFram/llama-160m", cache_dir = dir_models, adding_mode = "average" if args.togetherforming == "average" else "concatenate").to(torch_device) 
+# small_model = LlamaForCausalLMWeird.from_pretrained("JackFram/llama-160m", cache_dir = dir_models, adding_mode = "average" if args.togetherforming == "average" else "concatenate").to(torch_device) 
+small_model = LlamaForCausalLMWeird.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models, adding_mode = "average" if args.togetherforming == "average" else "concatenate").to(torch_device) 
 small_model.train() 
 
 large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
