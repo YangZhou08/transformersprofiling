@@ -330,7 +330,7 @@ except RuntimeError as r:
 small_model = small_model.to(torch_device) 
 small_model.train() 
 ''' 
-small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
+small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", force_download = True).to(torch_device) 
 config = small_model.config 
 for k, v in config.__dict__.items(): 
     print(k, v) 
@@ -358,7 +358,6 @@ train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc 
 train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 # test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 
-print(train_dataset[0]) 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
 # model_path = "/home/bc20/yang" 
