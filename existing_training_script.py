@@ -14,7 +14,7 @@ model = AutoModelForCausalLM.from_pretrained(
 
 # tokenizer = AutoTokenizer.from_pretrained("facebook/opt-125m")
 # tokenizer = AutoTokenizer.from_pretrained("Cheng98/llama-160m") 
-tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m") 
 
 import transformers
 from datasets import load_dataset
