@@ -279,7 +279,7 @@ from src.transformers import BitsAndBytesConfig
 
 # cache_dir = "/home/bc20/yang/" 
 dir_dataset = "/home/yangzho6/c4_parts" 
-dir_models = "/home/yangzho6/model_checkpoints" 
+dir_models = "/home/yangzho6/model_checkpoints2" 
 dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
 
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
