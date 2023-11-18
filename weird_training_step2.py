@@ -401,7 +401,7 @@ trainer = CustomTrainer(
 trainer = Trainer(
     model = small_model, 
     args = training_args, 
-    train_dataset = datasetnew, 
+    train_dataset = train_dataset, 
     data_collator = data_collator, 
 ) 
 
