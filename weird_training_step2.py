@@ -283,7 +283,7 @@ dir_models = "/home/yangzho6/model_checkpoints"
 dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
 
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
-# onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train[:1000]") 
+onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1.json', split = "train") 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 
 # d = onedataset.train_test_split(test_size = 0.1) 
@@ -298,14 +298,13 @@ tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir
 # tokenizer.add_special_tokens({"pad_token":"<pad>"}) 
 # print("the tokenizer pad token id is {}".format(tokenizer.pad_token_id)) 
 # tokenizer.pad_token = "[PAD]" 
-# tokenizer.pad_token = tokenizer.eos_token 
 if tokenizer.pad_token is not None: 
     print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
 else: 
     tokenizer.pad_token = tokenizer.eos_token 
     print("We now use eos_token as pad token") 
 tokenizer.padding_side = "left" 
-datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
+# datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
 '''
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
@@ -348,14 +347,16 @@ def encode_with_truncation(examples):
     return tokenizer(examples["text"], add_special_tokens = False, padding = "max_length", max_length = 128, 
                      return_attention_mask = True, return_tensors = "pt") 
 
-# train_dataset = d['train'].map(encode_with_truncation, batched = True, num_proc = 4) 
+train_dataset = onedataset["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
 # test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
 
 # print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
 
-# train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 # test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 
+print(train_dataset[0]) 
+exit(0) 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
 # model_path = "/home/bc20/yang" 
