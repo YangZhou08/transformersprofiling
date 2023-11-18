@@ -47,7 +47,7 @@ trainer = transformers.Trainer(
     model=model, 
     train_dataset=data['train'],
     args=transformers.TrainingArguments(
-        per_device_train_batch_size=4, 
+        per_device_train_batch_size=128, 
         gradient_accumulation_steps=4,
         warmup_steps=100, 
         max_steps=5000, 
@@ -57,7 +57,9 @@ trainer = transformers.Trainer(
         output_dir='outputs', 
         report_to='wandb' if has_wandb else 'none', 
         run_name=wandbrunname if has_wandb else None, 
+        num_train_epochs=5,            # number of training epochs, feel free to tweak 
     ), 
+    
     data_collator=transformers.DataCollatorForLanguageModeling(tokenizer, mlm=False)
 )
 model.config.use_cache = False  # silence the warnings. Please re-enable for inference!
