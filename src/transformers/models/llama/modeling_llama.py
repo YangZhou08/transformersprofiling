@@ -428,7 +428,7 @@ class LlamaAttention(nn.Module):
             attn_weights = attn_weights + attention_mask
 
         # upcast attention to fp32
-<<<<<<< HEAD
+        '''
         attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query_states.dtype) 
         # Note the next line is critical, since right now the softmax of all the values -inf is a very strange number 
         if "mask_list_pos" in kwargs: 
@@ -437,11 +437,10 @@ class LlamaAttention(nn.Module):
             mask[kwargs["mask_list_pos"], :] = 0.0 
             # attn_weights[:, :, kwargs["mask_list_pos"], :] = 0.0 
             attn_weights = attn_weights * mask 
-        
-=======
+        '''
+
         attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query_states.dtype)
         attn_weights = nn.functional.dropout(attn_weights, p=self.attention_dropout, training=self.training)
->>>>>>> d1a00f9dd0b851245e4a54cbd70816a80e781ec2
         attn_output = torch.matmul(attn_weights, value_states)
 
         if attn_output.size() != (bsz, self.num_heads, q_len, self.head_dim):
