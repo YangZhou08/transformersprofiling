@@ -265,7 +265,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument("--group1lr", type = float, default = 5e-4) 
 parser.add_argument("--group2lr", type = float, default = 1) 
 parser.add_argument("--togetherforming", type = str, default = "concatenation") 
-parser.add_argument("--freeze_pretrained", type = bool, default = False) 
+parser.add_argument("--freeze_pretrained", type = bool, store_true = True, default = False) 
 
 args = parser.parse_args() 
 print(args) 
@@ -380,7 +380,7 @@ if has_wandb:
                config = {**(training_args.to_dict()), **(args.__dict__)}, 
                name = "weirdtaskwithgroup1learningrate{}group2learningrate{}togetherform{}".format(custom_optimizer.param_groups[0]["lr"], custom_optimizer.param_groups[1]["lr"], args.togetherforming), 
     ) 
-'''
+
 trainer = CustomTrainer( 
     large_model = large_model, 
     model = small_model, 
@@ -392,6 +392,5 @@ trainer = CustomTrainer(
     optimizers = (custom_optimizer, scheduler), 
     togetherForming = args.togetherforming, 
 ) 
-''' 
 
 trainer.train() 
