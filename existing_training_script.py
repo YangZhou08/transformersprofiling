@@ -6,12 +6,14 @@ import torch.nn as nn
 from transformers import AutoTokenizer, AutoConfig, AutoModelForCausalLM
 
 model = AutoModelForCausalLM.from_pretrained(
-    "facebook/opt-125m", 
+    # "facebook/opt-125m", 
+    "Cheng98/llama-160m", 
     # load_in_8bit=True, 
     # device_map='auto',
 ) 
 
-tokenizer = AutoTokenizer.from_pretrained("facebook/opt-125m")
+# tokenizer = AutoTokenizer.from_pretrained("facebook/opt-125m")
+tokenizer = AutoTokenizer.from_pretrained("Cheng98/llama-160m") 
 
 import transformers
 from datasets import load_dataset
