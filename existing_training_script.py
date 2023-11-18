@@ -57,7 +57,7 @@ trainer = transformers.Trainer(
         output_dir='outputs', 
         report_to='wandb' if has_wandb else 'none', 
         run_name=wandbrunname if has_wandb else None, 
-    ) 
+    ), 
     data_collator=transformers.DataCollatorForLanguageModeling(tokenizer, mlm=False)
 )
 model.config.use_cache = False  # silence the warnings. Please re-enable for inference!
