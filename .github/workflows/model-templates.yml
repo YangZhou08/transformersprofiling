@@ -5,12 +5,21 @@
 #   schedule:
 #     - cron: "0 2 * * *"
 
+<<<<<<< HEAD
 # jobs:
 #   run_tests_templates:
 #     runs-on: ubuntu-latest
 #     steps:
 #       - name: Checkout repository
 #         uses: actions/checkout@v3
+=======
+jobs:
+  run_tests_templates:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+>>>>>>> d1a00f9dd0b851245e4a54cbd70816a80e781ec2
 
 #       - name: Install dependencies
 #         run: |

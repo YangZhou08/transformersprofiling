@@ -330,10 +330,10 @@ except RuntimeError as r:
 small_model = small_model.to(torch_device) 
 small_model.train() 
 ''' 
-small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m").to(torch_device) 
-config = small_model.config 
-for k, v in config.__dict__.items(): 
-    print(k, v) 
+# small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m").to(torch_device) 
+config = LlamaConfig.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+print(config) 
+exit(0) 
 # small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
 # small_model.config.pad_token_id = tokenizer.pad_token_id 
 # small_model.train() 
