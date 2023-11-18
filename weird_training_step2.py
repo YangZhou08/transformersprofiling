@@ -331,6 +331,9 @@ small_model = small_model.to(torch_device)
 small_model.train() 
 ''' 
 small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
+config = small_model.config 
+for k, v in config.__dict__.items(): 
+    print(k, v) 
 # small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
 # small_model.config.pad_token_id = tokenizer.pad_token_id 
 # small_model.train() 
@@ -344,7 +347,7 @@ max_length = 64
 def encode_with_truncation(examples): 
     # return tokenizer(examples["text"], truncation = True, padding = "max_length", 
                     #  max_length = max_length, return_special_tokens_mask = True) 
-    return tokenizer(examples["text"], add_special_tokens = False, padding = "max_length", max_length = 128, 
+    return tokenizer(examples["text"], add_special_tokens = True, padding = "max_length", max_length = 128, 
                      return_attention_mask = True, return_tensors = "pt", truncation = True) 
 
 train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
