@@ -19,6 +19,8 @@ from datasets import load_dataset
 # data = load_dataset()
 data = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1.json') 
 data = data.map(lambda samples: tokenizer(samples['text']), batched=True) 
+
+print(data) 
 # data = data.train_test_split(test_size = 0.1) 
 
 trainer = transformers.Trainer(
