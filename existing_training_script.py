@@ -17,8 +17,9 @@ import transformers
 from datasets import load_dataset
 # data = load_dataset("Abirate/english_quotes") 
 # data = load_dataset()
-data = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1.json', split = "train") 
+data = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1.json') 
 data = data.map(lambda samples: tokenizer(samples['text']), batched=True) 
+# data = data.train_test_split(test_size = 0.1) 
 
 trainer = transformers.Trainer(
     model=model, 
