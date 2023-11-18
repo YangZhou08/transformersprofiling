@@ -3,7 +3,13 @@ os.environ["CUDA_VISIBLE_DEVICES"]="0"
 import torch
 import torch.nn as nn
 # import bitsandbytes as bnb
-from transformers import AutoTokenizer, AutoConfig, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoConfig, AutoModelForCausalLM 
+
+try:
+    import wandb
+    has_wandb = True
+except ImportError:
+    has_wandb = False 
 
 model = AutoModelForCausalLM.from_pretrained(
     # "facebook/opt-125m", 
@@ -15,6 +21,10 @@ model = AutoModelForCausalLM.from_pretrained(
 # tokenizer = AutoTokenizer.from_pretrained("facebook/opt-125m")
 # tokenizer = AutoTokenizer.from_pretrained("Cheng98/llama-160m") 
 tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m") 
+
+if has_wandb: 
+    wandbrunname = "sequencelength{}kernelsize{}learning_rate{}".format(128, 4, 2e-4) 
+    wandb.init(project="llm160m", name=wandbrunname)
 
 if tokenizer.pad_token is not None: 
     print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
@@ -45,7 +55,9 @@ trainer = transformers.Trainer(
         fp16=True,
         logging_steps=1, 
         output_dir='outputs'
-    ),
+        report_to='wandb' if has_wandb else 'none', 
+        run_name=wandbrunname if has_wandb else None, 
+    ) 
     data_collator=transformers.DataCollatorForLanguageModeling(tokenizer, mlm=False)
 )
 model.config.use_cache = False  # silence the warnings. Please re-enable for inference!

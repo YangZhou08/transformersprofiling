@@ -1079,14 +1079,7 @@ class LlamaForCausalLM(LlamaPreTrainedModel):
         >>> generate_ids = model.generate(inputs.input_ids, max_length=30)
         >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
         "Hey, are you conscious? Can you talk to me?\nI'm not conscious, but I can talk to you."
-        ```"""
-        print(input_ids) 
-        input_ids[input_ids == 0] = 2 
-        print(input_ids) 
-        print(attention_mask) 
-        print(labels) 
-        labels[labels == 0] = -100 
-        print(labels) 
+        ```""" 
 
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
