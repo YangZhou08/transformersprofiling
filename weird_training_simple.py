@@ -99,15 +99,6 @@ class CustomTrainer(Trainer):
         self.iteration_count += 1 
         inputs = self._prepare_inputs(inputs) 
         '''
-        for k, v in inputs.items(): 
-            if isinstance(v, tuple): 
-                print(k, len(v)) 
-            elif isinstance(v, torch.Tensor): 
-                print(k, v.shape) 
-            else: 
-                print(k, v) 
-        ''' 
-        '''
         if is_sagemaker_mp_enabled():
             loss_mb = smp_forward_backward(model, inputs, self.args.gradient_accumulation_steps)
             return loss_mb.reduce_mean().detach().to(self.args.device)
@@ -125,16 +116,12 @@ class CustomTrainer(Trainer):
             self.accelerator.backward(loss) 
         
         for name, parameters in model.named_parameters(): 
-            # if name == "embed_tokens.weight": 
-            # print(name) 
             if name == "lm_head_different.weight": 
-                # print(colored("{} has gradient {}".format(name, parameters.grad.data[1][: 100]), "light_magenta")) 
                 print(colored("{} has gradient {}".format(name, parameters.grad.data.view(-1)[: 10]), "light_magenta")) 
                 print(colored("{} has weights {}".format(name, parameters.data.view(-1)[: 10]), "light_magenta")) 
             elif name == "embed_projection.weight": 
                 print(colored("{} has gradient {}".format(name, parameters.grad.data.view(-1)[: 10]), "light_magenta")) 
                 print(colored("{} has weights {}".format(name, parameters.data.view(-1)[: 10]), "light_magenta")) 
-            # print("the gradient of {} contains nan or not Ture or False: {}".format(name, torch.isnan(parameters.grad.data.view(-1).any()))) 
         
         return loss.detach() / self.args.gradient_accumulation_steps 
 
@@ -262,8 +249,6 @@ class CustomDataset:
 
         return item 
 
-from src.transformers import BitsAndBytesConfig 
-
 parser = argparse.ArgumentParser(
                     prog='ProgramName',
                     description='What the program does',
@@ -277,46 +262,34 @@ parser.add_argument("--freeze_pretrained", action = "store_true", default = Fals
 args = parser.parse_args() 
 print(args) 
 
-# cache_dir = "/home/bc20/yang/" 
 dir_dataset = "/home/yangzho6/c4_parts" 
 dir_models = "/home/yangzho6/model_checkpoints" 
 
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
-# onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 
 d = onedataset.train_test_split(test_size = 0.1) 
 print(d["train"], d["test"]) 
 
 print() 
 
-# tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
-# tokenizer.add_special_tokens({"pad_token":"<pad>"}) 
-# print("the tokenizer pad token id is {}".format(tokenizer.pad_token_id)) 
-# tokenizer.pad_token = "[PAD]" 
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "left" 
 
 small_model = LlamaForCausalLMWeird.from_pretrained("JackFram/llama-160m", cache_dir = dir_models, adding_mode = "average" if args.togetherforming == "average" else "concatenate").to(torch_device) 
-# small_model.adding_mode = "concatenate" 
 small_model.train() 
 
 large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 configs = large_model.config 
-# for k, v in configs.__dict__.items(): 
-    # print(k, v) 
-# large_model = LlamaForCausalLM.from_pretrained("TheBloke/Llama-2-7B-fp16", cache_dir = cache_dir).to(torch.bfloat16).to(torch_device) 
+
 large_model.eval() 
 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
 small_model.train() 
 
-# max_length = small_model.config.max_position_embeddings 
 max_length = 64 
-# def encode_with_truncation(examples): 
-    # return tokenizer(examples["text"], truncation=True, padding="max_length",
-                #    max_length=max_length, return_special_tokens_mask=True) 
+
 def encode_with_truncation(examples): 
     return tokenizer(examples["text"], truncation = True, padding = "max_length", 
                      max_length = max_length, return_special_tokens_mask = True) 
@@ -331,7 +304,6 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
-# model_path = "/home/bc20/yang" 
 model_path = "/home/yangzho6/model_checkpoints" 
 training_args = TrainingArguments(
     output_dir=model_path,          # output directory to where save model checkpoint
@@ -343,8 +315,6 @@ training_args = TrainingArguments(
     per_device_eval_batch_size=64,  # evaluation batch size
     logging_steps=1000,             # evaluate, log and save model checkpoints every 1000 step
     save_steps=1000,
-    # load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
-    # save_total_limit=3,           # whether you don't have much space so you let only 3 model weights saved in the disk 
 ) 
 
 pretraining_weights_group = []
@@ -381,23 +351,15 @@ print(weightmodelfirst.dtype)
 
 name = None 
 if len(custom_optimizer.param_groups) == 1: 
-    name = "weirdtaskwithgroup1learningrate{}togetherform{}".format(custom_optimizer.param_groups[0]["lr"], args.togetherforming),
+    name = "weirdtaskwithgroup1learningrate{}togetherform{}".format(custom_optimizer.param_groups[0]["lr"], args.togetherforming) 
 else: 
-    name = "weirdtaskwithgroup1learningrate{}group2learningrate{}togetherform{}".format(custom_optimizer.param_groups[0]["lr"], custom_optimizer.param_groups[1]["lr"], args.togetherforming), 
-
-global has_wandb 
-has_wandb = False 
+    name = "weirdtaskwithgroup1learningrate{}group2learningrate{}togetherform{}".format(custom_optimizer.param_groups[0]["lr"], custom_optimizer.param_groups[1]["lr"], args.togetherforming) 
 
 if has_wandb: 
-    # wandb.init(project = "llm160m", config = training_args, name="sequencelength{}kernelsize{}learning_rate{}".format(max_length, 4, training_args.learning_rate)) 
     wandb.init(project = "llm160m",
-            #    config = training_args + args, 
-            #    config = {**training_args, **args}, 
-            config = {**(training_args.to_dict()), **(args.__dict__)}, 
-            # name = name, 
-            name = "concatenationwithpretrainedfrozend", 
+        config = {**(training_args.to_dict()), **(args.__dict__)}, 
+        name = "concatenationwithpretrainedfrozend", 
     ) 
-    
 
 trainer = CustomTrainer( 
     large_model = large_model, 
