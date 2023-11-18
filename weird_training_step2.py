@@ -286,7 +286,7 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1.json', split = "train") 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 
-# d = onedataset.train_test_split(test_size = 0.1) 
+d = onedataset.train_test_split(test_size = 0.1) 
 # print(d["train"], d["test"]) 
 
 print() 
@@ -347,7 +347,7 @@ def encode_with_truncation(examples):
     return tokenizer(examples["text"], add_special_tokens = False, padding = "max_length", max_length = 128, 
                      return_attention_mask = True, return_tensors = "pt") 
 
-train_dataset = onedataset["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
+train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
 # test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
 
 # print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
