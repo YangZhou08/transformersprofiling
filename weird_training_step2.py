@@ -330,7 +330,7 @@ except RuntimeError as r:
 small_model = small_model.to(torch_device) 
 small_model.train() 
 ''' 
-small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", force_download = True).to(torch_device) 
+small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m").to(torch_device) 
 config = small_model.config 
 for k, v in config.__dict__.items(): 
     print(k, v) 
