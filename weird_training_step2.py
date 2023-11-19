@@ -403,7 +403,7 @@ training_args = TrainingArguments(
     lr_scheduler_type = "cosine", 
 ) 
 
-
+max_length = 128 
 if has_wandb: 
     wandb.init(project = "llm160m", config = training_args, name="sequencelength{}kernelsize{}learning_rate{}".format(max_length, 4, training_args.learning_rate)) 
 
