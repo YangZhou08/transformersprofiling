@@ -154,21 +154,6 @@ class CustomTrainer(Trainer):
             large_outputs = self.large_model.generate(input_ids = input_ids, attention_mask = attention_mask, do_sample = False, output_hidden_states = True, return_dict_in_generate = True, max_length = 128) 
             print("the large model output sequence is: ", end = "") 
             print(colored(self.tokenizer.decode(large_outputs.sequences[0]), "green")) 
-            '''
-            print("the shape of {}".format(len(large_outputs.hidden_states))) # 64 
-            for i in range(len(large_outputs.hidden_states)): 
-                print("the shape of first element of hidden states is {}".format(len(large_outputs.hidden_states[i]))) # 33 
-                print("the shape of the first element of the first element of hidden states is {}".format(large_outputs.hidden_states[i][0].shape)) # batch_size, seq-length, hidden_size 
-            list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
-            # print(colored("sequences of the large model output sequence has shape {}".format(large_outputs.sequences.shape), "yellow")) 
-            downsampled_vectors = self.downsample_vectors(list_of_last_hidden_states) 
-            assert len(downsampled_vectors) == 64/4 
-            # print("each dim of downsampled_vectors is {}".format(downsampled_vectors[0].shape)) 
-            downsampled_vectors = torch.stack(downsampled_vectors, dim = 1) 
-            print("downsampled vector dimension is {}".format(downsampled_vectors.shape)) 
-            attention_mask = torch.cat((attention_mask, torch.ones((attention_mask.shape[0], 80), device = attention_mask.device)), dim = 1) #TODO make it more general 
-            # print("shape of the downsampled vectors is {} hidden states dim {}".format(len(downsampled_vectors), downsampled_vectors[0].shape)) 
-            ''' 
             hidden_states_of_interest = large_outputs.hidden_states[-1][-1][:, -1, :] 
             '''
             large_model_output = self.large_model.lm_head(hidden_states_of_interest) 

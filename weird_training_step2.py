@@ -25,6 +25,15 @@ from src.transformers import DataCollatorForLanguageModeling
 from src.transformers.generation.utils import GenerationConfig 
 from src.transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSmallModel 
 import time 
+from torch.utils.data import random_split 
+from src.transformers import BitsAndBytesConfig 
+
+# cache_dir = "/home/bc20/yang/" 
+dir_dataset = "/home/yangzho6/c4_parts" 
+dir_models = "/home/yangzho6/model_checkpoints2" 
+dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+
+torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 
 try:
     import wandb
@@ -226,14 +235,20 @@ class CustomTrainer(Trainer):
                        "iteration_count": self.iteration_count * 50 
             }) 
         if self.iteration_count % 100 == 0: 
-            if isinstance(outputs.attentions, tuple): 
-                print("the attention mask have shape {}".format(len(outputs.attentions))) 
-                print("the attention mask first element has shape {}".format(outputs.attentions[0].shape)) 
-            else: 
-                print("the attention mask has shape {}".format(outputs.attentions.shape)) 
-            SimpleSmallModel.plot_attention_map(outputs.attentions, 0, 0, 144, "testing_attention_map.jpg") 
-            print(outputs.attentions[0][0][0][64]) 
-            wandb.log({"example_attention_map": wandb.Image("testing_attention_map.jpg")}) 
+            for layer in [0, 6, 12]: 
+                for head in [0, 6, 12]: 
+                    '''
+                    if isinstance(outputs.attentions, tuple): 
+                        print("the attention mask have shape {}".format(len(outputs.attentions))) 
+                        print("the attention mask first element has shape {}".format(outputs.attentions[0].shape)) 
+                    else: 
+                        print("the attention mask has shape {}".format(outputs.attentions.shape)) 
+                    ''' 
+                    # SimpleSmallModel.plot_attention_map(outputs.attentions, 0, 0, 144, "testing_attention_map.jpg") 
+                    SimpleSmallModel.plot_attention_map(outputs.attentions, layer, head, 144, "testing_attention_map.jpg") 
+                    # print(outputs.attentions[0][0][0][64]) 
+                    field_name = "layer{}_head{}".format(layer, head) 
+                    wandb.log({field_name: wandb.Image("testing_attention_map.jpg")}) 
 
         # inspect the hidden states here 
 
@@ -275,22 +290,12 @@ class CustomDataset:
 
         return item 
 
-from src.transformers import BitsAndBytesConfig 
+    def split(self, train_size): 
+        if isinstance(train_size, float): 
+            train_size = int(train_size * len(self)) 
+        eval_size = len(self) - train_size 
 
-# cache_dir = "/home/bc20/yang/" 
-dir_dataset = "/home/yangzho6/c4_parts" 
-dir_models = "/home/yangzho6/model_checkpoints2" 
-dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
-
-torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
-onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1.json', split = "train") 
-# onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
-
-d = onedataset.train_test_split(test_size = 0.1) 
-# print(d["train"], d["test"]) 
-
-print() 
-
+# defining tokenizer 
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
 # tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
@@ -304,8 +309,36 @@ else:
     tokenizer.pad_token = tokenizer.eos_token 
     print("We now use eos_token as pad token") 
 tokenizer.padding_side = "left" 
-# datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
+
 '''
+# backup dataset 
+onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1.json', split = "train") 
+# onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
+d = onedataset.train_test_split(test_size = 0.1) 
+# print(d["train"], d["test"]) 
+# max_length = small_model.config.max_position_embeddings 
+# def encode_with_truncation(examples): 
+    # return tokenizer(examples["text"], truncation=True, padding="max_length",
+                #    max_length=max_length, return_special_tokens_mask=True) 
+def encode_with_truncation(examples): 
+    # return tokenizer(examples["text"], truncation = True, padding = "max_length", 
+                    #  max_length = max_length, return_special_tokens_mask = True) 
+    return tokenizer(examples["text"], padding = "max_length", max_length = 128, 
+                     return_attention_mask = True, return_tensors = "pt", truncation = True) 
+train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
+test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
+# print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
+train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+''' 
+
+# custom dataset 
+# defining custom dataset 
+datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
+train_set, test_set = datasetnew.split(0.9) 
+
+''' 
+# handling simplesmallmodel 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 
@@ -330,34 +363,17 @@ except RuntimeError as r:
 small_model = small_model.to(torch_device) 
 small_model.train() 
 ''' 
+
+# alternative pretrained model 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m").to(torch_device) 
 # config = LlamaConfig.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 # print(config) 
-# small_model = AutoModelForCausalLM.from_pretrained()
-
 small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
-# small_model.config.pad_token_id = tokenizer.pad_token_id 
-# small_model.train() 
+small_model.train() 
+
+# for llama model we need to add the padding token 
+small_model.config.pad_token_id = tokenizer.pad_token_id 
 # print(small_model.embed_projection.weight.dtype) 
-
-# max_length = small_model.config.max_position_embeddings 
-max_length = 64 
-# def encode_with_truncation(examples): 
-    # return tokenizer(examples["text"], truncation=True, padding="max_length",
-                #    max_length=max_length, return_special_tokens_mask=True) 
-def encode_with_truncation(examples): 
-    # return tokenizer(examples["text"], truncation = True, padding = "max_length", 
-                    #  max_length = max_length, return_special_tokens_mask = True) 
-    return tokenizer(examples["text"], padding = "max_length", max_length = 128, 
-                     return_attention_mask = True, return_tensors = "pt", truncation = True) 
-
-train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
-# test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
-
-# print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
-
-train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
-# test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
@@ -368,19 +384,20 @@ training_args = TrainingArguments(
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size=1, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size=128, # the training batch size, put it as high as your GPU memory fits
     # gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=64,  # evaluation batch size
-    logging_steps=200000,             # evaluate, log and save model checkpoints every 1000 step
-    save_steps=1000, 
+    logging_steps=20000,             # evaluate, log and save model checkpoints every 1000 step
+    # save_steps=1000, 
+    save_steps = 2000, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
-    learning_rate = 5e-4, 
+    learning_rate=2e-4, 
     # learning_rate = 1e-4, 
     # learning_rate = 5e-6, 
     # learning_rate = 0, 
-    # load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
-    # save_total_limit=3,           # whether you don't have much space so you let only 3 model weights saved in the disk 
+    load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
+    save_total_limit=5,            # whether you don't have much space so you let only 3 model weights saved in the disk 
     lr_scheduler_type = "cosine", 
 ) 
 
@@ -391,20 +408,40 @@ if has_wandb:
 weightmodelfirst = next(small_model.parameters()) 
 # print(weightmodelfirst.dtype) 
 print(colored(weightmodelfirst.dtype, "red")) 
-'''
+
+def compute_metrics(p): 
+    from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+
+    logits = p.predictions 
+    labels = p.label_ids 
+    probs = torch.softmax(torch.tensor(logits), dim = -1) 
+    loss = nn.CrossEntropyLoss()(torch.tensor(logits), torch.tensor(labels)).item() 
+    perplexity = torch.exp(torch.tensor(loss)).item() 
+
+    pred = torch.argmax(probs, dim = -1) 
+
+    return {
+        'accuracy': accuracy_score(p.labels_ids, pred), 
+        'f1': precision_recall_fscore_support(p.label_ids, pred, average = 'weighted'), 
+        'perplexity': perplexity,
+    } 
+
 trainer = CustomTrainer( 
     model = small_model, 
     args = training_args, 
-    train_dataset = datasetnew, 
+    train_dataset = train_set, 
+    eval_dataset = test_set, 
     data_collator = data_collator, 
+    compute_metrics = compute_metrics, 
 ) 
-''' 
+'''
 trainer = Trainer(
     model = small_model, 
     args = training_args, 
     train_dataset = train_dataset, 
     data_collator = data_collator, 
 ) 
+''' 
 
 torch.autograd.set_detect_anomaly(True) 
 
