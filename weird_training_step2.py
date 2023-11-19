@@ -235,8 +235,8 @@ class CustomTrainer(Trainer):
                        "iteration_count": self.iteration_count * 50 
             }) 
         if self.iteration_count % 100 == 0: 
-            for layer in [0, 6, 12]: 
-                for head in [0, 6, 12]: 
+            for layer in [0, 6, 11]: 
+                for head in [0, 6, 11]: 
                     '''
                     if isinstance(outputs.attentions, tuple): 
                         print("the attention mask have shape {}".format(len(outputs.attentions))) 
@@ -387,7 +387,7 @@ training_args = TrainingArguments(
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
     per_device_train_batch_size=128, # the training batch size, put it as high as your GPU memory fits
-    # gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
+    gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=64,  # evaluation batch size
     logging_steps=2000,             # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
