@@ -275,13 +275,14 @@ class CustomDataset:
         if self.tokenizer is not None: 
             encoded_text = self.tokenizer( 
                 item["text"], 
-                add_special_tokens = False, 
+                # add_special_tokens = False, 
+                add_special_tokens = True, 
                 padding = "max_length", 
                 max_length = 128, 
                 return_attention_mask = True, 
                 return_tensors = "pt", 
                 truncation = True, 
-            ) 
+            ), 
             
             item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension
             item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
