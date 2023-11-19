@@ -356,4 +356,6 @@ trainer = CustomTrainer(
     togetherForming = args.togetherforming, 
 ) 
 
+print(trainer.lr_scheduler.state_dict()) 
+
 trainer.train() 
