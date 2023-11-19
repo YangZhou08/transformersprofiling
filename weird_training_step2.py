@@ -195,6 +195,7 @@ class CustomTrainer(Trainer):
                 return_dict = True, 
                 # condensed_fashion = "ground_truth", 
                 iteration_count = self.iteration_count, 
+                eval_mode = True, 
             ) 
             
             # visualize attention map 
@@ -337,7 +338,6 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 # datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
 # train_set, test_set = datasetnew.split(0.9) 
 
-'''
 # handling simplesmallmodel 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
@@ -360,17 +360,32 @@ try:
     small_model.load_state_dict(new_state_dict) 
 except RuntimeError as r: 
     print(colored(r, "yellow")) 
+
+pretraining_weights_group = []
+newly_initialized_group = [] 
+for k, v in small_model.named_parameters(): 
+    if "embed_projection" in l: 
+        print(k) 
+        newly_initialized_group.append(v) 
+    else: 
+        pretraining_weights_group.append(v) 
+print(len(pretraining_weights_group), len(newly_initialized_group)) 
+
+custom_optimizer = torch.optim.AdamW([
+    {"params": pretraining_weights_group, "lr": 2e-4}, 
+    {"params": newly_initialized_group, "lr": 2e-3}, 
+]) 
+
 small_model = small_model.to(torch_device) 
 small_model.train() 
-''' 
 
 # alternative pretrained model 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m").to(torch_device) 
 # config = LlamaConfig.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 # print(config) 
 # small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
-small_model = AutoModelForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
-small_model.train() 
+# small_model = AutoModelForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
+# small_model.train() 
 
 # for llama model we need to add the padding token 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
@@ -422,6 +437,11 @@ def compute_metrics(p):
     perplexity = torch.exp(torch.tensor(loss)).item() 
 
     pred = torch.argmax(probs, dim = -1) 
+
+    wandb.log({"evaluation_acc": accuracy_score(p.labels_ids, pred), 
+                "evaluation_f1": precision_recall_fscore_support(p.label_ids, pred, average = 'weighted'), 
+                "evaluation_perplexity": perplexity, 
+    }) 
 
     return {
         'accuracy': accuracy_score(p.labels_ids, pred), 
