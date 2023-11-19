@@ -401,7 +401,7 @@ training_args = TrainingArguments(
     load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
     save_total_limit=5,            # whether you don't have much space so you let only 3 model weights saved in the disk 
     # lr_scheduler_type = "cosine", 
-    warmup_step = 100, 
+    warmup_steps = 100, 
 ) 
 
 
