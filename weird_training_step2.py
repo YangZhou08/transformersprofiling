@@ -215,7 +215,7 @@ class CustomTrainer(Trainer):
                 print(outputs.hidden_states[i][0][64][: 10]) 
             exit(0) 
             ''' 
-            
+        
         # print(outputs.hidden_states[0].shape) 
         # print(outputs.hidden_states[0][0][0][: 10]) 
         # print(len(outputs.hidden_states)) 
@@ -311,7 +311,6 @@ else:
     print("We now use eos_token as pad token") 
 tokenizer.padding_side = "left" 
 
-'''
 # backup dataset 
 onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1.json', split = "train") 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
@@ -331,14 +330,13 @@ test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 
 # print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
 train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
-''' 
 
 # custom dataset 
 # defining custom dataset 
-datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
-train_set, test_set = datasetnew.split(0.9) 
+# datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
+# train_set, test_set = datasetnew.split(0.9) 
 
-''' 
+'''
 # handling simplesmallmodel 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
@@ -433,8 +431,10 @@ def compute_metrics(p):
 trainer = CustomTrainer( 
     model = small_model, 
     args = training_args, 
-    train_dataset = train_set, 
-    eval_dataset = test_set, 
+    # train_dataset = train_set, 
+    # eval_dataset = test_set, 
+    train_dataset = train_dataset, 
+    eval_dataset = test_dataset, 
     data_collator = data_collator, 
     compute_metrics = compute_metrics, 
 ) 
