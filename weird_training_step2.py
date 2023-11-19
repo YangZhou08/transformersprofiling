@@ -400,8 +400,10 @@ training_args = TrainingArguments(
     # learning_rate = 0, 
     load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
     save_total_limit=5,            # whether you don't have much space so you let only 3 model weights saved in the disk 
-    lr_scheduler_type = "cosine", 
+    # lr_scheduler_type = "cosine", 
+    warmup_step = 100, 
 ) 
+
 
 max_length = 128 
 if has_wandb: 
