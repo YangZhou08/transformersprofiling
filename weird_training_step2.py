@@ -294,6 +294,7 @@ class CustomDataset:
         if isinstance(train_size, float): 
             train_size = int(train_size * len(self)) 
         eval_size = len(self) - train_size 
+        return random_split(self, [train_size, eval_size]) 
 
 # defining tokenizer 
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
