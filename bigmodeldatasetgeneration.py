@@ -41,14 +41,20 @@ if "lovelace" in hostname:
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_dataset = "/home/yangzho6/c4_parts" 
     dir_models = "/home/yangzho6/model_checkpoints" 
+    synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/" 
+    synthesized_data_path = "/home/yangzho6/c4llm_synthesized/tensor_dir/" 
 elif "ada" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_dataset = "/home/beidic/yangzho6/c4_parts" 
     dir_models = "/home/beidic/yangzho6/model_checkpoints" 
+    synthesized_dir_path = "/home/beidic/yangzho6/c4llm_synthesized/" 
+    synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/tensor_dir/" 
 else: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_dataset = "/home/yangzho6/c4_parts" 
     dir_models = "/home/yangzho6/model_checkpoints" 
+    synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/" 
+    synthesized_data_path = "/home/yangzho6/c4llm_synthesized/tensor_dir/" 
 
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
@@ -198,9 +204,6 @@ trainer = CustomTrainer(
     # eval_dataset = test_dataset, 
     data_collator = data_collator, 
 ) 
-
-synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/" 
-synthesized_data_path = "/home/yangzho6/c4llm_synthesized/tensor_dir/" 
 
 os.makedirs(synthesized_data_path, exist_ok = True) 
 json_file_name = "c4synthesized_file1.json" 
