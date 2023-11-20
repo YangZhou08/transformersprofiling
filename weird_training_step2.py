@@ -83,6 +83,8 @@ class CustomTrainer(Trainer):
         # self.time_checkpoint = time.time() 
         self.time_checkpoint = 0 
         self.iteration_count = 0 
+        if "experiment_setting" in kwargs: 
+            self.experiment_setting = kwargs["experiment_setting"] 
     
     def training_step(self, model, inputs): 
         model.train() 
@@ -195,7 +197,8 @@ class CustomTrainer(Trainer):
                 return_dict = True, 
                 # condensed_fashion = "ground_truth", 
                 iteration_count = self.iteration_count, 
-                eval_mode = True, 
+                # eval_mode = True, 
+                experiment_setting = self.experiment_setting, 
             ) 
             
             # visualize attention map 
@@ -469,6 +472,7 @@ trainer = CustomTrainer(
     data_collator = data_collator, 
     compute_metrics = compute_metrics, 
     optimizers = (custom_optimizer, None), 
+    experiment_setting = "setting0", 
 ) 
 
 # print(trainer.lr_scheduler.state_dict()) 

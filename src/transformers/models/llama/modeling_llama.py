@@ -1931,10 +1931,13 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         eval_mode = False, 
         iteration_count = None, 
         condensed_fashion = "projection_mode", 
+        experiment_setting = "setting0", 
     ) -> Union[Tuple, CausalLMOutputWithPast]: 
         
         assert condensed_fashion in self.all_list_condensed 
         self.condensed_fashion = condensed_fashion 
+
+        self.experiment_setting = experiment_setting 
 
         self.eval_mode = eval_mode 
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
@@ -2076,10 +2079,16 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             # the attention_mask ignores the condensed tokens 
             self._convert_to_normal_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
         else: 
-            self._modify_decoder_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
-            # self._modify_decoder_attention_mask_for_harder(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
-            # self._modify_decoder_attention_mask_for_harder2(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
-            # self._modify_decoder_attention_mask_for_hardest(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            if self.experiment_setting == "setting0": 
+                self._modify_decoder_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            elif self.experiment_setting == "setting1": 
+                self._modify_decoder_attention_mask_for_harder(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            elif self.experiment_setting == "setting2": 
+                self._modify_decoder_attention_mask_for_harder2(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            elif self.experiment_setting == "setting3": 
+                self._modify_decoder_attention_mask_for_hardest(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            else: 
+                raise ValueError("We do not have the experiment setting you are looking for") 
             
         if iteration_count is not None and iteration_count == 1: 
             self.visualize_attention_mask(seq_length, attention_mask[0][0], working_dir + "attention_mask_after_modification.jpg") 
