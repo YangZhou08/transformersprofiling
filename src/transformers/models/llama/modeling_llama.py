@@ -1596,7 +1596,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         row_mask[mask_list_pos] = 1 
 
         condensed_token_idx_list = mask_list_pos 
-        for i in range(len(condensed_token_idx_list) - 1): 
+        for i in range(len(condensed_token_idx_list)): 
             row_mask[condensed_token_idx_list[i]: , condensed_token_idx_list[i]] = 1 
         row_mask = row_mask[None, None, :, :].expand(mask_shape).to(torch.bool) 
         row_mask = row_mask.to(device = combined_attention_mask.device) 
