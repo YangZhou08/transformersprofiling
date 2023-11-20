@@ -28,13 +28,17 @@ import socket
 hostname = socket.gethostname()
 print("Hostname:", hostname)
 
-if hostname == "lovelace": 
+if "lovelace" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_dataset = "/home/yangzho6/c4_parts" 
     dir_models = "/home/yangzho6/model_checkpoints" 
-elif hostname == "ada": 
+elif "ada" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_dataset = "/home/beidic/yangzho6/c4_parts" 
     dir_models = "/home/beidic/yangzho6/model_checkpoints" 
+else: 
+    # cache_dir = "/home/bc20/yang/transformersprofiling" 
+    dir_dataset = "/home/yangzho6/c4_parts" 
+    dir_models = "/home/yangzho6/model_checkpoints" 
 
 onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
