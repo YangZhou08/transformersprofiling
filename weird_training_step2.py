@@ -471,7 +471,7 @@ trainer = CustomTrainer(
     data_collator = data_collator, 
     compute_metrics = compute_metrics, 
     optimizers = (custom_optimizer, None), 
-    experiment_setting = "setting1", 
+    experiment_setting = "setting2", 
 ) 
 
 
