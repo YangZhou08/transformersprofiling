@@ -364,7 +364,7 @@ except RuntimeError as r:
 pretraining_weights_group = []
 newly_initialized_group = [] 
 for k, v in small_model.named_parameters(): 
-    if "embed_projection" in l: 
+    if "embed_projection" in k: 
         print(k) 
         newly_initialized_group.append(v) 
     else: 
