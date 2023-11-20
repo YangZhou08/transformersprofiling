@@ -283,7 +283,7 @@ class CustomDataset:
                 return_attention_mask = True, 
                 return_tensors = "pt", 
                 truncation = True, 
-            ), 
+            ) 
             
             item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension
             item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
