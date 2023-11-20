@@ -27,10 +27,28 @@ from src.transformers.generation.utils import GenerationConfig
 
 import os 
 import json 
-
+'''
 # cache_dir = "/home/bc20/yang/transformersprofiling" 
 dir_dataset = "/home/yangzho6/c4_parts" 
 dir_models = "/home/yangzho6/model_checkpoints" 
+''' 
+import socket
+
+hostname = socket.gethostname()
+print("Hostname:", hostname)
+
+if "lovelace" in hostname: 
+    # cache_dir = "/home/bc20/yang/transformersprofiling" 
+    dir_dataset = "/home/yangzho6/c4_parts" 
+    dir_models = "/home/yangzho6/model_checkpoints" 
+elif "ada" in hostname: 
+    # cache_dir = "/home/bc20/yang/transformersprofiling" 
+    dir_dataset = "/home/beidic/yangzho6/c4_parts" 
+    dir_models = "/home/beidic/yangzho6/model_checkpoints" 
+else: 
+    # cache_dir = "/home/bc20/yang/transformersprofiling" 
+    dir_dataset = "/home/yangzho6/c4_parts" 
+    dir_models = "/home/yangzho6/model_checkpoints" 
 
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
