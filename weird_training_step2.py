@@ -459,6 +459,10 @@ trainer = CustomTrainer(
     data_collator = data_collator, 
     compute_metrics = compute_metrics, 
 ) 
+
+print(trainer.lr_scheduler.state_dict()) 
+exit(0) 
+
 '''
 trainer = Trainer(
     model = small_model, 
