@@ -722,6 +722,7 @@ training_args = TrainingArguments(
     save_total_limit=5,            # whether you don't have much space so you let only 3 model weights saved in the disk 
     # lr_scheduler_type = "cosine", 
     warmup_steps = 100, 
+    eval_accumulation_steps = 10, 
 ) 
 
 
@@ -763,7 +764,7 @@ trainer = CustomTrainer(
     # train_dataset = train_dataset, 
     # eval_dataset = test_dataset, 
     data_collator = data_collator, 
-    # compute_metrics = compute_metrics, 
+    compute_metrics = compute_metrics, 
     optimizers = (custom_optimizer, None), 
     experiment_setting = "setting3", 
 ) 
