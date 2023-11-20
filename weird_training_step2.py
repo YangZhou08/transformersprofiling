@@ -235,7 +235,7 @@ class CustomTrainer(Trainer):
                        "group2.lr": self.optimizer.param_groups[1]["lr"], 
                        "iteration_count": self.iteration_count * 50 
             }) 
-        if self.iteration_count % 100 == 0: 
+        if self.iteration_count % 300 == 0: 
             for layer in [0, 6, 11]: 
                 for head in [0, 6, 11]: 
                     '''
@@ -376,6 +376,16 @@ custom_optimizer = torch.optim.AdamW([
     {"params": newly_initialized_group, "lr": 2e-3}, 
 ]) 
 
+def _lr_scheduler_rewriting(current_step, *, num_warmup_steps: int, num_training_steps: int): 
+    if current_step < num_warmup_steps:
+        return float(current_step) / float(max(1, num_warmup_steps))
+    return max(0.0, float(num_training_steps - current_step) / float(max(1, num_training_steps - num_warmup_steps)))
+
+custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
+    custom_optimizer, 
+    
+)
+
 small_model = small_model.to(torch_device) 
 small_model.train() 
 
@@ -460,8 +470,8 @@ trainer = CustomTrainer(
     compute_metrics = compute_metrics, 
 ) 
 
-print(trainer.lr_scheduler.state_dict()) 
-exit(0) 
+# print(trainer.lr_scheduler.state_dict()) 
+# exit(0) 
 
 '''
 trainer = Trainer(
