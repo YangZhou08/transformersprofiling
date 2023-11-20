@@ -381,10 +381,7 @@ def _lr_scheduler_rewriting(current_step, *, num_warmup_steps: int, num_training
         return float(current_step) / float(max(1, num_warmup_steps))
     return max(0.0, float(num_training_steps - current_step) / float(max(1, num_training_steps - num_warmup_steps)))
 
-custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
-    custom_optimizer, 
-    
-)
+# custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
 
 small_model = small_model.to(torch_device) 
 small_model.train() 
