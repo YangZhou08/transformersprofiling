@@ -76,15 +76,14 @@ if is_apex_available():
     from apex import amp 
 
 class CustomTrainer(Trainer): 
-    def __init__(self, *args, **kwargs): 
+    def __init__(self, experiment_setting = "setting0", *args, **kwargs): 
         super().__init__(*args, **kwargs) 
         # self.large_model = large_model 
         # self.generation_config = GenerationConfig(return_dict_in_generate = True) 
         # self.time_checkpoint = time.time() 
         self.time_checkpoint = 0 
         self.iteration_count = 0 
-        if "experiment_setting" in kwargs: 
-            self.experiment_setting = kwargs["experiment_setting"] 
+        self.experiment_setting = experiment_setting 
     
     def training_step(self, model, inputs): 
         model.train() 
