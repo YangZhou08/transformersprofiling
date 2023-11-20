@@ -342,9 +342,10 @@ train_set, test_set = datasetnew.split(0.9)
 
 # handling simplesmallmodel 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
-small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+# small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
 
-small_state_dict_for_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).state_dict() 
+small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
 small_model = SimpleSmallModel(small_config) 
 
 new_state_dict = {} 
