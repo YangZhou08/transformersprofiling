@@ -470,7 +470,7 @@ trainer = CustomTrainer(
     # train_dataset = train_dataset, 
     # eval_dataset = test_dataset, 
     data_collator = data_collator, 
-    compute_metrics = compute_metrics, 
+    # compute_metrics = compute_metrics, 
     optimizers = (custom_optimizer, None), 
     experiment_setting = "setting3", 
 ) 
