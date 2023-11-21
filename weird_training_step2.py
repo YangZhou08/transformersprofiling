@@ -450,7 +450,7 @@ class CustomTrainer(Trainer):
 
         observed_num_examples = 0
         # Main evaluation loop
-        for step, inputs in enumerate(dataloader):
+        for step, inputs in enumerate(tqdm(dataloader, desc = "description")): 
             # Update the observed num examples
             observed_batch_size = find_batch_size(inputs)
             if observed_batch_size is not None:
@@ -613,7 +613,7 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 # custom dataset 
 # defining custom dataset 
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
-train_set, test_set = datasetnew.split(0.95) 
+train_set, test_set = datasetnew.split(0.99) 
 
 # handling simplesmallmodel 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
