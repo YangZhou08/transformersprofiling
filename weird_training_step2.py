@@ -779,7 +779,7 @@ print(len(pretraining_weights_group), len(newly_initialized_group))
 
 custom_optimizer = torch.optim.AdamW([
     {"params": pretraining_weights_group, "lr": 2e-4}, 
-    {"params": newly_initialized_group, "lr": 2e-3}, 
+    {"params": newly_initialized_group, "lr": 2e-4}, 
 ]) 
 
 def _lr_scheduler_rewriting(current_step, *, num_warmup_steps: int, num_training_steps: int): 
