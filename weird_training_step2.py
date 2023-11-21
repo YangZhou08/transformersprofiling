@@ -343,7 +343,10 @@ class CustomTrainer(Trainer):
     ): 
         from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
+        logits = logits[:, :-1, :] 
+        labels = labels[:, 1:] 
         preds = torch.argmax(logits, dim = -1) 
+        print("the shape of preds is {}".format(preds.shape)) 
         # use loss to compute perplexity 
         perplexity = torch.exp(loss).mean().item() 
         print("the perplexity is {}".format(perplexity)) 
@@ -352,9 +355,10 @@ class CustomTrainer(Trainer):
         total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
         # accuracy = accuracy_score(labels[indices_to_keep], preds[indices_to_keep]) 
         correct_words = torch.sum((preds[indices_to_keep] == labels[indices_to_keep]).view(-1), dim = 0).item() 
+        print("correct words: {} and total words: {}".format(correct_words, total_valid_tokens)) 
         # use preds to compute f1 score 
-        f1 = precision_recall_fscore_support(labels, preds, average = "weighted") 
-        return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "f1": f1} 
+        # f1 = precision_recall_fscore_support(labels, preds, average = "weighted") 
+        return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens} 
 
     def evaluation_loop(
         self,
