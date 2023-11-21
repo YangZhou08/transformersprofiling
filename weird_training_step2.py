@@ -195,7 +195,7 @@ else:
 logger = logging.get_logger(__name__) 
 
 class CustomTrainer(Trainer): 
-    def __init__(self, experiment_setting = "setting0", tokenizer = None, artifact = None, commit_hash = None, *args, **kwargs): 
+    def __init__(self, experiment_setting = "setting0", tokenizer = None, artifact = None, commit_hash = None, eval_mode = False, *args, **kwargs): 
         super().__init__(*args, **kwargs) 
         # self.large_model = large_model 
         # self.generation_config = GenerationConfig(return_dict_in_generate = True) 
@@ -206,6 +206,7 @@ class CustomTrainer(Trainer):
         self.tokenizer = tokenizer 
         self.artifact = artifact 
         self.commit_hash = commit_hash 
+        self.eval_mode = eval_mode 
     
     def training_step(self, model, inputs): 
         model.train() 
@@ -320,6 +321,7 @@ class CustomTrainer(Trainer):
                 iteration_count = self.iteration_count, 
                 # eval_mode = True, 
                 experiment_setting = self.experiment_setting, 
+                eval_model = self.eval_mode, 
             ) 
             
             # visualize attention map 
@@ -866,6 +868,7 @@ trainer = CustomTrainer(
     experiment_setting = args.experiment_setting, 
     tokenizer = tokenizer, 
     artifact = artifact, 
+    eval_mode = args.eval_mode, 
 ) 
 
 print("experiment-setting is {}".format(trainer.experiment_setting)) 
