@@ -365,7 +365,9 @@ class CustomTrainer(Trainer):
                     else: 
                         print(colored(self.tokenizer.decode(pred_outputs[i][63 + j]), "red"), end = " ") 
                 print(labels[i]) 
-                labels_outputs = self.tokenizer.decode(labels[i][input_attention_mask[i] == 1]) 
+                mask_filtered = labels[i][input_attention_mask[i] == 1] 
+                mask_filtered[mask_filtered == -100] = 0 
+                labels_outputs = self.tokenizer.decode(mask_filtered) 
                 print("the label is: {}".format(colored(labels_outputs, "yellow"))) 
 
         # print("the shape of preds is {}".format(preds.shape)) 
