@@ -361,9 +361,10 @@ class CustomTrainer(Trainer):
                 print("the prediction is: {}".format(self.tokenizer.decode(pred_outputs[i][: 63])), end = "") 
                 for j in range(mask_correctness.shape[1]): 
                     if mask_correctness[i][j]: 
-                        print(colored(self.tokenizer.decode(pred_outputs[i][63 + j]), "green"), end = "") 
+                        print(colored(self.tokenizer.decode(pred_outputs[i][63 + j]), "green"), end = " ") 
                     else: 
-                        print(colored(self.tokenizer.decode(pred_outputs[i][63 + j]), "red"), end = "") 
+                        print(colored(self.tokenizer.decode(pred_outputs[i][63 + j]), "red"), end = " ") 
+                print(labels[i]) 
                 labels_outputs = self.tokenizer.decode(labels[i]) 
                 print("the label is: {}".format(colored(labels_outputs, "yellow"))) 
 
