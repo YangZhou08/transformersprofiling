@@ -29,10 +29,10 @@ from torch.utils.data import random_split
 from src.transformers import BitsAndBytesConfig 
 from packaging import version 
 
-# cache_dir = "/home/bc20/yang/" 
-dir_dataset = "/home/yangzho6/c4_parts" 
-dir_models = "/home/yangzho6/model_checkpoints2" 
-dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+# # cache_dir = "/home/bc20/yang/" 
+# dir_dataset = "/home/yangzho6/c4_parts" 
+# dir_models = "/home/yangzho6/model_checkpoints2" 
+# dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
 
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 
@@ -164,6 +164,33 @@ def get_git_commit_hash():
 
 commit_hash = get_git_commit_hash() 
 print("the commit hash is {}".format(commit_hash)) 
+
+import socket
+
+hostname = socket.gethostname()
+print("Hostname:", hostname)
+
+if "lovelace" in hostname: 
+    # cache_dir = "/home/bc20/yang/transformersprofiling" 
+    dir_dataset = "/home/yangzho6/c4_parts" 
+    dir_models = "/home/yangzho6/model_checkpoints" 
+    synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/" 
+    synthesized_data_path = "/home/yangzho6/c4llm_synthesized/tensor_dir/" 
+    dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+elif "ada" in hostname: 
+    # cache_dir = "/home/bc20/yang/transformersprofiling" 
+    dir_dataset = "/home/beidic/yangzho6/c4_parts" 
+    dir_models = "/home/beidic/yangzho6/model_checkpoints" 
+    synthesized_dir_path = "/home/beidic/yangzho6/c4llm_synthesized/" 
+    synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/tensor_dir/" 
+    dir_sdata = "/home/beidic/yangzho6/c4llm_synthesized/" 
+else: 
+    # cache_dir = "/home/bc20/yang/transformersprofiling" 
+    dir_dataset = "/home/yangzho6/c4_parts" 
+    dir_models = "/home/yangzho6/model_checkpoints" 
+    synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/" 
+    synthesized_data_path = "/home/yangzho6/c4llm_synthesized/tensor_dir/" 
+    dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
 
 logger = logging.get_logger(__name__) 
 
