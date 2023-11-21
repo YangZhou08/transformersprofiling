@@ -153,7 +153,7 @@ if is_accelerate_available():
 logger = logging.get_logger(__name__) 
 
 class CustomTrainer(Trainer): 
-    def __init__(self, experiment_setting = "setting0", *args, **kwargs): 
+    def __init__(self, experiment_setting = "setting0", tokenizer = None, *args, **kwargs): 
         super().__init__(*args, **kwargs) 
         # self.large_model = large_model 
         # self.generation_config = GenerationConfig(return_dict_in_generate = True) 
@@ -161,6 +161,7 @@ class CustomTrainer(Trainer):
         self.time_checkpoint = 0 
         self.iteration_count = 0 
         self.experiment_setting = experiment_setting 
+        self.tokenizer = tokenizer 
     
     def training_step(self, model, inputs): 
         model.train() 
@@ -340,7 +341,9 @@ class CustomTrainer(Trainer):
             labels, 
             loss, 
             input_attention_mask, 
+            outside_step, 
     ): 
+
         from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
         logits = logits[:, :-1, :] 
@@ -348,18 +351,31 @@ class CustomTrainer(Trainer):
         input_attention_mask = input_attention_mask[:, 1:] 
         labels = labels[:, 1:] 
         preds = torch.argmax(logits, dim = -1) 
-        print("the shape of preds is {}".format(preds.shape)) 
+        if outside_step == 0: 
+            mask_correctness = (preds[: 5][63 :] == labels[: 5][63 :]).to(torch.bool) 
+            pred_outputs = self.tokenizer.batch_decode(preds[: 5]) 
+            labels_outputs = self.tokenizer.batch_decode(labels[: 5]) 
+            for i in range(len(pred_outputs)): 
+                print("the prediction is: {}".format(pred_outputs[: 63]), end = " ") 
+                for j in range(mask_correctness.shape[1]): 
+                    if mask_correctness[i][j]: 
+                        print(colored(pred_outputs[63 + j], "green"), end = " ") 
+                    else: 
+                        print(colored(pred_outputs[63 + j], "red"), end = " ") 
+                print("the label is: {}".format(colored(labels_outputs, "yellow"))) 
+
+        # print("the shape of preds is {}".format(preds.shape)) 
         # use loss to compute perplexity 
         perplexity = torch.exp(loss).mean().item() 
-        print("the perplexity is {}".format(perplexity)) 
+        # print("the perplexity is {}".format(perplexity)) 
         # use preds to compute accuracy 
         indices_to_keep = input_attention_mask == 1 
         total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
-        print("shape of indices_to_keep: {}".format(indices_to_keep.shape)) 
+        # print("shape of indices_to_keep: {}".format(indices_to_keep.shape)) 
         interest_token_count = torch.sum(indices_to_keep[:, 63 :].reshape(-1), dim = 0).item() # check whether 63 makes sense and make it more general if it is correct or not 
         # accuracy = accuracy_score(labels[indices_to_keep], preds[indices_to_keep]) 
         correct_words = torch.sum((preds[indices_to_keep] == labels[indices_to_keep]).view(-1), dim = 0).item() 
-        print("shape of indices_to_keep: {}".format(indices_to_keep.shape)) 
+        # print("shape of indices_to_keep: {}".format(indices_to_keep.shape)) 
         # interest_correct_count = torch.sum((preds[indices_to_keep][:, 63 :] == labels[indices_to_keep][:, 63 :]).view(-1), dim = 0).item() 
         interest_correct_count = torch.sum(((preds * indices_to_keep)[:, 63: ] == (labels * indices_to_keep)[:, 63: ]).view(-1), dim = 0).item() 
         print("correct words: {} and total words: {}".format(correct_words, total_valid_tokens)) 
@@ -472,14 +488,14 @@ class CustomTrainer(Trainer):
             # Prediction step 
             ignore_keys = ["hidden_states", "attentions", "past_key_values"] 
             loss, logits, labels = self.prediction_step(model, inputs, False, ignore_keys=ignore_keys) 
-            print(ignore_keys) 
-            print(colored("the loss is {}".format(loss), "yellow")) 
+            # print(ignore_keys) 
+            # print(colored("the loss is {}".format(loss), "yellow")) 
             # print(colored("the shape of logits is {} {}".format(logits.shape, "yellow"))) 
             # print(colored("the shape of logits if {} {}".format(len(logits), logits[0].shape), "yellow")) 
-            print(colored("the shape of logits is {}".format(logits.shape), "yellow")) 
-            print(colored("the shape of labels is {}".format(labels.shape), "yellow")) 
+            # print(colored("the shape of logits is {}".format(logits.shape), "yellow")) 
+            # print(colored("the shape of labels is {}".format(labels.shape), "yellow")) 
             total_loss += loss.item() 
-            local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"]) 
+            local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"], step) 
             total_correct_words += local_metrics["correct_words"] 
             total_words += local_metrics["total_words"] 
             sum_of_perplexity += local_metrics["perplexity"] 
