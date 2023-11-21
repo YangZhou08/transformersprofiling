@@ -434,7 +434,7 @@ class CustomTrainer(Trainer):
 
             if is_torch_tpu_available():
                 xm.mark_step()
-            '''
+            
             # Update containers on host
             if loss is not None:
                 losses = self.gather_function((loss.repeat(batch_size)))
@@ -455,7 +455,7 @@ class CustomTrainer(Trainer):
                     logits = self.preprocess_logits_for_metrics(logits, labels)
                 logits = self.gather_function((logits))
                 preds_host = logits if preds_host is None else nested_concat(preds_host, logits, padding_index=-100)
-            ''' 
+            
             if labels is not None:
                 labels = self.gather_function((labels))
                 labels_host = labels if labels_host is None else nested_concat(labels_host, labels, padding_index=-100)
@@ -711,7 +711,7 @@ training_args = TrainingArguments(
     per_device_train_batch_size=128, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=256,  # evaluation batch size
-    logging_steps=1,             # evaluate, log and save model checkpoints every 1000 step
+    # logging_steps=1,             # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
     save_steps = 1, 
@@ -763,7 +763,7 @@ trainer = CustomTrainer(
     model = small_model, 
     args = training_args, 
     train_dataset = train_set, 
-    eval_dataset = test_set, 
+    # eval_dataset = test_set, 
     # train_dataset = train_dataset, 
     # eval_dataset = test_dataset, 
     data_collator = data_collator, 
