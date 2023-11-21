@@ -448,7 +448,8 @@ class CustomTrainer(Trainer):
         sum_of_perplexity = 0 # used to compute the average perplexity 
         total_loss = 0 # used to compute the correct perplexity 
 
-        observed_num_examples = 0
+        observed_num_examples = 0 
+        total_num_steps = len(dataloader) 
         # Main evaluation loop
         for step, inputs in enumerate(tqdm(dataloader, desc = "description")): 
             # Update the observed num examples
@@ -498,8 +499,10 @@ class CustomTrainer(Trainer):
         if num_samples == 0 and observed_num_examples > 0:
             num_samples = observed_num_examples
         
-        global_perplexity = np.exp(total_loss / num_samples) 
+        global_perplexity = np.exp(total_loss / total_num_steps) 
         global_accuracy = total_correct_words / total_words 
+        all_losses = total_loss / total_num_steps 
+
         metrics = {"perplexity": global_perplexity, "accuracy": global_accuracy} 
         wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy}) 
 
