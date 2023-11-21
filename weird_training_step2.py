@@ -344,7 +344,8 @@ class CustomTrainer(Trainer):
         from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
         logits = logits[:, :-1, :] 
-        input_attention_mask = input_attention_mask[:, :-1] 
+        # input_attention_mask = input_attention_mask[:, :-1] 
+        input_attention_mask = input_attention_mask[:, 1:] 
         labels = labels[:, 1:] 
         preds = torch.argmax(logits, dim = -1) 
         print("the shape of preds is {}".format(preds.shape)) 
@@ -354,12 +355,14 @@ class CustomTrainer(Trainer):
         # use preds to compute accuracy 
         indices_to_keep = input_attention_mask == 1 
         total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
+        interest_token_count = torch.sum(indices_to_keep[:, 63 :].view(-1), dim = 0).item() # check whether 63 makes sense and make it more general if it is correct or not 
         # accuracy = accuracy_score(labels[indices_to_keep], preds[indices_to_keep]) 
         correct_words = torch.sum((preds[indices_to_keep] == labels[indices_to_keep]).view(-1), dim = 0).item() 
+        interest_correct_count = torch.sum((preds[indices_to_keep][:, 63 :] == labels[indices_to_keep][:, 63 :]).view(-1), dim = 0).item() 
         print("correct words: {} and total words: {}".format(correct_words, total_valid_tokens)) 
         # use preds to compute f1 score 
         # f1 = precision_recall_fscore_support(labels, preds, average = "weighted") 
-        return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens} 
+        return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "interest_correct_words": interest_correct_count, "interest_total_words": interest_token_count} 
 
     def evaluation_loop(
         self,
@@ -447,6 +450,8 @@ class CustomTrainer(Trainer):
         total_words = 0 
         sum_of_perplexity = 0 # used to compute the average perplexity 
         total_loss = 0 # used to compute the correct perplexity 
+        interest_total_words = 0 
+        interest_correct_words = 0 
 
         observed_num_examples = 0 
         total_num_steps = len(dataloader) 
@@ -471,9 +476,11 @@ class CustomTrainer(Trainer):
             print(colored("the shape of labels is {}".format(labels.shape), "yellow")) 
             total_loss += loss.item() 
             local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"]) 
-            total_correct_words = local_metrics["correct_words"] 
-            total_words = local_metrics["total_words"] 
+            total_correct_words += local_metrics["correct_words"] 
+            total_words += local_metrics["total_words"] 
             sum_of_perplexity += local_metrics["perplexity"] 
+            interest_total_words += local_metrics["interest_total_words"] 
+            interest_correct_words += local_metrics["interest_correct_words"] 
 
             if is_torch_tpu_available():
                 xm.mark_step()
@@ -501,10 +508,11 @@ class CustomTrainer(Trainer):
         
         global_perplexity = np.exp(total_loss / total_num_steps) 
         global_accuracy = total_correct_words / total_words 
+        global_interest_accuracy = interest_correct_words / interest_total_words 
         all_losses = total_loss / total_num_steps 
 
-        metrics = {"perplexity": global_perplexity, "accuracy": global_accuracy} 
-        wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy}) 
+        metrics = {"perplexity": global_perplexity, "accuracy": global_accuracy, "interest_accuracy": global_interest_accuracy} 
+        wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy, "global_eval_interest_accuracy": global_interest_accuracy}) 
 
         '''
         # Metrics!
