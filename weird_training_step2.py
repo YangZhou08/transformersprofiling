@@ -373,6 +373,7 @@ class CustomTrainer(Trainer):
                 label_text = "the label is: {}".format(colored(labels_outputs, "yellow")) 
                 print(label_text) 
                 print() 
+                wandb.log({"key notes: ": prediction_text + label_text}) 
 
         # print("the shape of preds is {}".format(preds.shape)) 
         # use loss to compute perplexity 
