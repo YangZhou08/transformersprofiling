@@ -459,7 +459,7 @@ class CustomTrainer(Trainer):
             print(ignore_keys) 
             print(colored("the loss is {}".format(loss), "yellow")) 
             # print(colored("the shape of logits is {} {}".format(logits.shape, "yellow"))) 
-            print(colored("the shape of logits if {} {}".format(len(logits), logits[0].shape), "yellow")) 
+            print(colored("the shape of logits if {} {} {} {}".format(len(logits), logits[0].shape, logits[1].shape, logits[2].shape), "yellow")) 
             print(colored("the shape of labels is {}".format(labels.shape), "yellow")) 
             total_loss += loss.item() 
             local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"]) 
