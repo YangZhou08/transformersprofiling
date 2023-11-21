@@ -153,7 +153,7 @@ if is_accelerate_available():
 logger = logging.get_logger(__name__) 
 
 class CustomTrainer(Trainer): 
-    def __init__(self, experiment_setting = "setting0", tokenizer = None, *args, **kwargs): 
+    def __init__(self, experiment_setting = "setting0", tokenizer = None, artifact = None, *args, **kwargs): 
         super().__init__(*args, **kwargs) 
         # self.large_model = large_model 
         # self.generation_config = GenerationConfig(return_dict_in_generate = True) 
@@ -162,6 +162,7 @@ class CustomTrainer(Trainer):
         self.iteration_count = 0 
         self.experiment_setting = experiment_setting 
         self.tokenizer = tokenizer 
+        self.artifact = artifact 
     
     def training_step(self, model, inputs): 
         model.train() 
@@ -352,6 +353,8 @@ class CustomTrainer(Trainer):
         labels = labels[:, 1:] 
         preds = torch.argmax(logits, dim = -1) 
         if outside_step == 0: 
+            f = open("key_notes.md", "a") 
+            f.write("writing key notes at step {}".format(self.iteration_count)) 
             mask_correctness = (preds[: 5, 63 :] == labels[: 5, 63 :]).to(torch.bool) 
             print(mask_correctness.shape) 
             # pred_outputs = self.tokenizer.batch_decode(preds[: 5]) 
@@ -373,8 +376,13 @@ class CustomTrainer(Trainer):
                 label_text = "the label is: {}".format(colored(labels_outputs, "yellow")) 
                 print(label_text) 
                 print() 
-                wandb.log({"key notes: ": prediction_text + label_text}) 
-
+                # wandb.log({"key notes: ": prediction_text + label_text}) 
+                f.write(prediction_text + "\n" + label_text + "\n") 
+            f.write("\n") 
+            f.close() 
+            self.artifact.add_file("key_notes.md", name = "key_notes.md") 
+            wandb.log_artifact(self.artifact) 
+                
         # print("the shape of preds is {}".format(preds.shape)) 
         # use loss to compute perplexity 
         perplexity = torch.exp(loss).mean().item() 
@@ -779,6 +787,12 @@ def compute_metrics(p):
         'perplexity': perplexity,
     } 
 
+file = open("key_notes.md", "a") 
+file.write("# My Text Log\n\n") 
+file.close() 
+
+artifact = wandb.Artifact("key_notes", type = "text") 
+
 trainer = CustomTrainer( 
     model = small_model, 
     args = training_args, 
@@ -791,6 +805,7 @@ trainer = CustomTrainer(
     optimizers = (custom_optimizer, None), 
     experiment_setting = "setting2", 
     tokenizer = tokenizer, 
+    artifact = artifact, 
 ) 
 
 # print(trainer.lr_scheduler.state_dict()) 
