@@ -455,7 +455,7 @@ class CustomTrainer(Trainer):
                     batch_size = observed_batch_size
 
             # Prediction step
-            loss, logits, labels = self.prediction_step(model, inputs, True, ignore_keys=ignore_keys) 
+            loss, logits, labels = self.prediction_step(model, inputs, False, ignore_keys=ignore_keys) 
             print(colored("the loss is {}".format(loss), "yellow")) 
             print(colored("the shape of logits is {} {}".format(logits.shape, "yellow"))) 
             print(colored("the shape of labels is {}".format(labels.shape), "yellow")) 
