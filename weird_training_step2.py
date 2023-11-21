@@ -356,7 +356,7 @@ class CustomTrainer(Trainer):
             print(mask_correctness.shape) 
             # pred_outputs = self.tokenizer.batch_decode(preds[: 5]) 
             pred_outputs = preds[: 5] 
-            labels_outputs = self.tokenizer.batch_decode(labels[: 5]) 
+            labels_outputs = self.tokenizer.batch_decode(labels[: 5, :]) 
             for i in range(len(pred_outputs)): 
                 print("the prediction is: {}".format(self.tokenizer.decode(pred_outputs[i][: 63])), end = "") 
                 for j in range(mask_correctness.shape[1]): 
