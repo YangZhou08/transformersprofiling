@@ -352,7 +352,8 @@ class CustomTrainer(Trainer):
         labels = labels[:, 1:] 
         preds = torch.argmax(logits, dim = -1) 
         if outside_step == 0: 
-            mask_correctness = (preds[: 5][63 :] == labels[: 5][63 :]).to(torch.bool) 
+            mask_correctness = (preds[: 5, 63 :] == labels[: 5, 63 :]).to(torch.bool) 
+            print(mask_correctness.shape) 
             pred_outputs = self.tokenizer.batch_decode(preds[: 5]) 
             labels_outputs = self.tokenizer.batch_decode(labels[: 5]) 
             for i in range(len(pred_outputs)): 
