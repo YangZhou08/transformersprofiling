@@ -354,15 +354,16 @@ class CustomTrainer(Trainer):
         if outside_step == 0: 
             mask_correctness = (preds[: 5, 63 :] == labels[: 5, 63 :]).to(torch.bool) 
             print(mask_correctness.shape) 
-            pred_outputs = self.tokenizer.batch_decode(preds[: 5]) 
+            # pred_outputs = self.tokenizer.batch_decode(preds[: 5]) 
+            pred_outputs = preds[: 5] 
             labels_outputs = self.tokenizer.batch_decode(labels[: 5]) 
             for i in range(len(pred_outputs)): 
-                print("the prediction is: {}".format(pred_outputs[: 63]), end = " ") 
+                print("the prediction is: {}".format(self.tokenizer.decode(pred_outputs[i][: 63])), end = "") 
                 for j in range(mask_correctness.shape[1]): 
                     if mask_correctness[i][j]: 
-                        print(colored(pred_outputs[i][63 + j], "green"), end = " ") 
+                        print(colored(self.tokenizer.decode(pred_outputs[i][63 + j]), "green"), end = "") 
                     else: 
-                        print(colored(pred_outputs[i][63 + j], "red"), end = " ") 
+                        print(colored(self.tokenizer.decode(pred_outputs[i][63 + j]), "red"), end = "") 
                 print("the label is: {}".format(colored(labels_outputs, "yellow"))) 
 
         # print("the shape of preds is {}".format(preds.shape)) 
