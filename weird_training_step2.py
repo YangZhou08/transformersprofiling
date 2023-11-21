@@ -455,9 +455,9 @@ class CustomTrainer(Trainer):
                     batch_size = observed_batch_size
 
             # Prediction step
-            loss, logits, labels = self.prediction_step(model, inputs, prediction_loss_only, ignore_keys=ignore_keys) 
+            loss, logits, labels = self.prediction_step(model, inputs, True, ignore_keys=ignore_keys) 
             print(colored("the loss is {}".format(loss), "yellow")) 
-            print(colored("the shape of logits is {} {}".format(len(logits), logits[0].shape), "yellow")) 
+            print(colored("the shape of logits is {} {}".format(logits.shape, "yellow"))) 
             print(colored("the shape of labels is {}".format(labels.shape), "yellow")) 
             total_loss += loss.item() 
             local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"]) 
