@@ -755,10 +755,10 @@ training_args = TrainingArguments(
     per_device_train_batch_size=128, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=256,  # evaluation batch size
-    logging_steps=1,             # evaluate, log and save model checkpoints every 1000 step
+    logging_steps=250,            # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 1, 
+    save_steps = 250, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     learning_rate=2e-4, 
@@ -769,9 +769,8 @@ training_args = TrainingArguments(
     save_total_limit=5,            # whether you don't have much space so you let only 3 model weights saved in the disk 
     # lr_scheduler_type = "cosine", 
     warmup_steps = 100, 
-    eval_accumulation_steps = 2, 
+    # eval_accumulation_steps = 2, 
 ) 
-
 
 max_length = 128 
 if has_wandb: 
