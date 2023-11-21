@@ -724,7 +724,7 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 # defining custom dataset 
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
 train_set, test_set = datasetnew.split(0.95) 
-
+''' 
 # handling simplesmallmodel 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 # small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
@@ -749,6 +749,10 @@ try:
 except RuntimeError as r: 
     print(colored(r, "yellow")) 
 
+small_model = small_model.to(torch_device) 
+small_model.train() 
+'''
+
 pretraining_weights_group = []
 newly_initialized_group = [] 
 for k, v in small_model.named_parameters(): 
@@ -771,16 +775,13 @@ def _lr_scheduler_rewriting(current_step, *, num_warmup_steps: int, num_training
 
 # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
 
-small_model = small_model.to(torch_device) 
-small_model.train() 
-
 # alternative pretrained model 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m").to(torch_device) 
 # config = LlamaConfig.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 # print(config) 
 # small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
-# small_model = AutoModelForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
-# small_model.train() 
+small_model = AutoModelForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
+small_model.train() 
 
 # for llama model we need to add the padding token 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
