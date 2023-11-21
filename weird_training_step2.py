@@ -163,6 +163,7 @@ def get_git_commit_hash():
         return None
 
 commit_hash = get_git_commit_hash() 
+print("the commit hash is {}".format(commit_hash)) 
 
 logger = logging.get_logger(__name__) 
 
