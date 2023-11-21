@@ -522,7 +522,8 @@ class CustomTrainer(Trainer):
         metrics = denumpify_detensorize(metrics)
 
         if all_losses is not None:
-            metrics[f"{metric_key_prefix}_loss"] = all_losses.mean().item()
+            # metrics[f"{metric_key_prefix}_loss"] = all_losses.mean().item() 
+            metrics[f"{metric_key_prefix}_loss"] = all_losses 
         if hasattr(self, "jit_compilation_time"):
             metrics[f"{metric_key_prefix}_jit_compilation_time"] = self.jit_compilation_time
 
