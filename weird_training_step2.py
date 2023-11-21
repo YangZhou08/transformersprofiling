@@ -360,8 +360,10 @@ class CustomTrainer(Trainer):
         # accuracy = accuracy_score(labels[indices_to_keep], preds[indices_to_keep]) 
         correct_words = torch.sum((preds[indices_to_keep] == labels[indices_to_keep]).view(-1), dim = 0).item() 
         print("shape of indices_to_keep: {}".format(indices_to_keep.shape)) 
-        interest_correct_count = torch.sum((preds[indices_to_keep][:, 63 :] == labels[indices_to_keep][:, 63 :]).view(-1), dim = 0).item() 
+        # interest_correct_count = torch.sum((preds[indices_to_keep][:, 63 :] == labels[indices_to_keep][:, 63 :]).view(-1), dim = 0).item() 
+        interest_correct_count = torch.sum(((preds * indices_to_keep)[:, 63: ] == (labels * indices_to_keep)[:, 63: ]).view(-1), dim = 0).item() 
         print("correct words: {} and total words: {}".format(correct_words, total_valid_tokens)) 
+        print("interest correct words: {} and interest total words: {}".format(interest_correct_count, interest_token_count)) 
         # use preds to compute f1 score 
         # f1 = precision_recall_fscore_support(labels, preds, average = "weighted") 
         return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "interest_correct_words": interest_correct_count, "interest_total_words": interest_token_count} 
