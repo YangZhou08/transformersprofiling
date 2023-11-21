@@ -344,6 +344,7 @@ class CustomTrainer(Trainer):
         from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
         logits = logits[:, :-1, :] 
+        input_attention_mask = input_attention_mask[:, :-1] 
         labels = labels[:, 1:] 
         preds = torch.argmax(logits, dim = -1) 
         print("the shape of preds is {}".format(preds.shape)) 
