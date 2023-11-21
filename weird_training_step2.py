@@ -456,6 +456,7 @@ class CustomTrainer(Trainer):
 
             # Prediction step
             loss, logits, labels = self.prediction_step(model, inputs, False, ignore_keys=ignore_keys) 
+            print(ignore_keys) 
             print(colored("the loss is {}".format(loss), "yellow")) 
             # print(colored("the shape of logits is {} {}".format(logits.shape, "yellow"))) 
             print(colored("the shape of logits if {} {}".format(len(logits), logits[0].shape), "yellow")) 
