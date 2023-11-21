@@ -334,6 +334,28 @@ class CustomTrainer(Trainer):
 
         return (loss, outputs) if return_outputs else loss 
 
+    def local_compute_metrics(
+            self, 
+            logits, 
+            labels, 
+            loss, 
+            input_attention_mask, 
+    ): 
+        from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+
+        preds = torch.argmax(logits, dim = -1) 
+        # use loss to compute perplexity 
+        perplexity = torch.exp(loss).mean().item() 
+        print("the perplexity is {}".format(perplexity)) 
+        # use preds to compute accuracy 
+        indices_to_keep = input_attention_mask == 1 
+        total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
+        # accuracy = accuracy_score(labels[indices_to_keep], preds[indices_to_keep]) 
+        correct_words = torch.sum((preds[indices_to_keep] == labels[indices_to_keep]).view(-1), dim = 0).item() 
+        # use preds to compute f1 score 
+        f1 = precision_recall_fscore_support(labels, preds, average = "weighted") 
+        return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "f1": f1} 
+
     def evaluation_loop(
         self,
         dataloader: DataLoader,
@@ -416,6 +438,11 @@ class CustomTrainer(Trainer):
         all_inputs = None
         # Will be useful when we have an iterable dataset so don't know its length.
 
+        total_correct_words = 0 
+        total_words = 0 
+        sum_of_perplexity = 0 # used to compute the average perplexity 
+        total_loss = 0 # used to compute the correct perplexity 
+
         observed_num_examples = 0
         # Main evaluation loop
         for step, inputs in enumerate(dataloader):
@@ -428,89 +455,24 @@ class CustomTrainer(Trainer):
                     batch_size = observed_batch_size
 
             # Prediction step
-            loss, logits, labels = self.prediction_step(model, inputs, prediction_loss_only, ignore_keys=ignore_keys)
-            main_input_name = getattr(self.model, "main_input_name", "input_ids")
-            inputs_decode = self._prepare_input(inputs[main_input_name]) if args.include_inputs_for_metrics else None
+            loss, logits, labels = self.prediction_step(model, inputs, prediction_loss_only, ignore_keys=ignore_keys) 
+            print(colored("the loss is {}".format(loss), "yellow")) 
+            print(colored("the shape of logits is {} {}".format(len(logits), logits[0].shape), "yellow")) 
+            print(colored("the shape of labels is {}".format(labels.shape), "yellow")) 
+            total_loss += loss.item() 
+            local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"]) 
+            total_correct_words = local_metrics["correct_words"] 
+            total_words = local_metrics["total_words"] 
+            sum_of_perplexity += local_metrics["perplexity"] 
 
             if is_torch_tpu_available():
                 xm.mark_step()
-            
-            # Update containers on host
-            if loss is not None:
-                losses = self.gather_function((loss.repeat(batch_size)))
-                losses_host = losses if losses_host is None else nested_concat(losses_host, losses, padding_index=-100)
-            if labels is not None:
-                labels = self.accelerator.pad_across_processes(labels, dim=1, pad_index=-100)
-            if inputs_decode is not None:
-                inputs_decode = self.accelerator.pad_across_processes(inputs_decode, dim=1, pad_index=-100)
-                inputs_decode = self.gather_function((inputs_decode))
-                inputs_host = (
-                    inputs_decode
-                    if inputs_host is None
-                    else nested_concat(inputs_host, inputs_decode, padding_index=-100)
-                )
-            if logits is not None:
-                logits = self.accelerator.pad_across_processes(logits, dim=1, pad_index=-100)
-                if self.preprocess_logits_for_metrics is not None:
-                    logits = self.preprocess_logits_for_metrics(logits, labels)
-                logits = self.gather_function((logits))
-                preds_host = logits if preds_host is None else nested_concat(preds_host, logits, padding_index=-100)
-            
-            if labels is not None:
-                labels = self.gather_function((labels))
-                labels_host = labels if labels_host is None else nested_concat(labels_host, labels, padding_index=-100)
-
-            self.control = self.callback_handler.on_prediction_step(args, self.state, self.control)
-
-            # Gather all tensors and put them back on the CPU if we have done enough accumulation steps.
-            if (
-                args.eval_accumulation_steps is not None
-                and (step + 1) % args.eval_accumulation_steps == 0
-                and (self.accelerator.sync_gradients or version.parse(accelerate_version) > version.parse("0.20.3"))
-            ):
-                if losses_host is not None:
-                    losses = nested_numpify(losses_host)
-                    all_losses = losses if all_losses is None else np.concatenate((all_losses, losses), axis=0)
-                if preds_host is not None:
-                    logits = nested_numpify(preds_host)
-                    all_preds = logits if all_preds is None else nested_concat(all_preds, logits, padding_index=-100)
-                if inputs_host is not None:
-                    inputs_decode = nested_numpify(inputs_host)
-                    all_inputs = (
-                        inputs_decode
-                        if all_inputs is None
-                        else nested_concat(all_inputs, inputs_decode, padding_index=-100)
-                    )
-                if labels_host is not None:
-                    labels = nested_numpify(labels_host)
-                    all_labels = (
-                        labels if all_labels is None else nested_concat(all_labels, labels, padding_index=-100)
-                    )
-
-                # Set back to None to begin a new accumulation
-                losses_host, preds_host, inputs_host, labels_host = None, None, None, None
 
         # After all calls to `.gather_function`, reset to `gather_for_metrics`:
         self.gather_function = self.accelerator.gather_for_metrics
         if args.past_index and hasattr(self, "_past"):
             # Clean the state at the end of the evaluation loop
             delattr(self, "_past")
-
-        # Gather all remaining tensors and put them back on the CPU
-        if losses_host is not None:
-            losses = nested_numpify(losses_host)
-            all_losses = losses if all_losses is None else np.concatenate((all_losses, losses), axis=0)
-        if preds_host is not None:
-            logits = nested_numpify(preds_host)
-            all_preds = logits if all_preds is None else nested_concat(all_preds, logits, padding_index=-100)
-        if inputs_host is not None:
-            inputs_decode = nested_numpify(inputs_host)
-            all_inputs = (
-                inputs_decode if all_inputs is None else nested_concat(all_inputs, inputs_decode, padding_index=-100)
-            )
-        if labels_host is not None:
-            labels = nested_numpify(labels_host)
-            all_labels = labels if all_labels is None else nested_concat(all_labels, labels, padding_index=-100)
 
         # Number of samples
         if has_length(eval_dataset):
@@ -526,7 +488,13 @@ class CustomTrainer(Trainer):
                 num_samples = observed_num_examples
         if num_samples == 0 and observed_num_examples > 0:
             num_samples = observed_num_examples
+        
+        global_perplexity = np.exp(total_loss / num_samples) 
+        global_accuracy = total_correct_words / total_words 
+        metrics = {"perplexity": global_perplexity, "accuracy": global_accuracy} 
+        wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy}) 
 
+        '''
         # Metrics!
         if self.compute_metrics is not None and all_preds is not None and all_labels is not None:
             if args.include_inputs_for_metrics:
@@ -537,7 +505,7 @@ class CustomTrainer(Trainer):
                 metrics = self.compute_metrics(EvalPrediction(predictions=all_preds, label_ids=all_labels))
         else:
             metrics = {}
-
+        ''' 
         # To be JSON-serializable, we need to remove numpy types or zero-d tensors
         metrics = denumpify_detensorize(metrics)
 
@@ -711,7 +679,7 @@ training_args = TrainingArguments(
     per_device_train_batch_size=128, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=256,  # evaluation batch size
-    # logging_steps=1,             # evaluate, log and save model checkpoints every 1000 step
+    logging_steps=1,             # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
     save_steps = 1, 
@@ -721,7 +689,7 @@ training_args = TrainingArguments(
     # learning_rate = 1e-4, 
     # learning_rate = 5e-6, 
     # learning_rate = 0, 
-    # load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
+    load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
     save_total_limit=5,            # whether you don't have much space so you let only 3 model weights saved in the disk 
     # lr_scheduler_type = "cosine", 
     warmup_steps = 100, 
@@ -763,11 +731,11 @@ trainer = CustomTrainer(
     model = small_model, 
     args = training_args, 
     train_dataset = train_set, 
-    # eval_dataset = test_set, 
+    eval_dataset = test_set, 
     # train_dataset = train_dataset, 
     # eval_dataset = test_dataset, 
     data_collator = data_collator, 
-    compute_metrics = compute_metrics, 
+    # compute_metrics = compute_metrics, 
     optimizers = (custom_optimizer, None), 
     experiment_setting = "setting2", 
 ) 
