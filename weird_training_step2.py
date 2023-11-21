@@ -358,18 +358,20 @@ class CustomTrainer(Trainer):
             pred_outputs = preds[: 5] 
             # labels_outputs = self.tokenizer.batch_decode(labels[: 5, :]) 
             for i in range(len(pred_outputs)): 
-                print("the prediction is: {}".format(self.tokenizer.decode(pred_outputs[i][: 63])), end = "") 
+                prediction_text = "the prediction is: {}".format(self.tokenizer.decode(pred_outputs[i][: 63])) 
                 for j in range(mask_correctness.shape[1]): 
                     if mask_correctness[i][j]: 
-                        print(colored(self.tokenizer.decode(pred_outputs[i][63 + j]), "green"), end = " ") 
+                        prediction_text += colored(self.tokenizer.decode(pred_outputs[i][63 + j]), "green") + " " 
                     else: 
-                        print(colored(self.tokenizer.decode(pred_outputs[i][63 + j]), "red"), end = " ") 
+                        prediction_text += colored(self.tokenizer.decode(pred_outputs[i][63 + j]), "red") + " " 
+                print(prediction_text) 
                 print() 
                 # print(labels[i]) 
                 mask_filtered = labels[i][input_attention_mask[i] == 1] 
                 mask_filtered[mask_filtered == -100] = 0 
                 labels_outputs = self.tokenizer.decode(mask_filtered) 
-                print("the label is: {}".format(colored(labels_outputs, "yellow"))) 
+                label_text = "the label is: {}".format(colored(labels_outputs, "yellow")) 
+                print(label_text) 
                 print() 
 
         # print("the shape of preds is {}".format(preds.shape)) 
