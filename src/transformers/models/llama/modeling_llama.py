@@ -1574,8 +1574,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             expanded_attn_mask = _expand_mask(attention_mask, inputs_embeds.dtype, tgt_len = input_shape[-1]).to( #008000 
                 inputs_embeds.device 
             ) 
-            print("expanded_attn_mask has shape {}".format(expanded_attn_mask.shape)) 
-            print("combined_attention_mask has shape {}".format(combined_attention_mask.shape)) 
+            # print("expanded_attn_mask has shape {}".format(expanded_attn_mask.shape)) 
+            # print("combined_attention_mask has shape {}".format(combined_attention_mask.shape)) 
             # print("expanded attention mask shape {}".format(expanded_attn_mask.shape)) 
             combined_attention_mask = (
                 expanded_attn_mask if combined_attention_mask is None else expanded_attn_mask + combined_attention_mask 
@@ -1959,10 +1959,10 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             if self.condensed_fashion == "ground_truth": 
                 with torch.no_grad(): 
                     condensed_embeds = [self.embed_tokens(input_ids[:, start_idx + i * self.sliding_window_length : start_idx + (i + 1) * self.sliding_window_length]) for i in range((seq_length - start_idx)//self.sliding_window_length)] 
-                    print("shape of every entry of the condensed tokens: {}".format(condensed_embeds[0].shape)) 
+                    # print("shape of every entry of the condensed tokens: {}".format(condensed_embeds[0].shape)) 
                     condensed_embeds = [self.downsample_vectors2(condensed_embeds[i]) for i in range(len(condensed_embeds))] 
                     condensed_embeds = torch.stack(condensed_embeds, dim = 1) 
-                    print("shape of condensed_embeds: {}".format(condensed_embeds.shape)) 
+                    # print("shape of condensed_embeds: {}".format(condensed_embeds.shape)) 
                 # exit(0) 
                 assert (condensed_embeds.shape[0] == batch_size) and (condensed_embeds.shape[-1] == self.config.hidden_size) 
         else: 
@@ -2193,7 +2193,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             loss_fct = CrossEntropyLoss()
             shift_logits = shift_logits.view(-1, self.config.vocab_size)
             shift_labels = shift_labels.view(-1) 
-            print("shift_logits {}".format(shift_logits)) 
+            # print("shift_logits {}".format(shift_logits)) 
             # Enable model parallelism
             shift_labels = shift_labels.to(shift_logits.device)
             loss = loss_fct(shift_logits, shift_labels) 
