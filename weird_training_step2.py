@@ -769,8 +769,9 @@ trainer = CustomTrainer(
     data_collator = data_collator, 
     compute_metrics = compute_metrics, 
     optimizers = (custom_optimizer, None), 
-    experiment_setting = "setting3", 
+    experiment_setting = "setting2", 
 ) 
+
 
 
 # print(trainer.lr_scheduler.state_dict()) 
