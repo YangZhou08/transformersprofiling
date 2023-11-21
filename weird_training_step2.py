@@ -371,7 +371,7 @@ class CustomTrainer(Trainer):
             f = open("key_notes{}.md".format(self.commit_hash), "a") 
             f.write("writing key notes at step {}".format(self.iteration_count)) 
             mask_correctness = (preds[: 5, 63 :] == labels[: 5, 63 :]).to(torch.bool) 
-            print(mask_correctness.shape) 
+            # print(mask_correctness.shape) 
             # pred_outputs = self.tokenizer.batch_decode(preds[: 5]) 
             pred_outputs = preds[: 5] 
             # labels_outputs = self.tokenizer.batch_decode(labels[: 5, :]) 
@@ -391,12 +391,13 @@ class CustomTrainer(Trainer):
                 label_text = "the label is: {}".format(colored(labels_outputs, "yellow")) 
                 print(label_text) 
                 print() 
+                print() 
                 # wandb.log({"key notes: ": prediction_text + label_text}) 
                 f.write(prediction_text + "\n" + label_text + "\n") 
             f.write("\n") 
             f.close() 
-            self.artifact.add_file("key_notes{}.md".format(self.commit_hash), name = "key_notes.md") 
-            wandb.log_artifact(self.artifact) 
+            # self.artifact.add_file("key_notes{}.md".format(self.commit_hash), name = "key_notes.md") 
+            # wandb.log_artifact(self.artifact) 
                 
         # print("the shape of preds is {}".format(preds.shape)) 
         # use loss to compute perplexity 
