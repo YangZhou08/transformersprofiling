@@ -291,8 +291,8 @@ class CustomTrainer(Trainer):
                 return_dict = True, 
                 # condensed_fashion = "ground_truth", 
                 iteration_count = self.iteration_count, 
-                # eval_mode = True, 
-                experiment_setting = self.experiment_setting, 
+                eval_mode = True, 
+                # experiment_setting = self.experiment_setting, 
             ) 
             
             # visualize attention map 
