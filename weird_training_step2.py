@@ -668,6 +668,21 @@ class CustomDataset:
         eval_size = len(self) - train_size 
         return random_split(self, [train_size, eval_size]) 
 
+parser = argparse.ArgumentParser(
+                    prog='ProgramName',
+                    description='What the program does',
+                    epilog='Text at the bottom of help') 
+
+# parser.add_argument("--group1lr", type = float, default = 5e-4) 
+# parser.add_argument("--group2lr", type = float, default = 1) 
+# parser.add_argument("--togetherforming", type = str, default = "concatenation") 
+# parser.add_argument("--freeze_pretrained", action = "store_true", default = False) 
+parser.add_argument("--experiment_setting", type = str, default = "setting0") 
+parser.add_argument("--eval_mode", action="store_true", default = False) 
+
+args = parser.parse_args() 
+print(args) 
+
 # defining tokenizer 
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
 # tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
@@ -708,7 +723,7 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 # custom dataset 
 # defining custom dataset 
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
-train_set, test_set = datasetnew.split(0.99) 
+train_set, test_set = datasetnew.split(0.95) 
 
 # handling simplesmallmodel 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
@@ -847,10 +862,12 @@ trainer = CustomTrainer(
     data_collator = data_collator, 
     # compute_metrics = compute_metrics, 
     optimizers = (custom_optimizer, None), 
-    experiment_setting = "setting2", 
+    experiment_setting = args.experiment_setting, 
     tokenizer = tokenizer, 
     artifact = artifact, 
 ) 
+
+print("experiment-setting is {}".format(trainer.experiment_setting)) 
 
 # print(trainer.lr_scheduler.state_dict()) 
 # exit(0) 
