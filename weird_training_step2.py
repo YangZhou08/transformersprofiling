@@ -774,7 +774,8 @@ small_model.config.pad_token_id = tokenizer.pad_token_id
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
 # model_path = "/home/bc20/yang" 
-model_path = "/home/yangzho6/model_checkpoints" 
+# model_path = "/home/yangzho6/model_checkpoints" 
+model_path = dir_models 
 training_args = TrainingArguments(
     output_dir=model_path,          # output directory to where save model checkpoint
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
