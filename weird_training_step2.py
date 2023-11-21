@@ -148,12 +148,26 @@ if is_accelerate_available():
         DATA_SAMPLERS += [SeedableRandomSampler]
 
     if is_deepspeed_available():
-        from accelerate.utils import DeepSpeedSchedulerWrapper
+        from accelerate.utils import DeepSpeedSchedulerWrapper 
+
+import subprocess
+
+def get_git_commit_hash():
+    try:
+        # Run the git command to get the current commit hash
+        commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()
+        # Decode from bytes to string
+        return commit_hash.decode('utf-8')
+    except subprocess.CalledProcessError:
+        # Handle cases where the git command fails (e.g., not a git repository)
+        return None
+
+commit_hash = get_git_commit_hash() 
 
 logger = logging.get_logger(__name__) 
 
 class CustomTrainer(Trainer): 
-    def __init__(self, experiment_setting = "setting0", tokenizer = None, artifact = None, *args, **kwargs): 
+    def __init__(self, experiment_setting = "setting0", tokenizer = None, artifact = None, commit_hash = None, *args, **kwargs): 
         super().__init__(*args, **kwargs) 
         # self.large_model = large_model 
         # self.generation_config = GenerationConfig(return_dict_in_generate = True) 
@@ -163,6 +177,7 @@ class CustomTrainer(Trainer):
         self.experiment_setting = experiment_setting 
         self.tokenizer = tokenizer 
         self.artifact = artifact 
+        self.commit_hash = commit_hash 
     
     def training_step(self, model, inputs): 
         model.train() 
@@ -353,7 +368,7 @@ class CustomTrainer(Trainer):
         labels = labels[:, 1:] 
         preds = torch.argmax(logits, dim = -1) 
         if outside_step == 0: 
-            f = open("key_notes.md", "a") 
+            f = open("key_notes{}.md".format(self.commit_hash), "a") 
             f.write("writing key notes at step {}".format(self.iteration_count)) 
             mask_correctness = (preds[: 5, 63 :] == labels[: 5, 63 :]).to(torch.bool) 
             print(mask_correctness.shape) 
@@ -380,7 +395,7 @@ class CustomTrainer(Trainer):
                 f.write(prediction_text + "\n" + label_text + "\n") 
             f.write("\n") 
             f.close() 
-            self.artifact.add_file("key_notes.md", name = "key_notes.md") 
+            self.artifact.add_file("key_notes{}.md".format(self.commit_hash), name = "key_notes.md") 
             wandb.log_artifact(self.artifact) 
                 
         # print("the shape of preds is {}".format(preds.shape)) 
@@ -787,7 +802,7 @@ def compute_metrics(p):
         'perplexity': perplexity,
     } 
 
-file = open("key_notes.md", "a") 
+file = open("key_notes{}.md".format(commit_hash), "a") 
 file.write("# My Text Log\n\n") 
 file.close() 
 
