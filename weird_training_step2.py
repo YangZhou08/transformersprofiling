@@ -291,8 +291,8 @@ class CustomTrainer(Trainer):
                 return_dict = True, 
                 # condensed_fashion = "ground_truth", 
                 iteration_count = self.iteration_count, 
-                eval_mode = True, 
-                # experiment_setting = self.experiment_setting, 
+                # eval_mode = True, 
+                experiment_setting = self.experiment_setting, 
             ) 
             
             # visualize attention map 
@@ -819,7 +819,7 @@ trainer = CustomTrainer(
     data_collator = data_collator, 
     # compute_metrics = compute_metrics, 
     optimizers = (custom_optimizer, None), 
-    experiment_setting = "setting0", 
+    experiment_setting = "setting1", 
     tokenizer = tokenizer, 
     artifact = artifact, 
 ) 
