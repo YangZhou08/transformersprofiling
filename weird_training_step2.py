@@ -779,9 +779,8 @@ trainer = CustomTrainer(
     # compute_metrics = compute_metrics, 
     optimizers = (custom_optimizer, None), 
     experiment_setting = "setting2", 
+    tokenizer = tokenizer, 
 ) 
-
-
 
 # print(trainer.lr_scheduler.state_dict()) 
 # exit(0) 
