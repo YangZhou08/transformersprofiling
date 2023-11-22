@@ -361,7 +361,7 @@ class CustomTrainer(Trainer):
                        "group2.lr": self.optimizer.param_groups[1]["lr"], 
                        "iteration_count": self.iteration_count * 50 
             }) 
-        if self.iteration_count % 300 == 0: 
+        if self.iteration_count % 500 == 0: 
             for layer in [0, 6, 11]: 
                 for head in [0, 6, 11]: 
                     '''
@@ -372,10 +372,21 @@ class CustomTrainer(Trainer):
                         print("the attention mask has shape {}".format(outputs.attentions.shape)) 
                     ''' 
                     # SimpleSmallModel.plot_attention_map(outputs.attentions, 0, 0, 144, "testing_attention_map.jpg") 
-                    SimpleSmallModel.plot_attention_map(outputs.attentions, layer, head, 144, "testing_attention_map.jpg") 
+                    plot_name = "testing_attention_map_{}.jpg".format(self.commit_hash) 
+                    SimpleSmallModel.plot_attention_map(outputs.attentions, layer, head, 144, plot_name) 
                     # print(outputs.attentions[0][0][0][64]) 
+                    # time.sleep(0.1) # ensure the file is written to disk 
                     field_name = "layer{}_head{}".format(layer, head) 
-                    wandb.log({field_name: wandb.Image("testing_attention_map.jpg")}) 
+
+                    try: 
+                        wandb.log({field_name: wandb.Image(plot_name)}) 
+                    except Exception as e: 
+                        print(f"An error has occured during logging attention map: {e}") 
+                        # try again 
+                        # time.sleep(1) 
+                        # if try_count < 2: 
+                        #     wandb.log({field_name: wandb.Image("testing_attention_map.jpg")}) 
+                        #     try_count += 1 
 
         # inspect the hidden states here 
 
@@ -398,12 +409,12 @@ class CustomTrainer(Trainer):
         labels = labels[:, 1:] 
         preds = torch.argmax(logits, dim = -1) 
         if outside_step == 0: 
-            f = open("key_notes{}.md".format(self.commit_hash), "a") 
-            f.write("writing key notes at step {}".format(self.iteration_count)) 
-            mask_correctness = (preds[: 5, 63 :] == labels[: 5, 63 :]).to(torch.bool) 
+            # f = open("key_notes{}.md".format(self.commit_hash), "a") 
+            # f.write("writing key notes at step {}".format(self.iteration_count)) 
+            mask_correctness = (preds[: 20, 63 :] == labels[: 20, 63 :]).to(torch.bool) 
             # print(mask_correctness.shape) 
             # pred_outputs = self.tokenizer.batch_decode(preds[: 5]) 
-            pred_outputs = preds[: 5] 
+            pred_outputs = preds[: 20]  
             # labels_outputs = self.tokenizer.batch_decode(labels[: 5, :]) 
             for i in range(len(pred_outputs)): 
                 prediction_text = "the prediction is: {}".format(self.tokenizer.decode(pred_outputs[i][: 63])) 
@@ -417,15 +428,17 @@ class CustomTrainer(Trainer):
                 # print(labels[i]) 
                 mask_filtered = labels[i][input_attention_mask[i] == 1] 
                 mask_filtered[mask_filtered == -100] = 0 
-                labels_outputs = self.tokenizer.decode(mask_filtered) 
-                label_text = "the label is: {}".format(colored(labels_outputs, "yellow")) 
-                print(label_text) 
+                labels_outputs1 = self.tokenizer.decode(mask_filtered[: 63]) 
+                label_text = "the label is: {}".format(colored(labels_outputs1, "yellow")) 
+                print(label_text, end = " ") 
+                labels_outputs2 = self.tokenizer.decode(mask_filtered[63 :]) 
+                print(colored(labels_outputs2, "light_yellow")) 
                 print() 
                 print() 
                 # wandb.log({"key notes: ": prediction_text + label_text}) 
-                f.write(prediction_text + "\n" + label_text + "\n") 
-            f.write("\n") 
-            f.close() 
+                # f.write(prediction_text + "\n" + label_text + "\n") 
+            # f.write("\n") 
+            # f.close() 
             # self.artifact.add_file("key_notes{}.md".format(self.commit_hash), name = "key_notes.md") 
             # wandb.log_artifact(self.artifact) 
                 
