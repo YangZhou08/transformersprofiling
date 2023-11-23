@@ -743,7 +743,7 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 # defining custom dataset 
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
 train_set, test_set = datasetnew.split(0.95) 
-''' 
+
 # handling simplesmallmodel 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 # small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
@@ -770,7 +770,6 @@ except RuntimeError as r:
 
 small_model = small_model.to(torch_device) 
 small_model.train() 
-'''
 
 # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
 
@@ -779,8 +778,10 @@ small_model.train()
 # config = LlamaConfig.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 # print(config) 
 # small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
+'''
 small_model = AutoModelForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
 small_model.train() 
+''' 
 
 # for llama model we need to add the padding token 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
