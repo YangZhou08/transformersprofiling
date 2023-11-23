@@ -164,8 +164,12 @@ def get_git_commit_hash():
         # Handle cases where the git command fails (e.g., not a git repository)
         return None
 
-commit_hash = get_git_commit_hash() 
+commit_hash = get_git_commit_hash()[: 7] # only 7 digits 
 print("the commit hash is {}".format(commit_hash)) 
+
+import datetime 
+hash_of_time = str(datetime.datetime.now()).split('.')[-1] 
+print("the hash of time is {}".format(hash_of_time)) 
 
 import socket
 
@@ -197,7 +201,17 @@ else:
 logger = logging.get_logger(__name__) 
 
 class CustomTrainer(Trainer): 
-    def __init__(self, experiment_setting = "setting0", tokenizer = None, artifact = None, commit_hash = None, eval_mode = False, *args, **kwargs): 
+    def __init__(
+            self, 
+            experiment_setting = "setting0", 
+            tokenizer = None, 
+            artifact = None, 
+            commit_hash = None, 
+            eval_mode = False, 
+            time_hash = None, 
+            *args, 
+            **kwargs, 
+    ): 
         super().__init__(*args, **kwargs) 
         # self.large_model = large_model 
         # self.generation_config = GenerationConfig(return_dict_in_generate = True) 
@@ -209,6 +223,7 @@ class CustomTrainer(Trainer):
         self.artifact = artifact 
         self.commit_hash = commit_hash 
         self.eval_mode = eval_mode 
+        self.time_hash = time_hash 
     
     def training_step(self, model, inputs): 
         model.train() 
@@ -376,7 +391,7 @@ class CustomTrainer(Trainer):
                         print("the attention mask has shape {}".format(outputs.attentions.shape)) 
                     ''' 
                     # SimpleSmallModel.plot_attention_map(outputs.attentions, 0, 0, 144, "testing_attention_map.jpg") 
-                    plot_name = "testing_attention_map_{}.jpg".format(self.commit_hash) 
+                    plot_name = "testing_attention_map_{}_{}_{}.jpg".format(self.commit_hash, self.time_hash, self.experiment_setting) 
                     SimpleSmallModel.plot_attention_map(outputs.attentions, layer, head, 144, plot_name) 
                     # print(outputs.attentions[0][0][0][64]) 
                     # time.sleep(0.1) # ensure the file is written to disk 
@@ -413,6 +428,7 @@ class CustomTrainer(Trainer):
         labels = labels[:, 1:] 
         preds = torch.argmax(logits, dim = -1) 
         if outside_step == 0: 
+            print("*** evaluating at step {} ***".format(self.iteration_count)) 
             # f = open("key_notes{}.md".format(self.commit_hash), "a") 
             # f.write("writing key notes at step {}".format(self.iteration_count)) 
             mask_correctness = (preds[: 20, 63 :] == labels[: 20, 63 :]).to(torch.bool) 
@@ -750,7 +766,7 @@ train_set, test_set = datasetnew.split(0.95)
 small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
 
 small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
-small_model = SimpleSmallModel(small_config) 
+small_model = SimpleSmallModel(small_config, hostname = hostname) 
 
 new_state_dict = {} 
 
@@ -869,12 +885,6 @@ def compute_metrics(p):
         'perplexity': perplexity,
     } 
 
-file = open("key_notes{}.md".format(commit_hash), "a") 
-file.write("# My Text Log\n\n") 
-file.close() 
-
-artifact = wandb.Artifact("key_notes", type = "text") 
-
 trainer = CustomTrainer( 
     model = small_model, 
     args = training_args, 
@@ -889,6 +899,7 @@ trainer = CustomTrainer(
     tokenizer = tokenizer, 
     artifact = artifact, 
     eval_mode = args.eval_mode, 
+    time_hash = hash_of_time, 
 ) 
 
 print("experiment-setting is {}".format(trainer.experiment_setting)) 

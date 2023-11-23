@@ -1508,7 +1508,7 @@ class LlamaForSequenceClassification(LlamaPreTrainedModel):
 class SimpleSmallModel(LlamaPreTrainedModel): 
     _tied_weights_keys = ["lm_head.weight"] 
     
-    def __init__(self, config, sliding_window_length = 4): 
+    def __init__(self, config, sliding_window_length = 4, hostname = None): 
         super().__init__(config) 
         # copied from LlamaModel 
         self.padding_idx = config.pad_token_id 
@@ -1537,6 +1537,17 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         self.eval_mode = False 
         self.condensed_fashion = "projection_mode" 
         self.all_list_condensed = ["projection_mode", "ground_truth"] 
+
+        self.criticalpath = None 
+        # determine something 
+        if hostname is not None: 
+            if "lovelace" in hostname: 
+                self.criticalpath = "/home/yangzho6/" 
+            elif "ada" in hostname: 
+                self.criticalpath = "/home/beidic/yangzho6/" 
+
+        if self.criticalpath is None or hostname is None: 
+            raise ValueError("critical path is not set") 
     
     # input embeddings 
     def get_input_embeddings(self):
@@ -2074,7 +2085,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             # attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length 
             attention_mask, (batch_size, seq_length), input_embeds, past_key_values_length 
         ) 
-        working_dir = "/home/yangzho6/" 
+        # working_dir = "/home/yangzho6/" 
         # working_dir = "/home/beidic/yangzho6/" 
         # self.visualize_attention_mask(seq_length, attention_mask[0][0], working_dir + "attention_mask_before_modification.jpg") 
         # print(attention_mask[0][0]) 
@@ -2095,6 +2106,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 raise ValueError("We do not have the experiment setting you are looking for") 
             
         if iteration_count is not None and iteration_count == 1: 
+            working_dir = self.criticalpath 
             self.visualize_attention_mask(seq_length, attention_mask[0][0], working_dir + "attention_mask_after_modification.jpg") 
         # print(attention_mask[0][0]) 
         
