@@ -230,6 +230,7 @@ loss_fn = torch.nn.MSELoss()
 layerone = SingleLayerProjection() 
 layerone.to("cuda") 
 optimizer = torch.optim.Adam(layerone.parameters(), lr = 1e-4) 
+lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = 100, gamma = 0.9) 
 
 large_model_embeddings = large_model_embeddings.to("cuda") 
 small_model_embeddings = small_model_embeddings.to("cuda") 
