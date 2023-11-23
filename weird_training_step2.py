@@ -775,6 +775,8 @@ for key in small_state_dict_for_model.keys():
         new_key = key[6 :] 
     print(new_key) 
     new_state_dict[new_key] = small_state_dict_for_model[key] 
+if args.embedding_pretrained: 
+    new_state_dict["embed_projection.weight"] = torch.load("linearprojectionweighttesting.pt") 
 
 try: 
     small_model.load_state_dict(new_state_dict) 
@@ -783,7 +785,6 @@ except RuntimeError as r:
 
 small_model = small_model.to(torch_device) 
 small_model.train() 
-exit() 
 
 # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
 
@@ -811,10 +812,17 @@ for k, v in small_model.named_parameters():
         pretraining_weights_group.append(v) 
 print(len(pretraining_weights_group), len(newly_initialized_group)) 
 
-custom_optimizer = torch.optim.AdamW([
-    {"params": pretraining_weights_group, "lr": 2e-4}, 
-    {"params": newly_initialized_group, "lr": 2e-4}, 
-]) 
+if not args.embedding_pretrained: 
+    custom_optimizer = torch.optim.AdamW([
+        {"params": pretraining_weights_group, "lr": 2e-4}, 
+        {"params": newly_initialized_group, "lr": 2e-4}, 
+    ]) 
+else: 
+    for param in newly_initialized_group: 
+        pretraining_weights_group.append(param) 
+    custom_optimizer = torch.optim.AdamW([
+        {"params": pretraining_weights_group, "lr": 2e-4}, 
+    ]) 
 
 def _lr_scheduler_rewriting(current_step, *, num_warmup_steps: int, num_training_steps: int): 
     if current_step < num_warmup_steps:
