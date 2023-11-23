@@ -253,3 +253,11 @@ for i in range(10000): # 100 epochs
     optimizer.step() 
 
 wandb.finish() 
+
+torch.save(layerone.linear.weight, "linearprojectionweighttesting.pt") 
+
+layerone_checking = SingleLayerProjection() 
+layerone_checking.linear.weight = torch.nn.Parameter(torch.load("linearprojectionweighttesting.pt")) 
+layerone_checking.to("cuda") 
+
+print("loading model to cuda to print loss ", loss_fn(layerone_checking(large_model_embeddings), small_model_embeddings).item()) 
