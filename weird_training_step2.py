@@ -205,7 +205,6 @@ class CustomTrainer(Trainer):
             self, 
             experiment_setting = "setting0", 
             tokenizer = None, 
-            artifact = None, 
             commit_hash = None, 
             eval_mode = False, 
             time_hash = None, 
@@ -220,7 +219,6 @@ class CustomTrainer(Trainer):
         self.iteration_count = 0 
         self.experiment_setting = experiment_setting 
         self.tokenizer = tokenizer 
-        self.artifact = artifact 
         self.commit_hash = commit_hash 
         self.eval_mode = eval_mode 
         self.time_hash = time_hash 
@@ -895,7 +893,6 @@ trainer = CustomTrainer(
     optimizers = (custom_optimizer, None), 
     experiment_setting = args.experiment_setting, 
     tokenizer = tokenizer, 
-    artifact = artifact, 
     eval_mode = args.eval_mode, 
     time_hash = hash_of_time, 
 ) 
