@@ -311,6 +311,7 @@ class CustomTrainer(Trainer):
             # print("condensed_embeds is {}".format(condensed_embeds)) 
             # print("input_ids are {}".format(input_ids)) 
             # outputs = model(input_ids = large_outputs.sequences, attention_mask = attention_mask, labels = large_outputs.sequences, condensed_embeds = downsampled_vectors) 
+            print("printing out the experiment_setting: {} eval_mode: {}".format(self.experiment_setting, self.eval_mode)) 
             outputs = model(
                 input_ids = input_ids, 
                 attention_mask = attention_mask, 
