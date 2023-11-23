@@ -29,6 +29,8 @@ from torch.utils.data import random_split
 from src.transformers import BitsAndBytesConfig 
 from packaging import version 
 
+import datetime 
+
 # # cache_dir = "/home/bc20/yang/" 
 # dir_dataset = "/home/yangzho6/c4_parts" 
 # dir_models = "/home/yangzho6/model_checkpoints2" 
@@ -321,7 +323,8 @@ class CustomTrainer(Trainer):
                 iteration_count = self.iteration_count, 
                 # eval_mode = True, 
                 experiment_setting = self.experiment_setting, 
-                eval_model = self.eval_mode, 
+                # eval_model = self.eval_mode, 
+                eval_mode = self.eval_mode, 
             ) 
             
             # visualize attention map 
@@ -834,7 +837,9 @@ training_args = TrainingArguments(
 
 max_length = 128 
 if has_wandb: 
-    wandb.init(project = "llm160m", config = training_args, name="sequencelength{}kernelsize{}learning_rate{}".format(max_length, 4, training_args.learning_rate)) 
+    project_setting = args.experiment_setting if args.eval_mode is False else "finetuning" 
+    today = datetime.date.today() 
+    wandb.init(project = "llm160m", config = training_args, name="{}_{}".format(today, project_setting)) 
 
 weightmodelfirst = next(small_model.parameters()) 
 # print(weightmodelfirst.dtype) 
