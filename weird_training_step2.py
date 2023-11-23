@@ -373,11 +373,17 @@ class CustomTrainer(Trainer):
         loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
         print(colored("the loss is {}".format(loss), "yellow")) 
         if has_wandb: 
-            wandb.log({"loss": loss, 
-                       "group1.lr": self.optimizer.param_groups[0]["lr"], 
-                       "group2.lr": self.optimizer.param_groups[1]["lr"], 
-                       "iteration_count": self.iteration_count * 50 
-            }) 
+            if len(self.optimizer.param_groups) > 1: 
+                wandb.log({"loss": loss, 
+                        "group1.lr": self.optimizer.param_groups[0]["lr"], 
+                        "group2.lr": self.optimizer.param_groups[1]["lr"], 
+                        "iteration_count": self.iteration_count * 50 
+                }) 
+            else: 
+                wandb.log({"loss": loss, 
+                        "group1.lr": self.optimizer.param_groups[0]["lr"], 
+                        "iteration_count": self.iteration_count * 50 
+                }) 
         if self.iteration_count % 500 == 0: 
             for layer in [0, 6, 11]: 
                 for head in [0, 6, 11]: 
