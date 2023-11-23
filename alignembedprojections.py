@@ -250,8 +250,8 @@ for i in range(200): # 100 epochs
     loss = loss_fn(layerone(large_model_embeddings), small_model_embeddings) 
     loss.backward() 
     wandb.log({"global iteration count": i, "loss": loss.item()}) 
-    print(loss.item()) 
     optimizer.step() 
+    print(loss.item()) 
 
 wandb.finish() 
 
