@@ -224,11 +224,12 @@ class SingleLayerProjection(torch.nn.Module):
     def forward(self, x): 
         return self.linear(x) 
 
-optimizer = torch.optim.Adam(SingleLayerProjection().parameters(), lr = 1e-3) 
+
 loss_fn = torch.nn.MSELoss() 
 
 layerone = SingleLayerProjection() 
 layerone.to("cuda") 
+optimizer = torch.optim.adam(layerone.parameters(), lr = 1e-4) 
 
 large_model_embeddings = large_model_embeddings.to("cuda") 
 small_model_embeddings = small_model_embeddings.to("cuda") 
@@ -249,3 +250,5 @@ for i in range(10000): # 100 epochs
     loss.backward() 
     wandb.log({"global iteration count": i, "loss": loss.item()}) 
     optimizer.step() 
+
+wandb.finish() 
