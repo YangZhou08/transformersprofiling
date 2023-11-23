@@ -819,11 +819,13 @@ for k, v in small_model.named_parameters():
 print(len(pretraining_weights_group), len(newly_initialized_group)) 
 
 if not args.embedding_pretrained: 
+    print("*** we are not using pretrained embeddings ***") 
     custom_optimizer = torch.optim.AdamW([
         {"params": pretraining_weights_group, "lr": 2e-4}, 
         {"params": newly_initialized_group, "lr": 2e-4}, 
     ]) 
 else: 
+    print("*** we are using pretrained embeddings ***") 
     for param in newly_initialized_group: 
         pretraining_weights_group.append(param) 
     custom_optimizer = torch.optim.AdamW([
