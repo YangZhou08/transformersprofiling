@@ -710,6 +710,7 @@ parser = argparse.ArgumentParser(
 # parser.add_argument("--freeze_pretrained", action = "store_true", default = False) 
 parser.add_argument("--experiment_setting", type = str, default = "setting0") 
 parser.add_argument("--eval_mode", action="store_true", default = False) 
+parser.add_argument("--embedding_pretrained", action = "store_true", default = False) 
 
 args = parser.parse_args() 
 print(args) 
@@ -782,6 +783,7 @@ except RuntimeError as r:
 
 small_model = small_model.to(torch_device) 
 small_model.train() 
+exit() 
 
 # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
 
