@@ -219,7 +219,7 @@ for key in small_model_state_dict.keys():
 class SingleLayerProjection(torch.nn.Module): 
     def __init__(self): 
         super().__init__() 
-        self.linear = torch.nn.Linear(4096, 768) 
+        self.linear = torch.nn.Linear(4096, 768, bias = False) 
     
     def forward(self, x): 
         return self.linear(x) 
