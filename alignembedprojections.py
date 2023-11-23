@@ -250,12 +250,12 @@ for i in range(200): # 100 epochs
     loss = loss_fn(layerone(large_model_embeddings), small_model_embeddings) 
     loss.backward() 
     wandb.log({"global iteration count": i, "loss": loss.item()}) 
-    print(loss) 
+    print(loss.item()) 
     optimizer.step() 
 
 wandb.finish() 
 
-torch.save(layerone.linear.weight.data, "linearprojectionweighttesting.pt") 
+torch.save(layerone.linear.weight.clone().cpu(), "linearprojectionweighttesting.pt") 
 
 layerone_checking = SingleLayerProjection() 
 layerone_checking.linear.weight = torch.nn.Parameter(torch.load("linearprojectionweighttesting.pt")) 
