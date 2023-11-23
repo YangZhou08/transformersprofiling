@@ -199,5 +199,15 @@ logger = logging.get_logger(__name__)
 large_model_state_dict = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).state_dict() 
 small_model_state_dict = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
 
+large_model_embeddings = None 
 for key in large_model_state_dict.keys(): 
+    if key == "model.embed_tokens.weight": 
+        print("got here found the following key {}".format(key)) 
+        large_model_embeddings = large_model_state_dict[key] 
+        break 
+    else: 
+        continue 
+
+small_model_embeddings = None 
+for key in small_model_state_dict.keys(): 
     print(key) 
