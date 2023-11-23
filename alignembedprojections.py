@@ -206,8 +206,45 @@ for key in large_model_state_dict.keys():
         large_model_embeddings = large_model_state_dict[key] 
         break 
     else: 
-        continue 
+        del large_model_state_dict[key] 
 
 small_model_embeddings = None 
 for key in small_model_state_dict.keys(): 
-    print(key) 
+    if key == "model.embed_tokens.weight": 
+        small_model_embeddings = small_model_state_dict[key] 
+        break 
+    else: 
+        del small_model_state_dict[key] 
+
+class SingleLayerProjection(torch.nn.Module): 
+    def __init__(self): 
+        super().__init__() 
+        self.linear = torch.nn.Linear(4096, 768) 
+    
+    def forward(self, x): 
+        return self.linear(x) 
+
+optimizer = torch.optim.Adam(SingleLayerProjection().parameters(), lr = 1e-3) 
+loss_fn = torch.nn.MSELoss() 
+
+layerone = SingleLayerProjection() 
+layerone.to("cuda") 
+
+large_model_embeddings = large_model_embeddings.to("cuda") 
+small_model_embeddings = small_model_embeddings.to("cuda") 
+
+try:
+    import wandb
+    has_wandb = True
+except ImportError:
+    has_wandb = False 
+
+if has_wandb: 
+    wandb.init(project = "llm160m", name = "linearmodeltrainingalignment4") 
+
+for i in range(10000): # 100 epochs 
+    optimizer.zero_grad() 
+    loss = loss_fn(layerone(large_model_embeddings), small_model_embeddings) 
+    loss.backward() 
+    wandb.log({"global iteration count": i, "loss": loss.item()}) 
+    optimizer.step() 
