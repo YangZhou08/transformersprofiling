@@ -244,12 +244,13 @@ except ImportError:
 if has_wandb: 
     wandb.init(project = "llm160m", name = "linearmodeltrainingalignment4") 
 
-for i in range(10000): # 100 epochs 
+for i in range(200): # 100 epochs 
     print("iteration {} out of {}".format(i, 10000)) 
     optimizer.zero_grad() 
     loss = loss_fn(layerone(large_model_embeddings), small_model_embeddings) 
     loss.backward() 
     wandb.log({"global iteration count": i, "loss": loss.item()}) 
+    print(loss) 
     optimizer.step() 
 
 wandb.finish() 
