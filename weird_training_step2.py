@@ -433,9 +433,7 @@ class CustomTrainer(Trainer):
             # f.write("writing key notes at step {}".format(self.iteration_count)) 
             mask_correctness = (preds[: 20, 63 :] == labels[: 20, 63 :]).to(torch.bool) 
             # print(mask_correctness.shape) 
-            # pred_outputs = self.tokenizer.batch_decode(preds[: 5]) 
-            pred_outputs = preds[: 20]  
-            # labels_outputs = self.tokenizer.batch_decode(labels[: 5, :]) 
+            pred_outputs = preds[: 20] 
             for i in range(len(pred_outputs)): 
                 prediction_text = "the prediction is: {}".format(self.tokenizer.decode(pred_outputs[i][: 63])) 
                 for j in range(mask_correctness.shape[1]): 
