@@ -229,7 +229,7 @@ loss_fn = torch.nn.MSELoss()
 
 layerone = SingleLayerProjection() 
 layerone.to("cuda") 
-optimizer = torch.optim.adam(layerone.parameters(), lr = 1e-4) 
+optimizer = torch.optim.Adam(layerone.parameters(), lr = 1e-4) 
 
 large_model_embeddings = large_model_embeddings.to("cuda") 
 small_model_embeddings = small_model_embeddings.to("cuda") 
