@@ -889,6 +889,8 @@ def compute_metrics(p):
 
     logits = p.predictions 
     labels = p.label_ids 
+    logits = logits[: -1] 
+    labels = labels[1: ] 
     probs = torch.softmax(torch.tensor(logits), dim = -1) 
     loss = nn.CrossEntropyLoss()(torch.tensor(logits), torch.tensor(labels)).item() 
     perplexity = torch.exp(torch.tensor(loss)).item() 
