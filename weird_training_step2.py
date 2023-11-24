@@ -472,7 +472,8 @@ class CustomTrainer(Trainer):
         perplexity = torch.exp(loss).mean().item() 
         # print("the perplexity is {}".format(perplexity)) 
         # use preds to compute accuracy 
-        indices_to_keep = input_attention_mask == 1 
+        # indices_to_keep = input_attention_mask == 1 # only for debugging purposes 
+        indices_to_keep = torch.ones_like(input_attention_mask).to(torch.bool) 
         total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
         # print("shape of indices_to_keep: {}".format(indices_to_keep.shape)) 
         interest_token_count = torch.sum(indices_to_keep[:, 63 :].reshape(-1), dim = 0).item() # check whether 63 makes sense and make it more general if it is correct or not 
