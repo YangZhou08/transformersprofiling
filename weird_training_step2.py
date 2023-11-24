@@ -756,7 +756,7 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 # custom dataset 
 # defining custom dataset 
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
-train_set, test_set = datasetnew.split(0.8)    # 712k * 0.95 = 676k 712k * 0.05 = 36k 
+train_set, test_set = datasetnew.split(0.9)    # 712k * 0.95 = 676k 712k * 0.05 = 36k 
 
 if not args.use_plain_model: 
     print(colored("we use custom small", "cyan")) 
