@@ -3015,6 +3015,7 @@ class Trainer:
         ignore_keys: Optional[List[str]] = None,
         metric_key_prefix: str = "eval",
     ) -> EvalLoopOutput: 
+        print("got inside the class") 
         pass 
 
     def evaluate(
@@ -3054,7 +3055,7 @@ class Trainer:
         start_time = time.time()
 
         # below line is only for debugging 
-        self.evaluation_loop2(
+        output = self.evaluation_loop2(
             eval_dataloader,
             description="Evaluation",
             # No point gathering the predictions if there are no metrics, otherwise we defer to
