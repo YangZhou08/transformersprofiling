@@ -30,6 +30,7 @@ from src.transformers import BitsAndBytesConfig
 from packaging import version 
 
 import datetime 
+import os 
 
 # # cache_dir = "/home/bc20/yang/" 
 # dir_dataset = "/home/yangzho6/c4_parts" 
@@ -44,7 +45,7 @@ try:
 except ImportError:
     has_wandb = False 
 
-# has_wandb = False # disable for debugging 
+has_wandb = False # disable for debugging 
 
 from src.transformers.utils import ( 
     ADAPTER_CONFIG_NAME,
@@ -762,7 +763,7 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 # defining custom dataset 
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
 train_set, test_set = datasetnew.split(0.95) 
-
+'''
 # handling simplesmallmodel 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 # small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
@@ -793,16 +794,15 @@ small_model = small_model.to(torch_device)
 small_model.train() 
 
 # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
-
+''' 
 # alternative pretrained model 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m").to(torch_device) 
 # config = LlamaConfig.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 # print(config) 
 # small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
-'''
 small_model = AutoModelForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
 small_model.train() 
-''' 
+
 
 # for llama model we need to add the padding token 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
@@ -826,6 +826,8 @@ if not args.embedding_pretrained:
     ]) 
 else: 
     print("*** we are using pretrained embeddings ***") 
+    if not os.path.exists("linearprojectionweighttesting.pt"): 
+        raise ValueError("please run analyzing_initial_perfromance.py before runnint this setting") 
     for param in newly_initialized_group: 
         pretraining_weights_group.append(param) 
     custom_optimizer = torch.optim.AdamW([
@@ -871,7 +873,9 @@ max_length = 128
 if has_wandb: 
     project_setting = args.experiment_setting if args.eval_mode is False else "finetuning" 
     today = datetime.date.today() 
-    wandb.init(project = "llm160m", config = training_args, name="{}_{}".format(today, project_setting)) 
+    wandblogconfigs = {**(training_args.to_dict()), **(args.__dict__)} 
+    # wandb.init(project = "llm160m", config = training_args, name="{}_{}".format(today, project_setting)) 
+    wandb.init(project = "llm160m", config = wandblogconfigs, name = "{}_{}".format(today, project_setting)) 
 
 weightmodelfirst = next(small_model.parameters()) 
 # print(weightmodelfirst.dtype) 
