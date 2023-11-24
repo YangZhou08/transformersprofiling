@@ -486,8 +486,8 @@ class CustomTrainer(Trainer):
         # use preds to compute f1 score 
         # f1 = precision_recall_fscore_support(labels, preds, average = "weighted") 
         return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "interest_correct_words": interest_correct_count, "interest_total_words": interest_token_count} 
-    '''
-    def evaluation_loop(
+    
+    def evaluation_loop2(
         self,
         dataloader: DataLoader,
         description: str,
@@ -654,7 +654,6 @@ class CustomTrainer(Trainer):
                 metrics[f"{metric_key_prefix}_{key}"] = metrics.pop(key)
 
         return EvalLoopOutput(predictions=all_preds, label_ids=all_labels, metrics=metrics, num_samples=num_samples) 
-    ''' 
         
 class CustomDataset: 
     def __init__(self, data_dir, tokenizer = None, max_length = 128): 
