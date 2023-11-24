@@ -891,8 +891,9 @@ def compute_metrics(p):
     labels = p.label_ids 
     # logits = logits[: -1] 
     print("logits have shape {}".format(len(logits))) 
-    for i in range(len(logits)): 
-        print("logits[{}] has shape {}".format(i, logits[i].shape)) 
+    # for i in range(len(logits)): 
+    #     print("logits[{}] has shape {}".format(i, logits[i].shape)) 
+    logits = logits[0][:, : -1, :] 
     logits = logits[:, : -1, :] 
     labels = labels[1: ] 
     probs = torch.softmax(torch.tensor(logits), dim = -1) 
