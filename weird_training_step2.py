@@ -711,8 +711,8 @@ parser = argparse.ArgumentParser(
                     description='What the program does',
                     epilog='Text at the bottom of help') 
 
-parser.add_argument("--group1lr", type = float, default = 5e-4) 
-parser.add_argument("--group2lr", type = float, default = 1) 
+parser.add_argument("--group1lr", type = float, default = 2e-4) 
+parser.add_argument("--group2lr", type = float, default = 2e-3) 
 parser.add_argument("--experiment_setting", type = str, default = "setting0") 
 parser.add_argument("--eval_mode", action="store_true", default = False) 
 parser.add_argument("--embedding_pretrained", action = "store_true", default = False) 
@@ -825,8 +825,10 @@ print(len(pretraining_weights_group), len(newly_initialized_group))
 if not args.embedding_pretrained: 
     print("*** we are not using pretrained embeddings ***") 
     custom_optimizer = torch.optim.AdamW([
-        {"params": pretraining_weights_group, "lr": 2e-4}, 
-        {"params": newly_initialized_group, "lr": 2e-4}, 
+        # {"params": pretraining_weights_group, "lr": 2e-4}, 
+        # {"params": newly_initialized_group, "lr": 2e-3}, 
+        {"params": pretraining_weights_group, "lr": float(args.group1lr)}, 
+        {"params": newly_initialized_group, "lr": float(args.group2lr)}, 
     ]) 
 else: 
     print("*** we are using pretrained embeddings ***") 
@@ -835,7 +837,8 @@ else:
     for param in newly_initialized_group: 
         pretraining_weights_group.append(param) 
     custom_optimizer = torch.optim.AdamW([
-        {"params": pretraining_weights_group, "lr": 2e-4}, 
+        # {"params": pretraining_weights_group, "lr": 2e-4}, 
+        {"params": pretraining_weights_group, "lr": float(args.group1lr)}, 
     ]) 
 
 def _lr_scheduler_rewriting(current_step, *, num_warmup_steps: int, num_training_steps: int): 
@@ -878,6 +881,8 @@ if has_wandb:
     project_setting = args.experiment_setting if args.eval_mode is False else "finetuning" 
     today = datetime.date.today() 
     wandblogconfigs = {**(training_args.to_dict()), **(args.__dict__)} 
+    wandblogconfigs["git_commit"] = commit_hash 
+    wandblogconfigs["time_hash"] = hash_of_time 
     # wandb.init(project = "llm160m", config = training_args, name="{}_{}".format(today, project_setting)) 
     wandb.init(project = "llm160m", config = wandblogconfigs, name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain")) 
 
