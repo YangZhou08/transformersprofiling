@@ -916,8 +916,8 @@ def compute_metrics(p):
     }) 
     ''' 
     return {
-        'accuracy': accuracy_score(p.labels_ids, pred), 
-        'f1': precision_recall_fscore_support(p.label_ids, pred, average = 'weighted'), 
+        'accuracy': accuracy_score(labels, pred), 
+        # 'f1': precision_recall_fscore_support(p.label_ids, pred, average = 'weighted'), 
         'perplexity': perplexity,
     } 
 
