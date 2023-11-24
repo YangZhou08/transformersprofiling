@@ -373,7 +373,7 @@ class CustomTrainer(Trainer):
                 f"{','.join(outputs.keys())}. For reference, the inputs it received are {','.join(inputs.keys())}."
             ) 
         loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
-        print(colored("the loss is {}".format(loss), "yellow")) 
+        print(colored("the loss is {}".format(loss), "yellow" if evaluation_mode is False else "cyan")) 
         if has_wandb and evaluation_mode is False: 
             if len(self.optimizer.param_groups) > 1: 
                 wandb.log({"loss": loss, 
@@ -853,10 +853,10 @@ training_args = TrainingArguments(
     per_device_train_batch_size=128, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=256,  # evaluation batch size
-    logging_steps=3,            # evaluate, log and save model checkpoints every 1000 step
+    logging_steps=2,            # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 3,  
+    save_steps = 2,  
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     learning_rate=2e-4, 
