@@ -915,11 +915,13 @@ def compute_metrics(p):
                 "evaluation_perplexity": perplexity, 
     }) 
     ''' 
-    return {
+    output = {
         'accuracy': accuracy_score(labels, pred), 
         # 'f1': precision_recall_fscore_support(p.label_ids, pred, average = 'weighted'), 
         'perplexity': perplexity,
     } 
+    print(colored(output, "red")) 
+    return output 
 
 trainer = CustomTrainer( 
     model = small_model, 
