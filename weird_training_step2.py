@@ -711,15 +711,16 @@ parser = argparse.ArgumentParser(
                     description='What the program does',
                     epilog='Text at the bottom of help') 
 
-# parser.add_argument("--group1lr", type = float, default = 5e-4) 
-# parser.add_argument("--group2lr", type = float, default = 1) 
-# parser.add_argument("--togetherforming", type = str, default = "concatenation") 
-# parser.add_argument("--freeze_pretrained", action = "store_true", default = False) 
+parser.add_argument("--group1lr", type = float, default = 5e-4) 
+parser.add_argument("--group2lr", type = float, default = 1) 
 parser.add_argument("--experiment_setting", type = str, default = "setting0") 
 parser.add_argument("--eval_mode", action="store_true", default = False) 
 parser.add_argument("--embedding_pretrained", action = "store_true", default = False) 
+parser.add_argument("--use_plain_model", action = "store_true", default = False) 
 
 args = parser.parse_args() 
+if args.embedding_pretrained: 
+    args.group2lr = None # we enforce it 
 print(args) 
 
 # defining tokenizer 
@@ -763,45 +764,48 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 # defining custom dataset 
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
 train_set, test_set = datasetnew.split(0.95) 
-'''
-# handling simplesmallmodel 
-# small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
-# small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
-small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
 
-small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
-small_model = SimpleSmallModel(small_config, hostname = hostname) 
+if not args.use_plain_model: 
+    print(colored("we use custom small", "cyan")) 
+    # handling simplesmallmodel 
+    # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
+    # small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+    small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
 
-new_state_dict = {} 
+    small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
+    small_model = SimpleSmallModel(small_config, hostname = hostname) 
 
-for key in small_state_dict_for_model.keys(): 
-    new_key = key 
-    if 'lm_head' in key: 
-        print("got here found the following key {}".format(key)) 
-    if 'model.' in key: 
-        new_key = key[6 :] 
-    print(new_key) 
-    new_state_dict[new_key] = small_state_dict_for_model[key] 
-if args.embedding_pretrained: 
-    new_state_dict["embed_projection.weight"] = torch.load("linearprojectionweighttesting.pt") 
+    new_state_dict = {} 
 
-try: 
-    small_model.load_state_dict(new_state_dict) 
-except RuntimeError as r: 
-    print(colored(r, "yellow")) 
+    for key in small_state_dict_for_model.keys(): 
+        new_key = key 
+        if 'lm_head' in key: 
+            print("got here found the following key {}".format(key)) 
+        if 'model.' in key: 
+            new_key = key[6 :] 
+        print(new_key) 
+        new_state_dict[new_key] = small_state_dict_for_model[key] 
+    if args.embedding_pretrained: 
+        new_state_dict["embed_projection.weight"] = torch.load("linearprojectionweighttesting.pt") 
 
-small_model = small_model.to(torch_device) 
-small_model.train() 
+    try: 
+        small_model.load_state_dict(new_state_dict) 
+    except RuntimeError as r: 
+        print(colored(r, "yellow")) 
 
-# custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
-''' 
-# alternative pretrained model 
-# small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m").to(torch_device) 
-# config = LlamaConfig.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
-# print(config) 
-# small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
-small_model = AutoModelForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
-small_model.train() 
+    small_model = small_model.to(torch_device) 
+    small_model.train() 
+
+    # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
+else: 
+    print(colored("we use plain model", "cyan")) 
+    # alternative pretrained model 
+    # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m").to(torch_device) 
+    # config = LlamaConfig.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+    # print(config) 
+    # small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
+    small_model = AutoModelForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
+    small_model.train() 
 
 
 # for llama model we need to add the padding token 
@@ -875,7 +879,7 @@ if has_wandb:
     today = datetime.date.today() 
     wandblogconfigs = {**(training_args.to_dict()), **(args.__dict__)} 
     # wandb.init(project = "llm160m", config = training_args, name="{}_{}".format(today, project_setting)) 
-    wandb.init(project = "llm160m", config = wandblogconfigs, name = "{}_{}".format(today, project_setting)) 
+    wandb.init(project = "llm160m", config = wandblogconfigs, name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain")) 
 
 weightmodelfirst = next(small_model.parameters()) 
 # print(weightmodelfirst.dtype) 
