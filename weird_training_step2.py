@@ -46,7 +46,7 @@ try:
 except ImportError:
     has_wandb = False 
 
-# has_wandb = False # disable for debugging 
+has_wandb = False # disable for debugging 
 
 from src.transformers.utils import ( 
     ADAPTER_CONFIG_NAME,
@@ -486,7 +486,7 @@ class CustomTrainer(Trainer):
         # use preds to compute f1 score 
         # f1 = precision_recall_fscore_support(labels, preds, average = "weighted") 
         return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "interest_correct_words": interest_correct_count, "interest_total_words": interest_token_count} 
-
+    '''
     def evaluation_loop(
         self,
         dataloader: DataLoader,
@@ -654,7 +654,7 @@ class CustomTrainer(Trainer):
                 metrics[f"{metric_key_prefix}_{key}"] = metrics.pop(key)
 
         return EvalLoopOutput(predictions=all_preds, label_ids=all_labels, metrics=metrics, num_samples=num_samples) 
-
+    ''' 
         
 class CustomDataset: 
     def __init__(self, data_dir, tokenizer = None, max_length = 128): 
@@ -662,7 +662,7 @@ class CustomDataset:
         self.synthesize_dir = data_dir 
         self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json") 
         # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1copy.json") 
-        self.dataset = self.dataset["train"] 
+        self.dataset = self.dataset["train"][0: 5120] 
 
         self.tokenizer = tokenizer 
         self.max_length = max_length 
@@ -756,7 +756,7 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 # custom dataset 
 # defining custom dataset 
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
-train_set, test_set = datasetnew.split(0.95)   # 712k * 0.95 = 676k 712k * 0.05 = 36k 
+train_set, test_set = datasetnew.split(0.5)   # 712k * 0.95 = 676k 712k * 0.05 = 36k 
 
 if not args.use_plain_model: 
     print(colored("we use custom small", "cyan")) 
@@ -867,7 +867,7 @@ training_args = TrainingArguments(
     save_total_limit=5,            # whether you don't have much space so you let only 3 model weights saved in the disk 
     # lr_scheduler_type = "cosine", 
     warmup_steps = 100, 
-    # eval_accumulation_steps = 2, 
+    eval_accumulation_steps = 2, 
 ) 
 
 max_length = 128 
@@ -915,7 +915,7 @@ trainer = CustomTrainer(
     # train_dataset = train_dataset, 
     # eval_dataset = test_dataset, 
     data_collator = data_collator, 
-    # compute_metrics = compute_metrics, 
+    compute_metrics = compute_metrics, 
     optimizers = (custom_optimizer, None), 
     experiment_setting = args.experiment_setting, 
     tokenizer = tokenizer, 
