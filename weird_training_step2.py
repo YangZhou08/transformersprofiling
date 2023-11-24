@@ -24,6 +24,7 @@ from torch import nn
 from src.transformers import DataCollatorForLanguageModeling 
 from src.transformers.generation.utils import GenerationConfig 
 from src.transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSmallModel 
+from src.transformers.models.llama.modeling_llama import LlamaCausalLMWeirdTwo 
 import time 
 from torch.utils.data import random_split 
 from src.transformers import BitsAndBytesConfig 
@@ -763,7 +764,7 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 # custom dataset 
 # defining custom dataset 
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
-train_set, test_set = datasetnew.split(0.95) 
+train_set, test_set = datasetnew.split(0.95) # 712k * 0.95 = 676k 712k * 0.05 = 36k 
 
 if not args.use_plain_model: 
     print(colored("we use custom small", "cyan")) 
@@ -804,7 +805,8 @@ else:
     # config = LlamaConfig.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
     # print(config) 
     # small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
-    small_model = AutoModelForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
+    # small_model = AutoModelForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
+    small_model = LlamaCausalLMWeirdTwo.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
     small_model.train() 
 
 
