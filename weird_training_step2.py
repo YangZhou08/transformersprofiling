@@ -374,17 +374,18 @@ class CustomTrainer(Trainer):
             ) 
         loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
         print(colored("the loss is {}".format(loss), "yellow")) 
-        if has_wandb and self.iteration_count % 50 == 0 and evaluation_mode is False: 
+        if has_wandb and evaluation_mode is False: 
             if len(self.optimizer.param_groups) > 1: 
                 wandb.log({"loss": loss, 
                         "group1.lr": self.optimizer.param_groups[0]["lr"], 
                         "group2.lr": self.optimizer.param_groups[1]["lr"], 
-                        "iteration_count": self.iteration_count * 50 
+                        # "iteration_count": self.iteration_count * 50 
+                        "iteration_count": self.iteration_count 
                 }) 
             else: 
                 wandb.log({"loss": loss, 
                         "group1.lr": self.optimizer.param_groups[0]["lr"], 
-                        "iteration_count": self.iteration_count * 50 
+                        "iteration_count": self.iteration_count 
                 }) 
         if self.iteration_count % 500 == 0: 
             for layer in [0, 6, 11]: 
@@ -537,14 +538,6 @@ class CustomTrainer(Trainer):
                 model = model.to(dtype=torch.bfloat16, device=args.device)
 
         batch_size = self.args.eval_batch_size
-        '''
-        logger.info(f"***** Running {description} *****")
-        if has_length(dataloader):
-            logger.info(f"  Num examples = {self.num_examples(dataloader)}")
-        else:
-            logger.info("  Num examples: Unknown")
-        logger.info(f"  Batch size = {batch_size}")
-        ''' 
         model.eval()
 
         self.callback_handler.eval_dataloader = dataloader
@@ -636,19 +629,17 @@ class CustomTrainer(Trainer):
         metrics = {"perplexity": global_perplexity, "accuracy": global_accuracy, "interest_accuracy": global_interest_accuracy} 
         wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy, "global_eval_interest_accuracy": global_interest_accuracy}) 
 
-        '''
-        # Metrics!
-        if self.compute_metrics is not None and all_preds is not None and all_labels is not None:
-            if args.include_inputs_for_metrics:
-                metrics = self.compute_metrics(
-                    EvalPrediction(predictions=all_preds, label_ids=all_labels, inputs=all_inputs)
-                )
-            else:
-                metrics = self.compute_metrics(EvalPrediction(predictions=all_preds, label_ids=all_labels))
-        else:
-            metrics = {}
-        ''' 
-        # To be JSON-serializable, we need to remove numpy types or zero-d tensors
+        # # Metrics!
+        # if self.compute_metrics is not None and all_preds is not None and all_labels is not None:
+        #     if args.include_inputs_for_metrics:
+        #         metrics = self.compute_metrics(
+        #             EvalPrediction(predictions=all_preds, label_ids=all_labels, inputs=all_inputs)
+        #         )
+        #     else:
+        #         metrics = self.compute_metrics(EvalPrediction(predictions=all_preds, label_ids=all_labels))
+        # else:
+        #     metrics = {}
+        # # To be JSON-serializable, we need to remove numpy types or zero-d tensors
         metrics = denumpify_detensorize(metrics)
 
         if all_losses is not None:
@@ -664,6 +655,7 @@ class CustomTrainer(Trainer):
 
         return EvalLoopOutput(predictions=all_preds, label_ids=all_labels, metrics=metrics, num_samples=num_samples) 
 
+        
 class CustomDataset: 
     def __init__(self, data_dir, tokenizer = None, max_length = 128): 
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
@@ -764,7 +756,7 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 # custom dataset 
 # defining custom dataset 
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
-train_set, test_set = datasetnew.split(0.95) # 712k * 0.95 = 676k 712k * 0.05 = 36k 
+train_set, test_set = datasetnew.split(0.999)  # 712k * 0.95 = 676k 712k * 0.05 = 36k 
 
 if not args.use_plain_model: 
     print(colored("we use custom small", "cyan")) 
