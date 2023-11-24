@@ -243,7 +243,7 @@ class CustomTrainer(Trainer):
             return loss_mb.reduce_mean().detach().to(self.args.device)
         ''' 
         with self.compute_loss_context_manager():
-            loss = self.compute_loss(model, inputs)
+            loss = self.compute_loss(model, inputs, evaluation_mode = False) 
 
         if self.args.n_gpu > 1:
             loss = loss.mean()  # mean() to average on multi-gpu parallel training
@@ -280,7 +280,7 @@ class CustomTrainer(Trainer):
                 sum += listoflasthiddenstates[i] 
         return downsampled_vectors 
 
-    def compute_loss(self, model, inputs, return_outputs = False): 
+    def compute_loss(self, model, inputs, return_outputs = False, evaluation_mode = True): 
         torch.cuda.synchronize() 
         print(colored("time elasped in the last iteration is {}".format(time.time() - self.time_checkpoint)), "red") 
         self.time_checkpoint = time.time() 
@@ -373,7 +373,7 @@ class CustomTrainer(Trainer):
             ) 
         loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
         print(colored("the loss is {}".format(loss), "yellow")) 
-        if has_wandb: 
+        if has_wandb and self.iteration_count % 50 == 0 and evaluation_mode is False: 
             if len(self.optimizer.param_groups) > 1: 
                 wandb.log({"loss": loss, 
                         "group1.lr": self.optimizer.param_groups[0]["lr"], 
