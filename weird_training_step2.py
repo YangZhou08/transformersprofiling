@@ -455,7 +455,7 @@ class CustomTrainer(Trainer):
                 label_text = "the label is: {}".format(colored(labels_outputs1, "yellow")) 
                 print(label_text, end = " ") 
                 labels_outputs2 = self.tokenizer.decode(mask_filtered[63 :]) 
-                print(colored(labels_outputs2, "light_yellow")) 
+                print(colored(labels_outputs2, "cyan")) 
                 print() 
                 print() 
                 # wandb.log({"key notes: ": prediction_text + label_text}) 
