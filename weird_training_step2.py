@@ -907,13 +907,14 @@ def compute_metrics(p):
     perplexity = torch.exp(torch.tensor(loss)).item() 
 
     pred = torch.argmax(probs, dim = -1) 
+    '''
     wandb.login() 
 
     wandb.log({"evaluation_acc": accuracy_score(p.labels_ids, pred), 
                 "evaluation_f1": precision_recall_fscore_support(p.label_ids, pred, average = 'weighted'), 
                 "evaluation_perplexity": perplexity, 
     }) 
-
+    ''' 
     return {
         'accuracy': accuracy_score(p.labels_ids, pred), 
         'f1': precision_recall_fscore_support(p.label_ids, pred, average = 'weighted'), 
