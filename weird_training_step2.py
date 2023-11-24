@@ -627,6 +627,7 @@ class CustomTrainer(Trainer):
         all_losses = total_loss / total_num_steps 
 
         metrics = {"perplexity": global_perplexity, "accuracy": global_accuracy, "interest_accuracy": global_interest_accuracy} 
+        print(colored(metrics, "magenta")) 
         wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy, "global_eval_interest_accuracy": global_interest_accuracy}) 
 
         # # Metrics!
