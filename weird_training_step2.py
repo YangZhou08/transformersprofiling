@@ -853,10 +853,10 @@ training_args = TrainingArguments(
     per_device_train_batch_size=128, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=256,  # evaluation batch size
-    logging_steps=2,            # evaluate, log and save model checkpoints every 1000 step
+    logging_steps=1,            # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 2,  
+    save_steps = 1,  
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     learning_rate=2e-4, 
@@ -889,7 +889,8 @@ def compute_metrics(p):
 
     logits = p.predictions 
     labels = p.label_ids 
-    logits = logits[: -1] 
+    # logits = logits[: -1] 
+    logits = logits[:, : -1, :] 
     labels = labels[1: ] 
     probs = torch.softmax(torch.tensor(logits), dim = -1) 
     loss = nn.CrossEntropyLoss()(torch.tensor(logits), torch.tensor(labels)).item() 
