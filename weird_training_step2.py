@@ -895,7 +895,7 @@ def compute_metrics(p):
     #     print("logits[{}] has shape {}".format(i, logits[i].shape)) 
     logits = logits[0][:, : -1, :] 
     logits = logits[:, : -1, :] 
-    labels = labels[1: ] 
+    labels = labels[:, 1:] 
     probs = torch.softmax(torch.tensor(logits), dim = -1) 
     loss = nn.CrossEntropyLoss()(torch.tensor(logits), torch.tensor(labels)).item() 
     perplexity = torch.exp(torch.tensor(loss)).item() 
