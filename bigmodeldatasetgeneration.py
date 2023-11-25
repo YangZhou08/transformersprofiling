@@ -48,7 +48,8 @@ elif "ada" in hostname:
     dir_dataset = "/home/beidic/yangzho6/c4_parts" 
     dir_models = "/home/beidic/yangzho6/model_checkpoints" 
     synthesized_dir_path = "/home/beidic/yangzho6/c4llm_synthesized/" 
-    synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/tensor_dir/" 
+    # synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/tensor_dir/" 
+    synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/tensor_dir2/" 
 else: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_dataset = "/home/yangzho6/c4_parts" 
@@ -209,7 +210,8 @@ trainer = CustomTrainer(
 ) 
 
 os.makedirs(synthesized_data_path, exist_ok = True) 
-json_file_name = "c4synthesized_file1.json" 
+# json_file_name = "c4synthesized_file1.json" 
+json_file_name = "c4synthesized_file2.json" 
 json_file1 = open(synthesized_dir_path + json_file_name, "a") 
 
 train_dataloader = trainer.get_train_dataloader() 
