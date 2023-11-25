@@ -61,7 +61,7 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
 # onedataset = load_dataset('json', data_files = ['/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', '/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json'], split = "train") 
 # onedataset = load_dataset("json", data_files = '/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
-onedataset = load_dataset("json", data_files = "/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json", split = "train") 
+onedataset = load_dataset("json", data_files = "/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json", split = "train[:200]") 
 
 class CustomTrainer(Trainer): 
     def __init__(self, large_model = None, *args, **kwargs): 
@@ -240,7 +240,7 @@ for step, inputs in enumerate(train_dataloader):
     # break 
     if step % 100 == 0: 
         print("step is {} and the text first synthesized is {}".format(step, textsynthesized[0])) 
-    
+    ''' 
     for i in range(downsampled_vectors.shape[0]): 
         # print(i) 
         example_downsampled_vector = downsampled_vectors[i].clone() 
@@ -279,6 +279,6 @@ for step, inputs in enumerate(train_dataloader):
             "condensed_token_path": tensor_file_path, 
         } 
         json_file1.write(json.dumps(example_data) + "\n") 
-        
+    '''
     
 json_file1.close() 
