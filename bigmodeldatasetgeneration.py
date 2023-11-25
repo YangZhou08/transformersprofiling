@@ -237,7 +237,7 @@ for step, inputs in enumerate(train_dataloader):
         print(colored("the last hidden states: ", "yellow")) 
         for j in range(4): 
             print(list_of_last_hidden_states[i * 4 + j][0 : 5][0 : 10]) 
-        print(colored("the downsampled vectors: ", "light yellow")) 
+        print(colored("the downsampled vectors: ", "blue")) 
         print(downsampled_vectors[i][0 : 5][0 : 10]) 
         
     downsampled_vectors = torch.stack(downsampled_vectors, dim = 1) 
