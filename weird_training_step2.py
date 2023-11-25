@@ -472,8 +472,7 @@ class CustomTrainer(Trainer):
         perplexity = torch.exp(loss).mean().item() 
         # print("the perplexity is {}".format(perplexity)) 
         # use preds to compute accuracy 
-        # indices_to_keep = input_attention_mask == 1 # only for debugging purposes 
-        indices_to_keep = torch.ones_like(input_attention_mask).to(torch.bool) 
+        indices_to_keep = input_attention_mask == 1 # only for debugging purposes 
         total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
         # print("shape of indices_to_keep: {}".format(indices_to_keep.shape)) 
         interest_token_count = torch.sum(indices_to_keep[:, 63 :].reshape(-1), dim = 0).item() # check whether 63 makes sense and make it more general if it is correct or not 
@@ -488,7 +487,7 @@ class CustomTrainer(Trainer):
         # f1 = precision_recall_fscore_support(labels, preds, average = "weighted") 
         return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "interest_correct_words": interest_correct_count, "interest_total_words": interest_token_count} 
     
-    def evaluation_loop2(
+    def evaluation_loop(
         self,
         dataloader: DataLoader,
         description: str,

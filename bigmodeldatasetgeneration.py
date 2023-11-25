@@ -72,8 +72,8 @@ class CustomTrainer(Trainer):
         downsampled_vectors = [] 
         shape = listoflasthiddenstates[0].shape 
         device = listoflasthiddenstates[0].device 
+        sum = torch.zeros(shape, device = device) 
         for i in range(len(listoflasthiddenstates)): 
-            sum = torch.zeros(shape, device = device) 
             if i % kernel_size == kernel_size - 1: 
                 sum += listoflasthiddenstates[i] 
                 downsampled_vectors.append(sum/kernel_size) 
