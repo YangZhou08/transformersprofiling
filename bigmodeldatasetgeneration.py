@@ -57,6 +57,8 @@ else:
     synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/" 
     synthesized_data_path = "/home/yangzho6/c4llm_synthesized/tensor_dir/" 
 
+from termcolor import colored 
+
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
 # onedataset = load_dataset('json', data_files = ['/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', '/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json'], split = "train") 
@@ -231,6 +233,13 @@ for step, inputs in enumerate(train_dataloader):
     # tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step)) 
     list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
     downsampled_vectors = trainer.downsample_vectors(list_of_last_hidden_states) 
+    for i in range(len(downsampled_vectors)): 
+        print(colored("the last hidden states: ", "yellow")) 
+        for j in range(4): 
+            print(list_of_last_hidden_states[i * 4 + j][0 : 5][0 : 10]) 
+        print(colored("the downsampled vectors: ", "light yellow")) 
+        print(downsampled_vectors[i][0 : 5][0 : 10]) 
+        
     downsampled_vectors = torch.stack(downsampled_vectors, dim = 1) 
     # print("downampled_vector has shape {}".format(downsampled_vectors.shape)) 
     print("downampled_vector has shape {}".format(downsampled_vectors.shape)) 
@@ -240,6 +249,7 @@ for step, inputs in enumerate(train_dataloader):
     # break 
     if step % 100 == 0: 
         print("step is {} and the text first synthesized is {}".format(step, textsynthesized[0])) 
+    exit(0) 
     ''' 
     for i in range(downsampled_vectors.shape[0]): 
         # print(i) 
