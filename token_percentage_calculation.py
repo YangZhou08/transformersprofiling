@@ -28,6 +28,7 @@ from src.transformers.generation.utils import GenerationConfig
 import os 
 import json 
 from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampler 
+from src.transformers.models.llama.modeling_llama import LlamaCausalLMWeirdTwo 
 '''
 # cache_dir = "/home/bc20/yang/transformersprofiling" 
 dir_dataset = "/home/yangzho6/c4_parts" 
@@ -115,6 +116,42 @@ datasetcust = CustomDataset(data_dir = "/home/beidic/yangzho6/c4llm_synthesized2
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 customdataloader = DataLoader(datasetcust, batch_size = 2, collate_fn = data_collator, num_workers = 1, shuffle = False, pin_memory = False) 
 
-for step, batch in enumerate(customdataloader): 
+training_args = TrainingArguments(
+    # output_dir=model_path,          # output directory to where save model checkpoint 
+    evaluation_strategy="steps",    # evaluate each `logging_steps` steps
+    overwrite_output_dir=True,      
+    num_train_epochs=5,            # number of training epochs, feel free to tweak
+    per_device_train_batch_size=1, # the training batch size, put it as high as your GPU memory fits 
+    gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
+    per_device_eval_batch_size=256,  # evaluation batch size
+    # logging_steps=1,            # evaluate, log and save model checkpoints every 1000 step
+    # save_steps=1000, 
+    # save_steps = 2000, 
+    # save_steps = 1,  
+    # learning_rate=5e-7, 
+    # learning_rate=5e-5, 
+    learning_rate=2e-4, 
+    # learning_rate = 1e-4, 
+    # learning_rate = 5e-6, 
+    # learning_rate = 0, 
+    # load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
+    save_total_limit=5,            # whether you don't have much space so you let only 3 model weights saved in the disk 
+    # lr_scheduler_type = "cosine", 
+    warmup_steps = 100, 
+    eval_accumulation_steps = 2, 
+) 
+
+small_model = LlamaCausalLMWeirdTwo.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
+small_model.train() 
+
+trainer = Trainer( 
+    model = small_model, 
+    args = training_args, 
+    train_dataset = datasetcust, 
+    data_collator = data_collator, 
+    tokenizer = tokenizer, 
+) 
+
+for step, batch in enumerate(trainer.get_train_dataloader()): 
     print(datasetcust.special_token_count, datasetcust.total_token_count) 
     exit(0) 
