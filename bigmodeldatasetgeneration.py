@@ -252,13 +252,13 @@ for step, inputs in enumerate(train_dataloader):
     print("length of downsampled vectors is {} and the shape of element is {}".format(len(downsampled_vectors), downsampled_vectors[0].shape)) 
     for i in range(len(downsampled_vectors)): 
         print(colored("the last hidden states: ", "yellow")) 
-        for j in range(4): 
-            print(list_of_last_hidden_states[i * 4 + j][0 : 5][0 : 10]) 
+        for j in range(kernel_size): 
+            print(list_of_last_hidden_states[i * kernel_size + j][0 : 5][0 : 10]) 
         print(colored("the downsampled vectors: ", "blue")) 
         print(downsampled_vectors[i][0 : 5][0 : 10]) 
         
     downsampled_vectors = torch.stack(downsampled_vectors, dim = 1) 
-    # print("downampled_vector has shape {}".format(downsampled_vectors.shape)) 
+    print("downampled_vector has shape {}".format(downsampled_vectors.shape)) 
     print("downampled_vector has shape {}".format(downsampled_vectors.shape)) 
     textsynthesized = tokenizer.batch_decode(large_outputs.sequences) 
     # print(colored("the text synthesized is {}".format(textsynthesized[49]), "yellow")) 
