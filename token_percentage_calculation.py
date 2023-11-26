@@ -105,6 +105,9 @@ class CustomDataset:
 
         return item 
 
+
+torch_device = "cuda" 
+
 tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 if tokenizer.pad_token is not None: 
     print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
