@@ -115,7 +115,7 @@ else:
     tokenizer.pad_token = tokenizer.eos_token 
     print("We now use eos_token as pad token") 
 tokenizer.padding_side = "left" 
-datasetcust = CustomDataset(data_dir = "/home/beidic/yangzho6/c4llm_synthesized2/", tokenizer = tokenizer) 
+datasetcust = CustomDataset(data_dir = "/home/beidic/yangzho6/c4llm_synthesized", tokenizer = tokenizer) 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 customdataloader = DataLoader(datasetcust, batch_size = 2, collate_fn = data_collator, num_workers = 1, shuffle = False, pin_memory = False) 
 
