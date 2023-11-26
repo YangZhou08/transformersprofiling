@@ -116,8 +116,10 @@ datasetcust = CustomDataset(data_dir = "/home/beidic/yangzho6/c4llm_synthesized2
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 customdataloader = DataLoader(datasetcust, batch_size = 2, collate_fn = data_collator, num_workers = 1, shuffle = False, pin_memory = False) 
 
+model_path = "/home/beidic/yangzho6/model_checkpoints/" 
+
 training_args = TrainingArguments(
-    # output_dir=model_path,          # output directory to where save model checkpoint 
+    output_dir=model_path,          # output directory to where save model checkpoint 
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
