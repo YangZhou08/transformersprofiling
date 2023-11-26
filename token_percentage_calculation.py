@@ -49,8 +49,8 @@ elif "ada" in hostname:
     dir_dataset = "/home/beidic/yangzho6/c4_parts" 
     dir_models = "/home/beidic/yangzho6/model_checkpoints" 
     synthesized_dir_path = "/home/beidic/yangzho6/c4llm_synthesized/" 
-    # synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/tensor_dir/" 
-    synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/tensor_dir2/" 
+    synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/tensor_dir/" 
+    # synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/tensor_dir2/" 
 else: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_dataset = "/home/yangzho6/c4_parts" 
@@ -113,7 +113,7 @@ else:
 tokenizer.padding_side = "left" 
 datasetcust = CustomDataset(data_dir = "/home/beidic/yangzho6/c4llm_synthesized2/", tokenizer = tokenizer) 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
-customdataloader = DataLoader(datasetcust, batch_size = 1, collate_fn = data_collator, num_workers = 1, shuffle = False, pin_memory = False) 
+customdataloader = DataLoader(datasetcust, batch_size = 2, collate_fn = data_collator, num_workers = 1, shuffle = False, pin_memory = False) 
 
 for step, batch in enumerate(customdataloader): 
     print(datasetcust.special_token_count, datasetcust.total_token_count) 
