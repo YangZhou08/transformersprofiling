@@ -161,7 +161,7 @@ trainer = Trainer(
 ) 
 
 for step, batch in enumerate(tqdm(trainer.get_train_dataloader())): 
-    if step % 1000 == 0: 
+    if step % 100000 == 0: 
         print(step, datasetcust.special_token_count, datasetcust.total_token_count) 
 
 print("special token percentage: {}".format(datasetcust.special_token_count / datasetcust.total_token_count)) 
