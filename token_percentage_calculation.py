@@ -27,6 +27,7 @@ from src.transformers.generation.utils import GenerationConfig
 
 import os 
 import json 
+from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampler 
 '''
 # cache_dir = "/home/bc20/yang/transformersprofiling" 
 dir_dataset = "/home/yangzho6/c4_parts" 
@@ -102,3 +103,12 @@ class CustomDataset:
         item["condensed_embeds"] = tensor 
 
         return item 
+
+tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+datasetcust = CustomDataset(data_dir = "/home/beidic/yangzho6/c4llm_synthesized2/", tokenizer = tokenizer) 
+data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
+customdataloader = DataLoader(datasetcust, batch_size = 1, collate_fn = data_collator, num_workers = 1, shuffle = False, pin_memory = False) 
+
+for step, batch in enumerate(customdataloader): 
+    print(datasetcust.special_token_count, datasetcust.total_token_count) 
+    exit(0) 
