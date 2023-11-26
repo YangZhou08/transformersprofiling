@@ -59,6 +59,8 @@ else:
 
 from termcolor import colored 
 
+import argparse 
+
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
 # onedataset = load_dataset('json', data_files = ['/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', '/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json'], split = "train") 
@@ -77,8 +79,8 @@ class CustomTrainer(Trainer):
         downsampled_vectors = [] 
         shape = listoflasthiddenstates[0].shape 
         device = listoflasthiddenstates[0].device 
+        sum = torch.zeros(shape, device = device) 
         for i in range(len(listoflasthiddenstates)): 
-            sum = torch.zeros(shape, device = device) 
             if i % kernel_size == kernel_size - 1: 
                 sum += listoflasthiddenstates[i] 
                 downsampled_vectors.append(sum/kernel_size) 
@@ -137,6 +139,11 @@ class CustomTrainer(Trainer):
         print("the loss is {}".format(loss)) 
 
         return (loss, outputs) if return_outputs else loss 
+
+parser = argparse.ArgumentParser() 
+parser.add_argument("--kernel_size", type = int, default = 4) 
+
+args = parser.parse_args() 
 
 small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
 small_model.eval() 
@@ -218,6 +225,13 @@ json_file1 = open(synthesized_dir_path + json_file_name, "a")
 
 train_dataloader = trainer.get_train_dataloader() 
 print("the length of the train dataloader is {}".format(len(train_dataloader))) 
+dict_kernel_maxlength = {3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70} 
+# kernel_size = 4 
+if args.kernel_size not in dict_kernel_maxlength: 
+    raise ValueError("kernel size should be one of 3, 4, 5, 6, 7") 
+else: 
+    kernel_size = int(args.kernel_size) 
+
 for step, inputs in enumerate(train_dataloader): 
     inputs = trainer._prepare_inputs(inputs) 
     input_ids = inputs["input_ids"] 
@@ -228,11 +242,14 @@ for step, inputs in enumerate(train_dataloader):
 
     temperature = 1 
 
-    large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
+    # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
+    large_outputs = large_model.generate(input_ids = input_ids, max_length = max_length + dict_kernel_maxlength[kernel_size], do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step)) 
     list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
-    downsampled_vectors = trainer.downsample_vectors(list_of_last_hidden_states) 
+    print("length of last hidden states list is {} and the shape of element is {}".format(len(list_of_last_hidden_states), list_of_last_hidden_states[0].shape)) 
+    downsampled_vectors = trainer.downsample_vectors(list_of_last_hidden_states, kernel_size = kernel_size) 
+    print("length of downsampled vectors is {} and the shape of element is {}".format(len(downsampled_vectors), downsampled_vectors[0].shape)) 
     for i in range(len(downsampled_vectors)): 
         print(colored("the last hidden states: ", "yellow")) 
         for j in range(4): 
