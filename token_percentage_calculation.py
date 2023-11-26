@@ -98,6 +98,8 @@ class CustomDataset:
                 self.special_token_count += (encoded_text['input_ids'] == t).to(torch.long).view(-1).sum().item() 
                 self.total_token_count += encoded_text['input_ids'].numel() 
             
+            print(encoded_text['input_ids']) 
+            
             item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension
             item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
         
