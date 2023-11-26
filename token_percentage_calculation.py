@@ -97,7 +97,7 @@ class CustomDataset:
             for t in [0, 1, 2]: 
                 self.special_token_count += (encoded_text['input_ids'] == t).to(torch.long).view(-1).sum().item() 
             self.total_token_count += encoded_text['input_ids'].view(-1).shape[0] 
-            print("special token count {}, total token count {}".format(self.special_token_count, self.total_token_count)) 
+            # print("special token count {}, total token count {}".format(self.special_token_count, self.total_token_count)) 
             
             # print(encoded_text['input_ids']) 
             
@@ -162,4 +162,5 @@ trainer = Trainer(
 
 for step, batch in enumerate(trainer.get_train_dataloader()): 
     print(datasetcust.special_token_count, datasetcust.total_token_count) 
-    exit(0) 
+
+print("special token percentage: {}".format(datasetcust.special_token_count / datasetcust.total_token_count)) 
