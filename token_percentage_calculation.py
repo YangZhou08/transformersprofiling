@@ -105,6 +105,12 @@ class CustomDataset:
         return item 
 
 tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+if tokenizer.pad_token is not None: 
+    print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
+else: 
+    tokenizer.pad_token = tokenizer.eos_token 
+    print("We now use eos_token as pad token") 
+tokenizer.padding_side = "left" 
 datasetcust = CustomDataset(data_dir = "/home/beidic/yangzho6/c4llm_synthesized2/", tokenizer = tokenizer) 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 customdataloader = DataLoader(datasetcust, batch_size = 1, collate_fn = data_collator, num_workers = 1, shuffle = False, pin_memory = False) 
