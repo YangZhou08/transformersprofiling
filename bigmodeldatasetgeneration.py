@@ -225,7 +225,8 @@ json_file1 = open(synthesized_dir_path + json_file_name, "a")
 
 train_dataloader = trainer.get_train_dataloader() 
 print("the length of the train dataloader is {}".format(len(train_dataloader))) 
-dict_kernel_maxlength = {3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70} 
+# dict_kernel_maxlength = {3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70} 
+dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70} 
 # kernel_size = 4 
 if args.kernel_size not in dict_kernel_maxlength: 
     raise ValueError("kernel size should be one of 3, 4, 5, 6, 7") 
@@ -247,27 +248,26 @@ for step, inputs in enumerate(train_dataloader):
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step)) 
     list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
-    print("length of last hidden states list is {} and the shape of element is {}".format(len(list_of_last_hidden_states), list_of_last_hidden_states[0].shape)) 
     downsampled_vectors = trainer.downsample_vectors(list_of_last_hidden_states, kernel_size = kernel_size) 
-    print("length of downsampled vectors is {} and the shape of element is {}".format(len(downsampled_vectors), downsampled_vectors[0].shape)) 
-    for i in range(len(downsampled_vectors)): 
-        print(colored("the last hidden states: ", "yellow")) 
-        for j in range(kernel_size): 
-            print(list_of_last_hidden_states[i * kernel_size + j][0 : 5][0 : 10]) 
-        print(colored("the downsampled vectors: ", "blue")) 
-        print(downsampled_vectors[i][0 : 5][0 : 10]) 
-        
     downsampled_vectors = torch.stack(downsampled_vectors, dim = 1) 
     print("downampled_vector has shape {}".format(downsampled_vectors.shape)) 
-    print("downampled_vector has shape {}".format(downsampled_vectors.shape)) 
     textsynthesized = tokenizer.batch_decode(large_outputs.sequences) 
-    # print(colored("the text synthesized is {}".format(textsynthesized[49]), "yellow")) 
     print("shape of condensed_token shape is {}".format(downsampled_vectors[0].shape)) 
     # break 
     if step % 100 == 0: 
+        print("length of last hidden states list is {} and the shape of element is {}".format(len(list_of_last_hidden_states), list_of_last_hidden_states[0].shape)) 
+        print("length of downsampled vectors is {} and the shape of element is {}".format(len(downsampled_vectors), downsampled_vectors[0].shape)) 
+        print("downampled_vector has shape {}".format(downsampled_vectors.shape)) 
+        for i in range(len(downsampled_vectors)): 
+            print(colored("the last hidden states: ", "yellow")) 
+            for j in range(kernel_size): 
+                print(list_of_last_hidden_states[i * kernel_size + j][0 : 5][0 : 10]) 
+            print(colored("the downsampled vectors: ", "blue")) 
+            print(downsampled_vectors[i][0 : 5][0 : 10]) 
+        
+        # print(colored("the text synthesized is {}".format(textsynthesized[49]), "yellow")) 
         print("step is {} and the text first synthesized is {}".format(step, textsynthesized[0])) 
-    exit(0) 
-    ''' 
+    
     for i in range(downsampled_vectors.shape[0]): 
         # print(i) 
         example_downsampled_vector = downsampled_vectors[i].clone() 
@@ -306,6 +306,5 @@ for step, inputs in enumerate(train_dataloader):
             "condensed_token_path": tensor_file_path, 
         } 
         json_file1.write(json.dumps(example_data) + "\n") 
-    '''
     
 json_file1.close() 
