@@ -260,6 +260,7 @@ for step, inputs in enumerate(train_dataloader):
             print("the {}th element".format(i)) 
             print(colored("the last hidden states: ", "yellow")) 
             for j in range(kernel_size): 
+                print("shape of selected last hidden states is {}".format(list_of_last_hidden_states[i * kernel_size + j].shape)) 
                 print(list_of_last_hidden_states[i * kernel_size + j][0 : 5][0 : 10]) 
             print(colored("the downsampled vectors: ", "blue")) 
             print(downsampled_vectors[i][0 : 5][0 : 10]) 
