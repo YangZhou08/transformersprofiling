@@ -251,10 +251,6 @@ for step, inputs in enumerate(train_dataloader):
     # tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step)) 
     list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
     downsampled_vectors = trainer.downsample_vectors(list_of_last_hidden_states, kernel_size = kernel_size) 
-    downsampled_vectors = torch.stack(downsampled_vectors, dim = 1) 
-    print("downampled_vector has shape {}".format(downsampled_vectors.shape)) 
-    textsynthesized = tokenizer.batch_decode(large_outputs.sequences) 
-    print("shape of condensed_token shape is {}".format(downsampled_vectors[0].shape)) 
     # break 
     if step % 100 == 0: 
         print("length of last hidden states list is {} and the shape of element is {}".format(len(list_of_last_hidden_states), list_of_last_hidden_states[0].shape)) 
@@ -267,9 +263,14 @@ for step, inputs in enumerate(train_dataloader):
                 print(list_of_last_hidden_states[i * kernel_size + j][0 : 5][0 : 10]) 
             print(colored("the downsampled vectors: ", "blue")) 
             print(downsampled_vectors[i][0 : 5][0 : 10]) 
+            print() 
         
         # print(colored("the text synthesized is {}".format(textsynthesized[49]), "yellow")) 
         print("step is {} and the text first synthesized is {}".format(step, textsynthesized[0])) 
+    downsampled_vectors = torch.stack(downsampled_vectors, dim = 1) 
+    print("downampled_vector has shape {}".format(downsampled_vectors.shape)) 
+    textsynthesized = tokenizer.batch_decode(large_outputs.sequences) 
+    print("shape of condensed_token shape is {}".format(downsampled_vectors[0].shape)) 
     
     for i in range(downsampled_vectors.shape[0]): 
         # print(i) 
