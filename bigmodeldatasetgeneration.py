@@ -64,7 +64,7 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
 # onedataset = load_dataset('json', data_files = ['/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', '/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json'], split = "train") 
 # onedataset = load_dataset("json", data_files = '/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
-onedataset = load_dataset("json", data_files = datasetsrc, split = "train[:500]") 
+onedataset = load_dataset("json", data_files = datasetsrc, split = "train") 
 
 class CustomTrainer(Trainer): 
     def __init__(self, large_model = None, *args, **kwargs): 
