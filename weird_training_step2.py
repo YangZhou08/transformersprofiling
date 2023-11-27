@@ -649,13 +649,15 @@ class CustomTrainer(Trainer):
         return EvalLoopOutput(predictions=all_preds, label_ids=all_labels, metrics=metrics, num_samples=num_samples) 
         
 class CustomDataset: 
-    def __init__(self, data_dir, tokenizer = None, max_length = 128): 
+    def __init__(self, data_dir, tokenizer = None, max_length = 128, kernel_size = 4): 
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
         self.synthesize_dir = data_dir 
         # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json", split = "train") 
         # self.dataset = load_dataset('json', data_files = [self.synthesize_dir + 'c4synthesized_file1.json', self.synthesize_dir + 'c4synthesized_file2.json'], split="train") 
         filename = "c4synthesized_file1_kernel5.json" 
         self.dataset = load_dataset('json', data_files = self.synthesize_dir + filename, split = "train") 
+        self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70} 
+        self.kernel_size = kernel_size 
         # self.dataset = self.dataset["train"][0: 5120] 
 
         self.tokenizer = tokenizer 
@@ -749,7 +751,9 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 
 # custom dataset 
 # defining custom dataset 
-datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
+kernel_size = 5 
+
+datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
 train_set, test_set = datasetnew.split(0.95)     # 712k * 0.95 = 676k 712k * 0.05 = 36k 
 
 if not args.use_plain_model: 
@@ -760,7 +764,7 @@ if not args.use_plain_model:
     small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
 
     small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
-    small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 5) 
+    small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = kernel_size) 
 
     new_state_dict = {} 
 
