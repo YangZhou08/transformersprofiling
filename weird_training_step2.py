@@ -256,7 +256,7 @@ class CustomTrainer(Trainer):
             print("the gradient of {} contains nan or not Ture or False: {}".format(name, torch.isnan(parameters.grad.data.view(-1).any()))) 
         ''' 
         self.iteration_count += 1 
-        print(colored("the training iteration count is {}".format(self.iteration_count), "yellow")) 
+        print(colored("the training iteration count is {}".format(self.iteration_count), "red")) 
         return loss.detach() / self.args.gradient_accumulation_steps 
     
     def downsample_vectors(self, listoflasthiddenstates, kernel_size = 4): 
@@ -855,7 +855,7 @@ training_args = TrainingArguments(
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size=10, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size = 128, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=256,  # evaluation batch size
     # logging_steps=1, 
