@@ -265,13 +265,14 @@ for step, inputs in enumerate(train_dataloader):
             print(colored("the downsampled vectors: ", "blue")) 
             print(downsampled_vectors[i][0 : 5][0 : 10]) 
             print() 
-        
-        # print(colored("the text synthesized is {}".format(textsynthesized[49]), "yellow")) 
-        print("step is {} and the text first synthesized is {}".format(step, textsynthesized[0])) 
+
     downsampled_vectors = torch.stack(downsampled_vectors, dim = 1) 
     print("downampled_vector has shape {}".format(downsampled_vectors.shape)) 
     textsynthesized = tokenizer.batch_decode(large_outputs.sequences) 
     print("shape of condensed_token shape is {}".format(downsampled_vectors[0].shape)) 
+    if step % 100 == 0: 
+        # print(colored("the text synthesized is {}".format(textsynthesized[49]), "yellow")) 
+        print("step is {} and the text first synthesized is {}".format(step, textsynthesized[0])) 
     
     for i in range(downsampled_vectors.shape[0]): 
         # print(i) 
