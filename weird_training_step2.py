@@ -46,7 +46,7 @@ try:
 except ImportError:
     has_wandb = False 
 
-# has_wandb = False # disable for debugging 
+has_wandb = False # disable for debugging 
 
 from src.transformers.utils import ( 
     ADAPTER_CONFIG_NAME,
@@ -256,6 +256,7 @@ class CustomTrainer(Trainer):
             print("the gradient of {} contains nan or not Ture or False: {}".format(name, torch.isnan(parameters.grad.data.view(-1).any()))) 
         ''' 
         self.iteration_count += 1 
+        print(colored("the training iteration count is {}".format(self.iteration_count), "yellow")) 
         return loss.detach() / self.args.gradient_accumulation_steps 
     
     def downsample_vectors(self, listoflasthiddenstates, kernel_size = 4): 
@@ -365,7 +366,7 @@ class CustomTrainer(Trainer):
             ) 
         loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
         print(colored("the loss is {}".format(loss), "yellow" if evaluation_mode is False else "cyan")) 
-        if has_wandb and evaluation_mode is False: 
+        if has_wandb and evaluation_mode is False and self.iteration_count % 20 == 0: 
             if len(self.optimizer.param_groups) > 1: 
                 wandb.log({"loss": loss, 
                         "group1.lr": self.optimizer.param_groups[0]["lr"], 
@@ -378,7 +379,7 @@ class CustomTrainer(Trainer):
                         "group1.lr": self.optimizer.param_groups[0]["lr"], 
                         "iteration_count": self.iteration_count 
                 }) 
-        if self.iteration_count % 500 == 0: 
+        if self.iteration_count % 1000 == 0 and evaluation_mode is False and has_wandb: 
             print(colored("generating images ... at iteration {}".format(self.iteration_count), "yellow")) 
             for layer in [0, 6, 11]: 
                 for head in [0, 6, 11]: 
@@ -756,7 +757,8 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 kernel_size = args.kernel_size 
 
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
-train_set, test_set = datasetnew.split(0.95)     # 712k * 0.95 = 676k 712k * 0.05 = 36k 
+train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.05 = 36k 
+                                                 # 356k * 0.99 = 352k 356k * 0.01 = 3.6k 
 
 if not args.use_plain_model: 
     print(colored("we use custom small", "cyan")) 
@@ -868,7 +870,6 @@ training_args = TrainingArguments(
     save_total_limit=5,            # whether you don't have much space so you let only 3 model weights saved in the disk 
     # lr_scheduler_type = "cosine", 
     warmup_steps = 100, 
-    eval_accumulation_steps = 2, 
 ) 
 
 max_length = 128 
