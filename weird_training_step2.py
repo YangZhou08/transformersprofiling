@@ -218,7 +218,6 @@ class CustomTrainer(Trainer):
     
     def training_step(self, model, inputs): 
         model.train() 
-        self.iteration_count += 1 
         inputs = self._prepare_inputs(inputs) 
         '''
         for k, v in inputs.items(): 
@@ -256,6 +255,7 @@ class CustomTrainer(Trainer):
                 print(colored("{} has gradient {}".format(name, parameters.grad.data.view(-1)[: 10]), "light_magenta")) 
             print("the gradient of {} contains nan or not Ture or False: {}".format(name, torch.isnan(parameters.grad.data.view(-1).any()))) 
         ''' 
+        self.iteration_count += 1 
         return loss.detach() / self.args.gradient_accumulation_steps 
     
     def downsample_vectors(self, listoflasthiddenstates, kernel_size = 4): 
