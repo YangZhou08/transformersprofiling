@@ -391,7 +391,7 @@ class CustomTrainer(Trainer):
                     ''' 
                     # SimpleSmallModel.plot_attention_map(outputs.attentions, 0, 0, 144, "testing_attention_map.jpg") 
                     plot_name = "testing_attention_map_{}_{}_{}.jpg".format(self.commit_hash, self.time_hash, self.experiment_setting) 
-                    SimpleSmallModel.plot_attention_map(outputs.attentions, layer, head, 144, plot_name) 
+                    SimpleSmallModel.plot_attention_map(outputs.attentions, layer, head, input_ids.shape[1] + addedon_length, plot_name) 
                     # print(outputs.attentions[0][0][0][64]) 
                     # time.sleep(0.1) # ensure the file is written to disk 
                     field_name = "layer{}_head{}".format(layer, head) 
