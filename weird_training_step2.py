@@ -656,7 +656,10 @@ class CustomDataset:
         self.synthesize_dir = data_dir 
         # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json", split = "train") 
         # self.dataset = load_dataset('json', data_files = [self.synthesize_dir + 'c4synthesized_file1.json', self.synthesize_dir + 'c4synthesized_file2.json'], split="train") 
-        filename = "c4synthesized_file1_kernel{}.json".format(kernel_size) 
+        if kernel_size != 4: 
+            filename = "c4synthesized_file1_kernel{}.json".format(kernel_size) 
+        else: 
+            filename = "c4synthesized_file1.json" 
         self.dataset = load_dataset('json', data_files = self.synthesize_dir + filename, split = "train") 
         self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70} 
         self.kernel_size = kernel_size 
