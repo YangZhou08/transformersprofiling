@@ -180,24 +180,15 @@ print("Hostname:", hostname)
 
 if "lovelace" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
-    dir_dataset = "/home/yangzho6/c4_parts" 
     dir_models = "/home/yangzho6/model_checkpoints" 
-    synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/" 
-    synthesized_data_path = "/home/yangzho6/c4llm_synthesized/tensor_dir/" 
     dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
 elif "ada" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
-    dir_dataset = "/home/beidic/yangzho6/c4_parts" 
     dir_models = "/home/beidic/yangzho6/model_checkpoints" 
-    synthesized_dir_path = "/home/beidic/yangzho6/c4llm_synthesized/" 
-    synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/tensor_dir/" 
     dir_sdata = "/home/beidic/yangzho6/c4llm_synthesized/" 
 else: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
-    dir_dataset = "/home/yangzho6/c4_parts" 
     dir_models = "/home/yangzho6/model_checkpoints" 
-    synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/" 
-    synthesized_data_path = "/home/yangzho6/c4llm_synthesized/tensor_dir/" 
     dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
 
 logger = logging.get_logger(__name__) 
@@ -662,8 +653,9 @@ class CustomDataset:
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
         self.synthesize_dir = data_dir 
         # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json", split = "train") 
-        self.dataset = load_dataset('json', data_files = [self.synthesize_dir + 'c4synthesized_file1.json', self.synthesize_dir + 'c4synthesized_file2.json'], split="train") 
-        # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1copy.json") 
+        # self.dataset = load_dataset('json', data_files = [self.synthesize_dir + 'c4synthesized_file1.json', self.synthesize_dir + 'c4synthesized_file2.json'], split="train") 
+        filename = "c4synthesized_file1_kernel5.json" 
+        self.dataset = load_dataset('json', data_files = self.synthesize_dir + filename, split = "train") 
         # self.dataset = self.dataset["train"][0: 5120] 
 
         self.tokenizer = tokenizer 
@@ -852,7 +844,7 @@ training_args = TrainingArguments(
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size=128, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size=10, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=256,  # evaluation batch size
     # logging_steps=1, 
