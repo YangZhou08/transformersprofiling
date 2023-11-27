@@ -255,7 +255,7 @@ for step, inputs in enumerate(train_dataloader):
     if step % 100 == 0: 
         print("length of last hidden states list is {} and the shape of element is {}".format(len(list_of_last_hidden_states), list_of_last_hidden_states[0].shape)) 
         print("length of downsampled vectors is {} and the shape of element is {}".format(len(downsampled_vectors), downsampled_vectors[0].shape)) 
-        print("downampled_vector has shape {}".format(downsampled_vectors.shape)) 
+        print("downampled_vector has shape {}".format(len(downsampled_vectors))) 
         for i in range(len(downsampled_vectors)): 
             print("the {}th element".format(i)) 
             print(colored("the last hidden states: ", "yellow")) 
