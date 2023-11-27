@@ -379,6 +379,7 @@ class CustomTrainer(Trainer):
                         "iteration_count": self.iteration_count 
                 }) 
         if self.iteration_count % 500 == 0: 
+            print(colored("generating images ... at iteration {}".format(self.iteration_count), "yellow")) 
             for layer in [0, 6, 11]: 
                 for head in [0, 6, 11]: 
                     '''
