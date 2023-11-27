@@ -705,6 +705,7 @@ parser.add_argument("--group2lr", type = float, default = 2e-3)
 parser.add_argument("--experiment_setting", type = str, default = "setting0") 
 parser.add_argument("--eval_mode", action="store_true", default = False) 
 parser.add_argument("--embedding_pretrained", action = "store_true", default = False) 
+parser.add_argument("--kernel_size", type = int, default = 4) 
 parser.add_argument("--use_plain_model", action = "store_true", default = False) 
 
 args = parser.parse_args() 
@@ -751,7 +752,7 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 
 # custom dataset 
 # defining custom dataset 
-kernel_size = 5 
+kernel_size = args.kernel_size 
 
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
 train_set, test_set = datasetnew.split(0.95)     # 712k * 0.95 = 676k 712k * 0.05 = 36k 
