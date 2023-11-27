@@ -676,7 +676,7 @@ class CustomDataset:
                 # add_special_tokens = False, 
                 add_special_tokens = True, 
                 padding = "max_length", 
-                max_length = 128, 
+                max_length = 64 + self.dict_kernel_maxlength[self.kernel_size], 
                 return_attention_mask = True, 
                 return_tensors = "pt", 
                 truncation = True, 
