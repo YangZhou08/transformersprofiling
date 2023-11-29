@@ -166,7 +166,7 @@ else:
 tokenizer.padding_side = "left" 
 
 # datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
-datasetnew = load_dataset('json', data_files = datasetsrc, split = "train") 
+datasetnew = load_dataset('json', data_files = datasetsrc, split = "train[:1000]") 
 
 def encode_with_truncation(examples): 
     return tokenizer(examples["text"], truncation = True, max_length = 256, padding = "max_length", 
