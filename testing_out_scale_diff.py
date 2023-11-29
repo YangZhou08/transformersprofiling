@@ -203,8 +203,9 @@ model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_m
 '''
 model = = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch_device) 
 ''' 
-print("model.config.rope_scaling[type] is {}".format(model.config.rope_scaling["type"])) 
-print("model.config.rope_scaling[factor] is {}".format(model.config.rope_scaling["factor"])) 
+if model.config.rope_scaling is not None: 
+    print("model.config.rope_scaling[type] is {}".format(model.config.rope_scaling["type"])) 
+    print("model.config.rope_scaling[factor] is {}".format(model.config.rope_scaling["factor"])) 
 model.config.rope_scaling["type"] = "sep_q_k" 
 model.config.rope_scaling["factor"] = 2.0 
 
