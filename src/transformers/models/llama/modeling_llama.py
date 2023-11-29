@@ -169,8 +169,55 @@ class LlamaRotaryEmbedding(nn.Module):
         return (
             self.cos_cached[:seq_len].to(dtype=x.dtype),
             self.sin_cached[:seq_len].to(dtype=x.dtype),
-        )
+        ) 
 
+class LlamaRotaryEmbeddingqksep(nn.Module): 
+    def __init__(self, dim, max_position_embeddings=2048, base=10000, device = None, key_scaling_factor = 2.0): 
+        super().__init__()
+
+        self.dim = dim
+        self.max_position_embeddings = max_position_embeddings
+        self.base = base
+        inv_freq = 1.0 / (self.base ** (torch.arange(0, self.dim, 2).float().to(device) / self.dim))
+        self.register_buffer("inv_freq", inv_freq, persistent=False)
+
+        # Build here to make `torch.jit.trace` work.
+        self._set_cos_sin_cache(
+            seq_len=max_position_embeddings, device=self.inv_freq.device, dtype=torch.get_default_dtype(), key_scaling_factor = key_scaling_factor, 
+        ) 
+
+    def _set_cos_sin_cache(self, seq_len, device, dtype, key_scaling_factor): 
+        self.max_seq_len_cached = seq_len
+        t = torch.arange(self.max_seq_len_cached, device=device, dtype=self.inv_freq.dtype) 
+
+        freqs = torch.einsum("i,j->ij", t, self.inv_freq)
+        # Different from paper, but it uses a different permutation in order to obtain the same calculation
+        emb = torch.cat((freqs, freqs), dim=-1)
+        # self.register_buffer("cos_cached", emb.cos().to(dtype), persistent=False) 
+        # self.register_buffer("sin_cached", emb.sin().to(dtype), persistent=False) 
+        self.register_buffer("cosq_cached", emb.cos().to(dtype), persistent = False) 
+        self.register_buffer("sinq_cached", emb.sin().to(dtype), persistent = False) 
+
+        t_two = t / key_scaling_factor 
+
+        freqs_two = torch.einsum("i,j->ij", t_two, self.inv_freq) 
+        emb_two = torch.cat((freqs_two, freqs_two), dim = -1) 
+        self.register_buffer("cosk_cached", emb_two.cos().to(dtype), persistent = False) 
+        self.register_buffer("sink_cached", emb_two.sin().to(dtype), persistent = False) 
+
+    def forward(self, x, seq_len=None):
+        # x: [bs, num_attention_heads, seq_len, head_size]
+        if seq_len > self.max_seq_len_cached:
+            self._set_cos_sin_cache(seq_len=seq_len, device=x.device, dtype=x.dtype)
+
+        return (
+            # self.cos_cached[:seq_len].to(dtype=x.dtype), 
+            # self.sin_cached[:seq_len].to(dtype=x.dtype), 
+            self.cosq_cached[:seq_len].to(dtype = x.dtype), 
+            self.sinq_cached[:seq_len].to(dtype = x.dtype), 
+            self.cosk_cached[:seq_len].to(dtype = x.dtype), 
+            self.sink_cached[:seq_len].to(dtype = x.dtype), 
+        ) 
 
 class LlamaLinearScalingRotaryEmbedding(LlamaRotaryEmbedding):
     """LlamaRotaryEmbedding extended with linear scaling. Credits to the Reddit user /u/kaiokendev"""
@@ -249,8 +296,19 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids, unsqueeze_dim=1):
     sin = sin[position_ids].unsqueeze(unsqueeze_dim)
     q_embed = (q * cos) + (rotate_half(q) * sin)
     k_embed = (k * cos) + (rotate_half(k) * sin)
-    return q_embed, k_embed
+    return q_embed, k_embed 
 
+def apply_differently_rotary_pos_emb(q, k, cosq, sinq, cosk, sink, position_ids, unsqueeze_dim = 1): 
+    cosq = cosq[position_ids].unsqueeze(unsqueeze_dim) 
+    sinq = sinq[position_ids].unsqueeze(unsqueeze_dim) 
+
+    cosk = cosk[position_ids].unsqueeze(unsqueeze_dim) 
+    sink = sink[position_ids].unsqueeze(unsqueeze_dim) 
+
+    q_embed = (q * cosq) + (rotate_half(q) * sinq) 
+    k_embed = (k * cosk) + (rotate_half(k) * sink) 
+
+    return q_embed, k_embed 
 
 class LlamaMLP(nn.Module):
     def __init__(self, config):
@@ -349,7 +407,14 @@ class LlamaAttention(nn.Module):
                     max_position_embeddings=self.max_position_embeddings,
                     scaling_factor=scaling_factor,
                     base=self.rope_theta,
-                )
+                ) 
+            elif scaling_type == "sep_q_k": # NOTE I added to separate the q and k embeddings 
+                self.rotary_emb = LlamaRotaryEmbeddingqksep( 
+                    self.head_dim, 
+                    max_position_embeddings = self.max_position_embeddings, 
+                    base = self.rope_theta, 
+                    key_scaling_factor = scaling_factor, 
+                ) 
             else:
                 raise ValueError(f"Unknown RoPE scaling type {scaling_type}")
 
@@ -401,9 +466,14 @@ class LlamaAttention(nn.Module):
 
         kv_seq_len = key_states.shape[-2]
         if past_key_value is not None:
-            kv_seq_len += past_key_value[0].shape[-2]
-        cos, sin = self.rotary_emb(value_states, seq_len=kv_seq_len)
-        query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids)
+            kv_seq_len += past_key_value[0].shape[-2] 
+        if isinstance(self.rotary_emb, LlamaRotaryEmbeddingqksep): 
+            cosq, sinq, cosk, sink = self.rotary_emb(value_states, seq_len = kv_seq_len) 
+            query_states, key_states = apply_differently_rotary_pos_emb(query_states, key_states, cosq, sinq, cosk, sink, position_ids) 
+        else: 
+            cos, sin = self.rotary_emb(value_states, seq_len=kv_seq_len) 
+            query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids) 
+        
 
         if past_key_value is not None:
             # reuse k, v, self_attention

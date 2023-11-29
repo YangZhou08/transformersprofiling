@@ -27,6 +27,8 @@ from src.transformers.generation.utils import GenerationConfig
 
 import os 
 import json 
+import h5py 
+
 '''
 # cache_dir = "/home/bc20/yang/transformersprofiling" 
 dir_dataset = "/home/yangzho6/c4_parts" 
@@ -274,6 +276,12 @@ for step, inputs in enumerate(train_dataloader):
     if step % 100 == 0: 
         # print(colored("the text synthesized is {}".format(textsynthesized[49]), "yellow")) 
         print("step is {} and the text first synthesized is {}".format(step, textsynthesized[0])) 
+    
+    one_large_h5py_file = "all_condensed_tokens.pt" 
+    if args.advanced_data_layout: 
+        filename = "ct_from_{}_to_{}.pt".format(step * 100, step * 100 + 99) 
+        with h5py.File(filename, 'w') as file: 
+            
     
     for i in range(downsampled_vectors.shape[0]): 
         # print(i) 
