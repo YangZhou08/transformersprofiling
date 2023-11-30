@@ -1396,7 +1396,7 @@ class LlamaModelWeirdAttentionMap(LlamaPreTrainedModel):
             attention_mask = _prepare_4d_causal_attention_mask(
                 attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length
             ) 
-        self._modify_attention_mask_in_a_weird_way(attention_mask, inputs_embeds.dtype, start_idx = 64, kernel_size = 4) 
+        # self._modify_attention_mask_in_a_weird_way(attention_mask, inputs_embeds.dtype, start_idx = 64, kernel_size = 4) 
 
         # visualize the attention mask 
 
