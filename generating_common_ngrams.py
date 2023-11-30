@@ -97,7 +97,7 @@ def count_batch(batch):
     return {"ngrams": ngram_list, "counts": counts_list}  
 
 num_pros = 4 
-batch_size = 200 
+batch_size = 100 
 
 batched_counts = dataset.map( 
     count_batch, 
@@ -117,6 +117,7 @@ if remaining_length > 0:
 print(size_stride) 
 index = 0 
 for idx in tqdm(size_stride): 
+    print(index) 
     ngrams = batched_counts[index]["ngrams"]  # Access the first (and only) element in the list
     counts = batched_counts[index]["counts"]  # Access the first (and only) element in the list 
     # print(len(ngrams), len(counts)) 
