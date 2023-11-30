@@ -97,7 +97,7 @@ def count_batch(batch):
     return {"ngrams": ngram_list, "counts": counts_list}  
 
 num_pros = 4 
-batch_size = 50 
+batch_size = 200 
 
 batched_counts = dataset.map( 
     count_batch, 
