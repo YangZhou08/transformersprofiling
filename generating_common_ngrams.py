@@ -114,7 +114,6 @@ for i in range(4):
 print(size_stride) 
 index = 0 
 for idx in tqdm((size_stride[:-1])): 
-    index += idx 
     ngrams = batched_counts[index]["ngrams"]  # Access the first (and only) element in the list
     counts = batched_counts[index]["counts"]  # Access the first (and only) element in the list 
     print(len(ngrams), len(counts)) 
@@ -128,6 +127,7 @@ for idx in tqdm((size_stride[:-1])):
         # print(len(ngram)) 
         # for ngram, count in zip(ngrams, counts):
         total_counts[ngram] += count 
+    index += idx 
 
 # Now total_counts has the aggregated count of all ngrams 
 
