@@ -127,3 +127,13 @@ for index in tqdm(size_stride):
 # Now total_counts has the aggregated count of all ngrams 
 
 print(total_counts.most_common(200)) 
+
+print("checking with the sequential implementation") 
+sequential_counts = Counter() 
+for text in tqdm(dataset["text"]): 
+    tokens = tokenizer.tokenize(text) 
+    three_ngrams = zip(*[tokens[i:] for i in range(3)]) 
+    three_ngrams = list(three_ngrams) 
+    sequential_counts.update(three_ngrams) 
+
+print(sequential_counts.most_common(200)) 
