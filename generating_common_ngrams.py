@@ -56,6 +56,7 @@ else:
     synthesized_data_path = "/home/yangzho6/c4llm_synthesized/tensor_dir/" 
 
 from termcolor import colored 
+import json 
 
 torch_device = "cuda:0" 
 
@@ -81,7 +82,7 @@ def count_batch(batch):
     ngrams, counts = zip(*ngrams_counts) 
     ngrams = list(ngrams) 
     counts = list(counts) 
-    print(len(ngrams), len(counts)) 
+    # print(len(ngrams), len(counts)) 
     # ngrams, counts = zip(*ngrams_counts) if ngrams_counts else ([], []) 
     # ngrams = list(ngrams) 
     # counts = list(counts) 
@@ -112,12 +113,12 @@ remaining_length = total_length % (num_pros * batch_size)
 size_stride = [batch_size] * (num_batch * num_pros) 
 for i in range(num_pros): 
     size_stride.append(remaining_length//4) 
-print(size_stride) 
+# print(size_stride) 
 index = 0 
 for idx in tqdm(size_stride): 
     ngrams = batched_counts[index]["ngrams"]  # Access the first (and only) element in the list
     counts = batched_counts[index]["counts"]  # Access the first (and only) element in the list 
-    print(len(ngrams), len(counts)) 
+    # print(len(ngrams), len(counts)) 
 
     # Update the total counts
     for j in range(len(ngrams)): 
@@ -125,17 +126,21 @@ for idx in tqdm(size_stride):
         # print(len(ngram)) 
         ngram = tuple(ngram) 
         count = counts[j] 
-        print(count) 
         # print(len(ngram)) 
         # for ngram, count in zip(ngrams, counts):
         total_counts[ngram] += count 
     index += idx 
-    print(total_counts.most_common(200)) 
+    # print(total_counts.most_common(200)) 
 
 # Now total_counts has the aggregated count of all ngrams 
+most_common_3grams = total_counts.most_common(1000) 
+print(most_common_3grams) 
+file_path = "file1_1000_most_common_3grams.json" 
 
-print(total_counts.most_common(200)) 
+with open(file_path, "w", encoding = "utf-8") as f: 
+    json.dump(most_common_3grams, f, ensure_ascii = False, indent = 4) 
 
+'''
 print("checking with the sequential implementation") 
 sequential_counts = Counter() 
 for text in tqdm(dataset["text"]): 
@@ -145,3 +150,4 @@ for text in tqdm(dataset["text"]):
     sequential_counts.update(three_ngrams) 
 
 print(sequential_counts.most_common(200)) 
+''' 
