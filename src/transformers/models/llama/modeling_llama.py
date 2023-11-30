@@ -198,7 +198,8 @@ class LlamaRotaryEmbeddingqksep(nn.Module):
         self.register_buffer("cosq_cached", emb.cos().to(dtype), persistent = False) 
         self.register_buffer("sinq_cached", emb.sin().to(dtype), persistent = False) 
 
-        t_two = t / key_scaling_factor 
+        # t_two = t / key_scaling_factor 
+        t_two = torch.floor_divide(t, key_scaling_factor) 
 
         freqs_two = torch.einsum("i,j->ij", t_two, self.inv_freq) 
         emb_two = torch.cat((freqs_two, freqs_two), dim = -1) 
