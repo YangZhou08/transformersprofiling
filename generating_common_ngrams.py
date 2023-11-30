@@ -62,7 +62,7 @@ torch_device = "cuda:0"
 
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 
-dataset = load_dataset('json', data_files = datasetsrc, split = "train[:1000]") 
+dataset = load_dataset('json', data_files = datasetsrc, split = "train") 
 
 def generate_ngrams(tokens, n=3):
     return zip(*[tokens[i:] for i in range(n)])
@@ -98,7 +98,9 @@ def count_batch(batch):
     return {"ngrams": ngram_list, "counts": counts_list}  
 
 num_pros = 8 
-batch_size = 125 
+batch_size = 250 
+datalength = (len(dataset) // (num_pros * batch_size)) * (num_pros * batch_size) 
+dataset = dataset.select(range(datalength)) 
 
 batched_counts = dataset.map( 
     count_batch, 
