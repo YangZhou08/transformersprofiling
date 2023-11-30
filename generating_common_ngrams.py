@@ -87,6 +87,7 @@ def count_batch(batch):
     # counts = list(counts) 
 
     # return {"ngrams_counts": [ngrams_counts] * 100} 
+    return {"ngrams": [ngrams] * len(batch["text"]), "counts": [counts] * len(batch["text"])}  
     ngram_list = [ngrams] * len(batch["text"]) 
     print(len(ngram_list)) 
     print(len(ngram_list[0])) 
