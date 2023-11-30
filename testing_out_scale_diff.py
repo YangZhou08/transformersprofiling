@@ -199,18 +199,23 @@ small_model = small_model.to(torch_device)
 small_model.eval_mode = True 
 # small_model.train() 
 ''' 
-model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
 '''
 model = = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch_device) 
 ''' 
-if model.config.rope_scaling is not None: 
-    print("model.config.rope_scaling[type] is {}".format(model.config.rope_scaling["type"])) 
-    print("model.config.rope_scaling[factor] is {}".format(model.config.rope_scaling["factor"])) 
-else: 
-    model.config.rope_scaling = {} 
+config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
 
-model.config.rope_scaling["type"] = "sep_q_k" 
-model.config.rope_scaling["factor"] = 2.0 
+if config.rope_scaling is not None: 
+    print("model.config.rope_scaling[type] is {}".format(config.rope_scaling["type"])) 
+    print("model.config.rope_scaling[factor] is {}".format(config.rope_scaling["factor"])) 
+else: 
+    config.rope_scaling = {} 
+
+config.rope_scaling["type"] = "sep_q_k" 
+config.rope_scaling["factor"] = 2.0 
+
+state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
+model = LlamaForCausalLM(config) 
+model.load_state_dict(state_dict_for_model) 
 
 model.eval() 
 
