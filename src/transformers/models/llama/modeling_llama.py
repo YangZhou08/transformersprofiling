@@ -2447,7 +2447,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         ax.set_xlabel('Sequence Position')
         ax.set_ylabel('Sequence Position')
         ax.set_xticks(range(seq_length))
-        ax.set_yticks(range(seq_length))
+        ax.set_yticks(range(seq_length)) 
+        ax.set_xticklabels(ax.get_xticklabels(), rotation = 90, ha = "right") 
 
         plt.colorbar(cbar, orientation = "vertical") 
 
