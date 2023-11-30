@@ -125,6 +125,7 @@ for idx in tqdm(size_stride):
         # print(len(ngram)) 
         ngram = tuple(ngram) 
         count = counts[j] 
+        print(count) 
         # print(len(ngram)) 
         # for ngram, count in zip(ngrams, counts):
         total_counts[ngram] += count 
