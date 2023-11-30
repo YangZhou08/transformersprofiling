@@ -126,4 +126,4 @@ for index in tqdm(size_stride):
 
 # Now total_counts has the aggregated count of all ngrams 
 
-total_counts.most_common(200) 
+print(total_counts.most_common(200)) 
