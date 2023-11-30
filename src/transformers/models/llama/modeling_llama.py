@@ -468,6 +468,7 @@ class LlamaAttention(nn.Module):
         if past_key_value is not None:
             kv_seq_len += past_key_value[0].shape[-2] 
         if isinstance(self.rotary_emb, LlamaRotaryEmbeddingqksep): 
+            print(colored("We Got Here!!!", "red")) 
             cosq, sinq, cosk, sink = self.rotary_emb(value_states, seq_len = kv_seq_len) 
             query_states, key_states = apply_differently_rotary_pos_emb(query_states, key_states, cosq, sinq, cosk, sink, position_ids) 
         else: 
