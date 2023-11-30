@@ -88,7 +88,7 @@ def count_batch(batch):
     # counts = list(counts) 
 
     # return {"ngrams_counts": [ngrams_counts] * 100} 
-    print(len(batch["text"])) 
+    # print(len(batch["text"])) 
     return {"ngrams": [ngrams] * len(batch["text"]), "counts": [counts] * len(batch["text"])}  
     ngram_list = [ngrams] * len(batch["text"]) 
     print(len(ngram_list)) 
@@ -97,7 +97,7 @@ def count_batch(batch):
     print(len(counts_list[0])) 
     return {"ngrams": ngram_list, "counts": counts_list}  
 
-num_pros = 4 
+num_pros = 8 
 batch_size = 125 
 
 batched_counts = dataset.map( 
@@ -118,7 +118,7 @@ if remaining_length > 0:
 print(size_stride) 
 index = 0 
 for idx in tqdm(size_stride): 
-    print(index) 
+    # print(index) 
     ngrams = batched_counts[index]["ngrams"]  # Access the first (and only) element in the list
     counts = batched_counts[index]["counts"]  # Access the first (and only) element in the list 
     # print(len(ngrams), len(counts)) 
@@ -137,7 +137,7 @@ for idx in tqdm(size_stride):
 
 # Now total_counts has the aggregated count of all ngrams 
 most_common_3grams = total_counts.most_common(1000) 
-print(most_common_3grams) 
+# print(most_common_3grams) 
 file_path = "file1_1000_most_common_3grams.json" 
 '''
 with open(file_path, "w", encoding = "utf-8") as f: 
