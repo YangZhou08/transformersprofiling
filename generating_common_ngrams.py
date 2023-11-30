@@ -137,7 +137,7 @@ for idx in tqdm(size_stride):
 
 # Now total_counts has the aggregated count of all ngrams 
 most_common_3grams = total_counts.most_common(1000) 
-# print(most_common_3grams) 
+print(most_common_3grams) 
 file_path = "file1_1000_most_common_3grams.json" 
 '''
 with open(file_path, "w", encoding = "utf-8") as f: 
