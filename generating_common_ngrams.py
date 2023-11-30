@@ -111,8 +111,9 @@ total_length = len(batched_counts)
 num_batch = total_length // (num_pros * batch_size) 
 remaining_length = total_length % (num_pros * batch_size) 
 size_stride = [batch_size] * (num_batch * num_pros) 
-for i in range(num_pros): 
-    size_stride.append(remaining_length//4) 
+if remaining_length > 0: 
+    for i in range(num_pros): 
+        size_stride.append(remaining_length//4) 
 print(size_stride) 
 index = 0 
 for idx in tqdm(size_stride): 
