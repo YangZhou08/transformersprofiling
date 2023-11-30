@@ -211,7 +211,7 @@ else:
     config.rope_scaling = {} 
 
 config.rope_scaling["type"] = "sep_q_k" 
-config.rope_scaling["factor"] = 1.2 
+config.rope_scaling["factor"] = 1.1 
 
 state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
 model = LlamaForCausalLM(config) 
