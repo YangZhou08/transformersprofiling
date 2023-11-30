@@ -223,8 +223,34 @@ small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir 
 
 # small_model = large_model 
 ''' 
+data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
+
 batch_size = 50 
-dataloader = DataLoader(train_dataset, batch_size = batch_size) 
+# dataloader = DataLoader(train_dataset, batch_size = batch_size) 
+model_path = dir_models 
+training_args = TrainingArguments(
+    output_dir=model_path,          # output directory to where save model checkpoint
+    evaluation_strategy="steps",    # evaluate each `logging_steps` steps
+    overwrite_output_dir=True,      
+    num_train_epochs=1,            # number of training epochs, feel free to tweak
+    per_device_train_batch_size= 100, # the training batch size, put it as high as your GPU memory fits
+    gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
+    per_device_eval_batch_size=64,  # evaluation batch size
+    logging_steps=1000,             # evaluate, log and save model checkpoints every 1000 step
+    save_steps=1000,
+    # load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
+    # save_total_limit=3,           # whether you don't have much space so you let only 3 model weights saved in the disk
+) 
+
+trainer = Trainer( 
+    model = model, 
+    args = training_args, 
+    train_dataset = train_dataset, 
+    # eval_dataset = test_dataset, 
+    data_collator = data_collator, 
+) 
+
+train_dataloader = trainer.get_train_dataloader() 
 
 # generated using GPT-4 
 # Compute perplexity over the dataset
@@ -235,7 +261,7 @@ num_batches = 0
 count = 0 
 
 with torch.no_grad(): 
-    for batch in dataloader: 
+    for batch in train_dataloader: 
         input_ids = batch["input_ids"].to(torch_device) 
         attention_mask = batch["attention_mask"].to(torch_device) 
         labels = input_ids.clone() 
