@@ -409,6 +409,7 @@ class LlamaAttention(nn.Module):
                     base=self.rope_theta,
                 ) 
             elif scaling_type == "sep_q_k": # NOTE I added to separate the q and k embeddings 
+                print(colored("We got hee", "red")) 
                 self.rotary_emb = LlamaRotaryEmbeddingqksep( 
                     self.head_dim, 
                     max_position_embeddings = self.max_position_embeddings, 
