@@ -305,7 +305,7 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids, unsqueeze_dim=1):
     k_embed = (k * cos) + (rotate_half(k) * sin)
     return q_embed, k_embed 
 
-def apply_differently_rotary_pos_emb(q, k, cosq, sinq, cosk, sink, position_ids, unsqueeze_dim = 1, inv_freq = None) 
+def apply_differently_rotary_pos_emb(q, k, cosq, sinq, cosk, sink, position_ids, unsqueeze_dim = 1, inv_freq = None): 
     cosq = cosq[position_ids].unsqueeze(unsqueeze_dim) 
     sinq = sinq[position_ids].unsqueeze(unsqueeze_dim) 
 
