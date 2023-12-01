@@ -196,6 +196,48 @@ else:
 
 logger = logging.get_logger(__name__) 
 
+class CustomTrainer(Trainer): 
+    def __init__(self, *args, **kwargs): 
+        super().__init__(*args, **kwargs) 
+    
+    def compute_loss(self, model, inputs, return_outputs=False):
+        """
+        How the loss is computed by Trainer. By default, all models return the loss in the first element.
+
+        Subclass and override for custom behavior.
+        """
+        if self.label_smoother is not None and "labels" in inputs:
+            labels = inputs.pop("labels")
+        else:
+            labels = None
+        outputs = model(**inputs) 
+        print("outputs have shape {}".format(len(outputs))) 
+        # Save past state if it exists
+        # TODO: this needs to be fixed and made cleaner later.
+        if self.args.past_index >= 0:
+            self._past = outputs[self.args.past_index]
+
+        if labels is not None:
+            unwrapped_model = unwrap_model(model)
+            if is_peft_available() and isinstance(unwrapped_model, PeftModel):
+                model_name = unwrapped_model.base_model.model._get_name()
+            else:
+                model_name = unwrapped_model._get_name()
+            if model_name in MODEL_FOR_CAUSAL_LM_MAPPING_NAMES.values():
+                loss = self.label_smoother(outputs, labels, shift_labels=True)
+            else:
+                loss = self.label_smoother(outputs, labels)
+        else:
+            if isinstance(outputs, dict) and "loss" not in outputs:
+                raise ValueError(
+                    "The model did not return a loss from the inputs, only the following keys: "
+                    f"{','.join(outputs.keys())}. For reference, the inputs it received are {','.join(inputs.keys())}."
+                )
+            # We don't use .loss here since the model may return tuples instead of ModelOutput.
+            loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0]
+
+        return (loss, outputs) if return_outputs else loss 
+
 class CustomDataset: 
     def __init__(self, data_dir, tokenizer = None, max_length = 128, kernel_size = 4): 
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
@@ -310,18 +352,16 @@ train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.0
 ''' 
 
 param_group = [] 
-module_projection_name = "" 
+module_projection_name = "output_n_projection.weight" 
 model = LlamaCausalLMWeirdTwo.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 for name, param in model.named_parameters(): 
-    print(name) 
-    '''
     if name == module_projection_name: 
         param.requires_grad = True 
         param = param.to(torch.float32) 
         param_group.append(param) 
     else: 
         param.requires_grad = False 
-''' 
+model.train() 
 exit(0) 
 
 custom_optimizer = torch.optim.AdamW([
@@ -343,7 +383,7 @@ training_args = TrainingArguments(
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size = 128, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size = 1, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=256,  # evaluation batch size
     # logging_steps=1, 
@@ -419,7 +459,7 @@ def compute_metrics(p):
 # print(trainer.lr_scheduler.state_dict()) 
 # exit(0) 
 
-trainer = Trainer(
+trainer = CustomTrainer(
     model = model, 
     args = training_args, 
     train_dataset = train_dataset, 
