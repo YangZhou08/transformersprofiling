@@ -1673,7 +1673,7 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
             print(labels[0]) 
             for i in range(1, self.lookaheadcount + 1): 
                 shift_labels.append(labels[:, i : i + (originalseqlength - self.lookaheadcount)].contiguous()) 
-            shift_labels = torch.stack(shift_labels, dim = 2) 
+            shift_labels = torch.stack(shift_labels, dim = 1) 
             print(shift_labels[0]) 
             print("shift labels shape {}".format(shift_labels.shape)) 
             exit(0) 
