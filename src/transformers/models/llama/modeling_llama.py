@@ -1646,7 +1646,7 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
         hidden_states = outputs[0] 
         # hidden_states should have dimension (batch_size, seq_length, hidden_size) 
         # after the output_tripple_projection, we expect it should be (batch_size, seq_length, hidden_size * n) 
-        print("hidden_states has shape {}".format(hidden_states)) 
+        print("hidden_states has shape {}".format(hidden_states.shape)) 
         hidden_states = hidden_states.to(torch.float32) 
         hidden_states = self.output_n_projection(hidden_states) 
         hidden_states = hidden_states.reshape(hidden_states.shape[0], hidden_states.shape[1], self.lookaheadcount, -1) 

@@ -390,10 +390,10 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=256,  # evaluation batch size
     # logging_steps=1, 
-    logging_steps = 250,           # evaluate, log and save model checkpoints every 1000 step
+    logging_steps = 50,           # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 250, 
+    save_steps = 50, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     learning_rate=2e-4, 
@@ -403,7 +403,7 @@ training_args = TrainingArguments(
     load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
     save_total_limit=5,            # whether you don't have much space so you let only 3 model weights saved in the disk 
     # lr_scheduler_type = "cosine", 
-    warmup_steps = 100, 
+    warmup_steps = 25, 
 ) 
 
 max_length = 128 
