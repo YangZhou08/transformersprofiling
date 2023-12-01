@@ -313,18 +313,20 @@ param_group = []
 module_projection_name = "" 
 model = LlamaCausalLMWeirdTwo.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 for name, param in model.named_parameters(): 
+    print(name) 
+    '''
     if name == module_projection_name: 
         param.requires_grad = True 
         param = param.to(torch.float32) 
         param_group.append(param) 
     else: 
         param.requires_grad = False 
+''' 
+exit(0) 
 
 custom_optimizer = torch.optim.AdamW([
     {"params": param_group, "lr": 2e-4}, 
 ]) 
-
-exit(0) 
 
 
 # for llama model we need to add the padding token 
