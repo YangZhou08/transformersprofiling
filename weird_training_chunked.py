@@ -359,7 +359,7 @@ for name, param in model.named_parameters():
     if name == module_projection_name: 
         print("we got inside this if statement") 
         param.requires_grad = True 
-        param = param.to(torch.float32) 
+        param.data = param.data.to(torch.float32) 
         param_group.append(param) 
     else: 
         param.requires_grad = False 
