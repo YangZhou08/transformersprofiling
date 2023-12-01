@@ -54,7 +54,9 @@ from .configuration_llama import LlamaConfig
 
 if is_flash_attn_2_available():
     from flash_attn import flash_attn_func, flash_attn_varlen_func
-    from flash_attn.bert_padding import index_first_axis, pad_input, unpad_input  # noqa
+    from flash_attn.bert_padding import index_first_axis, pad_input, unpad_input  # noqa 
+
+torch.set_printoptions(threshold=1000) 
 
 
 # This makes `_prepare_4d_causal_attention_mask` a leaf function in the FX graph.
@@ -202,8 +204,8 @@ class LlamaRotaryEmbeddingqksep(nn.Module):
         # t_two = torch.floor_divide(t, key_scaling_factor) 
         t_two = t.clone() 
         t_two[4: ] = (torch.floor_divide(t, key_scaling_factor) + (self.max_seq_len_cached // 2))[4 :] 
-        print(t) 
-        print(t_two) 
+        print("printing t: {}".format(t.to(torch.long))) 
+        print("printing t_two: {}".format(t_two.to(torch.long))) 
 
         freqs_two = torch.einsum("i,j->ij", t_two, self.inv_freq) 
         emb_two = torch.cat((freqs_two, freqs_two), dim = -1) 
