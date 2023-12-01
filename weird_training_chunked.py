@@ -46,7 +46,7 @@ try:
 except ImportError:
     has_wandb = False 
 
-has_wandb = False # disable for debugging 
+# has_wandb = False # disable for debugging 
 
 from src.transformers.utils import ( 
     ADAPTER_CONFIG_NAME,
@@ -327,7 +327,7 @@ tokenizer.padding_side = "left"
 
 # backup dataset 
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1.json', split = "train") 
-onedataset = load_dataset('json', data_files = datasetsrc, split = "train[:1000]") 
+onedataset = load_dataset('json', data_files = datasetsrc, split = "train") 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 d = onedataset.train_test_split(test_size = 0.1) 
 # print(d["train"], d["test"]) 
