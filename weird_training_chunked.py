@@ -309,49 +309,27 @@ train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.0
                                                  # 356k * 0.99 = 352k 356k * 0.01 = 3.6k 
 ''' 
 
+param_group = [] 
+module_projection_name = "" 
 model = LlamaCausalLMWeirdTwo.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 for name, param in model.named_parameters(): 
-    print(name) 
+    if name == module_projection_name: 
+        param.requires_grad = True 
+        param = param.to(torch.float32) 
+        param_group.append(param) 
+    else: 
+        param.requires_grad = False 
+
+custom_optimizer = torch.optim.AdamW([
+    {"params": param_group, "lr": 2e-4}, 
+]) 
+
 exit(0) 
 
 
 # for llama model we need to add the padding token 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
 # print(small_model.embed_projection.weight.dtype) 
-
-pretraining_weights_group = []
-newly_initialized_group = [] 
-for k, v in small_model.named_parameters(): 
-    if "embed_projection" in k: 
-        print(k) 
-        newly_initialized_group.append(v) 
-    else: 
-        pretraining_weights_group.append(v) 
-print(len(pretraining_weights_group), len(newly_initialized_group)) 
-
-if not args.embedding_pretrained: 
-    print("*** we are not using pretrained embeddings ***") 
-    custom_optimizer = torch.optim.AdamW([
-        # {"params": pretraining_weights_group, "lr": 2e-4}, 
-        # {"params": newly_initialized_group, "lr": 2e-3}, 
-        {"params": pretraining_weights_group, "lr": float(args.group1lr)}, 
-        {"params": newly_initialized_group, "lr": float(args.group2lr)}, 
-    ]) 
-else: 
-    print("*** we are using pretrained embeddings ***") 
-    if not os.path.exists("linearprojectionweighttesting.pt"): 
-        raise ValueError("please run analyzing_initial_perfromance.py before runnint this setting") 
-    for param in newly_initialized_group: 
-        pretraining_weights_group.append(param) 
-    custom_optimizer = torch.optim.AdamW([
-        # {"params": pretraining_weights_group, "lr": 2e-4}, 
-        {"params": pretraining_weights_group, "lr": float(args.group1lr)}, 
-    ]) 
-
-def _lr_scheduler_rewriting(current_step, *, num_warmup_steps: int, num_training_steps: int): 
-    if current_step < num_warmup_steps:
-        return float(current_step) / float(max(1, num_warmup_steps))
-    return max(0.0, float(num_training_steps - current_step) / float(max(1, num_training_steps - num_warmup_steps)))
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
@@ -439,14 +417,14 @@ def compute_metrics(p):
 # print(trainer.lr_scheduler.state_dict()) 
 # exit(0) 
 
-'''
 trainer = Trainer(
-    model = small_model, 
+    model = model, 
     args = training_args, 
     train_dataset = train_dataset, 
+    eval_dataset = test_dataset, 
     data_collator = data_collator, 
+    optimizers = (custom_optimizer, None), 
 ) 
-''' 
 
 torch.autograd.set_detect_anomaly(True) 
 
