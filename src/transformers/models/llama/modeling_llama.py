@@ -310,13 +310,15 @@ def apply_differently_rotary_pos_emb(q, k, cosq, sinq, cosk, sink, position_ids,
     sinq = sinq[position_ids].unsqueeze(unsqueeze_dim) 
 
     if inv_freq is not None: 
+        print("inv_freq length is: {}".format(len(inv_freq))) 
+        print("position_ids length is: {}".format(len(position_ids))) 
+        print(position_ids) 
+        exit(0) 
         inv_freq = inv_freq[position_ids] 
         if len(position_ids.shape) != 1: 
             position_ids = position_ids[0] 
         t = position_ids.to(inv_freq.dtype) 
         seqlen = position_ids.shape[-1] 
-        print(position_ids) 
-        exit(0) 
         # t[4: ] = (torch.floor_divide(t, 2.) + (seqlen // 2))[4 :] 
         t[4: ] = t[4: ]/2 + (seqlen/2) 
         freqs = torch.einsum("i,j->ij", t, inv_freq) 
