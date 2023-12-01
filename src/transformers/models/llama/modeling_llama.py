@@ -56,7 +56,7 @@ if is_flash_attn_2_available():
     from flash_attn import flash_attn_func, flash_attn_varlen_func
     from flash_attn.bert_padding import index_first_axis, pad_input, unpad_input  # noqa 
 
-torch.set_printoptions(threshold=1000) 
+torch.set_printoptions(threshold=5000) 
 
 
 # This makes `_prepare_4d_causal_attention_mask` a leaf function in the FX graph.
