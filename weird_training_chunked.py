@@ -366,9 +366,7 @@ for name, param in model.named_parameters():
 model.train() 
 print("length of param_group is {}".format(len(param_group))) 
 
-custom_optimizer = torch.optim.AdamW([
-    {"params": param_group, "lr": 2e-4}, 
-]) 
+custom_optimizer = torch.optim.AdamW(param_group[0], lr = 2e-4) 
 
 
 # for llama model we need to add the padding token 
