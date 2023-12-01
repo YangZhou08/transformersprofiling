@@ -1670,13 +1670,13 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
             # only changing logits sequenc length dimension 
             shift_labels = [] # hold all the shifted versions together 
             originalseqlength = labels.shape[1] 
-            print(labels[0]) 
+            # print(labels[0]) 
             for i in range(1, self.lookaheadcount + 1): 
                 shift_labels.append(labels[:, i : i + (originalseqlength - self.lookaheadcount)].contiguous()) 
             shift_labels = torch.stack(shift_labels, dim = 1) 
-            print(shift_labels[0]) 
+            # print(shift_labels[0]) 
+            print("shift logits shape {}".format(shift_logits.shape)) 
             print("shift labels shape {}".format(shift_labels.shape)) 
-            exit(0) 
             # Flatten the tokens
             loss_fct = CrossEntropyLoss()
             shift_logits = shift_logits.view(-1, self.config.vocab_size)
