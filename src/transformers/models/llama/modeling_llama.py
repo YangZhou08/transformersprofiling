@@ -315,7 +315,8 @@ def apply_differently_rotary_pos_emb(q, k, cosq, sinq, cosk, sink, position_ids,
             position_ids = position_ids[0] 
         t = position_ids.to(inv_freq.dtype) 
         seqlen = position_ids.shape[-1] 
-        t[4: ] = (torch.floor_divide(t, 2.) + (seqlen // 2))[4 :] 
+        # t[4: ] = (torch.floor_divide(t, 2.) + (seqlen // 2))[4 :] 
+        t[4: ] = t[4: ]/2 + (seqlen/2) 
         freqs = torch.einsum("i,j->ij", t, inv_freq) 
         emb = torch.cat((freqs, freqs), dim = -1) 
         cosk = emb.cos().to(dtype = k.dtype) 
