@@ -491,7 +491,7 @@ class LlamaAttention(nn.Module):
             print(colored("We Got Here!!!", "red")) 
             cosq, sinq, cosk, sink = self.rotary_emb(value_states, seq_len = kv_seq_len) 
             inv_freq = self.rotary_emb.inv_freq 
-            query_states, key_states = apply_differently_rotary_pos_emb(query_states, key_states, cosq, sinq, cosk, sink, position_ids, inv_freq) 
+            query_states, key_states = apply_differently_rotary_pos_emb(query_states, key_states, cosq, sinq, cosk, sink, position_ids, inv_freq = inv_freq) 
         else: 
             cos, sin = self.rotary_emb(value_states, seq_len=kv_seq_len) 
             query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids) 
