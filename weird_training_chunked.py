@@ -212,6 +212,9 @@ class CustomTrainer(Trainer):
             labels = None
         outputs = model(**inputs) 
         print("outputs have shape {}".format(len(outputs))) 
+        if has_wandb: 
+            wandb.log({"training_loss": outputs[0].item()}) 
+
         # Save past state if it exists
         # TODO: this needs to be fixed and made cleaner later.
         if self.args.past_index >= 0:
@@ -403,16 +406,16 @@ training_args = TrainingArguments(
 ) 
 
 max_length = 128 
-'''
+
 if has_wandb: 
-    project_setting = args.experiment_setting if args.eval_mode is False else "finetuning" 
+    # project_setting = args.experiment_setting if args.eval_mode is False else "finetuning" 
     today = datetime.date.today() 
-    wandblogconfigs = {**(training_args.to_dict()), **(args.__dict__)} 
+    wandblogconfigs = training_args.to_dict() 
     wandblogconfigs["git_commit"] = commit_hash 
     wandblogconfigs["time_hash"] = hash_of_time 
     # wandb.init(project = "llm160m", config = training_args, name="{}_{}".format(today, project_setting)) 
-    wandb.init(project = "llm160m", config = wandblogconfigs, name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain")) 
-''' 
+    # wandb.init(project = "llm160m", config = wandblogconfigs, name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain")) 
+    wandb.init(project = "chunklargefinetuning", config = wandblogconfigs, name = "{}_{}".format(today, "unmasked")) 
 
 weightmodelfirst = next(model.parameters()) 
 # print(weightmodelfirst.dtype) 
