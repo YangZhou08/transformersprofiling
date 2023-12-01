@@ -1471,6 +1471,8 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
         self.model = LlamaModelWeirdAttentionMap(config) 
+        self.lookaheadcount = 3 
+        self.output_n_projection = nn.Linear(config.hidden_size, config.hidden_size * self.lookaheadcount, bias = False) 
         self.vocab_size = config.vocab_size
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
@@ -1641,7 +1643,11 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
             return_dict=return_dict,
         )
 
-        hidden_states = outputs[0]
+        hidden_states = outputs[0] 
+        # hidden_states should have dimension (batch_size, seq_length, hidden_size) 
+        # after the output_tripple_projection, we expect it should be (batch_size, seq_length, hidden_size * n) 
+        hidden_states = self.output_n_projection(hidden_states) 
+        hidden_states = hidden_states.reshape(hidden_states.shape[0], hidden_states.shape[1], self.lookaheadcount, -1) 
         if self.config.pretraining_tp > 1:
             lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
             logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]
@@ -1649,12 +1655,22 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
         else:
             logits = self.lm_head(hidden_states)
         logits = logits.float()
+        
 
         loss = None
         if labels is not None:
             # Shift so that tokens < n predict n
-            shift_logits = logits[..., :-1, :].contiguous()
-            shift_labels = labels[..., 1:].contiguous()
+            # shift_logits = logits[..., :-1, :].contiguous() 
+            # shift_labels = labels[..., 1:].contiguous() 
+            shift_logits = logits[:, :-(self.lookaheadcount), :, :].contiguous() 
+            print("shift logits shape {}".format(shift_logits.shape)) 
+            # only changing logits sequenc length dimension 
+            shift_labels = [] # hold all the shifted versions together 
+            originalseqlength = labels.shape[1] 
+            for i in range(1, self.lookaheadcount + 1): 
+                shift_labels.append(labels[:, i : i + (originalseqlength - self.lookaheadcount)].contiguous()) 
+            shift_labels = torch.stack(shift_labels, dim = 2) 
+            print("shift labels shape {}".format(shift_labels.shape)) 
             # Flatten the tokens
             loss_fct = CrossEntropyLoss()
             shift_logits = shift_logits.view(-1, self.config.vocab_size)

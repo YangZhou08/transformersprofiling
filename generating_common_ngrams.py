@@ -98,7 +98,8 @@ def count_batch(batch):
     return {"ngrams": ngram_list, "counts": counts_list}  
 
 num_pros = 8 
-batch_size = 250 
+# batch_size = 250 
+batch_size = 100 
 datalength = (len(dataset) // (num_pros * batch_size)) * (num_pros * batch_size) 
 dataset = dataset.select(range(datalength)) 
 
@@ -141,10 +142,12 @@ for idx in tqdm(size_stride):
 most_common_3grams = total_counts.most_common(1000) 
 print(most_common_3grams) 
 file_path = "file1_1000_most_common_3grams.json" 
-'''
+
+counter_dict = dict(total_counts) 
 with open(file_path, "w", encoding = "utf-8") as f: 
-    json.dump(most_common_3grams, f, ensure_ascii = False, indent = 4) 
-''' 
+    # json.dump(most_common_3grams, f, ensure_ascii = False, indent = 4) 
+    json.dump(counter_dict, f, ensure_ascii = False, indent = 4) 
+
 '''
 print("checking with the sequential implementation") 
 sequential_counts = Counter() 
