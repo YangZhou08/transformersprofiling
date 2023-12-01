@@ -282,7 +282,7 @@ with torch.no_grad():
             
             outputs = model(input_ids = input_ids, attention_mask = attention_mask, labels = labels, eval_mode = True, iteration_count = count) 
         else: 
-            outputs = model(input_ids = input_ids, attention_mask = attention_mask, labels = labels) 
+            outputs = model(input_ids = input_ids, attention_mask = attention_mask, labels = labels, output_hidden_states = True, output_attentions = True, return_dict = True) 
             for layer in [0, 3, 7, 11]: 
                 for head in [0, 3, 7, 11]: 
                     plot_name = "{}_attention_map_perturb_{}_{}.png".format("after", layer, head) 
