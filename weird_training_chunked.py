@@ -245,7 +245,7 @@ class CustomDataset:
             train_size = int(train_size * len(self)) 
         eval_size = len(self) - train_size 
         return random_split(self, [train_size, eval_size]) 
-
+'''
 parser = argparse.ArgumentParser(
                     prog='ProgramName',
                     description='What the program does',
@@ -263,7 +263,7 @@ args = parser.parse_args()
 if args.embedding_pretrained: 
     args.group2lr = None # we enforce it 
 print(args) 
-
+''' 
 # defining tokenizer 
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
