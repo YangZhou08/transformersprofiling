@@ -267,6 +267,8 @@ count = 0
 
 with torch.no_grad(): 
     for batch in train_dataloader: 
+        if count == 0: 
+            continue 
         input_ids = batch["input_ids"].to(torch_device) 
         print(input_ids[0]) 
         attention_mask = batch["attention_mask"].to(torch_device) 
@@ -285,6 +287,7 @@ with torch.no_grad():
             outputs = model(input_ids = input_ids, attention_mask = attention_mask, labels = labels, output_hidden_states = True, output_attentions = True, return_dict = True) 
             for layer in [0, 3, 7, 11]: 
                 for head in [0, 3, 7, 11]: 
+                    print(layer, head) 
                     plot_name = "{}_attention_map_perturb_{}_{}.png".format("after", layer, head) 
                     SimpleSmallModel.plot_attention_map(outputs.attentions, layer, head, 256, plot_name) 
         loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
