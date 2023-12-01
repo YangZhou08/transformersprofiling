@@ -268,6 +268,7 @@ count = 0
 with torch.no_grad(): 
     for batch in train_dataloader: 
         if count == 0: 
+            count += 1 
             continue 
         input_ids = batch["input_ids"].to(torch_device) 
         print(input_ids[0]) 
