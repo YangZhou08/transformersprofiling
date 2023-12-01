@@ -289,7 +289,7 @@ with torch.no_grad():
             for layer in [0, 3, 7, 11]: 
                 for head in [0, 3, 7, 11]: 
                     print(layer, head) 
-                    plot_name = "{}_attention_map_perturb_{}_{}.png".format("after", layer, head) 
+                    plot_name = "{}_attention_map_perturb_{}_{}.png".format("before", layer, head) 
                     SimpleSmallModel.plot_attention_map(outputs.attentions, layer, head, 256, plot_name) 
         loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
         print("size of loss is {}".format(loss)) 
