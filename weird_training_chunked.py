@@ -212,6 +212,7 @@ class CustomTrainer(Trainer):
             labels = None
         outputs = model(**inputs) 
         print("outputs have shape {}".format(len(outputs))) 
+        print(colored("model running loss: {}".format(outputs[0].item()), "yellow")) 
         if has_wandb: 
             wandb.log({"training_loss": outputs[0].item()}) 
 
