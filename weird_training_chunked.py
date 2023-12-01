@@ -46,7 +46,7 @@ try:
 except ImportError:
     has_wandb = False 
 
-# has_wandb = False # disable for debugging 
+has_wandb = False # disable for debugging 
 
 from src.transformers.utils import ( 
     ADAPTER_CONFIG_NAME,
@@ -212,6 +212,7 @@ class CustomTrainer(Trainer):
             labels = None
         outputs = model(**inputs) 
         print("outputs have shape {}".format(len(outputs))) 
+        exit(0) 
         # Save past state if it exists
         # TODO: this needs to be fixed and made cleaner later.
         if self.args.past_index >= 0:
@@ -334,7 +335,7 @@ d = onedataset.train_test_split(test_size = 0.1)
 def encode_with_truncation(examples): 
     # return tokenizer(examples["text"], truncation = True, padding = "max_length", 
                     #  max_length = max_length, return_special_tokens_mask = True) 
-    return tokenizer(examples["text"], padding = "max_length", max_length = 128, 
+    return tokenizer(examples["text"], padding = "max_length", max_length = 256, 
                      return_attention_mask = True, return_tensors = "pt", truncation = True) 
 train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
 test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
@@ -356,13 +357,14 @@ module_projection_name = "output_n_projection.weight"
 model = LlamaCausalLMWeirdTwo.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 for name, param in model.named_parameters(): 
     if name == module_projection_name: 
+        print("we got inside this if statement") 
         param.requires_grad = True 
         param = param.to(torch.float32) 
         param_group.append(param) 
     else: 
         param.requires_grad = False 
 model.train() 
-exit(0) 
+print("length of param_group is {}".format(len(param_group))) 
 
 custom_optimizer = torch.optim.AdamW([
     {"params": param_group, "lr": 2e-4}, 
@@ -370,7 +372,7 @@ custom_optimizer = torch.optim.AdamW([
 
 
 # for llama model we need to add the padding token 
-small_model.config.pad_token_id = tokenizer.pad_token_id 
+model.config.pad_token_id = tokenizer.pad_token_id 
 # print(small_model.embed_projection.weight.dtype) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
@@ -404,6 +406,7 @@ training_args = TrainingArguments(
 ) 
 
 max_length = 128 
+'''
 if has_wandb: 
     project_setting = args.experiment_setting if args.eval_mode is False else "finetuning" 
     today = datetime.date.today() 
@@ -412,8 +415,9 @@ if has_wandb:
     wandblogconfigs["time_hash"] = hash_of_time 
     # wandb.init(project = "llm160m", config = training_args, name="{}_{}".format(today, project_setting)) 
     wandb.init(project = "llm160m", config = wandblogconfigs, name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain")) 
+''' 
 
-weightmodelfirst = next(small_model.parameters()) 
+weightmodelfirst = next(model.parameters()) 
 # print(weightmodelfirst.dtype) 
 print(colored(weightmodelfirst.dtype, "red")) 
 
