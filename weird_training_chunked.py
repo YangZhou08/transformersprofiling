@@ -212,7 +212,6 @@ class CustomTrainer(Trainer):
             labels = None
         outputs = model(**inputs) 
         print("outputs have shape {}".format(len(outputs))) 
-        exit(0) 
         # Save past state if it exists
         # TODO: this needs to be fixed and made cleaner later.
         if self.args.past_index >= 0:
