@@ -203,9 +203,9 @@ class LlamaRotaryEmbeddingqksep(nn.Module):
         # t_two = t / key_scaling_factor 
         # t_two = torch.floor_divide(t, key_scaling_factor) 
         t_two = t.clone() 
-        t_two[4: ] = (torch.floor_divide(t, key_scaling_factor) + (self.max_seq_len_cached // 2))[4 :] 
-        print("printing t: {}".format(t.to(torch.long))) 
-        print("printing t_two: {}".format(t_two.to(torch.long))) 
+        # t_two[4: ] = (torch.floor_divide(t, key_scaling_factor) + (self.max_seq_len_cached // 2))[4 :] 
+        # print("printing t: {}".format(t.to(torch.long))) 
+        # print("printing t_two: {}".format(t_two.to(torch.long))) 
 
         freqs_two = torch.einsum("i,j->ij", t_two, self.inv_freq) 
         emb_two = torch.cat((freqs_two, freqs_two), dim = -1) 
@@ -305,12 +305,22 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids, unsqueeze_dim=1):
     k_embed = (k * cos) + (rotate_half(k) * sin)
     return q_embed, k_embed 
 
-def apply_differently_rotary_pos_emb(q, k, cosq, sinq, cosk, sink, position_ids, unsqueeze_dim = 1): 
+def apply_differently_rotary_pos_emb(q, k, cosq, sinq, cosk, sink, position_ids, unsqueeze_dim = 1, inv_freq = None) 
     cosq = cosq[position_ids].unsqueeze(unsqueeze_dim) 
     sinq = sinq[position_ids].unsqueeze(unsqueeze_dim) 
 
-    cosk = cosk[position_ids].unsqueeze(unsqueeze_dim) 
-    sink = sink[position_ids].unsqueeze(unsqueeze_dim) 
+    if inv_freq is not None: 
+        inv_freq = inv_freq[position_ids] 
+        if len(position_ids.shape) != 1: 
+            position_ids = position_ids[0] 
+        t = position_ids.to(inv_freq.dtype) 
+        seqlen = position_ids.shape[-1] 
+        t[4: ] = (torch.floor_divide(t, 2.) + (seqlen // 2))[4 :] 
+        freqs = torch.einsum("i,j->ij", t, inv_freq) 
+        emb = torch.cat((freqs, freqs), dim = -1) 
+    else: 
+        cosk = cosk[position_ids].unsqueeze(unsqueeze_dim) 
+        sink = sink[position_ids].unsqueeze(unsqueeze_dim) 
 
     q_embed = (q * cosq) + (rotate_half(q) * sinq) 
     k_embed = (k * cosk) + (rotate_half(k) * sink) 
@@ -478,7 +488,8 @@ class LlamaAttention(nn.Module):
         if isinstance(self.rotary_emb, LlamaRotaryEmbeddingqksep): 
             print(colored("We Got Here!!!", "red")) 
             cosq, sinq, cosk, sink = self.rotary_emb(value_states, seq_len = kv_seq_len) 
-            query_states, key_states = apply_differently_rotary_pos_emb(query_states, key_states, cosq, sinq, cosk, sink, position_ids) 
+            inv_freq = self.rotary_emb.inv_freq 
+            query_states, key_states = apply_differently_rotary_pos_emb(query_states, key_states, cosq, sinq, cosk, sink, position_ids, inv_freq) 
         else: 
             cos, sin = self.rotary_emb(value_states, seq_len=kv_seq_len) 
             query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids) 
