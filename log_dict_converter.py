@@ -10,7 +10,7 @@ def log_dict_converter(filename, preproc, tokenizer):
         words = ast.literal_eval(data) 
 
         data = {tuple(pairs): count for pairs, count in words} 
-        if preproc: 
+        if not preproc: 
             return data 
         else: 
             # first take all the keys out 
