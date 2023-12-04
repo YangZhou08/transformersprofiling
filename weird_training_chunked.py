@@ -29,6 +29,7 @@ import time
 from torch.utils.data import random_split 
 from src.transformers import BitsAndBytesConfig 
 from packaging import version 
+from collections.abc import Mapping
 
 import datetime 
 import os 
@@ -196,9 +197,35 @@ else:
 
 logger = logging.get_logger(__name__) 
 
+def log_dict_converter(filename, preproc = True, tokenizer = None): 
+    import ast 
+
+    with open(filename, "r") as f: 
+        data = f.read() 
+
+        words = ast.literal_eval(data) 
+
+        data = {tuple(pairs): count for pairs, count in words} 
+        if not preproc: 
+            return data 
+        else: 
+            # first take all the keys out 
+            keys = list(data.keys()) 
+
+            # then we tokenize them 
+            assert tokenizer is not None 
+            output_keys = [] 
+            for key in keys: 
+                output_tokenized_keys = tokenizer(key, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt") 
+                output_keys.append(output_tokenized_keys["input_ids"].squeeze(1)) 
+            output_keys = torch.stack(output_keys, dim = 0) 
+            print(output_keys.shape) 
+            return output_keys 
+
 class CustomTrainer(Trainer): 
     def __init__(self, *args, **kwargs): 
         super().__init__(*args, **kwargs) 
+        self.common_n_gram_dict = log_dict_converter("partial_c4_hot1000.txt") 
     
     def compute_loss(self, model, inputs, return_outputs=False):
         """
@@ -210,7 +237,25 @@ class CustomTrainer(Trainer):
             labels = inputs.pop("labels")
         else:
             labels = None
-        outputs = model(**inputs) 
+        # outputs = model(**inputs) 
+        input_ids = inputs["input_ids"] 
+        attention_mask = inputs["attention_mask"] 
+        labels = inputs["labels"] 
+
+        # hot_n_grams = self.common_n_gram_dict.keys() 
+
+        # further data collator steps 
+        assert isinstance(model, LlamaCausalLMWeirdTwo) 
+        outputs = model(
+            input_ids = input_ids, 
+            attention_mask = attention_mask, 
+            labels = labels, 
+            output_hidden_states = True, 
+            output_attentions = True, 
+            return_dict = True, 
+            hot_n_grams = hot_n_grams, 
+        ) 
+        
         print("outputs have shape {}".format(len(outputs))) 
         print(colored("model running loss: {}".format(outputs[0].item()), "yellow")) 
         if has_wandb: 
