@@ -22,6 +22,7 @@ def log_dict_converter(filename, preproc, tokenizer):
             for key in keys: 
                 output_tokenized_keys = tokenizer(key, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt") 
                 output_keys.append(output_tokenized_keys["input_ids"].squeeze(1)) 
+            print("got here, length of the output_keys is {}".format(len(output_keys))) 
             output_keys = torch.stack(output_keys, dim = 0) 
             print(output_keys.shape) 
             return output_keys 
