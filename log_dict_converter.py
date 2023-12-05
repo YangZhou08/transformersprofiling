@@ -62,3 +62,4 @@ for key in datadict.keys():
     print(key, datadict[key]) 
 ''' 
 print(datadict) 
+print(datadict.shape) 
