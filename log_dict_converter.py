@@ -46,7 +46,12 @@ def log_dict_converter(filename, preproc, tokenizer):
                 tokencat = torch.cat(local_tensor, dim = 0) 
                 if tokencat.shape[0] != 3: 
                     print(colored(tokencat, "red")) 
-                output_keys.append(tokencat) 
+                    for i in range(tokencat.shape[0] - 2): 
+                        cat1 = tokencat[i : i + 3] 
+                        print(cat1) 
+                        output_keys.append(cat1) 
+                else: 
+                    output_keys.append(tokencat) 
                 print() 
                 '''
                 print(local_tensor) 
