@@ -3472,7 +3472,8 @@ class Trainer:
                     else:
                         logits_mb = raw_outputs
                     logits = smp_nested_concat(logits_mb)
-            else:
+            else: 
+                print("has_labels: {}".format(has_labels)) 
                 if has_labels or loss_without_labels:
                     with self.compute_loss_context_manager():
                         loss, outputs = self.compute_loss(model, inputs, return_outputs=True)
