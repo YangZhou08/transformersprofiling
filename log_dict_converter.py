@@ -20,6 +20,7 @@ def log_dict_converter(filename, preproc, tokenizer):
             assert tokenizer is not None 
             output_keys = [] 
             for idx, key in enumerate(keys): 
+                print(idx) 
                 print("got here, keys are {}".format(key)) 
                 # output_tokenized_keys = tokenizer(key, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt") 
                 local_tensor = [] 
@@ -42,6 +43,7 @@ def log_dict_converter(filename, preproc, tokenizer):
                     local_tensor.append(tensorofinterest) 
                 print(local_tensor) 
                 output_keys.append(torch.cat(local_tensor, dim = 0)) 
+                print() 
                 '''
                 print(local_tensor) 
                 for seg in local_tensor: 
