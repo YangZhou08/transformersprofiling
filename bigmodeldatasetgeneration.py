@@ -229,7 +229,7 @@ json_file1 = open(synthesized_dir_path + json_file_name, "a")
 train_dataloader = trainer.get_train_dataloader() 
 print("the length of the train dataloader is {}".format(len(train_dataloader))) 
 # dict_kernel_maxlength = {3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70} 
-dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70} 
+dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
 # kernel_size = 4 
 if args.kernel_size not in dict_kernel_maxlength: 
     raise ValueError("kernel size should be one of 3, 4, 5, 6, 7") 
