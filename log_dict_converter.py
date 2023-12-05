@@ -28,7 +28,8 @@ def log_dict_converter(filename, preproc, tokenizer):
                     local_tensor.append(output_tokenized_keys["input_ids"].squeeze(0)) 
                 print(local_tensor) 
                 for seg in local_tensor: 
-                    print(tokenizer.decode(seg)) 
+                    for i in range(seg.shape[0]): 
+                        print(tokenizer.decode(seg[i])) 
                 exit(0) 
                 output_keys.append(output_tokenized_keys["input_ids"].squeeze(1)) 
             print("got here, length of the output_keys is {}".format(len(output_keys))) 
