@@ -25,7 +25,7 @@ def log_dict_converter(filename, preproc, tokenizer):
                 local_tensor = [] 
                 for seg in key: 
                     output_tokenized_keys = tokenizer.encode(seg, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt") 
-                    local_tensor.append(output_tokenized_keys["input_ids"].squeeze(0)) 
+                    local_tensor.append(output_tokenized_keys["input_ids"]) 
                 if local_tensor.shape[0] == 1: 
                     print(seg, local_tensor) 
                 else: 
@@ -36,7 +36,7 @@ def log_dict_converter(filename, preproc, tokenizer):
                     for i in range(seg.shape[0]): 
                         print(tokenizer.decode(seg[i])) 
                 ''' 
-                output_keys.append(output_tokenized_keys["input_ids"].squeeze(1)) 
+                # output_keys.append(output_tokenized_keys["input_ids"].squeeze(1)) 
             print("got here, length of the output_keys is {}".format(len(output_keys))) 
             '''
             output_keys = torch.stack(output_keys, dim = 0) 
