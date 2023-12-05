@@ -1,5 +1,6 @@
 import torch 
 from src.transformers import AutoTokenizer 
+from termcolor import colored 
 
 def log_dict_converter(filename, preproc, tokenizer): 
     import ast 
@@ -42,7 +43,10 @@ def log_dict_converter(filename, preproc, tokenizer):
                             print(seg, tensorofinterest) 
                     local_tensor.append(tensorofinterest) 
                 print(local_tensor) 
-                output_keys.append(torch.cat(local_tensor, dim = 0)) 
+                tokencat = torch.cat(local_tensor, dim = 0) 
+                if tokencat.shape[1] != 3: 
+                    print(colored(tokencat, "red")) 
+                output_keys.append(tokencat) 
                 print() 
                 '''
                 print(local_tensor) 
