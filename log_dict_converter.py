@@ -126,4 +126,4 @@ for key in datadict.keys():
 ''' 
 print(datadict) 
 print(datadict.shape) 
-print(datadicc == datadict) 
+print(torch.unique((datadicc == datadict).view(-1))) 
