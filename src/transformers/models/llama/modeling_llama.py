@@ -1709,12 +1709,11 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
             hot_n_grams_expand = hot_n_grams.unsqueeze(0).unsqueeze(0).to(shift_labels_expand.device) # turn into shape of (1, 1, 1000, 3) 
             matches = torch.all(shift_labels_expand == hot_n_grams_expand, dim = -1).to(torch.bool) # matches have dimension of (batch_size, seq_length, 1000) 
             mask = ~torch.any(matches, dim = -1) # mask has dimension of (batch_size, seq_length) 
-            print("first five of mask {}".format(mask[: 5, :])) 
-            print("first five of shift labels {}".format(shift_labels[: 5, :, 0])) 
+            # print("first five of mask {}".format(mask[: 5, :])) 
+            # print("first five of shift labels {}".format(shift_labels[: 5, :, 0])) 
             mask = mask.unsqueeze(-1).expand(-1, -1, 3) # mask has dimension of (batch_size, seq_length, 3) 
             shift_labels[mask] = -100 
-            print("first five of shift labels {}".format(shift_labels[: 5, :, 0])) 
-            exit(0) 
+            # print("first five of shift labels {}".format(shift_labels[: 5, :, 0])) 
 
             # Flatten the tokens
             loss_fct = CrossEntropyLoss()
