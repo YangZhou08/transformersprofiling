@@ -36,10 +36,11 @@ def log_dict_converter(filename, preproc, tokenizer):
                         # assert local_tensor.shape[0] == 2 
                         assert tensorofinterest.shape[0] == 2 
                         if tensorofinterest[0] == 29871: 
-                            print(seg, local_tensor) 
+                            print(seg, tensorofinterest) 
                             tensorofinterest = tensorofinterest[1:] 
-                            print(seg, local_tensor) 
+                            print(seg, tensorofinterest) 
                     local_tensor.append(tensorofinterest) 
+                print(local_tensor) 
                 '''
                 print(local_tensor) 
                 for seg in local_tensor: 
