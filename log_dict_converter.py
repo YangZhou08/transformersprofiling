@@ -24,7 +24,7 @@ def log_dict_converter(filename, preproc, tokenizer):
                 # output_tokenized_keys = tokenizer(key, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt") 
                 local_tensor = [] 
                 for seg in key: 
-                    output_tokenized_keys = tokenizer.encode(seg, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt") 
+                    output_tokenized_keys = tokenizer(seg, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt") 
                     local_tensor.append(output_tokenized_keys["input_ids"]) 
                 if local_tensor.shape[0] == 1: 
                     print(seg, local_tensor) 
