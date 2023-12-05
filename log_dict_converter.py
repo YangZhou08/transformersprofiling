@@ -119,7 +119,7 @@ def log_dict_converterc(filename, preproc, tokenizer):
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = "/home/yangzho6/model_checkpoints") 
 datadict = log_dict_converter("partial_c4_hot1000.txt", preproc = True, tokenizer = tokenizer) 
 datadicc = log_dict_converterc("partial_c4_hot1000.txt", preproc = True, tokenizer = tokenizer) 
-torch.set_printoptions(threshold = 5000) 
+torch.set_printoptions(threshold = 10_000) 
 '''
 print(len(datadict)) 
 for key in datadict.keys(): 
