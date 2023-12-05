@@ -65,8 +65,60 @@ def log_dict_converter(filename, preproc, tokenizer):
             print(output_keys.shape) 
             return output_keys 
 
+def log_dict_converterc(filename, preproc, tokenizer): 
+    import ast 
+
+    with open(filename, "r") as f: 
+        data = f.read() 
+
+        words = ast.literal_eval(data) 
+
+        data = {tuple(pairs): count for pairs, count in words} 
+        if not preproc: 
+            return data 
+        else: 
+            # first take all the keys out 
+            keys = list(data.keys()) 
+
+            # then we tokenize them 
+            assert tokenizer is not None 
+            output_keys = [] 
+            for idx, key in enumerate(keys): 
+                local_tensor = [] 
+                for seg in key: 
+                    if seg == "<0x0A>": 
+                        seg = "\n" 
+                    output_tokenized_keys = tokenizer(seg, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt") 
+                    # local_tensor.append(output_tokenized_keys["input_ids"].squeeze(0)) 
+                    tensorofinterest = output_tokenized_keys["input_ids"].squeeze(0) 
+                    # if local_tensor.shape[0] == 1: 
+                    if tensorofinterest.shape[0] != 1: 
+                        # assert local_tensor.shape[0] == 2 
+                        assert tensorofinterest.shape[0] == 2 
+                        if tensorofinterest[0] == 29871: 
+                            # print(seg, tensorofinterest) 
+                            tensorofinterest = tensorofinterest[1:] 
+                    local_tensor.append(tensorofinterest) 
+                tokencat = torch.cat(local_tensor, dim = 0) 
+                if tokencat.shape[0] != 3: 
+                    for i in range(tokencat.shape[0] - 2): 
+                        cat1 = tokencat[i : i + 3] 
+                        output_keys.append(cat1) 
+                else: 
+                    output_keys.append(tokencat) 
+                '''
+                print(local_tensor) 
+                for seg in local_tensor: 
+                    for i in range(seg.shape[0]): 
+                        print(tokenizer.decode(seg[i])) 
+                ''' 
+                # output_keys.append(output_tokenized_keys["input_ids"].squeeze(1)) 
+            output_keys = torch.stack(output_keys, dim = 0) 
+            return output_keys 
+
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = "/home/yangzho6/model_checkpoints") 
 datadict = log_dict_converter("partial_c4_hot1000.txt", preproc = True, tokenizer = tokenizer) 
+datadicc = log_dict_converterc("partial_c4_hot1000.txt", preproc = True, tokenizer = tokenizer) 
 '''
 print(len(datadict)) 
 for key in datadict.keys(): 
@@ -74,3 +126,4 @@ for key in datadict.keys():
 ''' 
 print(datadict) 
 print(datadict.shape) 
+print(datadicc == datadict) 
