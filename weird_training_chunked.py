@@ -197,7 +197,7 @@ else:
 
 logger = logging.get_logger(__name__) 
 
-def log_dict_converter(filename, preproc = True, tokenizer = None): 
+def log_dict_converterc(filename, preproc, tokenizer): 
     import ast 
 
     with open(filename, "r") as f: 
@@ -215,17 +215,43 @@ def log_dict_converter(filename, preproc = True, tokenizer = None):
             # then we tokenize them 
             assert tokenizer is not None 
             output_keys = [] 
-            for key in keys: 
-                output_tokenized_keys = tokenizer(key, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt") 
-                output_keys.append(output_tokenized_keys["input_ids"].squeeze(1)) 
+            for idx, key in enumerate(keys): 
+                local_tensor = [] 
+                for seg in key: 
+                    if seg == "<0x0A>": 
+                        seg = "\n" 
+                    output_tokenized_keys = tokenizer(seg, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt") 
+                    # local_tensor.append(output_tokenized_keys["input_ids"].squeeze(0)) 
+                    tensorofinterest = output_tokenized_keys["input_ids"].squeeze(0) 
+                    # if local_tensor.shape[0] == 1: 
+                    if tensorofinterest.shape[0] != 1: 
+                        # assert local_tensor.shape[0] == 2 
+                        assert tensorofinterest.shape[0] == 2 
+                        if tensorofinterest[0] == 29871: 
+                            # print(seg, tensorofinterest) 
+                            tensorofinterest = tensorofinterest[1:] 
+                    local_tensor.append(tensorofinterest) 
+                tokencat = torch.cat(local_tensor, dim = 0) 
+                if tokencat.shape[0] != 3: 
+                    for i in range(tokencat.shape[0] - 2): 
+                        cat1 = tokencat[i : i + 3] 
+                        output_keys.append(cat1) 
+                else: 
+                    output_keys.append(tokencat) 
+                '''
+                print(local_tensor) 
+                for seg in local_tensor: 
+                    for i in range(seg.shape[0]): 
+                        print(tokenizer.decode(seg[i])) 
+                ''' 
+                # output_keys.append(output_tokenized_keys["input_ids"].squeeze(1)) 
             output_keys = torch.stack(output_keys, dim = 0) 
-            print(output_keys.shape) 
             return output_keys 
 
 class CustomTrainer(Trainer): 
-    def __init__(self, *args, **kwargs): 
+    def __init__(self, common_n_gram_list, *args, **kwargs): 
         super().__init__(*args, **kwargs) 
-        self.common_n_gram_dict = log_dict_converter("partial_c4_hot1000.txt") 
+        self.common_n_gram_list = common_n_gram_list 
     
     def compute_loss(self, model, inputs, return_outputs=False):
         """
@@ -253,7 +279,7 @@ class CustomTrainer(Trainer):
             output_hidden_states = True, 
             output_attentions = True, 
             return_dict = True, 
-            hot_n_grams = hot_n_grams, 
+            hot_n_grams = self.common_n_gram_list, 
         ) 
         
         print("outputs have shape {}".format(len(outputs))) 
@@ -510,6 +536,8 @@ def compute_metrics(p):
 # print(trainer.lr_scheduler.state_dict()) 
 # exit(0) 
 
+hot_1000_3_grams = log_dict_converterc("partial_c4_hot1000.txt", preproc = True, tokenizer = tokenizer) 
+
 trainer = CustomTrainer(
     model = model, 
     args = training_args, 
@@ -517,6 +545,7 @@ trainer = CustomTrainer(
     eval_dataset = test_dataset, 
     data_collator = data_collator, 
     optimizers = (custom_optimizer, None), 
+    common_n_gram_list = hot_1000_3_grams, 
 ) 
 
 torch.autograd.set_detect_anomaly(True) 
