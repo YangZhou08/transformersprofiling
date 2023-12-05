@@ -1698,7 +1698,7 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
             # print(labels[0]) 
             for i in range(1, self.lookaheadcount + 1): 
                 shift_labels.append(labels[:, i : i + (originalseqlength - self.lookaheadcount)].contiguous()) 
-            shift_labels = torch.stack(shift_labels, dim = 1) 
+            shift_labels = torch.stack(shift_labels, dim = 2) # I think dimension should be at 2 
             # print(shift_labels[0]) 
             print("shift logits shape {}".format(shift_logits.shape)) 
             print("shift labels shape {}".format(shift_labels.shape)) 
@@ -1711,6 +1711,7 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
             mask = ~torch.any(matches, dim = -1).long() # mask has dimension of (batch_size, seq_length) 
             print("first five of mask {}".format(mask[: 5, :])) 
             print("first five of shift labels {}".format(shift_labels[: 5, :, 0])) 
+            exit(0) 
             mask = mask.unsqueeze(-1).expand(-1, -1, 3) # mask has dimension of (batch_size, seq_length, 3) 
             shift_labels[mask] = -100 
 
