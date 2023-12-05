@@ -29,7 +29,9 @@ import time
 from torch.utils.data import random_split 
 from src.transformers import BitsAndBytesConfig 
 from packaging import version 
-from collections.abc import Mapping
+from collections.abc import Mapping 
+from src.transformers.modeling_utils import PreTrainedModel, load_sharded_checkpoint, unwrap_model 
+from src.transformers.models.auto.modeling_auto import MODEL_FOR_CAUSAL_LM_MAPPING_NAMES, MODEL_MAPPING_NAMES 
 
 import datetime 
 import os 
