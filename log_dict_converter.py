@@ -24,18 +24,26 @@ def log_dict_converter(filename, preproc, tokenizer):
                 # output_tokenized_keys = tokenizer(key, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt") 
                 local_tensor = [] 
                 for seg in key: 
-                    output_tokenized_keys = tokenizer(seg, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt") 
+                    output_tokenized_keys = tokenizer.encode(seg, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt") 
                     local_tensor.append(output_tokenized_keys["input_ids"].squeeze(0)) 
+                if local_tensor.shape[0] == 1: 
+                    print(seg, local_tensor) 
+                else: 
+                    assert local_tensor.shape[0] == 2 
+                '''
                 print(local_tensor) 
                 for seg in local_tensor: 
                     for i in range(seg.shape[0]): 
                         print(tokenizer.decode(seg[i])) 
-                exit(0) 
+                ''' 
                 output_keys.append(output_tokenized_keys["input_ids"].squeeze(1)) 
             print("got here, length of the output_keys is {}".format(len(output_keys))) 
+            '''
             output_keys = torch.stack(output_keys, dim = 0) 
             print(output_keys.shape) 
             return output_keys 
+            ''' 
+            return None 
 
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = "/home/yangzho6/model_checkpoints") 
 datadict = log_dict_converter("partial_c4_hot1000.txt", preproc = True, tokenizer = tokenizer) 
