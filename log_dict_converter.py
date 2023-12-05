@@ -127,7 +127,7 @@ for key in datadict.keys():
 ''' 
 print(datadict) 
 # find = torch.tensor([[322, 372, 338]]) 
-find = torch.tensor([263,  3287,   310]) 
+find = torch.tensor([263, 1353, 310]) 
 print(torch.where(torch.all(datadict == find, dim = 1))) 
 print(datadict.shape) 
 print(torch.unique((datadicc == datadict).view(-1))) 
