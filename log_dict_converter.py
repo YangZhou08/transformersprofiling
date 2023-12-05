@@ -24,13 +24,21 @@ def log_dict_converter(filename, preproc, tokenizer):
                 # output_tokenized_keys = tokenizer(key, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt") 
                 local_tensor = [] 
                 for seg in key: 
+                    if seg == "<0x0A>": 
+                        seg = "\n" 
                     output_tokenized_keys = tokenizer(seg, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt") 
-                    local_tensor.append(output_tokenized_keys["input_ids"]) 
+                    # local_tensor.append(output_tokenized_keys["input_ids"].squeeze(0)) 
+                    tensorofinterest = output_tokenized_keys["input_ids"].squeeze(0) 
                     # if local_tensor.shape[0] == 1: 
-                    if output_tokenized_keys["input_ids"].shape[0] == 1: 
+                    if tensorofinterest.shape[0] == 1: 
                         print(seg, local_tensor) 
                     else: 
                         assert local_tensor.shape[0] == 2 
+                        if tensorofinterest[0] == 29871: 
+                            print(seg, local_tensor) 
+                            tensorofinterest = tensorofinterest[1:] 
+                            print(seg, local_tensor) 
+                    local_tensor.append(tensorofinterest) 
                 '''
                 print(local_tensor) 
                 for seg in local_tensor: 
