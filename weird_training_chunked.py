@@ -251,9 +251,10 @@ def log_dict_converterc(filename, preproc, tokenizer):
             return output_keys 
 
 class CustomTrainer(Trainer): 
-    def __init__(self, common_n_gram_list, *args, **kwargs): 
+    def __init__(self, common_n_gram_list, use_filtered_hot_labels = True, *args, **kwargs): 
         super().__init__(*args, **kwargs) 
         self.common_n_gram_list = common_n_gram_list 
+        self.use_filtered_hot_labels = use_filtered_hot_labels 
     
     def compute_loss(self, model, inputs, return_outputs=False):
         """
@@ -282,6 +283,7 @@ class CustomTrainer(Trainer):
             output_attentions = True, 
             return_dict = True, 
             hot_n_grams = self.common_n_gram_list, 
+            use_filtered_hot_labels = self.use_filtered_hot_labels, 
         ) 
         
         print("outputs have shape {}".format(len(outputs))) 
@@ -548,7 +550,9 @@ trainer = CustomTrainer(
     data_collator = data_collator, 
     optimizers = (custom_optimizer, None), 
     common_n_gram_list = hot_1000_3_grams, 
+    use_filtered_hot_labels = False, 
 ) 
+
 
 torch.autograd.set_detect_anomaly(True) 
 
