@@ -44,7 +44,7 @@ def log_dict_converter(filename, preproc, tokenizer):
                     local_tensor.append(tensorofinterest) 
                 print(local_tensor) 
                 tokencat = torch.cat(local_tensor, dim = 0) 
-                if tokencat.shape[1] != 3: 
+                if tokencat.shape[0] != 3: 
                     print(colored(tokencat, "red")) 
                 output_keys.append(tokencat) 
                 print() 
