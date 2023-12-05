@@ -1622,7 +1622,7 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None, 
         hot_n_grams = None, 
-        use_filtered_hot_labels = True, 
+        use_filtered_hot_labels = False, 
     ) -> Union[Tuple, CausalLMOutputWithPast]:
         r"""
         Args:
@@ -1703,6 +1703,7 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
             # print(shift_labels[0]) 
             print("shift logits shape {}".format(shift_logits.shape)) 
             print("shift labels shape {}".format(shift_labels.shape)) 
+            print("checking use_filtered_hot_labels: {}".format(use_filtered_hot_labels)) 
 
             if use_filtered_hot_labels: 
                 # interact with only the hot 1000 tokens 
