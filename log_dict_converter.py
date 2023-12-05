@@ -33,7 +33,8 @@ def log_dict_converter(filename, preproc, tokenizer):
                     if tensorofinterest.shape[0] == 1: 
                         print(seg, local_tensor) 
                     else: 
-                        assert local_tensor.shape[0] == 2 
+                        # assert local_tensor.shape[0] == 2 
+                        assert tensorofinterest.shape[0] == 2 
                         if tensorofinterest[0] == 29871: 
                             print(seg, local_tensor) 
                             tensorofinterest = tensorofinterest[1:] 
