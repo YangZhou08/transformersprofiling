@@ -26,10 +26,11 @@ def log_dict_converter(filename, preproc, tokenizer):
                 for seg in key: 
                     output_tokenized_keys = tokenizer(seg, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt") 
                     local_tensor.append(output_tokenized_keys["input_ids"]) 
-                if local_tensor.shape[0] == 1: 
-                    print(seg, local_tensor) 
-                else: 
-                    assert local_tensor.shape[0] == 2 
+                    # if local_tensor.shape[0] == 1: 
+                    if output_tokenized_keys["input_ids"].shape[0] == 1: 
+                        print(seg, local_tensor) 
+                    else: 
+                        assert local_tensor.shape[0] == 2 
                 '''
                 print(local_tensor) 
                 for seg in local_tensor: 
