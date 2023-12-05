@@ -268,7 +268,7 @@ class CustomTrainer(Trainer):
         # outputs = model(**inputs) 
         input_ids = inputs["input_ids"] 
         attention_mask = inputs["attention_mask"] 
-        labels = inputs["labels"] 
+        label2 = inputs["labels"] 
 
         # hot_n_grams = self.common_n_gram_dict.keys() 
 
@@ -277,7 +277,7 @@ class CustomTrainer(Trainer):
         outputs = model(
             input_ids = input_ids, 
             attention_mask = attention_mask, 
-            labels = labels, 
+            labels = label2, 
             output_hidden_states = True, 
             output_attentions = True, 
             return_dict = True, 
