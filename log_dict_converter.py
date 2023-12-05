@@ -19,7 +19,7 @@ def log_dict_converter(filename, preproc, tokenizer):
             # then we tokenize them 
             assert tokenizer is not None 
             output_keys = [] 
-            for key in keys: 
+            for idx, key in enumerate(keys): 
                 print("got here, keys are {}".format(key)) 
                 # output_tokenized_keys = tokenizer(key, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt") 
                 local_tensor = [] 
