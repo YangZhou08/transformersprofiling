@@ -41,6 +41,7 @@ def log_dict_converter(filename, preproc, tokenizer):
                             print(seg, tensorofinterest) 
                     local_tensor.append(tensorofinterest) 
                 print(local_tensor) 
+                output_keys.append(torch.cat(local_tensor, dim = 0)) 
                 '''
                 print(local_tensor) 
                 for seg in local_tensor: 
@@ -49,12 +50,9 @@ def log_dict_converter(filename, preproc, tokenizer):
                 ''' 
                 # output_keys.append(output_tokenized_keys["input_ids"].squeeze(1)) 
             print("got here, length of the output_keys is {}".format(len(output_keys))) 
-            '''
             output_keys = torch.stack(output_keys, dim = 0) 
             print(output_keys.shape) 
             return output_keys 
-            ''' 
-            return None 
 
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = "/home/yangzho6/model_checkpoints") 
 datadict = log_dict_converter("partial_c4_hot1000.txt", preproc = True, tokenizer = tokenizer) 
