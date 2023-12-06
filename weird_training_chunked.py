@@ -330,6 +330,7 @@ class CustomTrainer(Trainer):
         from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
         print(colored("printing out the type of logits {}".format(type(logits)), "red")) 
+        exit(0) 
         logits = logits[:, :-1, :] 
         # input_attention_mask = input_attention_mask[:, :-1] 
         input_attention_mask = input_attention_mask[:, 1:] 
@@ -605,7 +606,7 @@ tokenizer.padding_side = "left"
 
 # backup dataset 
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1.json', split = "train") 
-onedataset = load_dataset('json', data_files = datasetsrc, split = "train") 
+onedataset = load_dataset('json', data_files = datasetsrc, split = "train[:1000]") 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 d = onedataset.train_test_split(test_size = 0.1) 
 # print(d["train"], d["test"]) 
