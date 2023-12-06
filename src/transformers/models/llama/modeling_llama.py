@@ -30,7 +30,8 @@ from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 
 from ...activations import ACT2FN
 from ...modeling_attn_mask_utils import AttentionMaskConverter, _prepare_4d_causal_attention_mask
-from ...modeling_outputs import BaseModelOutputWithPast, CausalLMOutputWithPast, SequenceClassifierOutputWithPast
+from ...modeling_outputs import BaseModelOutputWithPast, CausalLMOutputWithPast, SequenceClassifierOutputWithPast 
+from ...modeling_outputs import CausalLMOutputWithPastWithOriginalOutput 
 from ...modeling_utils import PreTrainedModel
 from ...pytorch_utils import ALL_LAYERNORM_LAYERS, is_torch_greater_or_equal_than_1_13
 from ...utils import (
@@ -1623,6 +1624,7 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
         return_dict: Optional[bool] = None, 
         hot_n_grams = None, 
         use_filtered_hot_labels = False, 
+        compute_original_output = False, 
     ) -> Union[Tuple, CausalLMOutputWithPast]:
         r"""
         Args:
@@ -1670,6 +1672,8 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
         )
 
         hidden_states = outputs[0] 
+        if compute_original_output: 
+            original_prob_output = self.lm_head(hidden_states) 
         # hidden_states should have dimension (batch_size, seq_length, hidden_size) 
         # after the output_tripple_projection, we expect it should be (batch_size, seq_length, hidden_size * n) 
         print("hidden_states has shape {}".format(hidden_states.shape)) 
@@ -1730,13 +1734,23 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
             output = (logits,) + outputs[1:]
             return (loss,) + output if loss is not None else output
 
-        return CausalLMOutputWithPast(
-            loss=loss,
-            logits=logits,
-            past_key_values=outputs.past_key_values,
-            hidden_states=outputs.hidden_states,
-            attentions=outputs.attentions,
-        )
+        if not compute_original_output: 
+            return CausalLMOutputWithPast(
+                loss=loss,
+                logits=logits,
+                past_key_values=outputs.past_key_values,
+                hidden_states=outputs.hidden_states,
+                attentions=outputs.attentions,
+            ) 
+        else: 
+            return CausalLMOutputWithPastWithOriginalOutput(
+                loss=loss,
+                logits=logits,
+                past_key_values=outputs.past_key_values,
+                hidden_states=outputs.hidden_states,
+                attentions=outputs.attentions, 
+                original_model_output = original_prob_output, 
+            ) 
 
     def prepare_inputs_for_generation(
         self, input_ids, past_key_values=None, attention_mask=None, inputs_embeds=None, **kwargs

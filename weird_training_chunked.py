@@ -255,6 +255,7 @@ class CustomTrainer(Trainer):
         super().__init__(*args, **kwargs) 
         self.common_n_gram_list = common_n_gram_list 
         self.use_filtered_hot_labels = use_filtered_hot_labels 
+        self.training_mode = True 
     
     def compute_loss(self, model, inputs, return_outputs=False):
         """
@@ -284,6 +285,7 @@ class CustomTrainer(Trainer):
             return_dict = True, 
             hot_n_grams = self.common_n_gram_list, 
             use_filtered_hot_labels = self.use_filtered_hot_labels, 
+            original_model_output = True, 
         ) 
         
         print("outputs have shape {}".format(len(outputs))) 
@@ -317,6 +319,39 @@ class CustomTrainer(Trainer):
 
         return (loss, outputs) if return_outputs else loss 
     
+    def local_compute_metrics(
+        self, 
+        logits, 
+        labels, 
+        loss, 
+        input_attention_mask, 
+        outside_step, 
+    ): 
+        from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+
+        print(colored("printing out the type of logits {}".format(type(logits)), "red")) 
+        logits = logits[:, :-1, :] 
+        # input_attention_mask = input_attention_mask[:, :-1] 
+        input_attention_mask = input_attention_mask[:, 1:] 
+        labels = labels[:, 1:] 
+        preds = torch.argmax(logits, dim = -1) 
+        if outside_step == 0: 
+            print("*** evaluating at step {} ***".format(self.iteration_count)) 
+            # visualize the actual output prediction during the evaluation 
+            if self.use_filtered_hot_labels: 
+                pass 
+            else: 
+                pass 
+        
+        indices_to_keep = input_attention_mask == 1 
+        total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
+        
+        # computing the average acceptance length 
+        
+        # use preds to compute f1 score 
+        # f1 = precision_recall_fscore_support(labels, preds, average = "weighted") 
+        return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "interest_correct_words": interest_correct_count, "interest_total_words": interest_token_count} 
+    
     def evaluation_loop(
         self,
         dataloader: DataLoader,
@@ -326,6 +361,7 @@ class CustomTrainer(Trainer):
         metric_key_prefix: str = "eval",
     ) -> EvalLoopOutput:
         print("got inside the subclass") 
+        self.training_mode = False 
         """
         Prediction/evaluation loop, shared by `Trainer.evaluate()` and `Trainer.predict()`.
 
@@ -478,7 +514,9 @@ class CustomTrainer(Trainer):
         # Prefix all keys with metric_key_prefix + '_'
         for key in list(metrics.keys()):
             if not key.startswith(f"{metric_key_prefix}_"):
-                metrics[f"{metric_key_prefix}_{key}"] = metrics.pop(key)
+                metrics[f"{metric_key_prefix}_{key}"] = metrics.pop(key) 
+        
+        self.training_mode = True 
 
         return EvalLoopOutput(predictions=all_preds, label_ids=all_labels, metrics=metrics, num_samples=num_samples) 
 
@@ -630,10 +668,10 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=40,  # evaluation batch size
     # logging_steps=1, 
-    logging_steps = 50,           # evaluate, log and save model checkpoints every 1000 step
+    logging_steps = 2,            # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 50, 
+    save_steps = 2, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     # learning_rate=2e-4, 
