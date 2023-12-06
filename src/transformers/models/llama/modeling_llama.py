@@ -1735,6 +1735,7 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
             return (loss,) + output if loss is not None else output
 
         if not compute_original_output: 
+            print(colored("we are not outputing the original output", "red")) 
             return CausalLMOutputWithPast(
                 loss=loss,
                 logits=logits,
@@ -1743,6 +1744,7 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
                 attentions=outputs.attentions,
             ) 
         else: 
+            print(colored("we output the original output", "yellow")) 
             return CausalLMOutputWithPastWithOriginalOutput(
                 loss=loss,
                 logits=logits,

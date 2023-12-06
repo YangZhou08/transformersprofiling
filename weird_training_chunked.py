@@ -331,7 +331,7 @@ class CustomTrainer(Trainer):
 
         print("length of logits is {}".format(len(logits))) 
         for index in range(len(logits)): 
-            print("logits[{}] is {}".format(index, type(logits[index]))) 
+            print("logits[{}] is {}".format(index, logits[index].shape)) 
         print(colored("printing out the type of logits {}".format(type(logits)), "red")) 
         exit(0) 
         logits = logits[:, :-1, :] 
