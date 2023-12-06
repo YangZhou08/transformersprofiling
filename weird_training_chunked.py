@@ -342,7 +342,7 @@ class CustomTrainer(Trainer):
         labels = labels[:, 1:] 
         # preds = torch.argmax(logits, dim = -1) # dimension (batch_size, seq_len - 1) 
         if outside_step == 0: 
-            print("*** evaluating at step {} ***".format(self.iteration_count)) 
+            # print("*** evaluating at step {} ***".format(self.iteration_count)) 
             # visualize the actual output prediction during the evaluation 
             if self.use_filtered_hot_labels: 
                 pass 
