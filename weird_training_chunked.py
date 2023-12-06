@@ -285,7 +285,7 @@ class CustomTrainer(Trainer):
             return_dict = True, 
             hot_n_grams = self.common_n_gram_list, 
             use_filtered_hot_labels = self.use_filtered_hot_labels, 
-            compute_original_output = True, 
+            compute_original_output = not self.training_mode, 
         ) 
         
         print("outputs have shape {}".format(len(outputs))) 
@@ -329,6 +329,9 @@ class CustomTrainer(Trainer):
     ): 
         from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
+        print("length of logits is {}".format(len(logits))) 
+        for index in range(len(logits)): 
+            print("logits[{}] is {}".format(index, type(logits[index]))) 
         print(colored("printing out the type of logits {}".format(type(logits)), "red")) 
         exit(0) 
         logits = logits[:, :-1, :] 
@@ -669,10 +672,10 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=40,  # evaluation batch size
     # logging_steps=1, 
-    logging_steps = 2,            # evaluate, log and save model checkpoints every 1000 step
+    logging_steps = 1,             # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 2, 
+    save_steps = 1, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     # learning_rate=2e-4, 
