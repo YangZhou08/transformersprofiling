@@ -285,7 +285,7 @@ class CustomTrainer(Trainer):
             return_dict = True, 
             hot_n_grams = self.common_n_gram_list, 
             use_filtered_hot_labels = self.use_filtered_hot_labels, 
-            original_model_output = True, 
+            compute_original_output = True, 
         ) 
         
         print("outputs have shape {}".format(len(outputs))) 
