@@ -316,6 +316,171 @@ class CustomTrainer(Trainer):
             loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0]
 
         return (loss, outputs) if return_outputs else loss 
+    
+    def evaluation_loop(
+        self,
+        dataloader: DataLoader,
+        description: str,
+        prediction_loss_only: Optional[bool] = None,
+        ignore_keys: Optional[List[str]] = None,
+        metric_key_prefix: str = "eval",
+    ) -> EvalLoopOutput:
+        print("got inside the subclass") 
+        """
+        Prediction/evaluation loop, shared by `Trainer.evaluate()` and `Trainer.predict()`.
+
+        Works both with or without labels.
+        """
+        # NOTE: note that this modification is only helpful for single GPU training 
+        args = self.args
+
+        prediction_loss_only = prediction_loss_only if prediction_loss_only is not None else args.prediction_loss_only
+
+        # if eval is called w/o train, handle model prep here
+        if self.is_deepspeed_enabled and self.deepspeed is None:
+            _, _ = deepspeed_init(self, num_training_steps=0, inference=True)
+
+        model = self._wrap_model(self.model, training=False, dataloader=dataloader)
+
+        if len(self.accelerator._models) == 0 and model is self.model:
+            model = (
+                self.accelerator.prepare(model)
+                if self.is_deepspeed_enabled
+                else self.accelerator.prepare_model(model, evaluation_mode=True)
+            )
+
+            if self.is_fsdp_enabled:
+                self.model = model
+
+            # for the rest of this function `model` is the outside model, whether it was wrapped or not
+            if model is not self.model:
+                self.model_wrapped = model
+
+            # backward compatibility
+            if self.is_deepspeed_enabled:
+                self.deepspeed = self.model_wrapped
+
+        # if full fp16 or bf16 eval is wanted and this ``evaluation`` or ``predict`` isn't called
+        # while ``train`` is running, cast it to the right dtype first and then put on device
+        if not self.is_in_train:
+            if args.fp16_full_eval:
+                model = model.to(dtype=torch.float16, device=args.device)
+            elif args.bf16_full_eval:
+                model = model.to(dtype=torch.bfloat16, device=args.device)
+
+        batch_size = self.args.eval_batch_size
+        model.eval()
+
+        self.callback_handler.eval_dataloader = dataloader
+        # Do this before wrapping.
+        eval_dataset = getattr(dataloader, "dataset", None)
+
+        if args.past_index >= 0:
+            self._past = None
+
+        # Initialize containers
+        # losses/preds/labels on GPU/TPU (accumulated for eval_accumulation_steps)
+        losses_host = None
+        preds_host = None
+        labels_host = None
+        inputs_host = None
+
+        # losses/preds/labels on CPU (final containers)
+        all_losses = None
+        all_preds = None
+        all_labels = None
+        all_inputs = None
+        # Will be useful when we have an iterable dataset so don't know its length.
+
+        total_correct_words = 0 
+        total_words = 0 
+        sum_of_perplexity = 0 # used to compute the average perplexity 
+        total_loss = 0 # used to compute the correct perplexity 
+        interest_total_words = 0 
+        interest_correct_words = 0 
+
+        observed_num_examples = 0 
+        total_num_steps = len(dataloader) 
+        # Main evaluation loop
+        for step, inputs in enumerate(tqdm(dataloader, desc = "description")): 
+            # Update the observed num examples
+            observed_batch_size = find_batch_size(inputs)
+            if observed_batch_size is not None:
+                observed_num_examples += observed_batch_size
+                # For batch samplers, batch_size is not known by the dataloader in advance.
+                if batch_size is None:
+                    batch_size = observed_batch_size
+
+            # Prediction step 
+            ignore_keys = ["hidden_states", "attentions", "past_key_values"] 
+            loss, logits, labels = self.prediction_step(model, inputs, False, ignore_keys=ignore_keys) 
+            # print(ignore_keys) 
+            # print(colored("the loss is {}".format(loss), "yellow")) 
+            # print(colored("the shape of logits is {} {}".format(logits.shape, "yellow"))) 
+            # print(colored("the shape of logits if {} {}".format(len(logits), logits[0].shape), "yellow")) 
+            # print(colored("the shape of logits is {}".format(logits.shape), "yellow")) 
+            # print(colored("the shape of labels is {}".format(labels.shape), "yellow")) 
+            total_loss += loss.item() 
+            local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"], step) 
+            total_correct_words += local_metrics["correct_words"] 
+            total_words += local_metrics["total_words"] 
+
+            if is_torch_tpu_available():
+                xm.mark_step()
+
+        # After all calls to `.gather_function`, reset to `gather_for_metrics`:
+        self.gather_function = self.accelerator.gather_for_metrics
+        if args.past_index and hasattr(self, "_past"):
+            # Clean the state at the end of the evaluation loop
+            delattr(self, "_past")
+
+        # Number of samples
+        if has_length(eval_dataset):
+            num_samples = len(eval_dataset)
+        # The instance check is weird and does not actually check for the type, but whether the dataset has the right
+        # methods. Therefore we need to make sure it also has the attribute.
+        elif isinstance(eval_dataset, IterableDatasetShard) and getattr(eval_dataset, "num_examples", 0) > 0:
+            num_samples = eval_dataset.num_examples
+        else:
+            if has_length(dataloader):
+                num_samples = self.num_examples(dataloader)
+            else:  # both len(dataloader.dataset) and len(dataloader) fail
+                num_samples = observed_num_examples
+        if num_samples == 0 and observed_num_examples > 0:
+            num_samples = observed_num_examples
+        
+        global_accuracy = total_correct_words / total_words 
+        all_losses = total_loss / total_num_steps 
+
+        metrics = {"accuracy": global_accuracy} 
+        print(colored(metrics, "magenta")) 
+        wandb.log({"global_eval_accuracy": global_accuracy}) 
+
+        # # Metrics!
+        # if self.compute_metrics is not None and all_preds is not None and all_labels is not None:
+        #     if args.include_inputs_for_metrics:
+        #         metrics = self.compute_metrics(
+        #             EvalPrediction(predictions=all_preds, label_ids=all_labels, inputs=all_inputs)
+        #         )
+        #     else:
+        #         metrics = self.compute_metrics(EvalPrediction(predictions=all_preds, label_ids=all_labels))
+        # else:
+        #     metrics = {}
+        # # To be JSON-serializable, we need to remove numpy types or zero-d tensors
+        metrics = denumpify_detensorize(metrics)
+
+        if all_losses is not None:
+            # metrics[f"{metric_key_prefix}_loss"] = all_losses.mean().item() 
+            metrics[f"{metric_key_prefix}_loss"] = all_losses 
+        if hasattr(self, "jit_compilation_time"):
+            metrics[f"{metric_key_prefix}_jit_compilation_time"] = self.jit_compilation_time
+
+        # Prefix all keys with metric_key_prefix + '_'
+        for key in list(metrics.keys()):
+            if not key.startswith(f"{metric_key_prefix}_"):
+                metrics[f"{metric_key_prefix}_{key}"] = metrics.pop(key)
+
+        return EvalLoopOutput(predictions=all_preds, label_ids=all_labels, metrics=metrics, num_samples=num_samples) 
 
 class CustomDataset: 
     def __init__(self, data_dir, tokenizer = None, max_length = 128, kernel_size = 4): 
