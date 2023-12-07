@@ -407,6 +407,7 @@ class CustomTrainer(Trainer):
                         # we skip this token 
                         print("we skip at batch size {} position {} row_i {} row_indices is at {}.format(i, j, row_i, row_indices[idx_row_col_traversal])") 
                         while row_indices[idx_row_col_traversal] == row_i: 
+                        # while row_indices[idx_row_col_traversal] <= row_i: # should essentailly be ==, since previously we guarantee that row_indices is right at the new pos 
                             idx_row_col_traversal += 1 
                         print("idx_row_col_traversal now at {}".format(idx_row_col_traversal)) 
                         continue 
@@ -425,10 +426,16 @@ class CustomTrainer(Trainer):
                             idx_row_col_traversal += 1 
                     else: 
                         raise ValueError("We cannot have this scenario") 
+                    
+                    if idx_row_col_traversal >= (q.shape[0] * q.shape[1]): 
+                        break 
                     print("total acceptance length is {}".format(total_acceptance_length)) 
                     print("total counted pos is {}".format(total_counted_pos)) 
-                time.sleep(5) 
             exit(0) 
+            
+            print("total acceptance length is {}".format(total_acceptance_length)) 
+            print("total counted pos is {}".format(total_counted_pos)) 
+            print("average acceptance length is {}".format(total_acceptance_length / total_counted_pos)) 
             
             # use preds to compute f1 score 
             # f1 = precision_recall_fscore_support(labels, preds, average = "weighted") 
