@@ -49,7 +49,7 @@ try:
 except ImportError:
     has_wandb = False 
 
-# has_wandb = False # disable for debugging 
+has_wandb = False # disable for debugging 
 
 from src.transformers.utils import ( 
     ADAPTER_CONFIG_NAME,
@@ -384,10 +384,10 @@ class CustomTrainer(Trainer):
             idx_row_col_traversal = 0 
             total_counted_pos = 0 
             print("the shape of input_attention_mask is {}".format(input_attention_mask.shape)) 
-            for i in range(mask.shape[0]): 
-                for j in range(mask.shape[1]): 
+            for i in range(q.shape[0]): 
+                for j in range(q.shape[1]): 
                     row_i = i * mask.shape[1] + j 
-                    print(i, j) 
+                    # print(i, j) 
                     if input_attention_mask[i, j] == 0: 
                         # we skip this token 
                         while row_indices[idx_row_col_traversal] == row_i: 
