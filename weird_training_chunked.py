@@ -364,7 +364,9 @@ class CustomTrainer(Trainer):
         print("the shape of model_output_logits is {} expected (batch_size, seq_len - n + 1, n, vocab_size)".format(model_output_logits.shape)) 
         model_prediction = torch.argmax(model_output_logits, dim = -1) # dimension (batch_size, seq_len - n + 1, n) 
         print("the shape of model_prediction is {} expected (batch_size, seq_len - n + 1, n)".format(model_prediction.shape)) 
-        q = F.softmax(model_output_logits, dim = -1)[model_prediction] # dimension (batch_size, seq_len - n + 1, n, vocab_size) -> (batch_size, seq_len - n + 1, n) 
+        q = F.softmax(model_output_logits, dim = -1) 
+        del model_output_logits 
+        q = q[model_prediction] # dimension (batch_size, seq_len - n + 1, n, vocab_size) -> (batch_size, seq_len - n + 1, n) 
         print(colored("printing out the first batch example should be of dimension (seq_len - n + 1, n) {}".format(q[0]), "blue")) 
         p = F.softmax(original_model_logits, dim = -1)[model_prediction] # dimension (batch_size, seq_len - n + 1, n, vocab_size) -> (batch_size, seq_len - n + 1, n) 
         print(colored("printing out the first batch example should be of dimension (seq_len - n + 1, n) {}".format(p[0], "yellow"))) 
