@@ -363,7 +363,7 @@ class CustomTrainer(Trainer):
             shift_labels = torch.stack(shift_labels, dim = 2) # dimension (batch_size, seq_len - n, n) 
             # shift_labels[shift_labels.unsqueeze(-1).expand(-1, -1, 3)] = -100 
             total_acc_poscount = (~(label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n).to(torch.bool))).to(torch.long).view(-1).sum(dim = 0).item() 
-            model_output_logits2 = model_output_logits[:, :-(self.lookaheadcount), :, :].contiguous() 
+            model_output_logits2 = model_output_logits[:, :-(self.n), :, :].contiguous() 
             pred = torch.argmax(model_output_logits2, dim = -1) 
             assert pred.shape == shift_labels.shape 
             correctness_matrix = (pred == shift_labels).to(torch.long) # 1 for for matching while 0 is for not matching 
