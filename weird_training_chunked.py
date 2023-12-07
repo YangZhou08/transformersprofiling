@@ -390,8 +390,8 @@ class CustomTrainer(Trainer):
             print("batch 0, first 20 elements in (p/q) are {}".format((p/q)[0, : 20, :])) 
             print("batch 0, first 20 elements in r are {}".format(r[0, : 20, :])) 
             print("batch 0, first 20 elements in mask are {}".format(mask[0, : 20, :])) 
-            mask = mask.reshape(-1, self.n) # dimension (batch_size * (seq_len - n + 1), n) 
             ''' 
+            mask = mask.reshape(-1, self.n) # dimension (batch_size * (seq_len - n + 1), n) 
             total_acceptance_length = 0 
             row_indices, col_indices = torch.nonzero(mask, as_tuple = True) 
             print("shape of row_indices is {} shape of col_indices is {}".format(row_indices.shape, col_indices.shape)) 
