@@ -363,6 +363,7 @@ class CustomTrainer(Trainer):
         model_output_logits = model_output_logits[:, : -self.n + 1, ...] # dimension (batch_size, seq_len - n + 1, n, vocab_size) 
         print("the shape of model_output_logits is {} expected (batch_size, seq_len - n + 1, n, vocab_size)".format(model_output_logits.shape)) 
         model_prediction = torch.argmax(model_output_logits, dim = -1) # dimension (batch_size, seq_len - n + 1, n) 
+        model_prediction = model_prediction.to()
         print("the shape of model_prediction is {} expected (batch_size, seq_len - n + 1, n)".format(model_prediction.shape)) 
         q = F.softmax(model_output_logits, dim = -1) 
         del model_output_logits 
@@ -720,7 +721,7 @@ training_args = TrainingArguments(
     num_train_epochs=5,            # number of training epochs, feel free to tweak
     per_device_train_batch_size = 40, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
-    per_device_eval_batch_size=40,  # evaluation batch size
+    per_device_eval_batch_size=20,  # evaluation batch size
     # logging_steps=1, 
     logging_steps = 1,             # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
