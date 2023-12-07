@@ -1724,7 +1724,7 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
                 mask = mask.unsqueeze(-1).expand(-1, -1, 3) # mask has dimension of (batch_size, seq_length, 3) 
                 shift_labels[mask] = -100 
                 # print("first five of shift labels {}".format(shift_labels[: 5, :, 0])) 
-            output_actual_labelmasks = (shift_labels != -100)[0].to(torch.bool) # shape would be of dimension (batch_size, seq_length) 
+            output_actual_labelmasks = (shift_labels != -100)[0] # shape would be of dimension (batch_size, seq_length) 
 
             # Flatten the tokens
             loss_fct = CrossEntropyLoss()

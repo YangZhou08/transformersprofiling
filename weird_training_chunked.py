@@ -338,8 +338,9 @@ class CustomTrainer(Trainer):
             
             original_model_logits = logits[1] # dimension (batch_size, seq_len, vocab_size) 
             model_output_logits = logits[0] # dimension (batch_size, seq_len, n, vocab_size) 
-            label_actual_mask = logits[2] 
-            print("as a sanity check, we see the datatype of label_actual_mask is {}".format(label_actual_mask.dtype)) 
+            label_actual_mask = logits[2] # dimension (batch_size, seq_len - n) 
+            label_actual_mask = torch.cat((label_actual_mask, torch.ones((label_actual_mask.shape[0], 1)).to(torch_device)), dim = 1) # dimension (batch_size, seq_len - n + 1) 
+            # print("as a sanity check, we see the datatype of label_actual_mask is {}".format(label_actual_mask.dtype)) 
             time.sleep(3) 
             # input_attention_mask = input_attention_mask[:, :-1] 
             input_attention_mask = input_attention_mask[:, 1:] 
@@ -400,13 +401,15 @@ class CustomTrainer(Trainer):
             print("shape of row_indices is {} shape of col_indices is {}".format(row_indices.shape, col_indices.shape)) 
             idx_row_col_traversal = 0 
             total_counted_pos = 0 
-            print("the shape of input_attention_mask is {}".format(input_attention_mask.shape)) 
+            # print("the shape of input_attention_mask is {}".format(input_attention_mask.shape)) 
+            print("the shape of label_actual_mask is {}".format(label_actual_mask.shape)) 
             for i in range(q.shape[0]): 
                 for j in range(q.shape[1]): 
                     # row_i = i * mask.shape[1] + j 
                     row_i = i * q.shape[1] + j 
                     print(i, j) 
-                    if input_attention_mask[i, j] == 0: 
+                    # if input_attention_mask[i, j] == 0: 
+                    if label_actual_mask[i, j] == 0: 
                         # we skip this token 
                         print("we skip at batch size {} position {} row_i {} row_indices is at {}.format(i, j, row_i, row_indices[idx_row_col_traversal])") 
                         while row_indices[idx_row_col_traversal] == row_i: 
