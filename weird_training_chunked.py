@@ -415,7 +415,7 @@ class CustomTrainer(Trainer):
                     if label_actual_mask[i, j] == 0: 
                         # we skip this token 
                         print("we skip at batch size {} position {} row_i {} row_indices is at {}.format(i, j, row_i, row_indices[idx_row_col_traversal])") 
-                        while row_indices[idx_row_col_traversal] == row_i: 
+                        while idx_row_col_traversal < row_indices.shape[0] and row_indices[idx_row_col_traversal] == row_i: 
                         # while row_indices[idx_row_col_traversal] <= row_i: # should essentailly be ==, since previously we guarantee that row_indices is right at the new pos 
                             idx_row_col_traversal += 1 
                         print("idx_row_col_traversal now at {}".format(idx_row_col_traversal)) 
@@ -439,7 +439,7 @@ class CustomTrainer(Trainer):
                             print("we break at {}".format(idx_row_col_traversal)) 
                             break 
                         print("index_row_col_traversal now at {} and row_indices has length {}".format(idx_row_col_traversal, row_indices.shape[0])) 
-                        while row_indices[idx_row_col_traversal] == row_i: 
+                        while idx_row_col_traversal < row_indices.shape[0] and row_indices[idx_row_col_traversal] == row_i: 
                             idx_row_col_traversal += 1 
                     else: 
                         raise ValueError("We cannot have this scenario") 
