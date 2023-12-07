@@ -407,6 +407,7 @@ class CustomTrainer(Trainer):
                         print("we skip at batch size {} position {}".format(i, j)) 
                         while row_indices[idx_row_col_traversal] == row_i: 
                             idx_row_col_traversal += 1 
+                        print("idx_row_col_traversal now at {}".format(idx_row_col_traversal)) 
                         continue 
                     total_counted_pos += 1 
                     assert row_i <= row_indices[idx_row_col_traversal] 
@@ -414,7 +415,6 @@ class CustomTrainer(Trainer):
                         print("we accept all n tokens at {} since row index is at {}".format(row_i, row_indices[idx_row_col_traversal])) 
                         # we accept all n tokens at row_i position 
                         total_acceptance_length += self.n + 1 
-                        idx_row_col_traversal += 1 
                     elif row_i == row_indices[idx_row_col_traversal]: 
                         print("we accept some tokens {}".format(row_i)) 
                         # we accept some tokens
@@ -425,8 +425,8 @@ class CustomTrainer(Trainer):
                     else: 
                         raise ValueError("We cannot have this scenario") 
                     time.sleep(1) 
-            print("total acceptance length is {}".format(total_acceptance_length)) 
-            print("total counted pos is {}".format(total_counted_pos)) 
+                print("total acceptance length is {}".format(total_acceptance_length)) 
+                print("total counted pos is {}".format(total_counted_pos)) 
             exit(0) 
             
             # use preds to compute f1 score 
