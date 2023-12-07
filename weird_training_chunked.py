@@ -417,6 +417,9 @@ class CustomTrainer(Trainer):
                             idx_row_col_traversal += 1 
                         print("idx_row_col_traversal now at {}".format(idx_row_col_traversal)) 
                         continue 
+                    # boundary check 
+                    if idx_row_col_traversal >= row_indices.shape[0]: 
+                        break 
                     total_counted_pos += 1 
                     assert row_i <= row_indices[idx_row_col_traversal] 
                     if row_i < row_indices[idx_row_col_traversal]: 
@@ -428,12 +431,16 @@ class CustomTrainer(Trainer):
                         # we accept some tokens
                         total_acceptance_length += col_indices[idx_row_col_traversal] + 1 
                         idx_row_col_traversal += 1 
+                        # boundary check 
+                        if idx_row_col_traversal >= row_indices.shape[0]: 
+                            break 
                         while row_indices[idx_row_col_traversal] == row_i: 
                             idx_row_col_traversal += 1 
                     else: 
                         raise ValueError("We cannot have this scenario") 
                     
                     print("inspect where is idx_row_col_traversal at {}".format(idx_row_col_traversal)) 
+                    # boundary check 
                     if idx_row_col_traversal >= row_indices.shape[0]: 
                         break 
                     print("total acceptance length is {}".format(total_acceptance_length)) 
