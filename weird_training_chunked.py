@@ -374,8 +374,9 @@ class CustomTrainer(Trainer):
             p = torch.max(p, dim = -1).values 
             print(q.shape, p.shape) 
             r = torch.rand_like(q).to(q.device) # dimension (batch_size, seq_len - n + 1, n) 
-            print("printing out r {}".format(r[0])) 
+            print("printing out r {}".format(r[0].shape)) 
             mask = r > (p/q) # 1 is reject, 0 is accept, dimension is (batch_size, seq_len - n + 1, n) 
+            print("printing out mask shape {}".format(mask.shape)) 
             assert mask.shape[-1] == self.n 
             mask = mask.reshape(-1, self.n) # dimension (batch_size * (seq_len - n + 1), n) 
             total_acceptance_length = 0 
