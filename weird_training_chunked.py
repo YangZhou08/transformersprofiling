@@ -383,6 +383,7 @@ class CustomTrainer(Trainer):
             row_indices, col_indices = torch.nonzero(mask, as_tuple = True) 
             idx_row_col_traversal = 0 
             total_counted_pos = 0 
+            print("the shape of input_attention_mask is {}".format(input_attention_mask.shape)) 
             for i in range(mask.shape[0]): 
                 for j in range(mask.shape[1]): 
                     row_i = i * mask.shape[1] + j 
