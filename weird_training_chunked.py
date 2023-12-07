@@ -387,6 +387,7 @@ class CustomTrainer(Trainer):
             for i in range(mask.shape[0]): 
                 for j in range(mask.shape[1]): 
                     row_i = i * mask.shape[1] + j 
+                    print(i, j) 
                     if input_attention_mask[i, j] == 0: 
                         # we skip this token 
                         while row_indices[idx_row_col_traversal] == row_i: 
