@@ -433,7 +433,8 @@ class CustomTrainer(Trainer):
                     else: 
                         raise ValueError("We cannot have this scenario") 
                     
-                    if idx_row_col_traversal >= (q.shape[0] * q.shape[1]): 
+                    print("inspect where is idx_row_col_traversal at {}".format(idx_row_col_traversal)) 
+                    if idx_row_col_traversal >= row_indices.shape[0]: 
                         break 
                     print("total acceptance length is {}".format(total_acceptance_length)) 
                     print("total counted pos is {}".format(total_counted_pos)) 
