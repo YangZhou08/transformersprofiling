@@ -806,7 +806,7 @@ training_args = TrainingArguments(
     # lr_scheduler_type = "cosine", 
     warmup_steps = 25, 
     label_names = ["labels"], 
-） 
+) 
 
 max_length = 128 
 
@@ -877,7 +877,7 @@ trainer = CustomTrainer(
     optimizers = (custom_optimizer, None), 
     common_n_gram_list = hot_1000_3_grams, 
     use_filtered_hot_labels = False, 
-    n = 5, 
+    n = 3, 
 ) 
 
 
