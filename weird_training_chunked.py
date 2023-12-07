@@ -438,6 +438,7 @@ class CustomTrainer(Trainer):
                         if idx_row_col_traversal >= row_indices.shape[0]: 
                             print("we break at {}".format(idx_row_col_traversal)) 
                             break 
+                        print("index_row_col_traversal now at {} and row_indices has length {}".format(idx_row_col_traversal, row_indices.shape[0])) 
                         while row_indices[idx_row_col_traversal] == row_i: 
                             idx_row_col_traversal += 1 
                     else: 
