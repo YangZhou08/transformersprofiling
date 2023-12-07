@@ -373,7 +373,9 @@ class CustomTrainer(Trainer):
             outputsq = torch.max(q, dim = -1) 
             q = outputsq.values 
             idx_q = outputsq.indices 
+            print("the shape of index_q is {}".format(idx_q.shape)) 
             p = p.cpu() 
+            print("the shape of p is {}".format(p.shape)) 
             idx_q = idx_q.cpu() 
             p = p[idx_q] 
             p = p.to(torch_device) 
