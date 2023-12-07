@@ -436,6 +436,7 @@ class CustomTrainer(Trainer):
                         idx_row_col_traversal += 1 
                         # boundary check 
                         if idx_row_col_traversal >= row_indices.shape[0]: 
+                            print("we break at {}".format(idx_row_col_traversal)) 
                             break 
                         while row_indices[idx_row_col_traversal] == row_i: 
                             idx_row_col_traversal += 1 
@@ -445,7 +446,6 @@ class CustomTrainer(Trainer):
                     print("inspect where is idx_row_col_traversal at {}".format(idx_row_col_traversal)) 
                     print("total acceptance length is {}".format(total_acceptance_length)) 
                     print("total counted pos is {}".format(total_counted_pos)) 
-            exit(0) 
             
             print("total acceptance length is {}".format(total_acceptance_length)) 
             print("total counted pos is {}".format(total_counted_pos)) 
