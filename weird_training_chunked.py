@@ -400,7 +400,8 @@ class CustomTrainer(Trainer):
             print("the shape of input_attention_mask is {}".format(input_attention_mask.shape)) 
             for i in range(q.shape[0]): 
                 for j in range(q.shape[1]): 
-                    row_i = i * mask.shape[1] + j 
+                    # row_i = i * mask.shape[1] + j 
+                    row_i = i * q.shape[1] + j 
                     print(i, j) 
                     if input_attention_mask[i, j] == 0: 
                         # we skip this token 
