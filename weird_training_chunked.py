@@ -378,8 +378,8 @@ class CustomTrainer(Trainer):
             # index_one_hot = torch.zeros_like(p).index_put_(indices = idx_q, values = 1).to(torch.bool) 
             index_one_hot = torch.zeros_like(p).scatter_(3, idx_q.unsqueeze(3), 1).to(torch.bool) 
             # p = p[idx_q] 
-            # p = p[index_one_hot] 
-            p = torch.gather(p, -1, idx_q.unsqueeze(-1)).squeeze(-1) 
+            p = p[index_one_hot] 
+            # p = torch.gather(p, -1, idx_q.unsqueeze(-1)).squeeze(-1) 
             p = p.to(torch_device) 
             print("the shape of p is {}".format(p.shape)) 
             
