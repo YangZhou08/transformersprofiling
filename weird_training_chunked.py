@@ -876,7 +876,7 @@ trainer = CustomTrainer(
     data_collator = data_collator, 
     optimizers = (custom_optimizer, None), 
     common_n_gram_list = hot_1000_3_grams, 
-    use_filtered_hot_labels = True, 
+    use_filtered_hot_labels = False, 
     n = 2, 
 ) 
 
