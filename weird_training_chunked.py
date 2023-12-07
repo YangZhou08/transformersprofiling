@@ -363,7 +363,7 @@ class CustomTrainer(Trainer):
             print("the shape of original_model_logits is {} expected (batch_size, seq_len - n + 1, n, vocab_size)".format(original_model_logits.shape)) 
             model_output_logits = model_output_logits[:, : -self.n + 1, ...] # dimension (batch_size, seq_len - n + 1, n, vocab_size) 
             print("the shape of model_output_logits is {} expected (batch_size, seq_len - n + 1, n, vocab_size)".format(model_output_logits.shape)) 
-            q = F.softmax(model_output_logits, dim = 3) 
+            q = F.softmax(model_output_logits, dim = -1) 
             print("the shape of q is {} expected (batch_size, seq_len - n + 1, n, vocab_size)".format(q.shape)) 
             p = F.softmax(original_model_logits, dim = -1) 
             
@@ -375,6 +375,7 @@ class CustomTrainer(Trainer):
             p = p.cpu() 
             print("the shape of p is {}".format(p.shape)) 
             idx_q = idx_q.cpu() 
+            idx_q = idx_q.to(torch.long).unsqueeze(-1) 
             # index_one_hot = torch.zeros_like(p).index_put_(indices = idx_q, values = 1).to(torch.bool) 
             index_one_hot = torch.zeros_like(p).scatter_(3, idx_q.unsqueeze(3), 1).to(torch.bool) 
             p = p[idx_q] 
