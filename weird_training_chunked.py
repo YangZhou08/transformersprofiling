@@ -727,7 +727,7 @@ tokenizer.padding_side = "left"
 
 # backup dataset 
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1.json', split = "train") 
-onedataset = load_dataset('json', data_files = datasetsrc, split = "train[:1000]") 
+onedataset = load_dataset('json', data_files = datasetsrc, split = "train") 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 d = onedataset.train_test_split(test_size = 0.1) 
 # print(d["train"], d["test"]) 
@@ -790,10 +790,10 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size= 30,  # evaluation batch size
     # logging_steps=1, 
-    logging_steps = 1,             # evaluate, log and save model checkpoints every 1000 step
+    logging_steps = 40,             # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 1, 
+    save_steps = 40, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     # learning_rate=2e-4, 
