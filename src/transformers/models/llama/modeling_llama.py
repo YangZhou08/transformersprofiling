@@ -1690,7 +1690,7 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
             logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]
             logits = torch.cat(logits, dim=-1)
         else: 
-            hidden_states = residual_list + self.act(hidden_states) 
+            hidden_states = residual_values + self.act(hidden_states) 
             logits = self.lm_head(hidden_states)
         logits = logits.float()
         
@@ -1726,7 +1726,7 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
                 mask = ~torch.any(matches, dim = -1) # mask has dimension of (batch_size, seq_length) 
                 # print("first five of mask {}".format(mask[: 5, :])) 
                 # print("first five of shift labels {}".format(shift_labels[: 5, :, 0])) 
-                mask = mask.unsqueeze(-1).expand(-1, -1, 3) # mask has dimension of (batch_size, seq_length, 3) 
+                mask = mask.unsqueeze(-1).expand(-1, -1, self.lookaheadcount) # mask has dimension of (batch_size, seq_length, 3) 
                 shift_labels[mask] = -100 
                 # print("first five of shift labels {}".format(shift_labels[: 5, :, 0])) 
             output_actual_labelmasks = (shift_labels != -100)[:, :, 0] # shape would be of dimension (batch_size, seq_length) 
