@@ -469,6 +469,7 @@ class CustomTrainer(Trainer):
             # use preds to compute f1 score 
             # f1 = precision_recall_fscore_support(labels, preds, average = "weighted") 
             # return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "interest_correct_words": interest_correct_count, "interest_total_words": interest_token_count} 
+            return {"correct_words": correct_words, "total_words": total_acc_poscount, "total_counted_pos": total_counted_pos, "total_acceptance_length": total_acceptance_length} 
     
     def evaluation_loop(
         self,
@@ -548,10 +549,10 @@ class CustomTrainer(Trainer):
 
         total_correct_words = 0 
         total_words = 0 
-        sum_of_perplexity = 0 # used to compute the average perplexity 
+        # sum_of_perplexity = 0 # used to compute the average perplexity 
         total_loss = 0 # used to compute the correct perplexity 
-        interest_total_words = 0 
-        interest_correct_words = 0 
+        total_length_token = 0 
+        total_acceptance_length = 0 
 
         observed_num_examples = 0 
         total_num_steps = len(dataloader) 
@@ -578,6 +579,8 @@ class CustomTrainer(Trainer):
             local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"], step) 
             total_correct_words += local_metrics["correct_words"] 
             total_words += local_metrics["total_words"] 
+            total_length_token += local_metrics["total_counted_pos"] 
+            total_acceptance_length += local_metrics["total_acceptance_length"] 
 
             if is_torch_tpu_available():
                 xm.mark_step()
@@ -606,10 +609,10 @@ class CustomTrainer(Trainer):
         global_accuracy = total_correct_words / total_words 
         all_losses = total_loss / total_num_steps 
 
-        metrics = {"accuracy": global_accuracy} 
+        metrics = {"accuracy": global_accuracy, "average_acceptance_length": total_acceptance_length / total_length_token} 
         print(colored(metrics, "magenta")) 
         if has_wandb: 
-            wandb.log({"global_eval_accuracy": global_accuracy}) 
+            wandb.log({"global_eval_accuracy": global_accuracy, "average_acceptance_length": total_acceptance_length / total_length_token, "total_acceptance_length": total_acceptance_length, "total_length_counted_tokens": total_length_token}) 
 
         # # Metrics!
         # if self.compute_metrics is not None and all_preds is not None and all_labels is not None:
