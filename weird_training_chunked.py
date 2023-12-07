@@ -404,6 +404,9 @@ class CustomTrainer(Trainer):
             # print("the shape of input_attention_mask is {}".format(input_attention_mask.shape)) 
             print("the shape of label_actual_mask is {}".format(label_actual_mask.shape)) 
             for i in range(q.shape[0]): 
+                # boundary check 
+                if idx_row_col_traversal >= row_indices.shape[0]: 
+                    break 
                 for j in range(q.shape[1]): 
                     # row_i = i * mask.shape[1] + j 
                     row_i = i * q.shape[1] + j 
@@ -440,9 +443,6 @@ class CustomTrainer(Trainer):
                         raise ValueError("We cannot have this scenario") 
                     
                     print("inspect where is idx_row_col_traversal at {}".format(idx_row_col_traversal)) 
-                    # boundary check 
-                    if idx_row_col_traversal >= row_indices.shape[0]: 
-                        break 
                     print("total acceptance length is {}".format(total_acceptance_length)) 
                     print("total counted pos is {}".format(total_counted_pos)) 
             exit(0) 
