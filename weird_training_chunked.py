@@ -371,7 +371,6 @@ class CustomTrainer(Trainer):
             correctness_matrix = correctness_matrix * (label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n)) 
             correct_words = torch.sum(correctness_matrix.view(-1), dim = 0) 
             print("total counted words is {} correct words is {}".format(total_acc_poscount, correct_words)) 
-            exit(0) 
             
             # computing the average acceptance length 
             # first, folding the original_model_logits 
