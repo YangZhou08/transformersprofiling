@@ -365,21 +365,15 @@ class CustomTrainer(Trainer):
             print("the shape of model_output_logits is {} expected (batch_size, seq_len - n + 1, n, vocab_size)".format(model_output_logits.shape)) 
             model_prediction = torch.argmax(model_output_logits, dim = -1) # dimension (batch_size, seq_len - n + 1, n) 
             print("the shape of model_prediction is {} expected (batch_size, seq_len - n + 1, n)".format(model_prediction.shape)) 
-            q = F.softmax(model_output_logits, dim = -1) 
+            q = F.softmax(model_output_logits, dim = 3) 
             print("the shape of q is {} expected (batch_size, seq_len - n + 1, n, vocab_size)".format(q.shape)) 
             del model_output_logits 
             p = F.softmax(original_model_logits, dim = -1) 
             del original_model_logits 
             
             # trying CPU offloading 
-            q = q.cpu() 
-            model_prediction = model_prediction.cpu() 
-            q = q[model_prediction] 
-            q = q.to(torch_device) 
-            q = q[model_prediction] # dimension (batch_size, seq_len - n + 1, n, vocab_size) -> (batch_size, seq_len - n + 1, n) 
-            print(colored("printing out the first batch example should be of dimension (seq_len - n + 1, n) {}".format(q[0]), "blue")) 
-            p = p[model_prediction] # dimension (batch_size, seq_len - n + 1, n, vocab_size) -> (batch_size, seq_len - n + 1, n) 
-            print(colored("printing out the first batch example should be of dimension (seq_len - n + 1, n) {}".format(p[0], "yellow"))) 
+            q = torch.max(q, dim = -1) 
+            p = torch.max(p, dim = -1) 
             r = torch.rand_like(q).to(q.device) # dimension (batch_size, seq_len - n + 1, n) 
             print("printing out r {}".format(r[0])) 
             mask = r > (p/q) # 1 is reject, 0 is accept, dimension is (batch_size, seq_len - n + 1, n) 
