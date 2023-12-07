@@ -373,7 +373,6 @@ class CustomTrainer(Trainer):
             q = torch.max(q, dim = -1).values 
             p = torch.max(p, dim = -1).values 
             print(q.shape, p.shape) 
-            exit(0) 
             r = torch.rand_like(q).to(q.device) # dimension (batch_size, seq_len - n + 1, n) 
             print("printing out r {}".format(r[0])) 
             mask = r > (p/q) # 1 is reject, 0 is accept, dimension is (batch_size, seq_len - n + 1, n) 
