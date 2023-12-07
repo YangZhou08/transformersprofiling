@@ -365,9 +365,7 @@ class CustomTrainer(Trainer):
             print("the shape of model_output_logits is {} expected (batch_size, seq_len - n + 1, n, vocab_size)".format(model_output_logits.shape)) 
             q = F.softmax(model_output_logits, dim = 3) 
             print("the shape of q is {} expected (batch_size, seq_len - n + 1, n, vocab_size)".format(q.shape)) 
-            del model_output_logits 
             p = F.softmax(original_model_logits, dim = -1) 
-            del original_model_logits 
             
             # trying CPU offloading 
             outputsq = torch.max(q, dim = -1) 
