@@ -373,7 +373,6 @@ class CustomTrainer(Trainer):
             idx_q = outputsq.indices 
             print("the shape of index_q is {}".format(idx_q.shape)) 
             print("the shape of p is {}".format(p.shape)) 
-            idx_q = idx_q.to(torch.long).unsqueeze(-1) 
             
             p = torch.gather(p, -1, idx_q.unsqueeze(-1)).squeeze(-1) # The reason why regular direct index won't work is because the index is not of the same dimension as p 
             p = p.to(torch_device) 
