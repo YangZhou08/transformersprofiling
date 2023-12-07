@@ -425,8 +425,8 @@ class CustomTrainer(Trainer):
                     else: 
                         raise ValueError("We cannot have this scenario") 
                     time.sleep(1) 
-                print("total acceptance length is {}".format(total_acceptance_length)) 
-                print("total counted pos is {}".format(total_counted_pos)) 
+                    print("total acceptance length is {}".format(total_acceptance_length)) 
+                    print("total counted pos is {}".format(total_counted_pos)) 
             exit(0) 
             
             # use preds to compute f1 score 
