@@ -404,7 +404,7 @@ class CustomTrainer(Trainer):
                     print(i, j) 
                     if input_attention_mask[i, j] == 0: 
                         # we skip this token 
-                        print("we skip at batch size {} position {}".format(i, j)) 
+                        print("we skip at batch size {} position {} row_i {} row_indices is at {}.format(i, j, row_i, row_indices[idx_row_col_traversal])") 
                         while row_indices[idx_row_col_traversal] == row_i: 
                             idx_row_col_traversal += 1 
                         print("idx_row_col_traversal now at {}".format(idx_row_col_traversal)) 
@@ -424,9 +424,9 @@ class CustomTrainer(Trainer):
                             idx_row_col_traversal += 1 
                     else: 
                         raise ValueError("We cannot have this scenario") 
-                    time.sleep(1) 
                     print("total acceptance length is {}".format(total_acceptance_length)) 
                     print("total counted pos is {}".format(total_counted_pos)) 
+                time.sleep(1) 
             exit(0) 
             
             # use preds to compute f1 score 
@@ -571,7 +571,8 @@ class CustomTrainer(Trainer):
 
         metrics = {"accuracy": global_accuracy} 
         print(colored(metrics, "magenta")) 
-        wandb.log({"global_eval_accuracy": global_accuracy}) 
+        if has_wandb: 
+            wandb.log({"global_eval_accuracy": global_accuracy}) 
 
         # # Metrics!
         # if self.compute_metrics is not None and all_preds is not None and all_labels is not None:
