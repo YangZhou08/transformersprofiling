@@ -769,7 +769,7 @@ for name, param in model.named_parameters():
 model.train() 
 print("length of param_group is {}".format(len(param_group))) 
 
-custom_optimizer = torch.optim.AdamW(param_group, lr = 1e-4) 
+custom_optimizer = torch.optim.AdamW(param_group, lr = 1e-3) 
 
 
 # for llama model we need to add the padding token 
@@ -786,9 +786,9 @@ training_args = TrainingArguments(
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size = 25, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size = 40, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
-    per_device_eval_batch_size= 25,  # evaluation batch size
+    per_device_eval_batch_size= 40,  # evaluation batch size
     # logging_steps=1, 
     logging_steps = 40,             # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
@@ -806,7 +806,7 @@ training_args = TrainingArguments(
     # lr_scheduler_type = "cosine", 
     warmup_steps = 25, 
     label_names = ["labels"], 
-) 
+） 
 
 max_length = 128 
 
