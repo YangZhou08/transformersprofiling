@@ -412,6 +412,7 @@ class CustomTrainer(Trainer):
                     if row_i < row_indices[idx_row_col_traversal]: 
                         # we accept all n tokens at row_i position 
                         total_acceptance_length += self.n + 1 
+                        idx_row_col_traversal += 1 
                     elif row_i == row_indices[idx_row_col_traversal]: 
                         # we accept some tokens
                         total_acceptance_length += col_indices[idx_row_col_traversal] + 1 
