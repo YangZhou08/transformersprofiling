@@ -377,7 +377,8 @@ class CustomTrainer(Trainer):
             p = p.cpu() 
             print("the shape of p is {}".format(p.shape)) 
             idx_q = idx_q.cpu() 
-            index_one_hot = torch.zeros_like(p).index_put_(indices = idx_q, values = 1).to(torch.bool) 
+            # index_one_hot = torch.zeros_like(p).index_put_(indices = idx_q, values = 1).to(torch.bool) 
+            index_one_hot = torch.zeros_like(p).scatter_(3, index = idx_q.unsqueeze(3), src = 1).to(torch.bool) 
             # p = p[idx_q] 
             p = p[index_one_hot] 
             p = p.to(torch_device) 
