@@ -328,84 +328,85 @@ class CustomTrainer(Trainer):
         input_attention_mask, 
         outside_step, 
     ): 
-        from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+        with torch.no_grad(): 
+            from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
-        print("length of logits is {}".format(len(logits))) 
-        for index in range(len(logits)): 
-            print("logits[{}] is {}".format(index, logits[index].shape)) 
-        print(colored("printing out the type of logits {}".format(type(logits)), "red")) 
-        
-        original_model_logits = logits[1] # dimension (batch_size, seq_len, vocab_size) 
-        model_output_logits = logits[0] # dimension (batch_size, seq_len, n, vocab_size) 
-        # input_attention_mask = input_attention_mask[:, :-1] 
-        input_attention_mask = input_attention_mask[:, 1:] 
-        labels = labels[:, 1:] 
-        # preds = torch.argmax(logits, dim = -1) # dimension (batch_size, seq_len - 1) 
-        if outside_step == 0: 
-            # print("*** evaluating at step {} ***".format(self.iteration_count)) 
-            # visualize the actual output prediction during the evaluation 
-            if self.use_filtered_hot_labels: 
-                pass 
-            else: 
-                pass 
-        
-        indices_to_keep = input_attention_mask == 1 
-        total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
-        
-        # computing the average acceptance length 
-        # first, folding the original_model_logits 
-        list_folding_logits = [] 
-        original_seq_len = original_model_logits.shape[1] 
-        for i in range(self.n): 
-            list_folding_logits.append(original_model_logits[:, i : original_seq_len - self.n + i + 1, :]) 
-        original_model_logits = torch.stack(list_folding_logits, dim = 2) # dimension (batch_size, seq_len - n + 1, n, vocab_size) 
-        print("the shape of original_model_logits is {} expected (batch_size, seq_len - n + 1, n, vocab_size)".format(original_model_logits.shape)) 
-        model_output_logits = model_output_logits[:, : -self.n + 1, ...] # dimension (batch_size, seq_len - n + 1, n, vocab_size) 
-        print("the shape of model_output_logits is {} expected (batch_size, seq_len - n + 1, n, vocab_size)".format(model_output_logits.shape)) 
-        model_prediction = torch.argmax(model_output_logits, dim = -1) # dimension (batch_size, seq_len - n + 1, n) 
-        model_prediction = model_prediction.to()
-        print("the shape of model_prediction is {} expected (batch_size, seq_len - n + 1, n)".format(model_prediction.shape)) 
-        q = F.softmax(model_output_logits, dim = -1) 
-        del model_output_logits 
-        q = q[model_prediction] # dimension (batch_size, seq_len - n + 1, n, vocab_size) -> (batch_size, seq_len - n + 1, n) 
-        print(colored("printing out the first batch example should be of dimension (seq_len - n + 1, n) {}".format(q[0]), "blue")) 
-        p = F.softmax(original_model_logits, dim = -1)[model_prediction] # dimension (batch_size, seq_len - n + 1, n, vocab_size) -> (batch_size, seq_len - n + 1, n) 
-        print(colored("printing out the first batch example should be of dimension (seq_len - n + 1, n) {}".format(p[0], "yellow"))) 
-        r = torch.rand_like(q).to(q.device) # dimension (batch_size, seq_len - n + 1, n) 
-        print("printing out r {}".format(r[0])) 
-        mask = r > (p/q) # 1 is reject, 0 is accept, dimension is (batch_size, seq_len - n + 1, n) 
-        assert mask.shape[-1] == self.n 
-        mask = mask.reshape(-1, self.n) # dimension (batch_size * (seq_len - n + 1), n) 
-        total_acceptance_length = 0 
-        row_indices, col_indices = torch.nonzero(mask, as_tuple = True) 
-        idx_row_col_traversal = 0 
-        total_counted_pos = 0 
-        for i in range(mask.shape[0]): 
-            for j in range(mask.shape[1]): 
-                row_i = i * mask.shape[1] + j 
-                if input_attention_mask[i, j] == 0: 
-                    # we skip this token 
-                    while row_indices[idx_row_col_traversal] == row_i: 
+            print("length of logits is {}".format(len(logits))) 
+            for index in range(len(logits)): 
+                print("logits[{}] is {}".format(index, logits[index].shape)) 
+            print(colored("printing out the type of logits {}".format(type(logits)), "red")) 
+            
+            original_model_logits = logits[1] # dimension (batch_size, seq_len, vocab_size) 
+            model_output_logits = logits[0] # dimension (batch_size, seq_len, n, vocab_size) 
+            # input_attention_mask = input_attention_mask[:, :-1] 
+            input_attention_mask = input_attention_mask[:, 1:] 
+            labels = labels[:, 1:] 
+            # preds = torch.argmax(logits, dim = -1) # dimension (batch_size, seq_len - 1) 
+            if outside_step == 0: 
+                # print("*** evaluating at step {} ***".format(self.iteration_count)) 
+                # visualize the actual output prediction during the evaluation 
+                if self.use_filtered_hot_labels: 
+                    pass 
+                else: 
+                    pass 
+            
+            indices_to_keep = input_attention_mask == 1 
+            total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
+            
+            # computing the average acceptance length 
+            # first, folding the original_model_logits 
+            list_folding_logits = [] 
+            original_seq_len = original_model_logits.shape[1] 
+            for i in range(self.n): 
+                list_folding_logits.append(original_model_logits[:, i : original_seq_len - self.n + i + 1, :]) 
+            original_model_logits = torch.stack(list_folding_logits, dim = 2) # dimension (batch_size, seq_len - n + 1, n, vocab_size) 
+            print("the shape of original_model_logits is {} expected (batch_size, seq_len - n + 1, n, vocab_size)".format(original_model_logits.shape)) 
+            model_output_logits = model_output_logits[:, : -self.n + 1, ...] # dimension (batch_size, seq_len - n + 1, n, vocab_size) 
+            print("the shape of model_output_logits is {} expected (batch_size, seq_len - n + 1, n, vocab_size)".format(model_output_logits.shape)) 
+            model_prediction = torch.argmax(model_output_logits, dim = -1) # dimension (batch_size, seq_len - n + 1, n) 
+            model_prediction = model_prediction.to()
+            print("the shape of model_prediction is {} expected (batch_size, seq_len - n + 1, n)".format(model_prediction.shape)) 
+            q = F.softmax(model_output_logits, dim = -1) 
+            del model_output_logits 
+            q = q[model_prediction] # dimension (batch_size, seq_len - n + 1, n, vocab_size) -> (batch_size, seq_len - n + 1, n) 
+            print(colored("printing out the first batch example should be of dimension (seq_len - n + 1, n) {}".format(q[0]), "blue")) 
+            p = F.softmax(original_model_logits, dim = -1)[model_prediction] # dimension (batch_size, seq_len - n + 1, n, vocab_size) -> (batch_size, seq_len - n + 1, n) 
+            print(colored("printing out the first batch example should be of dimension (seq_len - n + 1, n) {}".format(p[0], "yellow"))) 
+            r = torch.rand_like(q).to(q.device) # dimension (batch_size, seq_len - n + 1, n) 
+            print("printing out r {}".format(r[0])) 
+            mask = r > (p/q) # 1 is reject, 0 is accept, dimension is (batch_size, seq_len - n + 1, n) 
+            assert mask.shape[-1] == self.n 
+            mask = mask.reshape(-1, self.n) # dimension (batch_size * (seq_len - n + 1), n) 
+            total_acceptance_length = 0 
+            row_indices, col_indices = torch.nonzero(mask, as_tuple = True) 
+            idx_row_col_traversal = 0 
+            total_counted_pos = 0 
+            for i in range(mask.shape[0]): 
+                for j in range(mask.shape[1]): 
+                    row_i = i * mask.shape[1] + j 
+                    if input_attention_mask[i, j] == 0: 
+                        # we skip this token 
+                        while row_indices[idx_row_col_traversal] == row_i: 
+                            idx_row_col_traversal += 1 
+                        continue 
+                    total_counted_pos += 1 
+                    assert row_i <= row_indices[idx_row_col_traversal] 
+                    if row_i < row_indices[idx_row_col_traversal]: 
+                        # we accept all n tokens at row_i position 
+                        total_acceptance_length += self.n + 1 
+                    elif row_i == row_indices[idx_row_col_traversal]: 
+                        # we accept some tokens
+                        total_acceptance_length += col_indices[idx_row_col_traversal] + 1 
                         idx_row_col_traversal += 1 
-                    continue 
-                total_counted_pos += 1 
-                assert row_i <= row_indices[idx_row_col_traversal] 
-                if row_i < row_indices[idx_row_col_traversal]: 
-                    # we accept all n tokens at row_i position 
-                    total_acceptance_length += self.n + 1 
-                elif row_i == row_indices[idx_row_col_traversal]: 
-                    # we accept some tokens
-                    total_acceptance_length += col_indices[idx_row_col_traversal] + 1 
-                    idx_row_col_traversal += 1 
-                    while row_indices[idx_row_col_traversal] == row_i: 
-                        idx_row_col_traversal += 1 
-        print("total acceptance length is {}".format(total_acceptance_length)) 
-        print("total counted pos is {}".format(total_counted_pos)) 
-        exit(0) 
-        
-        # use preds to compute f1 score 
-        # f1 = precision_recall_fscore_support(labels, preds, average = "weighted") 
-        return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "interest_correct_words": interest_correct_count, "interest_total_words": interest_token_count} 
+                        while row_indices[idx_row_col_traversal] == row_i: 
+                            idx_row_col_traversal += 1 
+            print("total acceptance length is {}".format(total_acceptance_length)) 
+            print("total counted pos is {}".format(total_counted_pos)) 
+            exit(0) 
+            
+            # use preds to compute f1 score 
+            # f1 = precision_recall_fscore_support(labels, preds, average = "weighted") 
+            return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "interest_correct_words": interest_correct_count, "interest_total_words": interest_token_count} 
     
     def evaluation_loop(
         self,
