@@ -370,8 +370,14 @@ class CustomTrainer(Trainer):
             del original_model_logits 
             
             # trying CPU offloading 
-            q = torch.max(q, dim = -1).values 
-            p = torch.max(p, dim = -1).values 
+            outputsq = torch.max(q, dim = -1) 
+            q = outputsq.values 
+            idx_q = outputsq.indices 
+            p = p.cpu() 
+            idx_q = idx_q.cpu() 
+            p = p[idx_q] 
+            p = p.to(torch_device) 
+            
             print(q.shape, p.shape) 
             r = torch.rand_like(q).to(q.device) # dimension (batch_size, seq_len - n + 1, n) 
             print("printing out r {}".format(r[0].shape)) 
