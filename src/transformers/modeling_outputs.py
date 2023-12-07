@@ -620,6 +620,7 @@ class CausalLMOutputWithPast(ModelOutput):
 
 @dataclass 
 class CausalLMOutputWithPastWithOriginalOutput(ModelOutput): 
+    # newly added for customized service (on Dec. 6 for Weird Model Finetuning) 
     """
     Base class for causal language model (or autoregressive) outputs.
 
@@ -653,7 +654,7 @@ class CausalLMOutputWithPastWithOriginalOutput(ModelOutput):
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None 
     original_model_output: Optional[torch.FloatTensor] = None 
-
+    labels_actual_mask: Optional[torch.Tensor] = None 
 
 @dataclass
 class CausalLMOutputWithCrossAttentions(ModelOutput):

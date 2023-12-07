@@ -338,6 +338,9 @@ class CustomTrainer(Trainer):
             
             original_model_logits = logits[1] # dimension (batch_size, seq_len, vocab_size) 
             model_output_logits = logits[0] # dimension (batch_size, seq_len, n, vocab_size) 
+            label_actual_mask = logits[2] 
+            print("as a sanity check, we see the datatype of label_actual_mask is {}".format(label_actual_mask.dtype)) 
+            time.sleep(3) 
             # input_attention_mask = input_attention_mask[:, :-1] 
             input_attention_mask = input_attention_mask[:, 1:] 
             labels = labels[:, 1:] 

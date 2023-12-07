@@ -1701,9 +1701,12 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
             shift_labels = [] # hold all the shifted versions together 
             originalseqlength = labels.shape[1] 
             # print(labels[0]) 
+            label_actual_mask = (labels[:, 1 : 1 + (originalseqlength - self.lookaheadcount)] == -100).to(torch.bool) # True to write -100, False to not write 
             for i in range(1, self.lookaheadcount + 1): 
                 shift_labels.append(labels[:, i : i + (originalseqlength - self.lookaheadcount)].contiguous()) 
             shift_labels = torch.stack(shift_labels, dim = 2) # I think dimension should be at 2 
+            label_actual_mask = label_actual_mask.unsqueeze(-1) 
+            shift_labels[label_actual_mask] = -100 
             # print(shift_labels[0]) 
             print("shift logits shape {}".format(shift_logits.shape)) 
             print("shift labels shape {}".format(shift_labels.shape)) 
@@ -1721,6 +1724,7 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
                 mask = mask.unsqueeze(-1).expand(-1, -1, 3) # mask has dimension of (batch_size, seq_length, 3) 
                 shift_labels[mask] = -100 
                 # print("first five of shift labels {}".format(shift_labels[: 5, :, 0])) 
+            output_actual_labelmasks = (shift_labels != -100)[0].to(torch.bool) # shape would be of dimension (batch_size, seq_length) 
 
             # Flatten the tokens
             loss_fct = CrossEntropyLoss()
@@ -1752,7 +1756,9 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
                 hidden_states=outputs.hidden_states,
                 attentions=outputs.attentions, 
                 original_model_output = original_prob_output, 
+                labels_actual_mask = output_actual_labelmasks if labels is not None else None, 
             ) 
+                
 
     def prepare_inputs_for_generation(
         self, input_ids, past_key_values=None, attention_mask=None, inputs_embeds=None, **kwargs
