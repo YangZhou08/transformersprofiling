@@ -1690,6 +1690,7 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
             logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]
             logits = torch.cat(logits, dim=-1)
         else: 
+            residual_values = residual_values.reshape(residual_values.shape[0], residual_values.shape[1], self.lookaheadcount, -1) 
             hidden_states = residual_values + self.act(hidden_states) 
             logits = self.lm_head(hidden_states)
         logits = logits.float()
