@@ -636,7 +636,7 @@ class Trainer:
 
         # torch.compile
         if args.torch_compile and not is_torch_compile_available():
-            raise RuntimeError("Using torch.compile requires PyTorch 2.0 or higher.")
+            raise RuntimeError("Using torch.compile requires PyTorch 2.0 or higher.") 
 
     def _activate_neftune(self, model):
         r"""
@@ -3429,7 +3429,6 @@ class Trainer:
             logits and labels (each being optional).
         """
         has_labels = False if len(self.label_names) == 0 else all(inputs.get(k) is not None for k in self.label_names)
-        print("has_labels: {} len(self.label_names): {}".format(has_labels, len(self.label_names))) 
         # For CLIP-like models capable of returning loss values.
         # If `return_loss` is not specified or being `None` in `inputs`, we check if the default value of `return_loss`
         # is `True` in `model.forward`.

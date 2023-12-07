@@ -1499,7 +1499,8 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
         self.lookaheadcount = 3 
         self.output_n_projection = nn.Linear(config.hidden_size, config.hidden_size * self.lookaheadcount, bias = False) 
         self.vocab_size = config.vocab_size
-        self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
+        self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False) 
+        self.act = nn.SiLU() 
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -1672,6 +1673,9 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
         )
 
         hidden_states = outputs[0] 
+        residual_values = hidden_states # size (batch_size, seq_length, hidden_size) 
+        residual_list = [residual_values for _ in range(self.lookaheadcount)] 
+        residual_values = torch.cat(residual_list, dim = -1) # size (batch_size, seq_length, hidden_size * lookaheadcount) 
         if compute_original_output: 
             original_prob_output = self.lm_head(hidden_states) 
         # hidden_states should have dimension (batch_size, seq_length, hidden_size) 
@@ -1685,7 +1689,8 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
             lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
             logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]
             logits = torch.cat(logits, dim=-1)
-        else:
+        else: 
+            hidden_states = residual_list + self.act(hidden_states) 
             logits = self.lm_head(hidden_states)
         logits = logits.float()
         
