@@ -478,8 +478,8 @@ class CustomTrainer(Trainer):
             pred = pred[:, self.generated_token_start_idx - 1 :, :] 
             shift_labels = shift_labels[:, self.generated_token_start_idx - 1 :, :] 
             label_accept = label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n)[:, self.generated_token_start_idx - 1 :] 
-            acceptance_intermediate = (pred == shift_labels).to(torch.long) 
-            acceptance_intermediate = acceptance_intermediate * label_accept 
+            acceptance_intermediate = (pred == shift_labels).to(torch.long) # here one is for correct, zero is for incorrect 
+            acceptance_intermediate = acceptance_intermediate * label_accept # after filtering one is for keep and correct, zero is for discard 
             dim0  = acceptance_intermediate.shape[0] 
             dim1 = acceptance_intermediate.shape[1] 
             print("dim0 is {} dim1 is {}".format(dim0, dim1)) # we have to make sure dim0 and dim1 are assigned before we reshape acceptance_intermediate 
@@ -493,7 +493,7 @@ class CustomTrainer(Trainer):
                 print("dimension {} has prediction accuracy: {}".format(i, torch.sum(acceptance_intermediate[:, :, i].view(-1), dim = 0).item() / (dim0 * dim1))) 
             acceptance_intermediate = acceptance_intermediate.reshape(-1, self.n) 
             
-            row_indices, col_indices = torch.nonzero(acceptance_intermediate, as_tuple = True) 
+            row_indices, col_indices = torch.nonzero(~(acceptance_intermediate.to(torch.bool)), as_tuple = True) # this is very important, now one is for wrong or discard, zero is for correct and keep 
             idx_row_col_traversal = 0 
             total_counted_pos = 0 
             total_acceptance_length = 0 
@@ -507,6 +507,7 @@ class CustomTrainer(Trainer):
                     print(i, j) 
                     # if input_attention_mask[i, j] == 0: 
                     if label_accept[i, j, 0] == 0: # label_accept has dimension (batch_size, some length, n) 
+                        # we have this filtering such that after the if, we have 1 to signify keep and wrong, 0 is to signify keep and correct 
                         # we skip this token 
                         print("we skip at batch size {} position {} row_i {} row_indices is at {}.format(i, j, row_i, row_indices[idx_row_col_traversal])") 
                         while idx_row_col_traversal < row_indices.shape[0] and row_indices[idx_row_col_traversal] == row_i: 
@@ -537,8 +538,7 @@ class CustomTrainer(Trainer):
                             idx_row_col_traversal += 1 
                     else: 
                         raise ValueError("We cannot have this scenario") 
-                    
-                    time.sleep(1) 
+
                     print("inspect where is idx_row_col_traversal at {}".format(idx_row_col_traversal)) 
                     print("total acceptance length is {}".format(total_acceptance_length)) 
                     print("total counted pos is {}".format(total_counted_pos)) 
