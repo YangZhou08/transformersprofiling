@@ -479,6 +479,8 @@ class CustomTrainer(Trainer):
             acceptance_intermediate = acceptance_intermediate * label_accept 
             dim0  = acceptance_intermediate.shape[0] 
             dim1 = acceptance_intermediate.shape[1] 
+            print("dim0 is {} dim1 is {}".format(dim0, dim1)) # we have to make sure dim0 and dim1 are assigned before we reshape acceptance_intermediate 
+            acceptance_intermediate = acceptance_intermediate.reshape(-1, self.n) 
             
             row_indices, col_indices = torch.nonzero(acceptance_intermediate, as_tuple = True) 
             idx_row_col_traversal = 0 
