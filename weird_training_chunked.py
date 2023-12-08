@@ -527,6 +527,7 @@ class CustomTrainer(Trainer):
                         print("we accept some tokens {}".format(row_i)) 
                         # we accept some tokens
                         total_acceptance_length += col_indices[idx_row_col_traversal] 
+                        print("col_indices[idx_row_col_traversal] is {}".format(col_indices[idx_row_col_traversal])) 
                         idx_row_col_traversal += 1 
                         # boundary check 
                         if idx_row_col_traversal >= row_indices.shape[0]: 
