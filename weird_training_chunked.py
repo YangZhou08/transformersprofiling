@@ -481,15 +481,17 @@ class CustomTrainer(Trainer):
             acceptance_intermediate = acceptance_intermediate * label_accept # after filtering one is for keep and correct, zero is for discard 
             dim0  = acceptance_intermediate.shape[0] 
             dim1 = acceptance_intermediate.shape[1] 
-            print("dim0 is {} dim1 is {}".format(dim0, dim1)) # we have to make sure dim0 and dim1 are assigned before we reshape acceptance_intermediate 
-            print("pred, atch size {}, first 20 elements on dim 0 are {}".format(0, pred[0, : 20, 0])) 
-            print("pred, batch size {}, first 20 elements on dim 1 are {}".format(0, pred[0, :20, 1])) 
-            print("labels, batch size {}, first 20 elements on dim 0 are {}".format(0, shift_labels[0, : 20, 0])) 
-            print("labels, batch size {}, first 20 elements on dim 1 are {}".format(0, shift_labels[0, :20, 1])) 
-            print("acceptance_intermediate, batch size {}, first 20 elements are {}".format(0, acceptance_intermediate[0, : 20, 0])) 
-            print("acceptance_intermediate, batch size {}, first 20 elements are {}".format(0, acceptance_intermediate[0, : 20, 1])) 
+            # print("dim0 is {} dim1 is {}".format(dim0, dim1)) # we have to make sure dim0 and dim1 are assigned before we reshape acceptance_intermediate 
+            # print("pred, atch size {}, first 20 elements on dim 0 are {}".format(0, pred[0, : 20, 0])) 
+            # print("pred, batch size {}, first 20 elements on dim 1 are {}".format(0, pred[0, :20, 1])) 
+            # print("labels, batch size {}, first 20 elements on dim 0 are {}".format(0, shift_labels[0, : 20, 0])) 
+            # print("labels, batch size {}, first 20 elements on dim 1 are {}".format(0, shift_labels[0, :20, 1])) 
+            # print("acceptance_intermediate, batch size {}, first 20 elements are {}".format(0, acceptance_intermediate[0, : 20, 0])) 
+            # print("acceptance_intermediate, batch size {}, first 20 elements are {}".format(0, acceptance_intermediate[0, : 20, 1])) 
+            holding_diff_dimensionacc = {} 
             for i in range(0, self.n): 
                 print("dimension {} has prediction accuracy: {}".format(i, torch.sum(acceptance_intermediate[:, :, i].view(-1), dim = 0).item() / (dim0 * dim1))) 
+                holding_diff_dimensionacc["dimension acc {}".format(i)] = torch.sum(acceptance_intermediate[:, :, i].view(-1), dim = 0).item() / (dim0 * dim1) 
             acceptance_intermediate = acceptance_intermediate.reshape(-1, self.n) 
             
             row_indices, col_indices = torch.nonzero(~(acceptance_intermediate.to(torch.bool)), as_tuple = True) # this is very important, now one is for wrong or discard, zero is for correct and keep 
@@ -503,12 +505,12 @@ class CustomTrainer(Trainer):
                 for j in range(dim1): 
                     # row_i = i * mask.shape[1] + j 
                     row_i = i * dim1 + j 
-                    print(i, j) 
+                    # print(i, j) 
                     # if input_attention_mask[i, j] == 0: 
                     if label_accept[i, j, 0] == 0: # label_accept has dimension (batch_size, some length, n) 
                         # we have this filtering such that after the if, we have 1 to signify keep and wrong, 0 is to signify keep and correct 
                         # we skip this token 
-                        print("we skip at batch size {} position {} row_i {} row_indices is at {}.format(i, j, row_i, row_indices[idx_row_col_traversal])") 
+                        # print("we skip at batch size {} position {} row_i {} row_indices is at {}.format(i, j, row_i, row_indices[idx_row_col_traversal])") 
                         while idx_row_col_traversal < row_indices.shape[0] and row_indices[idx_row_col_traversal] == row_i: 
                         # while row_indices[idx_row_col_traversal] <= row_i: # should essentailly be ==, since previously we guarantee that row_indices is right at the new pos 
                             idx_row_col_traversal += 1 
@@ -520,28 +522,28 @@ class CustomTrainer(Trainer):
                     total_counted_pos += 1 
                     assert row_i <= row_indices[idx_row_col_traversal] 
                     if row_i < row_indices[idx_row_col_traversal]: 
-                        print("we accept all n tokens at {} since row index is at {}".format(row_i, row_indices[idx_row_col_traversal])) 
+                        # print("we accept all n tokens at {} since row index is at {}".format(row_i, row_indices[idx_row_col_traversal])) 
                         # we accept all n tokens at row_i position 
                         total_acceptance_length += self.n 
                     elif row_i == row_indices[idx_row_col_traversal]: 
-                        print("we accept some tokens {}".format(row_i)) 
+                        # print("we accept some tokens {}".format(row_i)) 
                         # we accept some tokens
                         total_acceptance_length += col_indices[idx_row_col_traversal] 
-                        print("col_indices[idx_row_col_traversal] is {}".format(col_indices[idx_row_col_traversal])) 
+                        # print("col_indices[idx_row_col_traversal] is {}".format(col_indices[idx_row_col_traversal])) 
                         idx_row_col_traversal += 1 
                         # boundary check 
                         if idx_row_col_traversal >= row_indices.shape[0]: 
                             # print("we break at {}".format(idx_row_col_traversal)) 
                             break 
-                        print("index_row_col_traversal now at {} and row_indices has length {}".format(idx_row_col_traversal, row_indices.shape[0])) 
+                        # print("index_row_col_traversal now at {} and row_indices has length {}".format(idx_row_col_traversal, row_indices.shape[0])) 
                         while idx_row_col_traversal < row_indices.shape[0] and row_indices[idx_row_col_traversal] == row_i: 
                             idx_row_col_traversal += 1 
                     else: 
                         raise ValueError("We cannot have this scenario") 
 
-                    print("inspect where is idx_row_col_traversal at {}".format(idx_row_col_traversal)) 
-                    print("total acceptance length is {}".format(total_acceptance_length)) 
-                    print("total counted pos is {}".format(total_counted_pos)) 
+                    # print("inspect where is idx_row_col_traversal at {}".format(idx_row_col_traversal)) 
+                    # print("total acceptance length is {}".format(total_acceptance_length)) 
+                    # print("total counted pos is {}".format(total_counted_pos)) 
         
         print("total acceptance length is {}".format(total_acceptance_length)) 
         print("total counted pos is {}".format(total_counted_pos)) 
@@ -550,7 +552,7 @@ class CustomTrainer(Trainer):
         # use preds to compute f1 score 
         # f1 = precision_recall_fscore_support(labels, preds, average = "weighted") 
         # return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "interest_correct_words": interest_correct_count, "interest_total_words": interest_token_count} 
-        return {"correct_words": correct_words, "total_words": total_acc_poscount, "total_counted_pos": total_counted_pos, "total_acceptance_length": total_acceptance_length} 
+        return {"correct_words": correct_words, "total_words": total_acc_poscount, "total_counted_pos": total_counted_pos, "total_acceptance_length": total_acceptance_length, **holding_diff_dimensionacc} 
     
     def evaluation_loop(
         self,
