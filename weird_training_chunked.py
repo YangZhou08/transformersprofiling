@@ -808,7 +808,7 @@ d = onedataset.train_test_split(test_size = 0.1)
 def encode_with_truncation(examples): 
     # return tokenizer(examples["text"], truncation = True, padding = "max_length", 
                     #  max_length = max_length, return_special_tokens_mask = True) 
-    return tokenizer(examples["text"], padding = "max_length", max_length = 256, 
+    return tokenizer(examples["text"], padding = "max_length", max_length = 128, 
                      return_attention_mask = True, return_tensors = "pt", truncation = True) 
 train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
 test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
