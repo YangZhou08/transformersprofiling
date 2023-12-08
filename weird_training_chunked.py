@@ -362,7 +362,7 @@ class CustomTrainer(Trainer):
                 shift_labels.append(labels[:, i : i + original_seq_len - self.n].contiguous()) 
             shift_labels = torch.stack(shift_labels, dim = 2) # dimension (batch_size, seq_len - n, n) 
             # shift_labels[shift_labels.unsqueeze(-1).expand(-1, -1, 3)] = -100 
-            total_acc_poscount = (~(label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n).to(torch.bool))).to(torch.long).view(-1).sum(dim = 0).item() 
+            total_acc_poscount = (label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n).to(torch.bool)).to(torch.long).view(-1).sum(dim = 0).item() 
             model_output_logits2 = model_output_logits[:, :-(self.n), :, :].contiguous() 
             pred = torch.argmax(model_output_logits2, dim = -1) 
             assert pred.shape == shift_labels.shape 
@@ -370,7 +370,7 @@ class CustomTrainer(Trainer):
             # filter the matrix with the original filter 
             correctness_matrix = correctness_matrix * (label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n)) 
             correct_words = torch.sum(correctness_matrix.view(-1), dim = 0) 
-            print("total counted words is {} correct words is {}".format(total_acc_poscount, correct_words)) 
+            print(colored("total counted words is {} correct words is {}".format(total_acc_poscount, correct_words), "yellow")) 
             
             # computing the average acceptance length 
             # first, folding the original_model_logits 
@@ -788,12 +788,12 @@ training_args = TrainingArguments(
     num_train_epochs=5,            # number of training epochs, feel free to tweak
     per_device_train_batch_size = 40, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
-    per_device_eval_batch_size= 40,  # evaluation batch size
+    per_device_eval_batch_size= 30,  # evaluation batch size
     # logging_steps=1, 
-    logging_steps = 40,             # evaluate, log and save model checkpoints every 1000 step
+    logging_steps = 1,             # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 40, 
+    save_steps = 1, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     # learning_rate=2e-4, 
