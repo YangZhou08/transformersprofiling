@@ -495,7 +495,7 @@ class CustomTrainer(Trainer):
                     row_i = i * dim1 + j 
                     # print(i, j) 
                     # if input_attention_mask[i, j] == 0: 
-                    if label_accept[0, i, j] == 0: # label_accept has dimension (batch_size, some length, n) 
+                    if label_accept[i, j, 0] == 0: # label_accept has dimension (batch_size, some length, n) 
                         # we skip this token 
                         # print("we skip at batch size {} position {} row_i {} row_indices is at {}.format(i, j, row_i, row_indices[idx_row_col_traversal])") 
                         while idx_row_col_traversal < row_indices.shape[0] and row_indices[idx_row_col_traversal] == row_i: 
