@@ -876,6 +876,7 @@ training_args = TrainingArguments(
     # lr_scheduler_type = "cosine", 
     warmup_steps = 25, 
     label_names = ["labels"], 
+    remove_unused_columns = True, 
 ) 
 
 max_length = 128 
@@ -948,7 +949,6 @@ trainer = CustomTrainer(
     common_n_gram_list = hot_1000_3_grams, 
     use_filtered_hot_labels = False, 
     n = 2, 
-    remove_columns = ["condensed_token_path"], 
 ) 
 
 torch.autograd.set_detect_anomaly(True) 
