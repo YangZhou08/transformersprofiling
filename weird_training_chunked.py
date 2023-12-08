@@ -257,6 +257,7 @@ class CustomTrainer(Trainer):
         self.use_filtered_hot_labels = use_filtered_hot_labels 
         self.training_mode = True 
         self.generated_token_start_idx = generated_token_start_idx 
+        self.iteration_count = 0 
     
     def compute_loss(self, model, inputs, return_outputs=False):
         """
@@ -291,7 +292,7 @@ class CustomTrainer(Trainer):
         
         print("outputs have shape {}".format(len(outputs))) 
         print(colored("model running loss: {}".format(outputs[0].item()), "yellow")) 
-        if has_wandb: 
+        if self.training_mode and has_wandb: 
             wandb.log({"training_loss": outputs[0].item()}) 
 
         # Save past state if it exists
@@ -452,7 +453,8 @@ class CustomTrainer(Trainer):
             
             # computing the total accuracy of prediction 
             shift_labels = [] 
-            original_seq_len = original_model_logits.shape[1] 
+            # original_seq_len = original_model_logits.shape[1] 
+            original_seq_len = model_output_logits.shape[1] 
             print(colored("original seq len is {}".format(original_seq_len), "yellow")) 
             for i in range(1, self.n + 1): 
                 shift_labels.append(labels[:, i : i + original_seq_len - self.n].contiguous()) 
@@ -811,7 +813,7 @@ tokenizer.padding_side = "left"
 # backup dataset 
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1.json', split = "train") 
 # onedataset = load_dataset('json', data_files = datasetsrc, split = "train[:1000]") 
-onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1_kernel5.json', split = "train[:1000]") 
+onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1_kernel5.json', split = "train") 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 d = onedataset.train_test_split(test_size = 0.1) 
 # print(d["train"], d["test"]) 
@@ -874,10 +876,10 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size= 25,  # evaluation batch size
     # logging_steps=1, 
-    logging_steps = 1,             # evaluate, log and save model checkpoints every 1000 step
+    logging_steps = 40,             # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 1, 
+    save_steps = 40, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     # learning_rate=2e-4, 

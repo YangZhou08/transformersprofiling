@@ -1677,7 +1677,8 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
         residual_list = [residual_values for _ in range(self.lookaheadcount)] 
         residual_values = torch.stack(residual_list, dim = 2) # size (batch_size, seq_length, hidden_size * lookaheadcount) 
         if compute_original_output: 
-            original_prob_output = self.lm_head(hidden_states) 
+            # original_prob_output = self.lm_head(hidden_states) 
+            original_prob_output = None 
         # hidden_states should have dimension (batch_size, seq_length, hidden_size) 
         # after the output_tripple_projection, we expect it should be (batch_size, seq_length, hidden_size * n) 
         print("hidden_states has shape {}".format(hidden_states.shape)) 
