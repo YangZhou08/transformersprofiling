@@ -362,7 +362,8 @@ class CustomTrainer(Trainer):
                 shift_labels.append(labels[:, i : i + original_seq_len - self.n].contiguous()) 
             shift_labels = torch.stack(shift_labels, dim = 2) # dimension (batch_size, seq_len - n, n) 
             # shift_labels[shift_labels.unsqueeze(-1).expand(-1, -1, 3)] = -100 
-            total_acc_poscount = (label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n).to(torch.bool)).to(torch.long).view(-1).sum(dim = 0).item() 
+            total_acc_poscount = (~(label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n).to(torch.bool))).to(torch.long).view(-1).sum(dim = 0).item() 
+            # total_acc_poscount = (label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n).to(torch.bool)).to(torch.long).view(-1).sum(dim = 0).item() 
             model_output_logits2 = model_output_logits[:, :-(self.n), :, :].contiguous() 
             pred = torch.argmax(model_output_logits2, dim = -1) 
             assert pred.shape == shift_labels.shape 
@@ -727,7 +728,7 @@ tokenizer.padding_side = "left"
 
 # backup dataset 
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1.json', split = "train") 
-onedataset = load_dataset('json', data_files = datasetsrc, split = "train") 
+onedataset = load_dataset('json', data_files = datasetsrc, split = "train[:1000]") 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 d = onedataset.train_test_split(test_size = 0.1) 
 # print(d["train"], d["test"]) 
@@ -877,7 +878,7 @@ trainer = CustomTrainer(
     optimizers = (custom_optimizer, None), 
     common_n_gram_list = hot_1000_3_grams, 
     use_filtered_hot_labels = False, 
-    n = 3, 
+    n = 2, 
 ) 
 
 
