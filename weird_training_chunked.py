@@ -251,12 +251,13 @@ def log_dict_converterc(filename, preproc, tokenizer):
             return output_keys 
 
 class CustomTrainer(Trainer): 
-    def __init__(self, common_n_gram_list, n = 3, use_filtered_hot_labels = False, *args, **kwargs): 
+    def __init__(self, common_n_gram_list, n = 3, use_filtered_hot_labels = False, generated_token_start_idx = 64, *args, **kwargs): 
         super().__init__(*args, **kwargs) 
         self.n = n 
         self.common_n_gram_list = common_n_gram_list 
         self.use_filtered_hot_labels = use_filtered_hot_labels 
         self.training_mode = True 
+        self.generated_token_start_idx = generated_token_start_idx 
     
     def compute_loss(self, model, inputs, return_outputs=False):
         """
@@ -319,6 +320,101 @@ class CustomTrainer(Trainer):
             loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0]
 
         return (loss, outputs) if return_outputs else loss 
+
+    def not_used_acceptance_length_compute(self, logits, labels, loss, input_attention_mask, output_step): 
+        # computing the average acceptance length 
+        # first, folding the original_model_logits 
+        label_actual_mask = torch.cat((label_actual_mask, torch.ones((label_actual_mask.shape[0], 1)).to(torch_device)), dim = 1) # dimension (batch_size, seq_len - n + 1) 
+        list_folding_logits = [] 
+        for i in range(self.n): 
+            list_folding_logits.append(original_model_logits[:, i : original_seq_len - self.n + i + 1, :]) 
+        original_model_logits = torch.stack(list_folding_logits, dim = 2) # dimension (batch_size, seq_len - n + 1, n, vocab_size) 
+        # print("the shape of original_model_logits is {} expected (batch_size, seq_len - n + 1, n, vocab_size)".format(original_model_logits.shape)) 
+        model_output_logits = model_output_logits[:, : -self.n + 1, ...] # dimension (batch_size, seq_len - n + 1, n, vocab_size) 
+        # print("the shape of model_output_logits is {} expected (batch_size, seq_len - n + 1, n, vocab_size)".format(model_output_logits.shape)) 
+        q = F.softmax(model_output_logits, dim = -1) 
+        # print("the shape of q is {} expected (batch_size, seq_len - n + 1, n, vocab_size)".format(q.shape)) 
+        p = F.softmax(original_model_logits, dim = -1) 
+        
+        outputsq = torch.max(q, dim = -1) 
+        q = outputsq.values 
+        idx_q = outputsq.indices 
+        # print("the shape of index_q is {}".format(idx_q.shape)) 
+        # print("the shape of p is {}".format(p.shape)) 
+        
+        p = torch.gather(p, -1, idx_q.unsqueeze(-1)).squeeze(-1) # The reason why regular direct index won't work is because the index is not of the same dimension as p 
+        p = p.to(torch_device) 
+        # print("the shape of p is {}".format(p.shape)) 
+        
+        r = torch.rand_like(q).to(q.device) # dimension (batch_size, seq_len - n + 1, n) 
+        # print("printing out r {}".format(r[0].shape)) 
+        mask = r > (p/q) # 1 is reject, 0 is accept, dimension is (batch_size, seq_len - n + 1, n) 
+        # print("printing out mask shape {}".format(mask.shape)) 
+        assert mask.shape[-1] == self.n 
+        '''
+        # a small checking piece 
+        print("batch 0, first 50 elements in p are {}".format(p[0, : 20, :])) 
+        print("batch 0, first 50 elements in q are {}".format(q[0, : 20, :])) 
+        print("batch 0, first 20 elements in (p/q) are {}".format((p/q)[0, : 20, :])) 
+        print("batch 0, first 20 elements in r are {}".format(r[0, : 20, :])) 
+        print("batch 0, first 20 elements in mask are {}".format(mask[0, : 20, :])) 
+        ''' 
+        mask = mask.reshape(-1, self.n) # dimension (batch_size * (seq_len - n + 1), n) 
+        total_acceptance_length = 0 
+        row_indices, col_indices = torch.nonzero(mask, as_tuple = True) 
+        # print("shape of row_indices is {} shape of col_indices is {}".format(row_indices.shape, col_indices.shape)) 
+        idx_row_col_traversal = 0 
+        total_counted_pos = 0 
+        # print("the shape of input_attention_mask is {}".format(input_attention_mask.shape)) 
+        # print("the shape of label_actual_mask is {}".format(label_actual_mask.shape)) 
+        for i in range(q.shape[0]): 
+            # boundary check 
+            if idx_row_col_traversal >= row_indices.shape[0]: 
+                break 
+            for j in range(q.shape[1]): 
+                # row_i = i * mask.shape[1] + j 
+                row_i = i * q.shape[1] + j 
+                # print(i, j) 
+                # if input_attention_mask[i, j] == 0: 
+                if label_actual_mask[i, j] == 0: 
+                    # we skip this token 
+                    # print("we skip at batch size {} position {} row_i {} row_indices is at {}.format(i, j, row_i, row_indices[idx_row_col_traversal])") 
+                    while idx_row_col_traversal < row_indices.shape[0] and row_indices[idx_row_col_traversal] == row_i: 
+                    # while row_indices[idx_row_col_traversal] <= row_i: # should essentailly be ==, since previously we guarantee that row_indices is right at the new pos 
+                        idx_row_col_traversal += 1 
+                    # print("idx_row_col_traversal now at {}".format(idx_row_col_traversal)) 
+                    continue 
+                # boundary check 
+                if idx_row_col_traversal >= row_indices.shape[0]: 
+                    break 
+                total_counted_pos += 1 
+                assert row_i <= row_indices[idx_row_col_traversal] 
+                if row_i < row_indices[idx_row_col_traversal]: 
+                    # print("we accept all n tokens at {} since row index is at {}".format(row_i, row_indices[idx_row_col_traversal])) 
+                    # we accept all n tokens at row_i position 
+                    total_acceptance_length += self.n + 1 
+                elif row_i == row_indices[idx_row_col_traversal]: 
+                    # print("we accept some tokens {}".format(row_i)) 
+                    # we accept some tokens
+                    total_acceptance_length += col_indices[idx_row_col_traversal] + 1 
+                    idx_row_col_traversal += 1 
+                    # boundary check 
+                    if idx_row_col_traversal >= row_indices.shape[0]: 
+                        # print("we break at {}".format(idx_row_col_traversal)) 
+                        break 
+                    # print("index_row_col_traversal now at {} and row_indices has length {}".format(idx_row_col_traversal, row_indices.shape[0])) 
+                    while idx_row_col_traversal < row_indices.shape[0] and row_indices[idx_row_col_traversal] == row_i: 
+                        idx_row_col_traversal += 1 
+                else: 
+                    raise ValueError("We cannot have this scenario") 
+                
+                # print("inspect where is idx_row_col_traversal at {}".format(idx_row_col_traversal)) 
+                # print("total acceptance length is {}".format(total_acceptance_length)) 
+                # print("total counted pos is {}".format(total_counted_pos)) 
+        
+        print("total acceptance length is {}".format(total_acceptance_length)) 
+        print("total counted pos is {}".format(total_counted_pos)) 
+        print("average acceptance length is {}".format(total_acceptance_length / total_counted_pos)) 
     
     def local_compute_metrics(
         self, 
@@ -373,61 +469,31 @@ class CustomTrainer(Trainer):
             correct_words = torch.sum(correctness_matrix.view(-1), dim = 0) 
             print(colored("total counted words is {} correct words is {}".format(total_acc_poscount, correct_words), "yellow")) 
             
-            # computing the average acceptance length 
-            # first, folding the original_model_logits 
-            label_actual_mask = torch.cat((label_actual_mask, torch.ones((label_actual_mask.shape[0], 1)).to(torch_device)), dim = 1) # dimension (batch_size, seq_len - n + 1) 
-            list_folding_logits = [] 
-            for i in range(self.n): 
-                list_folding_logits.append(original_model_logits[:, i : original_seq_len - self.n + i + 1, :]) 
-            original_model_logits = torch.stack(list_folding_logits, dim = 2) # dimension (batch_size, seq_len - n + 1, n, vocab_size) 
-            # print("the shape of original_model_logits is {} expected (batch_size, seq_len - n + 1, n, vocab_size)".format(original_model_logits.shape)) 
-            model_output_logits = model_output_logits[:, : -self.n + 1, ...] # dimension (batch_size, seq_len - n + 1, n, vocab_size) 
-            # print("the shape of model_output_logits is {} expected (batch_size, seq_len - n + 1, n, vocab_size)".format(model_output_logits.shape)) 
-            q = F.softmax(model_output_logits, dim = -1) 
-            # print("the shape of q is {} expected (batch_size, seq_len - n + 1, n, vocab_size)".format(q.shape)) 
-            p = F.softmax(original_model_logits, dim = -1) 
+            # nothing fancy now, just greedy speculative sampling 
+            # starting from 64th token, the rest 64th token should be used to compute the acceptance length 
+            # pred has shape (batch_size, seq_len - n, n) 
+            pred = pred[:, self.generated_token_start_idx - 1 :, :] 
+            shift_labels = shift_labels[:, self.generated_token_start_idx - 1 :, :] 
+            label_accept = label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n)[:, self.generated_token_start_idx - 1 :] 
+            acceptance_intermediate = (pred == shift_labels).to(torch.long) 
+            acceptance_intermediate = acceptance_intermediate * label_accept 
+            dim0  = acceptance_intermediate.shape[0] 
+            dim1 = acceptance_intermediate.shape[1] 
             
-            outputsq = torch.max(q, dim = -1) 
-            q = outputsq.values 
-            idx_q = outputsq.indices 
-            # print("the shape of index_q is {}".format(idx_q.shape)) 
-            # print("the shape of p is {}".format(p.shape)) 
-            
-            p = torch.gather(p, -1, idx_q.unsqueeze(-1)).squeeze(-1) # The reason why regular direct index won't work is because the index is not of the same dimension as p 
-            p = p.to(torch_device) 
-            # print("the shape of p is {}".format(p.shape)) 
-            
-            r = torch.rand_like(q).to(q.device) # dimension (batch_size, seq_len - n + 1, n) 
-            # print("printing out r {}".format(r[0].shape)) 
-            mask = r > (p/q) # 1 is reject, 0 is accept, dimension is (batch_size, seq_len - n + 1, n) 
-            # print("printing out mask shape {}".format(mask.shape)) 
-            assert mask.shape[-1] == self.n 
-            '''
-            # a small checking piece 
-            print("batch 0, first 50 elements in p are {}".format(p[0, : 20, :])) 
-            print("batch 0, first 50 elements in q are {}".format(q[0, : 20, :])) 
-            print("batch 0, first 20 elements in (p/q) are {}".format((p/q)[0, : 20, :])) 
-            print("batch 0, first 20 elements in r are {}".format(r[0, : 20, :])) 
-            print("batch 0, first 20 elements in mask are {}".format(mask[0, : 20, :])) 
-            ''' 
-            mask = mask.reshape(-1, self.n) # dimension (batch_size * (seq_len - n + 1), n) 
-            total_acceptance_length = 0 
-            row_indices, col_indices = torch.nonzero(mask, as_tuple = True) 
-            # print("shape of row_indices is {} shape of col_indices is {}".format(row_indices.shape, col_indices.shape)) 
+            row_indices, col_indices = torch.nonzero(acceptance_intermediate, as_tuple = True) 
             idx_row_col_traversal = 0 
             total_counted_pos = 0 
-            # print("the shape of input_attention_mask is {}".format(input_attention_mask.shape)) 
-            # print("the shape of label_actual_mask is {}".format(label_actual_mask.shape)) 
-            for i in range(q.shape[0]): 
+            total_acceptance_length = 0 
+            for i in range(dim0): 
                 # boundary check 
                 if idx_row_col_traversal >= row_indices.shape[0]: 
                     break 
-                for j in range(q.shape[1]): 
+                for j in range(dim1): 
                     # row_i = i * mask.shape[1] + j 
-                    row_i = i * q.shape[1] + j 
+                    row_i = i * dim1 + j 
                     # print(i, j) 
                     # if input_attention_mask[i, j] == 0: 
-                    if label_actual_mask[i, j] == 0: 
+                    if label_actual_mask[0][i, j] == 0: 
                         # we skip this token 
                         # print("we skip at batch size {} position {} row_i {} row_indices is at {}.format(i, j, row_i, row_indices[idx_row_col_traversal])") 
                         while idx_row_col_traversal < row_indices.shape[0] and row_indices[idx_row_col_traversal] == row_i: 
@@ -462,15 +528,15 @@ class CustomTrainer(Trainer):
                     # print("inspect where is idx_row_col_traversal at {}".format(idx_row_col_traversal)) 
                     # print("total acceptance length is {}".format(total_acceptance_length)) 
                     # print("total counted pos is {}".format(total_counted_pos)) 
+        
+        print("total acceptance length is {}".format(total_acceptance_length)) 
+        print("total counted pos is {}".format(total_counted_pos)) 
+        print("average acceptance length is {}".format(total_acceptance_length / total_counted_pos)) 
             
-            print("total acceptance length is {}".format(total_acceptance_length)) 
-            print("total counted pos is {}".format(total_counted_pos)) 
-            print("average acceptance length is {}".format(total_acceptance_length / total_counted_pos)) 
-            
-            # use preds to compute f1 score 
-            # f1 = precision_recall_fscore_support(labels, preds, average = "weighted") 
-            # return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "interest_correct_words": interest_correct_count, "interest_total_words": interest_token_count} 
-            return {"correct_words": correct_words, "total_words": total_acc_poscount, "total_counted_pos": total_counted_pos, "total_acceptance_length": total_acceptance_length} 
+        # use preds to compute f1 score 
+        # f1 = precision_recall_fscore_support(labels, preds, average = "weighted") 
+        # return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "interest_correct_words": interest_correct_count, "interest_total_words": interest_token_count} 
+        return {"correct_words": correct_words, "total_words": total_acc_poscount, "total_counted_pos": total_counted_pos, "total_acceptance_length": total_acceptance_length} 
     
     def evaluation_loop(
         self,
