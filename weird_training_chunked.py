@@ -490,7 +490,7 @@ class CustomTrainer(Trainer):
             print("acceptance_intermediate, batch size {}, first 20 elements are {}".format(0, acceptance_intermediate[0, : 20, 0])) 
             print("acceptance_intermediate, batch size {}, first 20 elements are {}".format(0, acceptance_intermediate[0, : 20, 1])) 
             for i in range(0, self.n): 
-                print("dimension {} has prediction accuracy: {}".format(i, torch.sum(acceptance_intermediate[:, :, i], dim = 0).item() / (dim0 * dim1))) 
+                print("dimension {} has prediction accuracy: {}".format(i, torch.sum(acceptance_intermediate[:, :, i].view(-1), dim = 0).item() / (dim0 * dim1))) 
             acceptance_intermediate = acceptance_intermediate.reshape(-1, self.n) 
             exit(0) 
             
