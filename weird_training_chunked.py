@@ -474,6 +474,7 @@ class CustomTrainer(Trainer):
             # nothing fancy now, just greedy speculative sampling 
             # starting from 64th token, the rest 64th token should be used to compute the acceptance length 
             # pred has shape (batch_size, seq_len - n, n) 
+            # pred = pred[:, self.generated_token_start_idx :, :] 
             pred = pred[:, self.generated_token_start_idx - 1 :, :] 
             shift_labels = shift_labels[:, self.generated_token_start_idx - 1 :, :] 
             label_accept = label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n)[:, self.generated_token_start_idx - 1 :] 
@@ -488,6 +489,8 @@ class CustomTrainer(Trainer):
             print("labels, batch size {}, first 20 elements on dim 1 are {}".format(0, shift_labels[0, :20, 1])) 
             print("acceptance_intermediate, batch size {}, first 20 elements are {}".format(0, acceptance_intermediate[0, : 20, 0])) 
             print("acceptance_intermediate, batch size {}, first 20 elements are {}".format(0, acceptance_intermediate[0, : 20, 1])) 
+            for i in range(0, self.n): 
+                print("dimension {} has prediction accuracy: {}".format(i, torch.sum(acceptance_intermediate[:, :, i], dim = 0).item() / (dim0 * dim1))) 
             acceptance_intermediate = acceptance_intermediate.reshape(-1, self.n) 
             exit(0) 
             
@@ -520,11 +523,11 @@ class CustomTrainer(Trainer):
                     if row_i < row_indices[idx_row_col_traversal]: 
                         print("we accept all n tokens at {} since row index is at {}".format(row_i, row_indices[idx_row_col_traversal])) 
                         # we accept all n tokens at row_i position 
-                        total_acceptance_length += self.n + 1 
+                        total_acceptance_length += self.n 
                     elif row_i == row_indices[idx_row_col_traversal]: 
                         print("we accept some tokens {}".format(row_i)) 
                         # we accept some tokens
-                        total_acceptance_length += col_indices[idx_row_col_traversal] + 1 
+                        total_acceptance_length += col_indices[idx_row_col_traversal] 
                         idx_row_col_traversal += 1 
                         # boundary check 
                         if idx_row_col_traversal >= row_indices.shape[0]: 
