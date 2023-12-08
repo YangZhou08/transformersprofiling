@@ -492,7 +492,6 @@ class CustomTrainer(Trainer):
             for i in range(0, self.n): 
                 print("dimension {} has prediction accuracy: {}".format(i, torch.sum(acceptance_intermediate[:, :, i].view(-1), dim = 0).item() / (dim0 * dim1))) 
             acceptance_intermediate = acceptance_intermediate.reshape(-1, self.n) 
-            exit(0) 
             
             row_indices, col_indices = torch.nonzero(acceptance_intermediate, as_tuple = True) 
             idx_row_col_traversal = 0 
