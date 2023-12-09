@@ -135,6 +135,12 @@ for i in range(num_iterations):
     for j in range(num_workers): 
         with open(synthesized_dir_path + "mostcommon1000003gramsworker{}_iterationcount{}.json".format(j, i), "r") as f: 
             data = json.load(f) 
+            for d in data: 
+                print(d) 
+                print(type(d)) 
+                print(d[0]) 
+                exit(0) 
+                collection.update([tuple(d[0])])
             collection.update(data) 
 
 globalhottestngram = collection.most_common(100000) 
