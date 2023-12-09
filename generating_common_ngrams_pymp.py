@@ -62,7 +62,7 @@ import multiprocessing as mp
 torch_device = "cuda:0" 
 
 parser = argparse.ArgumentParser() 
-parser.add_argument("--num_ngrams", type = int, default = 100000) 
+parser.add_argument("--num_ngrams", type = int, default = 1000) 
 parser.add_argument("--length_of_ngram", type = int, default = 3) 
 parser.add_argument("--num_workers", type = int, default = 8) 
 parser.add_argument("--num_pass_iteration", type = int, default = 5) 
@@ -141,13 +141,14 @@ for i in range(num_iterations):
                 print(d[0]) 
                 collection.update([tuple(d[0]), d[1]]) 
 
-globalhottestngram = collection.most_common(100000) 
+globalhottestngram = collection.most_common(args.num_ngrams) 
 print(type(globalhottestngram), len(globalhottestngram)) 
+exit(0) 
 with open(synthesized_dir_path + "mostcommon1000003grams.json", "w") as f: 
     json.dump(globalhottestngram, f) 
 
 greedy_finding = set() 
-for i in range(100000): 
+for i in range(args.num_ngrams): 
     greedy_finding.add(globalhottestngram[i][0]) 
 
 print("checking with the sequential implementation") 
@@ -158,9 +159,9 @@ for text in tqdm(dataset["text"]):
     three_ngrams = list(three_ngrams) 
     sequential_counts.update(three_ngrams) 
 
-sequential_n = sequential_counts.most_common(100000) 
+sequential_n = sequential_counts.most_common(args.num_ngrams) 
 sequential_finding = set() 
-for i in range(100000): 
+for i in range(args.ngrams): 
     sequential_finding.add(sequential_n[i][0]) 
 
 hottestsequentialintersection = greedy_finding & sequential_finding 
