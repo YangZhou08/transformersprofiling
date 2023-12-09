@@ -83,7 +83,7 @@ def generate_ngrams(tokens, n=3):
 
 def worker(num, iteration_count): 
     idx_start, idx_end = subdatasets[num] 
-    subdatasets = dataset[idx_start : idx_end] 
+    subdatasplit = dataset[idx_start : idx_end] 
     print("worker {} started".format(num)) 
     batch_counter = Counter() 
     if num == 0: 
