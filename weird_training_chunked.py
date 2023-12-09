@@ -825,7 +825,7 @@ tokenizer.padding_side = "left"
 # onedataset = load_dataset('json', data_files = datasetsrc, split = "train[:1000]") 
 onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1_kernel5.json', split = "train") 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
-d = onedataset.train_test_split(test_size = 0.1) 
+d = onedataset.train_test_split(test_size = 0.05) 
 # print(d["train"], d["test"]) 
 # max_length = small_model.config.max_position_embeddings 
 # def encode_with_truncation(examples): 
@@ -886,10 +886,10 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size= 25,  # evaluation batch size
     # logging_steps=1, 
-    logging_steps = 40,             # evaluate, log and save model checkpoints every 1000 step
+    logging_steps = 100,             # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 40, 
+    save_steps = 100, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     # learning_rate=2e-4, 
@@ -974,7 +974,7 @@ trainer = CustomTrainer(
     optimizers = (custom_optimizer, None), 
     common_n_gram_list = hot_1000_3_grams, 
     use_filtered_hot_labels = False, 
-    n = 2, 
+    n = 5, 
 ) 
 
 torch.autograd.set_detect_anomaly(True) 
