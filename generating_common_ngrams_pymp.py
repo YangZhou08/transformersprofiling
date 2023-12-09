@@ -83,19 +83,21 @@ def generate_ngrams(tokens, n=3):
 
 def worker(num, iteration_count): 
     idx_start, idx_end = subdatasets[num] 
-    subdatasplit = dataset[idx_start : idx_end] 
+    # subdatasplit = dataset[idx_start : idx_end] 
     print("worker {} started".format(num)) 
     batch_counter = Counter() 
     if num == 0: 
-        for i in tqdm(range(len(subdatasplit))): 
-            text = subdatasplit[i]["text"] 
+        for i in tqdm(range(idx_start, idx_end)): 
+            # text = subdatasplit[i]["text"] 
+            text = dataset[i]["text"] 
             tokens = tokenizer.tokenize(text) 
             three_ngrams = generate_ngrams(tokens, args.length_of_ngram) 
             three_ngrams = list(three_ngrams) 
             batch_counter.update(three_ngrams) 
     else: 
-        for i in range(len(subdatasplit)): 
-            text = subdatasplit[i]["text"] 
+        for i in range(idx_start, idx_end): 
+            # text = subdatasplit[i]["text"] 
+            text = dataset[i]["text"] 
             tokens = tokenizer.tokenize(text) 
             three_ngrams = generate_ngrams(tokens, args.length_of_ngram) 
             three_ngrams = list(three_ngrams) 
@@ -129,7 +131,7 @@ for j in range(num_iterations):
     print("finish iteration {}".format(j)) 
 
 collection = Counter() 
-for i in range(5): 
+for i in range(num_iterations): 
     for j in range(num_workers): 
         with open(synthesized_dir_path + "mostcommon1000003gramsworker{}_iterationcount{}.json".format(j, i), "r") as f: 
             data = json.load(f) 
