@@ -700,7 +700,7 @@ class CustomTrainer(Trainer):
         global_accuracy = total_correct_words / total_words 
         all_losses = total_loss / total_num_steps 
         holding_dimsionacc = {} 
-        for i in self.n: 
+        for i in range(self.n): 
             holding_dimsionacc["dimension acc {}".format(i)] = sum(holding_diff_dimensionacc["dimension acc {}".format(i)])/len(holding_diff_dimensionacc["dimension acc {}".format(i)]) 
             print("dimension {} has accuracy {}".format(i, holding_dimsionacc["dimension acc {}".format(i)])) 
 
