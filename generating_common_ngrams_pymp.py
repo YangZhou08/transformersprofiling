@@ -115,8 +115,10 @@ num_iterations = args.num_pass_iteration
 for j in range(num_iterations): 
     print("iteration {}".format(j)) 
     set_in_used = dataset[global_datasetidx : min(length_of_dataset, global_datasetidx + (length_of_dataset + num_iterations - 1) // num_iterations)] 
-    global_datasetidx += (length_of_dataset + 5 - 1) // 5 
-    length_of_subset = len(set_in_used) 
+    # global_datasetidx += (length_of_dataset + 5 - 1) // 5 
+    global_datasetidx += (length_of_dataset + num_iterations - 1) // num_iterations 
+    # length_of_subset = len(set_in_used) 
+    length_of_subset = (len(dataset) + num_iterations - 1) // num_iterations 
     subdivision_length = (length_of_subset + num_workers - 1)//num_workers 
     # subdatasets = [set_in_used[i : min(length_of_subset, (i + 1) * ((length_of_subset + num_workers - 1) // num_workers))] for i in range(num_workers)] # evenly partitioned the dataset into num_workers splits 
     # subdatasets = [set_in_used[k * subdivision_length : min(length_of_subset, (k + 1) * subdivision_length)] for k in range(num_workers)] 
