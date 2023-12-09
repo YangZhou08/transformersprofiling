@@ -974,7 +974,7 @@ trainer = CustomTrainer(
     optimizers = (custom_optimizer, None), 
     common_n_gram_list = hot_1000_3_grams, 
     use_filtered_hot_labels = False, 
-    n = 5, 
+    n = 4, 
 ) 
 
 torch.autograd.set_detect_anomaly(True) 
