@@ -84,7 +84,8 @@ def generate_ngrams(tokens, n=3):
 def worker(num, iteration_count): 
     idx_start, idx_end = subdatasets[num] 
     # subdatasplit = dataset[idx_start : idx_end] 
-    print("worker {} started".format(num)) 
+    print("worker {} started idx_start {} idx_end {}".format(num, idx_start, idx_end)) 
+    return 
     batch_counter = Counter() 
     if num == 0: 
         for i in tqdm(range(idx_start, idx_end)): 
@@ -114,7 +115,7 @@ num_iterations = args.num_pass_iteration
 
 for j in range(num_iterations): 
     print("iteration {}".format(j)) 
-    set_in_used = dataset[global_datasetidx : min(length_of_dataset, global_datasetidx + (length_of_dataset + num_iterations - 1) // num_iterations)] 
+    # set_in_used = dataset[global_datasetidx : min(length_of_dataset, global_datasetidx + (length_of_dataset + num_iterations - 1) // num_iterations)] 
     # global_datasetidx += (length_of_dataset + 5 - 1) // 5 
     global_datasetidx += (length_of_dataset + num_iterations - 1) // num_iterations 
     # length_of_subset = len(set_in_used) 
@@ -131,6 +132,7 @@ for j in range(num_iterations):
     for p in processes: 
         p.join() 
     print("finish iteration {}".format(j)) 
+    exit(0) 
 
 collection = Counter() 
 for i in range(num_iterations): 
