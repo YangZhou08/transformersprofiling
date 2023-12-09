@@ -897,13 +897,14 @@ training_args = TrainingArguments(
     # learning_rate = 1e-4, 
     # learning_rate = 5e-6, 
     # learning_rate = 0, 
-    load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
+    # load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training 
     save_total_limit=5,            # whether you don't have much space so you let only 3 model weights saved in the disk 
     # lr_scheduler_type = "cosine", 
     warmup_steps = 25, 
     label_names = ["labels"], 
     remove_unused_columns = True, 
     save_strategy = "no", 
+    evaluation_strategy = "no", 
 ) 
 
 max_length = 128 
