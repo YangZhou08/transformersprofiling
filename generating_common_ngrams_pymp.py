@@ -82,7 +82,8 @@ def generate_ngrams(tokens, n=3):
     return zip(*[tokens[i:] for i in range(n)]) 
 
 def worker(num, iteration_count): 
-    subdatasplit = subdatasets[num] 
+    idx_start, idx_end = subdatasets[num] 
+    subdatasets = dataset[idx_start : idx_end] 
     print("worker {} started".format(num)) 
     batch_counter = Counter() 
     if num == 0: 
@@ -116,7 +117,8 @@ for j in range(num_iterations):
     length_of_subset = len(set_in_used) 
     subdivision_length = (length_of_subset + num_workers - 1)//num_workers 
     # subdatasets = [set_in_used[i : min(length_of_subset, (i + 1) * ((length_of_subset + num_workers - 1) // num_workers))] for i in range(num_workers)] # evenly partitioned the dataset into num_workers splits 
-    subdatasets = [set_in_used[k * subdivision_length : min(length_of_subset, (k + 1) * subdivision_length)] for k in range(num_workers)] 
+    # subdatasets = [set_in_used[k * subdivision_length : min(length_of_subset, (k + 1) * subdivision_length)] for k in range(num_workers)] 
+    subdatasets = [(k * subdivision_length, min(length_of_subset, (k + 1) * subdivision_length)) for k in range(num_workers)] 
     for i in range(4): 
         p = mp.Process(target = worker, args = (i, j)) 
         processes.append(p) 
