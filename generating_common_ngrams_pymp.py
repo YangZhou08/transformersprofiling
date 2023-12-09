@@ -121,7 +121,7 @@ for j in range(num_iterations):
     # subdatasets = [set_in_used[i : min(length_of_subset, (i + 1) * ((length_of_subset + num_workers - 1) // num_workers))] for i in range(num_workers)] # evenly partitioned the dataset into num_workers splits 
     # subdatasets = [set_in_used[k * subdivision_length : min(length_of_subset, (k + 1) * subdivision_length)] for k in range(num_workers)] 
     subdatasets = [(k * subdivision_length, min(length_of_subset, (k + 1) * subdivision_length)) for k in range(num_workers)] 
-    for i in range(4): 
+    for i in range(num_workers): 
         p = mp.Process(target = worker, args = (i, j)) 
         processes.append(p) 
         p.start() 
