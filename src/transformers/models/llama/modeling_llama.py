@@ -1496,7 +1496,7 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
         self.model = LlamaModelWeirdAttentionMap(config) 
-        self.lookaheadcount = 4 
+        self.lookaheadcount = 3 
         self.output_n_projection = nn.Linear(config.hidden_size, config.hidden_size * self.lookaheadcount, bias = False) 
         self.vocab_size = config.vocab_size
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False) 
