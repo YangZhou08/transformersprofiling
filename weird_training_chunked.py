@@ -642,6 +642,9 @@ class CustomTrainer(Trainer):
         observed_num_examples = 0 
         total_num_steps = len(dataloader) 
         # Main evaluation loop
+        holding_diff_dimensionacc = {} 
+        for i in range(0, self.n): 
+            holding_diff_dimensionacc["dimension acc {}".format(i)] = [] 
         for step, inputs in enumerate(tqdm(dataloader, desc = "description")): 
             # Update the observed num examples
             observed_batch_size = find_batch_size(inputs)
@@ -666,6 +669,9 @@ class CustomTrainer(Trainer):
             total_words += local_metrics["total_words"] 
             total_length_token += local_metrics["total_counted_pos"] 
             total_acceptance_length += local_metrics["total_acceptance_length"] 
+            for i in range(0, self.n): 
+                # holding_diff_dimensionacc["dimension acc {}".format(i)] = local_metrics["dimension acc {}".format(i)] 
+                holding_diff_dimensionacc["dimension acc {}".format(i)].append(local_metrics["dimension acc {}".format(i)]) 
 
             if is_torch_tpu_available():
                 xm.mark_step()
@@ -693,11 +699,15 @@ class CustomTrainer(Trainer):
         
         global_accuracy = total_correct_words / total_words 
         all_losses = total_loss / total_num_steps 
+        holding_dimsionacc = {} 
+        for i in self.n: 
+            holding_dimsionacc["dimension acc {}".format(i)] = sum(holding_diff_dimensionacc["dimension acc {}".format(i)])/len(holding_diff_dimensionacc["dimension acc {}".format(i)]) 
+            print("dimension {} has accuracy {}".format(i, holding_dimsionacc["dimension acc {}".format(i)])) 
 
         metrics = {"accuracy": global_accuracy, "average_acceptance_length": total_acceptance_length / total_length_token} 
         print(colored(metrics, "magenta")) 
         if has_wandb: 
-            wandb.log({"global_eval_accuracy": global_accuracy, "average_acceptance_length": total_acceptance_length / total_length_token, "total_acceptance_length": total_acceptance_length, "total_length_counted_tokens": total_length_token}) 
+            wandb.log({"global_eval_accuracy": global_accuracy, "average_acceptance_length": total_acceptance_length / total_length_token, "total_acceptance_length": total_acceptance_length, "total_length_counted_tokens": total_length_token, **holding_dimsionacc}) 
 
         # # Metrics!
         # if self.compute_metrics is not None and all_preds is not None and all_labels is not None:
