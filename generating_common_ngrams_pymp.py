@@ -136,3 +136,23 @@ for i in range(5):
 globalhottestngram = collection.most_common(100000) 
 with open(synthesized_dir_path + "mostcommon1000003grams.json", "w") as f: 
     json.dump(globalhottestngram, f) 
+
+greedy_finding = set() 
+for i in range(100000): 
+    greedy_finding.add(globalhottestngram[i][0]) 
+
+print("checking with the sequential implementation") 
+sequential_counts = Counter() 
+for text in tqdm(dataset["text"]): 
+    tokens = tokenizer.tokenize(text) 
+    three_ngrams = zip(*[tokens[i:] for i in range(3)]) 
+    three_ngrams = list(three_ngrams) 
+    sequential_counts.update(three_ngrams) 
+
+sequential_n = sequential_counts.most_common(100000) 
+sequential_finding = set() 
+for i in range(100000): 
+    sequential_finding.add(sequential_n[i][0]) 
+
+hottestsequentialintersection = greedy_finding & sequential_finding 
+print(len(hottestsequentialintersection)/len(sequential_finding)) 
