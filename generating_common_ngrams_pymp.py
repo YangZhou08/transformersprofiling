@@ -140,7 +140,6 @@ for i in range(num_iterations):
                 print(type(d)) 
                 print(d[0]) 
                 collection.update([tuple(d[0]), d[1]]) 
-            collection.update(data) 
 
 globalhottestngram = collection.most_common(100000) 
 with open(synthesized_dir_path + "mostcommon1000003grams.json", "w") as f: 
