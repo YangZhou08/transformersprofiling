@@ -139,8 +139,7 @@ for i in range(num_iterations):
                 print(d) 
                 print(type(d)) 
                 print(d[0]) 
-                exit(0) 
-                collection.update([tuple(d[0])])
+                collection.update([tuple(d[0]), d[1]]) 
             collection.update(data) 
 
 globalhottestngram = collection.most_common(100000) 
