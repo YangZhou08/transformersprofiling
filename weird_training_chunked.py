@@ -903,6 +903,7 @@ training_args = TrainingArguments(
     warmup_steps = 25, 
     label_names = ["labels"], 
     remove_unused_columns = True, 
+    save_strategy = "no", 
 ) 
 
 max_length = 128 
