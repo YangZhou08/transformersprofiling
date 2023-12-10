@@ -92,8 +92,7 @@ def worker(num, iteration_count):
             text = dataset[i]["text"] 
             tokens = tokenizer.tokenize(text) 
             three_ngrams = generate_ngrams(tokens, args.length_of_ngram) 
-            # three_ngrams = list(three_ngrams) 
-            three_ngrams = tuple(three_ngrams) 
+            three_ngrams = list(three_ngrams) 
             three_ngrams = [tuple(ngram) for ngram in three_ngrams] 
             # print("worker {} length of three_ngrams {}".format(num, len(three_ngrams))) 
             batch_counter.update(three_ngrams) 
@@ -103,8 +102,7 @@ def worker(num, iteration_count):
             text = dataset[i]["text"] 
             tokens = tokenizer.tokenize(text) 
             three_ngrams = generate_ngrams(tokens, args.length_of_ngram) 
-            # three_ngrams = list(three_ngrams) 
-            three_ngrams = tuple(three_ngrams) 
+            three_ngrams = list(three_ngrams) 
             three_ngrams = [tuple(ngram) for ngram in three_ngrams] 
             # print("worker {} length of three_ngrams {}".format(num, len(three_ngrams))) 
             batch_counter.update(three_ngrams) 
@@ -152,7 +150,8 @@ for i in range(num_iterations):
             for d in data: 
                 # print(type(d)) 
                 # print(d[0]) 
-                collection[d[0]] += d[1] 
+                # collection[d[0]] += d[1] 
+                collection[tuple(d[0])] += d[1] 
 print("collection {}".format(len(collection))) 
 
 globalhottestngram = collection.most_common(args.num_ngrams) 
