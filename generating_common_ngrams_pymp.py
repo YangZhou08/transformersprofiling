@@ -177,3 +177,7 @@ for i in range(args.num_ngrams):
 
 hottestsequentialintersection = greedy_finding & sequential_finding 
 print(len(hottestsequentialintersection)/len(sequential_finding)) 
+
+print("seperation line") 
+print("globalhottestngram first 100 pairs hott would be: ") 
+print(collection.most_common(100)) 
