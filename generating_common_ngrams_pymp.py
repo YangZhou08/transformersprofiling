@@ -172,8 +172,8 @@ for text in tqdm(dataset["text"]):
     three_ngrams = [tuple(ngram) for ngram in three_ngrams] 
     sequential_counts.update(three_ngrams) 
     
-sequential_counts = dict(sequential_counts) 
-sequential_counts = [(ngram, count) for ngram, count in sequential_counts.items()] 
+sequential_counts2 = dict(sequential_counts) 
+sequential_counts2 = [(ngram, count) for ngram, count in sequential_counts2.items()] 
 
 sequential_n = sequential_counts.most_common(args.num_ngrams) 
 sequential_finding = set() 
@@ -187,4 +187,4 @@ print("seperation line")
 print("globalhottestngram first 100 pairs hott would be: ") 
 print(collection.most_common(100)) 
 print("sequential_n first 100 pairs hott would be: ") 
-print(sequential_counts.most_common(100)) 
+print(sequential_counts2.most_common(100)) 
