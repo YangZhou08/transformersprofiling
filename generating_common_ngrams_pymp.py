@@ -62,7 +62,7 @@ import multiprocessing as mp
 torch_device = "cuda:0" 
 
 parser = argparse.ArgumentParser() 
-parser.add_argument("--num_ngrams", type = int, default = 1000) 
+parser.add_argument("--num_ngrams", type = int, default = 100000) 
 parser.add_argument("--length_of_ngram", type = int, default = 3) 
 parser.add_argument("--num_workers", type = int, default = 8) 
 parser.add_argument("--num_pass_iteration", type = int, default = 1) 
