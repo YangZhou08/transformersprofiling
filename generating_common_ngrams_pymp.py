@@ -105,7 +105,7 @@ def worker(num, iteration_count):
             # print("worker {} length of three_ngrams {}".format(num, len(three_ngrams))) 
             batch_counter.update(three_ngrams) 
     # print("worker {} batch {}".format(num, len(batch_counter))) 
-    most_common_3grams = batch_counter.most_common(2 * args.num_ngrams) 
+    most_common_3grams = batch_counter.most_common(4 * args.num_ngrams) 
     print("worker {} most_common_3grams {}".format(num, len(most_common_3grams))) 
     with open(synthesized_dir_path + "mostcommon1000003gramsworker{}_iterationcount{}.json".format(num, iteration_count), "w") as f: 
         json.dump(most_common_3grams, f) 
