@@ -92,7 +92,8 @@ def worker(num, iteration_count):
             text = dataset[i]["text"] 
             tokens = tokenizer.tokenize(text) 
             three_ngrams = generate_ngrams(tokens, args.length_of_ngram) 
-            three_ngrams = list(three_ngrams) 
+            # three_ngrams = list(three_ngrams) 
+            three_ngrams = tuple(three_ngrams) 
             three_ngrams = [tuple(ngram) for ngram in three_ngrams] 
             # print("worker {} length of three_ngrams {}".format(num, len(three_ngrams))) 
             batch_counter.update(three_ngrams) 
@@ -102,7 +103,8 @@ def worker(num, iteration_count):
             text = dataset[i]["text"] 
             tokens = tokenizer.tokenize(text) 
             three_ngrams = generate_ngrams(tokens, args.length_of_ngram) 
-            three_ngrams = list(three_ngrams) 
+            # three_ngrams = list(three_ngrams) 
+            three_ngrams = tuple(three_ngrams) 
             three_ngrams = [tuple(ngram) for ngram in three_ngrams] 
             # print("worker {} length of three_ngrams {}".format(num, len(three_ngrams))) 
             batch_counter.update(three_ngrams) 
@@ -168,7 +170,8 @@ sequential_counts = Counter()
 for text in tqdm(dataset["text"]): 
     tokens = tokenizer.tokenize(text) 
     three_ngrams = zip(*[tokens[i:] for i in range(3)]) 
-    three_ngrams = list(three_ngrams) 
+    # three_ngrams = list(three_ngrams) 
+    three_ngrams = tuple(three_ngrams) 
     three_ngrams = [tuple(ngram) for ngram in three_ngrams] 
     sequential_counts.update(three_ngrams) 
     
