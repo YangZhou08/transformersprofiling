@@ -93,6 +93,7 @@ def worker(num, iteration_count):
             tokens = tokenizer.tokenize(text) 
             three_ngrams = generate_ngrams(tokens, args.length_of_ngram) 
             three_ngrams = list(three_ngrams) 
+            three_ngrams = [tuple(ngram) for ngram in three_ngrams] 
             # print("worker {} length of three_ngrams {}".format(num, len(three_ngrams))) 
             batch_counter.update(three_ngrams) 
     else: 
@@ -168,7 +169,11 @@ for text in tqdm(dataset["text"]):
     tokens = tokenizer.tokenize(text) 
     three_ngrams = zip(*[tokens[i:] for i in range(3)]) 
     three_ngrams = list(three_ngrams) 
+    three_ngrams = [tuple(ngram) for ngram in three_ngrams] 
     sequential_counts.update(three_ngrams) 
+    
+sequential_counts = dict(sequential_counts) 
+sequential_counts = [(ngram, count) for ngram, count in sequential_counts.items()] 
 
 sequential_n = sequential_counts.most_common(args.num_ngrams) 
 sequential_finding = set() 
