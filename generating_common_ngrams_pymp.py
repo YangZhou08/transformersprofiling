@@ -141,24 +141,23 @@ for i in range(num_iterations):
     for j in range(num_workers): 
         with open(synthesized_dir_path + "mostcommon1000003gramsworker{}_iterationcount{}.json".format(j, i), "r") as f: 
             data = json.load(f) 
-            print(len(data)) 
+            # print(len(data)) 
             for d in data: 
                 # print(d) 
                 # print(type(d)) 
                 # print(d[0]) 
                 collection.update([tuple(d[0]), d[1]]) 
 print("collection {}".format(len(collection))) 
-exit(0) 
 
 globalhottestngram = collection.most_common(args.num_ngrams) 
 print(type(globalhottestngram), len(globalhottestngram)) 
-exit(0) 
 with open(synthesized_dir_path + "mostcommon1000003grams.json", "w") as f: 
     json.dump(globalhottestngram, f) 
 
 greedy_finding = set() 
 for i in range(args.num_ngrams): 
     greedy_finding.add(globalhottestngram[i][0]) 
+print("greedy_finding has length {}".format(len(greedy_finding))) 
 
 print("checking with the sequential implementation") 
 sequential_counts = Counter() 
