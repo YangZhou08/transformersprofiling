@@ -148,11 +148,9 @@ for i in range(num_iterations):
             data = json.load(f) 
             print(len(data)) 
             for d in data: 
-                print(d) 
-                exit(0) 
                 # print(type(d)) 
                 # print(d[0]) 
-                collection.update([tuple(d[0]), d[1]]) 
+                collection[d[0]] += d[1] 
 print("collection {}".format(len(collection))) 
 
 globalhottestngram = collection.most_common(args.num_ngrams) 
