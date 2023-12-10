@@ -85,7 +85,6 @@ def worker(num, iteration_count):
     idx_start, idx_end = subdatasets[num] 
     # subdatasplit = dataset[idx_start : idx_end] 
     print("worker {} started idx_start {} idx_end {}".format(num, idx_start, idx_end)) 
-    return 
     batch_counter = Counter() 
     if num == 0: 
         for i in tqdm(range(idx_start, idx_end)): 
@@ -94,6 +93,7 @@ def worker(num, iteration_count):
             tokens = tokenizer.tokenize(text) 
             three_ngrams = generate_ngrams(tokens, args.length_of_ngram) 
             three_ngrams = list(three_ngrams) 
+            print("worker {} length of three_ngrams {}".format(num, len(three_ngrams))) 
             batch_counter.update(three_ngrams) 
     else: 
         for i in range(idx_start, idx_end): 
@@ -102,7 +102,9 @@ def worker(num, iteration_count):
             tokens = tokenizer.tokenize(text) 
             three_ngrams = generate_ngrams(tokens, args.length_of_ngram) 
             three_ngrams = list(three_ngrams) 
+            print("worker {} length of three_ngrams {}".format(num, len(three_ngrams))) 
             batch_counter.update(three_ngrams) 
+    return 
     most_common_3grams = batch_counter.most_common(args.num_ngrams) 
     with open(synthesized_dir_path + "mostcommon1000003gramsworker{}_iterationcount{}.json".format(num, iteration_count), "w") as f: 
         json.dump(most_common_3grams, f) 
