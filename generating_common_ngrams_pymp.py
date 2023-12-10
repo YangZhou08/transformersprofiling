@@ -158,7 +158,7 @@ with open(synthesized_dir_path + "mostcommon1000003grams.json", "w") as f:
     json.dump(globalhottestngram, f) 
 
 greedy_finding = set() 
-for i in range(len(greedy_finding)): 
+for i in range(len(globalhottestngram)): 
     greedy_finding.add(globalhottestngram[i][0]) 
 print("greedy_finding has length {}".format(len(greedy_finding))) 
 
