@@ -107,8 +107,8 @@ def worker(num, iteration_count):
             # print("worker {} length of three_ngrams {}".format(num, len(three_ngrams))) 
             batch_counter.update(three_ngrams) 
     # print("worker {} batch {}".format(num, len(batch_counter))) 
-    # most_common_3grams = batch_counter.most_common(4 * args.num_ngrams) 
-    most_common_3grams = dict(batch_counter) 
+    most_common_3grams = batch_counter.most_common(4 * args.num_ngrams) 
+    # most_common_3grams = dict(batch_counter) 
     most_common_3grams = [(ngram, count) for ngram, count in most_common_3grams.items()] 
     print("worker {} most_common_3grams {}".format(num, len(most_common_3grams))) 
     with open(synthesized_dir_path + "mostcommon1000003gramsworker{}_iterationcount{}.json".format(num, iteration_count), "w") as f: 
@@ -184,9 +184,10 @@ for i in range(args.num_ngrams):
 
 hottestsequentialintersection = greedy_finding & sequential_finding 
 print(len(hottestsequentialintersection)/len(sequential_finding)) 
-
+'''
 print("seperation line") 
 print("globalhottestngram first 100 pairs hott would be: ") 
 print(collection.most_common(100)) 
 print("sequential_n first 100 pairs hott would be: ") 
 print(sequential_counts2.most_common(100)) 
+''' 
