@@ -841,7 +841,7 @@ test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 
 
 for i in range(len(train_dataset)): 
     print(type(train_dataset[i])) 
-    for k, v in train_dataset[i]: 
+    for k, v in train_dataset[i].items(): 
         print(k) 
         print(v) 
         exit(0) 
