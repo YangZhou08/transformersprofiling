@@ -146,6 +146,7 @@ for j in range(num_iterations):
             subdatasets.append((idx_start, length_of_dataset)) 
         else: 
             subdatasets.append((idx_start, idx_end)) 
+    print("subdatasets {}".format(subdatasets)) 
     for i in range(num_workers): 
         p = mp.Process(target = worker, args = (i, j)) 
         processes.append(p) 
