@@ -67,6 +67,7 @@ parser.add_argument("--length_of_ngram", type = int, default = 3)
 parser.add_argument("--num_workers", type = int, default = 8) 
 parser.add_argument("--num_pass_iteration", type = int, default = 1) 
 parser.add_argument("--testing_mode", type = bool, default = False) 
+parser.add_argument("--reduce_precision", type = bool, default = False) 
 
 args = parser.parse_args() 
 
@@ -110,8 +111,11 @@ def worker(num, iteration_count):
             # print("worker {} length of three_ngrams {}".format(num, len(three_ngrams))) 
             batch_counter.update(three_ngrams) 
     # print("worker {} batch {}".format(num, len(batch_counter))) 
-    most_common_3grams = batch_counter.most_common(2 * args.num_ngrams) 
-    most_common_3grams = dict(most_common_3grams) 
+    if args.reduce_precision: 
+        most_common_3grams = batch_counter.most_common(2 * args.num_ngrams) 
+        most_common_3grams = dict(most_common_3grams) 
+    else: 
+        most_common_3grams = dict(batch_counter) 
     most_common_3grams = [(ngram, count) for ngram, count in most_common_3grams.items()] 
     print("worker {} most_common_3grams {}".format(num, len(most_common_3grams))) 
     with open(synthesized_dir_path + "mostcommon100000{}gramsworker{}_iterationcount{}.json".format(args.length_of_ngram, num, iteration_count), "w") as f: 
@@ -184,7 +188,7 @@ greedy_finding = set()
 for i in range(len(globalhottestngram)): 
     greedy_finding.add(globalhottestngram[i][0]) 
 print("greedy_finding has length {}".format(len(greedy_finding))) 
-
+''' 
 print("checking with the sequential implementation") 
 sequential_counts = Counter() 
 for text in tqdm(dataset["text"]): 
@@ -205,7 +209,7 @@ for i in range(args.num_ngrams):
 
 hottestsequentialintersection = greedy_finding & sequential_finding 
 print(len(hottestsequentialintersection)/len(sequential_finding)) 
-'''
+
 print("seperation line") 
 print("globalhottestngram first 100 pairs hott would be: ") 
 print(collection.most_common(100)) 
