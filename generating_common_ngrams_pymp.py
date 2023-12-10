@@ -166,7 +166,8 @@ for j in range(num_iterations):
 
 collection = Counter() 
 for i in range(num_iterations): 
-    for j in range(num_workers): 
+    # for j in range(num_workers): 
+    for j in tqdm(range(num_workers)): 
         print(i, j) 
         with open(synthesized_dir_path + "mostcommon100000{}gramsworker{}_iterationcount{}.json".format(args.length_of_ngram, j, i), "r") as f: 
             data = json.load(f) 
