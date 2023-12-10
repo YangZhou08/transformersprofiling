@@ -109,7 +109,7 @@ def worker(num, iteration_count):
     print("worker {} most_common_3grams {}".format(num, len(most_common_3grams))) 
     with open(synthesized_dir_path + "mostcommon1000003gramsworker{}_iterationcount{}.json".format(num, iteration_count), "w") as f: 
         json.dump(most_common_3grams, f) 
-    print("worker {} write file to {}".format(num, synthesized_dir_path + "mostcommon1000003gramsworker{}_iterationcount{}.json".format(num, iteration_count))) 
+    # print("worker {} write file to {}".format(num, synthesized_dir_path + "mostcommon1000003gramsworker{}_iterationcount{}.json".format(num, iteration_count))) 
 
 
 processes = [] 
@@ -135,7 +135,6 @@ for j in range(num_iterations):
     for p in processes: 
         p.join() 
     print("finish iteration {}".format(j)) 
-    exit(0) 
 
 collection = Counter() 
 for i in range(num_iterations): 
