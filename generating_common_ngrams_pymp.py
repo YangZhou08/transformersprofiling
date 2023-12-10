@@ -71,7 +71,7 @@ args = parser.parse_args()
 
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 
-dataset = load_dataset('json', data_files = datasetsrc, split = "train[:4000]") 
+dataset = load_dataset('json', data_files = datasetsrc, split = "train") 
 
 length_of_dataset = len(dataset) 
 num_workers = args.num_workers 
