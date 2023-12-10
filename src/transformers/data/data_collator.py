@@ -984,6 +984,7 @@ class DataCollatorForLanguageModeling2(DataCollatorMixin):
                 labels[labels == self.tokenizer.pad_token_id] = -100
             batch["labels"] = labels 
             print("we got inside and trying to modify this function") 
+            exit(0) 
         return batch
 
     def torch_mask_tokens(self, inputs: Any, special_tokens_mask: Optional[Any] = None) -> Tuple[Any, Any]:

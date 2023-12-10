@@ -824,7 +824,7 @@ tokenizer.padding_side = "left"
 # backup dataset 
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1.json', split = "train") 
 # onedataset = load_dataset('json', data_files = datasetsrc, split = "train[:1000]") 
-onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1_kernel5.json', split = "train") 
+onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1_kernel5.json', split = "train[:1000]") 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 d = onedataset.train_test_split(test_size = 0.05) 
 # print(d["train"], d["test"]) 
@@ -839,14 +839,13 @@ def encode_with_truncation(examples):
                      return_attention_mask = True, return_tensors = "pt", truncation = True) 
 train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
 test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
-
+''' 
 for i in range(len(train_dataset)): 
     print(type(train_dataset[i])) 
     for k, v in train_dataset[i].items(): 
         print(k) 
         print(v) 
-        
-exit(0) 
+'''
 # print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
 train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
