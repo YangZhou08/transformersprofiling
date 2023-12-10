@@ -71,7 +71,7 @@ args = parser.parse_args()
 
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 
-dataset = load_dataset('json', data_files = datasetsrc, split = "train") 
+dataset = load_dataset('json', data_files = datasetsrc, split = "train[:4000]") 
 
 length_of_dataset = len(dataset) 
 num_workers = args.num_workers 
@@ -110,7 +110,7 @@ def worker(num, iteration_count):
             batch_counter.update(three_ngrams) 
     # print("worker {} batch {}".format(num, len(batch_counter))) 
     most_common_3grams = batch_counter.most_common(args.num_ngrams) 
-    most_common_3grams = dict(batch_counter) 
+    most_common_3grams = dict(most_common_3grams) 
     most_common_3grams = [(ngram, count) for ngram, count in most_common_3grams.items()] 
     print("worker {} most_common_3grams {}".format(num, len(most_common_3grams))) 
     with open(synthesized_dir_path + "mostcommon100000{}gramsworker{}_iterationcount{}.json".format(args.length_of_ngram, num, iteration_count), "w") as f: 
