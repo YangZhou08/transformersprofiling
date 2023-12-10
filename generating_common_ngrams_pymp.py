@@ -169,7 +169,7 @@ for text in tqdm(dataset["text"]):
 
 sequential_n = sequential_counts.most_common(args.num_ngrams) 
 sequential_finding = set() 
-for i in range(args.ngrams): 
+for i in range(args.num_ngrams): 
     sequential_finding.add(sequential_n[i][0]) 
 
 hottestsequentialintersection = greedy_finding & sequential_finding 
