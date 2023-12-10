@@ -2,6 +2,9 @@ import torch
 from src.transformers import AutoTokenizer 
 from termcolor import colored 
 
+def parallel_processing_of_labels(filename, tokenizer): 
+    pass 
+
 def log_dict_converter(filename, preproc, tokenizer): 
     import ast 
 
