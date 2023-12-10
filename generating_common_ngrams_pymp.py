@@ -143,11 +143,13 @@ for j in range(num_iterations):
 collection = Counter() 
 for i in range(num_iterations): 
     for j in range(num_workers): 
+        print(i, j) 
         with open(synthesized_dir_path + "mostcommon1000003gramsworker{}_iterationcount{}.json".format(j, i), "r") as f: 
             data = json.load(f) 
-            # print(len(data)) 
+            print(len(data)) 
             for d in data: 
-                # print(d) 
+                print(d) 
+                exit(0) 
                 # print(type(d)) 
                 # print(d[0]) 
                 collection.update([tuple(d[0]), d[1]]) 
@@ -172,7 +174,7 @@ for text in tqdm(dataset["text"]):
     three_ngrams = [tuple(ngram) for ngram in three_ngrams] 
     sequential_counts.update(three_ngrams) 
     
-sequential_counts2 = dict(sequential_counts) 
+sequential_counts2 = dict(sequential_counts.most_common(len(sequential_counts))) 
 sequential_counts2 = [(ngram, count) for ngram, count in sequential_counts2.items()] 
 
 sequential_n = sequential_counts.most_common(args.num_ngrams) 
