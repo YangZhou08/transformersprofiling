@@ -22,6 +22,7 @@ from termcolor import colored
 from src.transformers import Trainer, TrainingArguments 
 from torch import nn 
 from src.transformers import DataCollatorForLanguageModeling 
+from src.transformers.data.data_collator import DataCollatorForLanguageModeling2 
 from src.transformers.generation.utils import GenerationConfig 
 from src.transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSmallModel 
 from src.transformers.models.llama.modeling_llama import LlamaCausalLMWeirdTwo 
@@ -844,6 +845,7 @@ for i in range(len(train_dataset)):
     for k, v in train_dataset[i].items(): 
         print(k) 
         print(v) 
+        
 exit(0) 
 # print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
 train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
@@ -879,7 +881,8 @@ custom_optimizer = torch.optim.AdamW(param_group, lr = 1e-3)
 model.config.pad_token_id = tokenizer.pad_token_id 
 # print(small_model.embed_projection.weight.dtype) 
 
-data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
+# data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
+data_collator = DataCollatorForLanguageModeling2(tokenizer = tokenizer, mlm = False) 
 
 # model_path = "/home/bc20/yang" 
 # model_path = "/home/yangzho6/model_checkpoints" 
