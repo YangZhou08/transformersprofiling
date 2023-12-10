@@ -83,6 +83,8 @@ def generate_ngrams(tokens, n=3):
 
 def worker(num, iteration_count): 
     idx_start, idx_end = subdatasets[num] 
+    if idx_start == idx_end: 
+        return 
     # subdatasplit = dataset[idx_start : idx_end] 
     print("worker {} started idx_start {} idx_end {}".format(num, idx_start, idx_end)) 
     batch_counter = Counter() 
@@ -111,7 +113,7 @@ def worker(num, iteration_count):
     most_common_3grams = dict(batch_counter) 
     most_common_3grams = [(ngram, count) for ngram, count in most_common_3grams.items()] 
     print("worker {} most_common_3grams {}".format(num, len(most_common_3grams))) 
-    with open(synthesized_dir_path + "mostcommon1000003gramsworker{}_iterationcount{}.json".format(num, iteration_count), "w") as f: 
+    with open(synthesized_dir_path + "mostcommon100000{}gramsworker{}_iterationcount{}.json".format(args.length_of_ngram, num, iteration_count), "w") as f: 
         json.dump(most_common_3grams, f) 
     # print("worker {} write file to {}".format(num, synthesized_dir_path + "mostcommon1000003gramsworker{}_iterationcount{}.json".format(num, iteration_count))) 
 
@@ -119,6 +121,8 @@ def worker(num, iteration_count):
 processes = [] 
 global_datasetidx = 0 
 num_iterations = args.num_pass_iteration 
+
+iteration_length = 0 
 
 for j in range(num_iterations): 
     print("iteration {}".format(j)) 
@@ -130,7 +134,18 @@ for j in range(num_iterations):
     subdivision_length = (length_of_subset + num_workers - 1)//num_workers 
     # subdatasets = [set_in_used[i : min(length_of_subset, (i + 1) * ((length_of_subset + num_workers - 1) // num_workers))] for i in range(num_workers)] # evenly partitioned the dataset into num_workers splits 
     # subdatasets = [set_in_used[k * subdivision_length : min(length_of_subset, (k + 1) * subdivision_length)] for k in range(num_workers)] 
-    subdatasets = [(k * subdivision_length, min(length_of_subset, (k + 1) * subdivision_length)) for k in range(num_workers)] 
+    subdatasets2 = [(k * subdivision_length, min(length_of_subset, (k + 1) * subdivision_length)) for k in range(num_workers)] 
+    iteration_length += length_of_dataset 
+    subdatasets = [] 
+    for idx_start, idx_end in subdatasets2: 
+        idx_start += iteration_length 
+        idx_end += iteration_length 
+        if idx_start >= length_of_dataset: 
+            subdatasets.append((length_of_dataset, length_of_dataset)) 
+        elif idx_end >= length_of_dataset: 
+            subdatasets.append((idx_start, length_of_dataset)) 
+        else: 
+            subdatasets.append((idx_start, idx_end)) 
     for i in range(num_workers): 
         p = mp.Process(target = worker, args = (i, j)) 
         processes.append(p) 
@@ -144,7 +159,7 @@ collection = Counter()
 for i in range(num_iterations): 
     for j in range(num_workers): 
         print(i, j) 
-        with open(synthesized_dir_path + "mostcommon1000003gramsworker{}_iterationcount{}.json".format(j, i), "r") as f: 
+        with open(synthesized_dir_path + "mostcommon100000{}gramsworker{}_iterationcount{}.json".format(args.length_of_ngram, j, i), "r") as f: 
             data = json.load(f) 
             print(len(data)) 
             for d in data: 
@@ -156,7 +171,7 @@ print("collection {}".format(len(collection)))
 
 globalhottestngram = collection.most_common(args.num_ngrams) 
 print(type(globalhottestngram), len(globalhottestngram)) 
-with open(synthesized_dir_path + "mostcommon1000003grams.json", "w") as f: 
+with open(synthesized_dir_path + "mostcommon100000{}grams.json".format(args.length_of_ngram), "w") as f: 
     json.dump(globalhottestngram, f) 
 
 greedy_finding = set() 
