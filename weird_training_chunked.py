@@ -838,6 +838,14 @@ def encode_with_truncation(examples):
                      return_attention_mask = True, return_tensors = "pt", truncation = True) 
 train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
 test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
+
+for i in range(len(train_dataset)): 
+    print(type(train_dataset[i])) 
+    for k, v in train_dataset[i]: 
+        print(k) 
+        print(v) 
+        exit(0) 
+exit(0) 
 # print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
 train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
