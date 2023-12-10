@@ -66,6 +66,7 @@ parser.add_argument("--num_ngrams", type = int, default = 100000)
 parser.add_argument("--length_of_ngram", type = int, default = 3) 
 parser.add_argument("--num_workers", type = int, default = 8) 
 parser.add_argument("--num_pass_iteration", type = int, default = 1) 
+parser.add_argument("--testing_mode", type = bool, default = False) 
 
 args = parser.parse_args() 
 
@@ -109,7 +110,7 @@ def worker(num, iteration_count):
             # print("worker {} length of three_ngrams {}".format(num, len(three_ngrams))) 
             batch_counter.update(three_ngrams) 
     # print("worker {} batch {}".format(num, len(batch_counter))) 
-    most_common_3grams = batch_counter.most_common(args.num_ngrams) 
+    most_common_3grams = batch_counter.most_common(2 * args.num_ngrams) 
     most_common_3grams = dict(most_common_3grams) 
     most_common_3grams = [(ngram, count) for ngram, count in most_common_3grams.items()] 
     print("worker {} most_common_3grams {}".format(num, len(most_common_3grams))) 
@@ -175,8 +176,9 @@ print("collection {}".format(len(collection)))
 
 globalhottestngram = collection.most_common(args.num_ngrams) 
 print(type(globalhottestngram), len(globalhottestngram)) 
-with open(synthesized_dir_path + "mostcommon100000{}grams.json".format(args.length_of_ngram), "w") as f: 
-    json.dump(globalhottestngram, f) 
+if not args.testing_mode: 
+    with open(synthesized_dir_path + "mostcommon100000{}grams.json".format(args.length_of_ngram), "w") as f: 
+        json.dump(globalhottestngram, f) 
 
 greedy_finding = set() 
 for i in range(len(globalhottestngram)): 
