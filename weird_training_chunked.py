@@ -892,8 +892,8 @@ for i in range(len(train_dataset)):
         print(v) 
     break 
 
-train_dataset = d["train"].map(encode_with_truncation2, batched = True, num_proc = 4) 
-test_dataset = d['test'].map(encode_with_truncation2, batched = True, num_proc = 4) 
+train_dataset = train_dataset.map(encode_with_truncation2, batched = True, num_proc = 4) 
+test_dataset = test_dataset.map(encode_with_truncation2, batched = True, num_proc = 4) 
 
 for i in range(len(train_dataset)): 
     print(type(train_dataset[i])) 
