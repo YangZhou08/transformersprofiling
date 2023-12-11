@@ -939,7 +939,7 @@ for i in range(10):
                     collection_verify.append(v[i]) 
 
 for it in collection_verify: 
-    print(colored(tokenizer(it)["input_ids"], "blue"), end = ", ") 
+    print(colored(tokenizer.decode(torch.tensor(it)), "blue"), end = ", ") 
 exit(0) 
 
 # print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
