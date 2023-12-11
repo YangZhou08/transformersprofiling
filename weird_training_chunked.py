@@ -203,6 +203,16 @@ else:
 
 logger = logging.get_logger(__name__) 
 
+parser = argparse.ArgumentParser( 
+                    prog = "ProgramName", 
+                    description = "What the program does", 
+                    epilog = "Text at the bottom of help") 
+
+parser.add_argument("--n", type = int, default = 3) 
+
+args = parser.parse_args() 
+print(args) 
+
 def log_dict_converterc(filename, preproc, tokenizer): 
     import ast 
 
@@ -233,7 +243,11 @@ def log_dict_converterc(filename, preproc, tokenizer):
                     else: 
                         trial_key.append(seg) 
                 keybinding = "".join(trial_key) 
-                print(tokenizer(keybinding, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt")["input_ids"].squeeze(0)) 
+                encodedtensor = tokenizer(keybinding, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt")["input_ids"].squeeze(0) 
+                if encodedtensor[0].item() == 29871: 
+                    encodedtensor = encodedtensor[1: ] 
+                print(encodedtensor) 
+                assert encodedtensor.shape[0] == args.n 
                 
                 for seg in key: 
                     if seg == "<0x0A>": 
@@ -825,15 +839,6 @@ if args.embedding_pretrained:
     args.group2lr = None # we enforce it 
 print(args) 
 ''' 
-parser = argparse.ArgumentParser( 
-                    prog = "ProgramName", 
-                    description = "What the program does", 
-                    epilog = "Text at the bottom of help") 
-
-parser.add_argument("--n", type = int, default = 3) 
-
-args = parser.parse_args() 
-print(args) 
 
 # defining tokenizer 
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
