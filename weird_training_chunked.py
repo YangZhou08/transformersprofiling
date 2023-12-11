@@ -176,7 +176,8 @@ import datetime
 hash_of_time = str(datetime.datetime.now()).split('.')[-1] 
 print("the hash of time is {}".format(hash_of_time)) 
 
-import socket
+import socket 
+import json 
 
 hostname = socket.gethostname()
 print("Hostname:", hostname)
@@ -203,11 +204,11 @@ def log_dict_converterc(filename, preproc, tokenizer):
     import ast 
 
     with open(filename, "r") as f: 
-        data = f.read() 
-
-        words = ast.literal_eval(data) 
-
-        data = {tuple(pairs): count for pairs, count in words} 
+        data = json.load(f) 
+        
+        print(len(data)) 
+        
+        data = {d[0]: d[1] for d in data} 
         if not preproc: 
             return data 
         else: 
@@ -218,6 +219,9 @@ def log_dict_converterc(filename, preproc, tokenizer):
             assert tokenizer is not None 
             output_keys = [] 
             for idx, key in enumerate(keys): 
+                print(type(key)) 
+                if not isinstance(key, list): 
+                    key = list(key) 
                 local_tensor = [] 
                 for seg in key: 
                     if seg == "<0x0A>": 
