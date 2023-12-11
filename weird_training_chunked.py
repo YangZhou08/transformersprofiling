@@ -922,11 +922,25 @@ for i in range(len(train_dataset)):
 train_dataset = train_dataset.map(encode_with_truncation2, batched = True, num_proc = 4) 
 test_dataset = test_dataset.map(encode_with_truncation2, batched = True, num_proc = 4) 
 
+collection_verify = [] 
 for i in range(10): 
     print(type(train_dataset[i])) 
     for k, v in train_dataset[i].items(): 
-        print(k) 
-        print(v) 
+        if k != "labels": 
+            print(k) 
+            print(v) 
+        else: 
+            print(k) 
+            for i in range(v.shape[0]): 
+                if v[i, 0].item() == -100: 
+                    print(v[i]) 
+                else: 
+                    print(colored(v[i], "yellow")) 
+                    collection_verify.append(v[i]) 
+
+for it in collection_verify: 
+    print(colored(tokenizer(it)["input_ids"], "blue"), end = ", ") 
+exit(0) 
 
 # print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
 train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
