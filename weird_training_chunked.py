@@ -889,7 +889,7 @@ for i in range(len(train_dataset)):
     print(type(train_dataset[i])) 
     for k, v in train_dataset[i].items(): 
         print("type of k is {} and k is {}".format(type(k), k)) 
-        print(v) 
+        print("type of v is {} and v is {}".format(type(v), v)) 
     break 
 
 train_dataset = train_dataset.map(encode_with_truncation2, batched = True, num_proc = 4) 
