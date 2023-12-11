@@ -901,6 +901,7 @@ def encode_with_truncation2(examples):
     
     shift_labels_expand = shift_labels.long().unsqueeze(2) # shape of (batch_size, seq_len - n, 1, n) 
     hot_n_grams_expand = hot_1000_3_grams.unsqueeze(0).unsqueeze(0).to(shift_labels_expand.device) # shape (1, 1, hottestcount, n) 
+    print("hot n grams expand shape {}".format(hot_n_grams_expand.shape)) 
     matches = torch.all(shift_labels_expand == hot_n_grams_expand, dim = -1).to(torch.bool) # matches have dimension of (batch_size, seq_len - n, hottestcount) 
     mask = ~torch.any(matches, dim = -1) # mask has dimension of (batch_size, seq_len - n) 
     mask = mask.unsqueeze(-1).expand(-1, -1, args.n) # mask has dimension of (batch_size, seq_len - n, n) 
