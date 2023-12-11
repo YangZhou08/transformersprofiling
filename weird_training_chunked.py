@@ -232,7 +232,7 @@ def log_dict_converterc(filename, preproc, tokenizer):
             assert tokenizer is not None 
             output_keys = [] 
             for idx, key in tqdm(enumerate(keys)): 
-                print(key) 
+                # print(key) 
                 if not isinstance(key, list): 
                     key = list(key) 
                 trial_key = [] 
@@ -245,11 +245,11 @@ def log_dict_converterc(filename, preproc, tokenizer):
                 encodedtensor = tokenizer(keybinding, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt")["input_ids"].squeeze(0) 
                 if encodedtensor[0].item() == 29871: 
                     encodedtensor = encodedtensor[1: ] 
-                print(encodedtensor) 
+                # print(encodedtensor) 
                 tokencat = encodedtensor 
                 if encodedtensor.shape[0] != args.n: 
                     local_tensor = [] 
-                    print(colored("encodedtensor shape not equalling what we want", "red")) 
+                    # print(colored("encodedtensor shape not equalling what we want", "red")) 
                     if encodedtensor.shape[0] < args.n: 
                         for seg in key: 
                             if seg == "<0x0A>": 
@@ -257,7 +257,7 @@ def log_dict_converterc(filename, preproc, tokenizer):
                             output_tokenized_keys = tokenizer(seg, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt") 
                             # local_tensor.append(output_tokenized_keys["input_ids"].squeeze(0)) 
                             tensorofinterest = output_tokenized_keys["input_ids"].squeeze(0) 
-                            print(tensorofinterest) 
+                            # print(tensorofinterest) 
                             # if local_tensor.shape[0] == 1: 
                             if tensorofinterest.shape[0] != 1: 
                                 # assert local_tensor.shape[0] == 2 
@@ -266,7 +266,7 @@ def log_dict_converterc(filename, preproc, tokenizer):
                                     tensorofinterest = tensorofinterest[1:] 
                             local_tensor.append(tensorofinterest) 
                         tokencat = torch.cat(local_tensor, dim = 0) 
-                        print(tokencat) 
+                        # print(tokencat) 
                 
                 # tokencat = torch.cat(local_tensor, dim = 0) 
                 if tokencat.shape[0] != args.n: 
@@ -864,7 +864,7 @@ tokenizer.padding_side = "left"
 # backup dataset 
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1.json', split = "train") 
 # onedataset = load_dataset('json', data_files = datasetsrc, split = "train[:1000]") 
-onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1_kernel5.json', split = "train[:1000]") 
+onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1_kernel5.json', split = "train") 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 d = onedataset.train_test_split(test_size = 0.05) 
 # print(d["train"], d["test"]) 
