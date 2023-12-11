@@ -886,8 +886,10 @@ test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 
 for i in range(len(train_dataset)): 
     print(type(train_dataset[i])) 
     for k, v in train_dataset[i].items(): 
-        print(k) 
+        print("type of k is {} and k is {}".format(type(k), k)) 
         print(v) 
+        break 
+    break 
 
 train_dataset = d["train"].map(encode_with_truncation2, batched = True, num_proc = 4) 
 test_dataset = d['test'].map(encode_with_truncation2, batched = True, num_proc = 4) 
