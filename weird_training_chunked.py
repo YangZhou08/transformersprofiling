@@ -855,9 +855,7 @@ def encode_with_truncation2(examples):
     examples need to have the "input_ids" fiels in it already 
     ''' 
     # first make the labels 
-    for k in examples.keys(): 
-        print(k) 
-    labels = examples["input_ids"].clone() 
+    labels = torch.tensor(examples["input_ids"]).clone() if isinstance(examples["input_ids"], list) else examples["input_ids"].clone() 
     if tokenizer.pad_token_id is not None: 
         labels[labels == tokenizer.pad_token_id] = -100 
     
