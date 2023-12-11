@@ -883,6 +883,12 @@ def encode_with_truncation2(examples):
 train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
 test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
 
+for i in range(len(train_dataset)): 
+    print(type(train_dataset[i])) 
+    for k, v in train_dataset[i].items(): 
+        print(k) 
+        print(v) 
+
 train_dataset = d["train"].map(encode_with_truncation2, batched = True, num_proc = 4) 
 test_dataset = d['test'].map(encode_with_truncation2, batched = True, num_proc = 4) 
 
