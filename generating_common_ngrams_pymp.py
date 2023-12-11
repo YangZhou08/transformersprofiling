@@ -71,6 +71,7 @@ parser.add_argument("--testing_mode", type = bool, default = False)
 parser.add_argument("--reduce_precision", type = bool, default = False) 
 
 args = parser.parse_args() 
+print(args) 
 
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 
