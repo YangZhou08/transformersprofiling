@@ -888,7 +888,6 @@ for i in range(len(train_dataset)):
     for k, v in train_dataset[i].items(): 
         print("type of k is {} and k is {}".format(type(k), k)) 
         print(v) 
-        break 
     break 
 
 train_dataset = d["train"].map(encode_with_truncation2, batched = True, num_proc = 4) 
