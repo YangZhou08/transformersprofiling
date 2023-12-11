@@ -286,6 +286,7 @@ def log_dict_converterc(filename, preproc, tokenizer):
                 # output_keys.append(output_tokenized_keys["input_ids"].squeeze(1)) 
             output_keys = torch.stack(output_keys, dim = 0) 
             print("output_keys shape is {}".format(output_keys.shape)) 
+            exit(0) 
             return output_keys 
 
 class CustomTrainer(Trainer): 
