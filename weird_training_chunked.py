@@ -316,6 +316,7 @@ class CustomTrainer(Trainer):
         # hot_n_grams = self.common_n_gram_dict.keys() 
 
         # further data collator steps 
+        print(type(model)) 
         assert isinstance(model, LlamaCausalLMWeirdTwo) 
         outputs = model(
             input_ids = input_ids, 
