@@ -888,7 +888,6 @@ for i in range(len(train_dataset)):
     for k, v in train_dataset[i].items(): 
         print("type of k is {} and k is {}".format(type(k), k)) 
         print("type of v is {} and v is {}".format(type(v), v)) 
-    break 
 
 train_dataset = train_dataset.map(encode_with_truncation2, batched = True, num_proc = 4) 
 test_dataset = test_dataset.map(encode_with_truncation2, batched = True, num_proc = 4) 
@@ -898,7 +897,7 @@ for i in range(len(train_dataset)):
     for k, v in train_dataset[i].items(): 
         print(k) 
         print(v) 
-        exit(0) 
+    exit(0) 
 
 # print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
 train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
