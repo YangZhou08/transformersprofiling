@@ -921,7 +921,7 @@ for i in range(len(train_dataset)):
 train_dataset = train_dataset.map(encode_with_truncation2, batched = True, num_proc = 4) 
 test_dataset = test_dataset.map(encode_with_truncation2, batched = True, num_proc = 4) 
 
-for i in range(len(train_dataset)): 
+for i in range(10): 
     print(type(train_dataset[i])) 
     for k, v in train_dataset[i].items(): 
         print(k) 
