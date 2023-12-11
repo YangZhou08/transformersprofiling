@@ -211,7 +211,7 @@ def log_dict_converterc(filename, preproc, tokenizer):
         
         print(len(data)) 
         
-        data = {d[0]: d[1] for d in data} 
+        data = {tuple(d[0]): d[1] for d in data} 
         if not preproc: 
             return data 
         else: 
