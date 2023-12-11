@@ -23,7 +23,9 @@ import numpy as np
 
 from ..models.bert import BertTokenizer, BertTokenizerFast
 from ..tokenization_utils_base import PreTrainedTokenizerBase
-from ..utils import PaddingStrategy
+from ..utils import PaddingStrategy 
+
+from termcolor import colored 
 
 
 InputDataClass = NewType("InputDataClass", Any)
@@ -979,12 +981,13 @@ class DataCollatorForLanguageModeling2(DataCollatorMixin):
                 batch["input_ids"], special_tokens_mask=special_tokens_mask
             )
         else:
-            labels = batch["input_ids"].clone()
-            if self.tokenizer.pad_token_id is not None:
-                labels[labels == self.tokenizer.pad_token_id] = -100
-            batch["labels"] = labels 
-            print("we got inside and trying to modify this function") 
-            exit(0) 
+            if "labels" not in batch.keys(): 
+                labels = batch["input_ids"].clone()
+                if self.tokenizer.pad_token_id is not None:
+                    labels[labels == self.tokenizer.pad_token_id] = -100
+                batch["labels"] = labels 
+            else: 
+                print(colored("labels are prepropulated so data_collator will not do anything", "red")) 
         return batch
 
     def torch_mask_tokens(self, inputs: Any, special_tokens_mask: Optional[Any] = None) -> Tuple[Any, Any]:

@@ -806,6 +806,16 @@ if args.embedding_pretrained:
     args.group2lr = None # we enforce it 
 print(args) 
 ''' 
+parser = argparse.ArgumentParser( 
+                    prog = "ProgramName", 
+                    description = "What the program does", 
+                    epilog = "Text at the bottom of help") 
+
+parser.add_argument("--n", type = int, default = 3) 
+
+args = parser.parse_args() 
+print(args) 
+
 # defining tokenizer 
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
@@ -832,20 +842,57 @@ d = onedataset.train_test_split(test_size = 0.05)
 # def encode_with_truncation(examples): 
     # return tokenizer(examples["text"], truncation=True, padding="max_length",
                 #    max_length=max_length, return_special_tokens_mask=True) 
+hot_1000_3_grams = log_dict_converterc("partial_c4_hot1000.txt", preproc = True, tokenizer = tokenizer) 
+
 def encode_with_truncation(examples): 
     # return tokenizer(examples["text"], truncation = True, padding = "max_length", 
                     #  max_length = max_length, return_special_tokens_mask = True) 
     return tokenizer(examples["text"], padding = "max_length", max_length = 128, 
                      return_attention_mask = True, return_tensors = "pt", truncation = True) 
+
+def encode_with_truncation2(examples): 
+    ''' 
+    examples need to have the "input_ids" fiels in it already 
+    ''' 
+    # first make the labels 
+    labels = examples["input_ids"].clone() 
+    if tokenizer.pad_token_id is not None: 
+        labels[labels == tokenizer.pad_token_id] = -100 
+    
+    # second shift labels in a way to do ngram loss 
+    shift_labels = [] 
+    originalseqlength = labels.shape[1] 
+    label_actual_mask = (labels[:, 1 : 1 + (originalseqlength - args.n)] != -100).to(torch.bool) 
+    for i in range(1, args.n + 1): 
+        shift_labels.append(labels[:, 1 : 1 + (originalseqlength - args.n)].contiguous()) 
+    shift_labels = torch.stack(shift_labels, dim = 2) 
+    label_actual_mask = label_actual_mask.unsqueeze(-1).expand(-1, -1, args.n) 
+    shift_labels[label_actual_mask] = -100 
+    print("shift labels shape {}".format(shift_labels.shape)) 
+    
+    shift_labels_expand = shift_labels.long().unsqueeze(2) # shape of (batch_size, seq_len - n, 1, n) 
+    hot_n_grams_expand = hot_1000_3_grams.unsqueeze(0).unsqueeze(0).to(shift_labels_expand.device) # shape (1, 1, hottestcount, n) 
+    matches = torch.all(shift_labels_expand == hot_n_grams_expand, dim = -1).to(torch.bool) # matches have dimension of (batch_size, seq_len - n, hottestcount) 
+    mask = ~torch.any(matches, dim = -1) # mask has dimension of (batch_size, seq_len - n) 
+    mask = mask.unsqueeze(-1).expand(-1, -1, args.n) # mask has dimension of (batch_size, seq_len - n, n) 
+    shift_labels[mask] = -100 
+    
+    outputform = {"labels": shift_labels} 
+    return outputform 
+    
 train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
 test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
-''' 
+
+train_dataset = d["train"].map(encode_with_truncation2, batched = True, num_proc = 4) 
+test_dataset = d['test'].map(encode_with_truncation2, batched = True, num_proc = 4) 
+
 for i in range(len(train_dataset)): 
     print(type(train_dataset[i])) 
     for k, v in train_dataset[i].items(): 
         print(k) 
         print(v) 
-'''
+        exit(0) 
+
 # print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
 train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
@@ -973,8 +1020,6 @@ def compute_metrics(p):
 
 # print(trainer.lr_scheduler.state_dict()) 
 # exit(0) 
-
-hot_1000_3_grams = log_dict_converterc("partial_c4_hot1000.txt", preproc = True, tokenizer = tokenizer) 
 
 trainer = CustomTrainer(
     model = model, 
