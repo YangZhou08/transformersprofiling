@@ -222,7 +222,7 @@ def log_dict_converterc(filename, preproc, tokenizer):
             assert tokenizer is not None 
             output_keys = [] 
             for idx, key in enumerate(keys): 
-                print(type(key)) 
+                print(key) 
                 if not isinstance(key, list): 
                     key = list(key) 
                 local_tensor = [] 
@@ -232,6 +232,7 @@ def log_dict_converterc(filename, preproc, tokenizer):
                     output_tokenized_keys = tokenizer(seg, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt") 
                     # local_tensor.append(output_tokenized_keys["input_ids"].squeeze(0)) 
                     tensorofinterest = output_tokenized_keys["input_ids"].squeeze(0) 
+                    print(tensorofinterest) 
                     # if local_tensor.shape[0] == 1: 
                     if tensorofinterest.shape[0] != 1: 
                         # assert local_tensor.shape[0] == 2 
@@ -240,6 +241,7 @@ def log_dict_converterc(filename, preproc, tokenizer):
                             # print(seg, tensorofinterest) 
                             tensorofinterest = tensorofinterest[1:] 
                     local_tensor.append(tensorofinterest) 
+                print(local_tensor) 
                 tokencat = torch.cat(local_tensor, dim = 0) 
                 if tokencat.shape[0] != 3: 
                     for i in range(tokencat.shape[0] - 2): 
