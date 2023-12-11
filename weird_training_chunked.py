@@ -932,7 +932,7 @@ for i in range(10):
         else: 
             print(k) 
             for i in range(len(v)): 
-                if v[i, 0].item() == -100: 
+                if v[i, 0] == -100: 
                     print(v[i]) 
                 else: 
                     print(colored(v[i], "yellow")) 
