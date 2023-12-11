@@ -940,11 +940,10 @@ for i in range(10):
 
 for it in collection_verify: 
     print(colored(tokenizer.decode(torch.tensor(it)), "blue"), end = ", ") 
-exit(0) 
 
 # print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
-train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
-test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask', 'labels']) 
+test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask', 'labels']) 
 '''
 # custom dataset 
 # defining custom dataset 
