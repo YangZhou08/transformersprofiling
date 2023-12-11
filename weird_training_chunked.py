@@ -226,6 +226,15 @@ def log_dict_converterc(filename, preproc, tokenizer):
                 if not isinstance(key, list): 
                     key = list(key) 
                 local_tensor = [] 
+                trial_key = [] 
+                for i, seg in enumerate(key): 
+                    if seg == "<0x0A>": 
+                        trial_key.append("\n") 
+                    else: 
+                        trial_key.append(seg) 
+                keybinding = "".join(trial_key) 
+                print(tokenizer(keybinding, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt")["input_ids"].squeeze(0)) 
+                
                 for seg in key: 
                     if seg == "<0x0A>": 
                         seg = "\n" 
@@ -241,6 +250,7 @@ def log_dict_converterc(filename, preproc, tokenizer):
                             # print(seg, tensorofinterest) 
                             tensorofinterest = tensorofinterest[1:] 
                     local_tensor.append(tensorofinterest) 
+                
                 print(local_tensor) 
                 tokencat = torch.cat(local_tensor, dim = 0) 
                 if tokencat.shape[0] != 3: 
