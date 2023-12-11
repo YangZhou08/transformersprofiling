@@ -926,7 +926,6 @@ for i in range(10):
     for k, v in train_dataset[i].items(): 
         print(k) 
         print(v) 
-    exit(0) 
 
 # print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
 train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
