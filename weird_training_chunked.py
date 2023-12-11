@@ -931,7 +931,7 @@ for i in range(10):
             print(v) 
         else: 
             print(k) 
-            for i in range(v.shape[0]): 
+            for i in range(len(v)): 
                 if v[i, 0].item() == -100: 
                     print(v[i]) 
                 else: 
