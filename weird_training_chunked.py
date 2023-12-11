@@ -231,7 +231,7 @@ def log_dict_converterc(filename, preproc, tokenizer):
             # then we tokenize them 
             assert tokenizer is not None 
             output_keys = [] 
-            for idx, key in enumerate(keys): 
+            for idx, key in tqdm(enumerate(keys)): 
                 print(key) 
                 if not isinstance(key, list): 
                     key = list(key) 
