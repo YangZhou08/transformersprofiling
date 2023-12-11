@@ -470,6 +470,7 @@ class CustomTrainer(Trainer):
             # print("length of logits is {}".format(len(logits))) 
             for index in range(len(logits)): 
                 print("logits[{}] is {}".format(index, logits[index].shape)) 
+            exit(0) 
             # print(colored("printing out the type of logits {}".format(type(logits)), "red")) 
             
             # original_model_logits = logits[1] # dimension (batch_size, seq_len, vocab_size) 
@@ -492,6 +493,7 @@ class CustomTrainer(Trainer):
             total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
             
             # computing the total accuracy of prediction 
+            '''
             shift_labels = [] 
             # original_seq_len = original_model_logits.shape[1] 
             original_seq_len = model_output_logits.shape[1] 
@@ -499,6 +501,8 @@ class CustomTrainer(Trainer):
             for i in range(1, self.n + 1): 
                 shift_labels.append(labels[:, i : i + original_seq_len - self.n].contiguous()) 
             shift_labels = torch.stack(shift_labels, dim = 2) # dimension (batch_size, seq_len - n, n) 
+            ''' 
+            
             print("shift_labels has shape {}".format(shift_labels.shape)) 
             # shift_labels[shift_labels.unsqueeze(-1).expand(-1, -1, 3)] = -100 
             # total_acc_poscount = (~(label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n).to(torch.bool))).to(torch.long).view(-1).sum(dim = 0).item() 
@@ -991,10 +995,10 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size= 25,  # evaluation batch size
     # logging_steps=1, 
-    logging_steps = 100,             # evaluate, log and save model checkpoints every 1000 step
+    logging_steps = 1,             # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 100, 
+    save_steps = 1, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     # learning_rate=2e-4, 
