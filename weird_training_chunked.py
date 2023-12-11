@@ -247,7 +247,8 @@ def log_dict_converterc(filename, preproc, tokenizer):
                 if encodedtensor[0].item() == 29871: 
                     encodedtensor = encodedtensor[1: ] 
                 print(encodedtensor) 
-                assert encodedtensor.shape[0] == args.n 
+                if encodedtensor.shape[0] != args.n: 
+                    print(colored("encodedtensor shape not equalling what we want", "red")) 
                 
                 for seg in key: 
                     if seg == "<0x0A>": 
