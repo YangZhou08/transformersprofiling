@@ -185,16 +185,19 @@ print("Hostname:", hostname)
 if "lovelace" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     datasetsrc = "/home/yangzho6/c4_parts/downloads/c4_file2.json" 
+    synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/" 
     dir_models = "/home/yangzho6/model_checkpoints" 
     dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
 elif "ada" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     datasetsrc = "/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json" 
+    synthesized_dir_path = "/home/beidic/yangzho6/c4llm_synthesized/" 
     dir_models = "/home/beidic/yangzho6/model_checkpoints" 
     dir_sdata = "/home/beidic/yangzho6/c4llm_synthesized/" 
 else: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     datasetsrc = "/home/yangzho6/c4_parts/downloads/c4_file2.json" 
+    synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/" 
     dir_models = "/home/yangzho6/model_checkpoints" 
     dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
 
@@ -846,7 +849,7 @@ d = onedataset.train_test_split(test_size = 0.05)
 # def encode_with_truncation(examples): 
     # return tokenizer(examples["text"], truncation=True, padding="max_length",
                 #    max_length=max_length, return_special_tokens_mask=True) 
-hot_1000_3_grams = log_dict_converterc("partial_c4_hot1000.txt", preproc = True, tokenizer = tokenizer) 
+hot_1000_3_grams = log_dict_converterc(synthesized_dir_path + "mostcommon100000{}grams.json".format(args.n), preproc = True, tokenizer = tokenizer) 
 
 def encode_with_truncation(examples): 
     # return tokenizer(examples["text"], truncation = True, padding = "max_length", 
