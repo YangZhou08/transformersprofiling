@@ -38,7 +38,8 @@ print("Hostname:", hostname)
 
 if "lovelace" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
-    datasetsrc = "/home/yangzho6/c4_parts/downloads/c4_file2.json" 
+    # datasetsrc = "/home/yangzho6/c4_parts/downloads/c4_file2.json" 
+    datasetsrc = "/home/yangzho6/c4llm_synthesized/c4synthesized_file1_kernel5.json" 
     dir_models = "/home/yangzho6/model_checkpoints" 
     synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/" 
     synthesized_data_path = "/home/yangzho6/c4llm_synthesized/tensor_dir/" 
