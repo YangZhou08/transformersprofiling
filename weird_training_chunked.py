@@ -891,9 +891,9 @@ def encode_with_truncation2(examples):
     # second shift labels in a way to do ngram loss 
     shift_labels = [] 
     originalseqlength = labels.shape[1] 
-    label_actual_mask = (labels[:, 1 : 1 + (originalseqlength - args.n)] != -100).to(torch.bool) 
+    label_actual_mask = (labels[:, 1 : 1 + (originalseqlength - args.n)] == -100).to(torch.bool) 
     for i in range(1, args.n + 1): 
-        shift_labels.append(labels[:, 1 : 1 + (originalseqlength - args.n)].contiguous()) 
+        shift_labels.append(labels[:, i : i + (originalseqlength - args.n)].contiguous()) 
     shift_labels = torch.stack(shift_labels, dim = 2) 
     label_actual_mask = label_actual_mask.unsqueeze(-1).expand(-1, -1, args.n) 
     shift_labels[label_actual_mask] = -100 
