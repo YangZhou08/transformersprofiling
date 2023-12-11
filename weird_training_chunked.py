@@ -235,7 +235,6 @@ def log_dict_converterc(filename, preproc, tokenizer):
                 print(key) 
                 if not isinstance(key, list): 
                     key = list(key) 
-                local_tensor = [] 
                 trial_key = [] 
                 for i, seg in enumerate(key): 
                     if seg == "<0x0A>": 
@@ -247,31 +246,33 @@ def log_dict_converterc(filename, preproc, tokenizer):
                 if encodedtensor[0].item() == 29871: 
                     encodedtensor = encodedtensor[1: ] 
                 print(encodedtensor) 
+                tokencat = encodedtensor 
                 if encodedtensor.shape[0] != args.n: 
+                    local_tensor = [] 
                     print(colored("encodedtensor shape not equalling what we want", "red")) 
-                '''
-                for seg in key: 
-                    if seg == "<0x0A>": 
-                        seg = "\n" 
-                    output_tokenized_keys = tokenizer(seg, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt") 
-                    # local_tensor.append(output_tokenized_keys["input_ids"].squeeze(0)) 
-                    tensorofinterest = output_tokenized_keys["input_ids"].squeeze(0) 
-                    print(tensorofinterest) 
-                    # if local_tensor.shape[0] == 1: 
-                    if tensorofinterest.shape[0] != 1: 
-                        # assert local_tensor.shape[0] == 2 
-                        assert tensorofinterest.shape[0] == 2 
-                        if tensorofinterest[0] == 29871: 
-                            # print(seg, tensorofinterest) 
-                            tensorofinterest = tensorofinterest[1:] 
-                    local_tensor.append(tensorofinterest) 
-                ''' 
+                    if encodedtensor.shape[0] < args.n: 
+                        for seg in key: 
+                            if seg == "<0x0A>": 
+                                seg = "\n" 
+                            output_tokenized_keys = tokenizer(seg, add_special_tokens = False, return_attention_mask = False, return_tensors = "pt") 
+                            # local_tensor.append(output_tokenized_keys["input_ids"].squeeze(0)) 
+                            tensorofinterest = output_tokenized_keys["input_ids"].squeeze(0) 
+                            print(tensorofinterest) 
+                            # if local_tensor.shape[0] == 1: 
+                            if tensorofinterest.shape[0] != 1: 
+                                # assert local_tensor.shape[0] == 2 
+                                assert tensorofinterest.shape[0] == 2 
+                                if tensorofinterest[0] == 29871: 
+                                    # print(seg, tensorofinterest) 
+                                    tensorofinterest = tensorofinterest[1:] 
+                            local_tensor.append(tensorofinterest) 
+                        tokencat = torch.cat(local_tensor, dim = 0) 
+                        print(tokencat) 
                 
                 # tokencat = torch.cat(local_tensor, dim = 0) 
-                tokencat = encodedtensor 
-                if tokencat.shape[0] != 3: 
-                    for i in range(tokencat.shape[0] - 2): 
-                        cat1 = tokencat[i : i + 3] 
+                if tokencat.shape[0] != args.n: 
+                    for i in range(tokencat.shape[0] - (args.n - 1)): 
+                        cat1 = tokencat[i : i + args.n] 
                         output_keys.append(cat1) 
                         print(colored("adding tokens tensor {}".format(cat1), "yellow")) 
                 else: 
