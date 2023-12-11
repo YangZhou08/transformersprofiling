@@ -249,7 +249,7 @@ def log_dict_converterc(filename, preproc, tokenizer):
                 print(encodedtensor) 
                 if encodedtensor.shape[0] != args.n: 
                     print(colored("encodedtensor shape not equalling what we want", "red")) 
-                
+                '''
                 for seg in key: 
                     if seg == "<0x0A>": 
                         seg = "\n" 
@@ -265,15 +265,18 @@ def log_dict_converterc(filename, preproc, tokenizer):
                             # print(seg, tensorofinterest) 
                             tensorofinterest = tensorofinterest[1:] 
                     local_tensor.append(tensorofinterest) 
+                ''' 
                 
-                print(local_tensor) 
-                tokencat = torch.cat(local_tensor, dim = 0) 
+                # tokencat = torch.cat(local_tensor, dim = 0) 
+                tokencat = encodedtensor 
                 if tokencat.shape[0] != 3: 
                     for i in range(tokencat.shape[0] - 2): 
                         cat1 = tokencat[i : i + 3] 
                         output_keys.append(cat1) 
+                        print(colored("adding tokens tensor {}".format(cat1), "yellow")) 
                 else: 
                     output_keys.append(tokencat) 
+                    print(colored("adding tokens tensor {}".format(tokencat), "yellow")) 
                 '''
                 print(local_tensor) 
                 for seg in local_tensor: 
@@ -282,6 +285,7 @@ def log_dict_converterc(filename, preproc, tokenizer):
                 ''' 
                 # output_keys.append(output_tokenized_keys["input_ids"].squeeze(1)) 
             output_keys = torch.stack(output_keys, dim = 0) 
+            print("output_keys shape is {}".format(output_keys.shape)) 
             return output_keys 
 
 class CustomTrainer(Trainer): 
