@@ -909,10 +909,15 @@ def encode_with_truncation2(examples):
     print("hot n grams expand shape {}".format(hot_n_grams_expand.shape)) 
     matches = torch.all(shift_labels_expand == hot_n_grams_expand, dim = -1).to(torch.bool) # matches have dimension of (batch_size, seq_len - n, hottestcount) 
     mask = ~torch.any(matches, dim = -1) # mask has dimension of (batch_size, seq_len - n) 
+    
+    # do a bit stats 
+    total_pos = mask.numel() 
+    total_found_num = torch.sum((~mask).view(-1), dim = 0).item() 
+    
     mask = mask.unsqueeze(-1).expand(-1, -1, args.n) # mask has dimension of (batch_size, seq_len - n, n) 
     shift_labels[mask] = -100 
     
-    outputform = {"labels": shift_labels} 
+    outputform = {"labels": shift_labels, "total_pos": total_pos, "total_found_num": total_found_num} 
     return outputform 
     
 train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
