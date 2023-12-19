@@ -911,8 +911,8 @@ def encode_with_truncation2(examples):
     mask = ~torch.any(matches, dim = -1) # mask has dimension of (batch_size, seq_len - n) 
     
     # do a bit stats 
-    total_pos = torch.tensor(mask.numel()).to(shift_labels.device) 
-    total_found_num = torch.sum((~mask).view(-1), dim = 0) 
+    total_pos = torch.tensor(mask.numel()).reshape(1, -1).to(shift_labels.device) 
+    total_found_num = torch.sum((~mask).view(-1), dim = 0).reshape(1, -1) 
     
     mask = mask.unsqueeze(-1).expand(-1, -1, args.n) # mask has dimension of (batch_size, seq_len - n, n) 
     shift_labels[mask] = -100 
