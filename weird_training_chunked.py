@@ -933,6 +933,14 @@ for i in range(len(train_dataset)):
 train_dataset = train_dataset.map(encode_with_truncation2, batched = True, num_proc = 4) 
 test_dataset = test_dataset.map(encode_with_truncation2, batched = True, num_proc = 4) 
 
+total_seq_count = 0 
+total_found_seg_collector = 0 
+for example in train_dataset: 
+    total_seq_count += example["total_pos"].reshape(-1).sum(dim = 0).item() 
+    total_found_seg_collector += example["total_found_num"].sum(dim = 0).item() 
+
+print("percentage of found segments is {} total seq found is {} total word in the train dataset is {}".format(total_found_seg_collector / total_seq_count, total_found_seg_collector, total_seq_count)) 
+
 collection_verify = [] 
 for i in range(10): 
     print(type(train_dataset[i])) 
