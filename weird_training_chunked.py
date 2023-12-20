@@ -477,7 +477,8 @@ class CustomTrainer(Trainer):
             
             # original_model_logits = logits[1] # dimension (batch_size, seq_len, vocab_size) 
             model_output_logits = logits[0] # dimension (batch_size, seq_len, n, vocab_size) 
-            label_actual_mask = logits[1] # dimension (batch_size, seq_len - n) 
+            # label_actual_mask = logits[1] # dimension (batch_size, seq_len - n) 
+            label_actual_mask = (labels != -100).to(torch.bool) 
             '''
             # besides, we also want to know how many of the tokens here actually has their ngram found out 
             assert old_label_mask.shape[1] == label_actual_mask.shape[1] and old_label_mask.shape[0] == label_actual_mask.shape[0] 
@@ -501,29 +502,41 @@ class CustomTrainer(Trainer):
             total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
             
             # computing the total accuracy of prediction 
-            '''
-            shift_labels = [] 
-            # original_seq_len = original_model_logits.shape[1] 
-            original_seq_len = model_output_logits.shape[1] 
-            print(colored("original seq len is {}".format(original_seq_len), "yellow")) 
-            for i in range(1, self.n + 1): 
-                shift_labels.append(labels[:, i : i + original_seq_len - self.n].contiguous()) 
-            shift_labels = torch.stack(shift_labels, dim = 2) # dimension (batch_size, seq_len - n, n) 
-            ''' 
-            shift_labels = label_actual_mask 
-            print("shift_labels has shape {}".format(shift_labels.shape)) 
-            # shift_labels[shift_labels.unsqueeze(-1).expand(-1, -1, 3)] = -100 
-            # total_acc_poscount = (~(label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n).to(torch.bool))).to(torch.long).view(-1).sum(dim = 0).item() 
-            total_acc_poscount = (label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n).to(torch.bool)).to(torch.long).view(-1).sum(dim = 0).item() 
-            model_output_logits2 = model_output_logits[:, :-(self.n), :, :].contiguous() 
-            pred = torch.argmax(model_output_logits2, dim = -1) 
-            print("pred has shape {}, while shift_labels has shape {}".format(pred.shape, shift_labels.shape)) 
-            assert pred.shape == shift_labels.shape 
-            correctness_matrix = (pred == shift_labels).to(torch.long) # 1 for for matching while 0 is for not matching 
-            # filter the matrix with the original filter 
-            correctness_matrix = correctness_matrix * (label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n)) 
-            correct_words = torch.sum(correctness_matrix.view(-1), dim = 0) 
-            print(colored("total counted words is {} correct words is {}".format(total_acc_poscount, correct_words), "yellow")) 
+            
+            if self.labels.shape[-1] != self.n: 
+                shift_labels = [] 
+                # original_seq_len = original_model_logits.shape[1] 
+                original_seq_len = model_output_logits.shape[1] 
+                print(colored("original seq len is {}".format(original_seq_len), "yellow")) 
+                for i in range(1, self.n + 1): 
+                    shift_labels.append(labels[:, i : i + original_seq_len - self.n].contiguous()) 
+                shift_labels = torch.stack(shift_labels, dim = 2) # dimension (batch_size, seq_len - n, n) 
+
+                shift_labels = label_actual_mask 
+                print("shift_labels has shape {}".format(shift_labels.shape)) 
+                # shift_labels[shift_labels.unsqueeze(-1).expand(-1, -1, 3)] = -100 
+                # total_acc_poscount = (~(label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n).to(torch.bool))).to(torch.long).view(-1).sum(dim = 0).item() 
+                total_acc_poscount = (label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n).to(torch.bool)).to(torch.long).view(-1).sum(dim = 0).item() 
+                model_output_logits2 = model_output_logits[:, :-(self.n), :, :].contiguous() 
+                pred = torch.argmax(model_output_logits2, dim = -1) 
+                print("pred has shape {}, while shift_labels has shape {}".format(pred.shape, shift_labels.shape)) 
+                assert pred.shape == shift_labels.shape 
+                correctness_matrix = (pred == shift_labels).to(torch.long) # 1 for for matching while 0 is for not matching 
+                # filter the matrix with the original filter 
+                correctness_matrix = correctness_matrix * (label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n)) 
+                correct_words = torch.sum(correctness_matrix.view(-1), dim = 0) 
+                print(colored("total counted words is {} correct words is {}".format(total_acc_poscount, correct_words), "yellow")) 
+            else: 
+                shift_labels = labels 
+                total_acc_poscount = (labels != -100).to(torch.long).view(-1).sum(dim = 0).item() 
+                model_output_logits2 = model_output_logits[:, :-(self.n), :, :].contiguous() 
+                pred = torch.argmax(model_output_logits2, dim = -1) 
+                print("pred has shape {}, while shift_labels has shape {}".format(pred.shape, shift_labels.shape)) 
+                assert pred.shape == shift_labels.shape 
+                correctness_matrix = (pred == shift_labels).to(torch.long) # 1 for for matching while 0 is for not matching 
+                correctness_matrix = correctness_matrix * (label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n)) 
+                correct_words = torch.sum(correctness_matrix.view(-1), dim = 0) 
+                print(colored("total counted words is {} correct words is {}".format(total_acc_poscount, correct_words), "yellow")) 
             
             # nothing fancy now, just greedy speculative sampling 
             # starting from 64th token, the rest 64th token should be used to compute the acceptance length 
