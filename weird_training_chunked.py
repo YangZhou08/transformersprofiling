@@ -184,13 +184,15 @@ print("Hostname:", hostname)
 
 if "lovelace" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
-    datasetsrc = "/home/yangzho6/c4_parts/downloads/c4_file2.json" 
+    # datasetsrc = "/home/yangzho6/c4_parts/downloads/c4_file2.json" 
+    datasetsrc = "/home/yangzho6/c4llm_synthesized/c4synthesized_file1_kernel5.json" 
     synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/" 
     dir_models = "/home/yangzho6/model_checkpoints" 
     dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
 elif "ada" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
-    datasetsrc = "/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json" 
+    # datasetsrc = "/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json" 
+    datasetsrc = "/home/beidic/yangzho6/c4llm_synthesized/c4synthesized_file1.json" 
     synthesized_dir_path = "/home/beidic/yangzho6/c4llm_synthesized/" 
     dir_models = "/home/beidic/yangzho6/model_checkpoints" 
     dir_sdata = "/home/beidic/yangzho6/c4llm_synthesized/" 
@@ -868,7 +870,7 @@ tokenizer.padding_side = "left"
 # backup dataset 
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1.json', split = "train") 
 # onedataset = load_dataset('json', data_files = datasetsrc, split = "train[:1000]") 
-onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1_kernel5.json', split = "train") 
+onedataset = load_dataset('json', data_files = datasetsrc, split = "train") 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 d = onedataset.train_test_split(test_size = 0.05) 
 # print(d["train"], d["test"]) 
