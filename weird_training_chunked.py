@@ -478,7 +478,10 @@ class CustomTrainer(Trainer):
             # original_model_logits = logits[1] # dimension (batch_size, seq_len, vocab_size) 
             model_output_logits = logits[0] # dimension (batch_size, seq_len, n, vocab_size) 
             # label_actual_mask = logits[1] # dimension (batch_size, seq_len - n) 
-            label_actual_mask = (labels != -100).to(torch.bool) 
+            if labels.shape[-1] != self.n: 
+                label_actual_mask = logits[1] 
+            else: 
+                label_actual_mask = (labels != -100).to(torch.bool) 
             '''
             # besides, we also want to know how many of the tokens here actually has their ngram found out 
             assert old_label_mask.shape[1] == label_actual_mask.shape[1] and old_label_mask.shape[0] == label_actual_mask.shape[0] 
@@ -534,7 +537,7 @@ class CustomTrainer(Trainer):
                 print("pred has shape {}, while shift_labels has shape {}".format(pred.shape, shift_labels.shape)) 
                 assert pred.shape == shift_labels.shape 
                 correctness_matrix = (pred == shift_labels).to(torch.long) # 1 for for matching while 0 is for not matching 
-                correctness_matrix = correctness_matrix * (label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n)) 
+                correctness_matrix = correctness_matrix * label_actual_mask 
                 correct_words = torch.sum(correctness_matrix.view(-1), dim = 0) 
                 print(colored("total counted words is {} correct words is {}".format(total_acc_poscount, correct_words), "yellow")) 
             
@@ -545,7 +548,10 @@ class CustomTrainer(Trainer):
             total_unfiltered_tokens = shift_labels.shape[1] - (self.generated_token_start_idx - 1) 
             pred = pred[:, self.generated_token_start_idx - 1 :, :] 
             shift_labels = shift_labels[:, self.generated_token_start_idx - 1 :, :] 
-            label_accept = label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n)[:, self.generated_token_start_idx - 1 :] 
+            if labels.shape[-1] != self.n: 
+                label_accept = label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n)[:, self.generated_token_start_idx - 1 :] 
+            else: 
+                label_accept = label_actual_mask[:, self.generated_token_start_idx - 1 :] 
             acceptance_intermediate = (pred == shift_labels).to(torch.long) # here one is for correct, zero is for incorrect 
             acceptance_intermediate = acceptance_intermediate * label_accept # after filtering one is for keep and correct, zero is for discard 
             dim0  = acceptance_intermediate.shape[0] 
