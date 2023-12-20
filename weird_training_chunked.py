@@ -157,7 +157,9 @@ if is_accelerate_available():
     if is_deepspeed_available():
         from accelerate.utils import DeepSpeedSchedulerWrapper 
 
-import subprocess
+import subprocess 
+
+import multiprocessing as mp 
 
 def get_git_commit_hash():
     try:
@@ -882,25 +884,6 @@ class CustomDataset:
             train_size = int(train_size * len(self)) 
         eval_size = len(self) - train_size 
         return random_split(self, [train_size, eval_size]) 
-'''
-parser = argparse.ArgumentParser(
-                    prog='ProgramName',
-                    description='What the program does',
-                    epilog='Text at the bottom of help') 
-
-parser.add_argument("--group1lr", type = float, default = 2e-4) 
-parser.add_argument("--group2lr", type = float, default = 2e-3) 
-parser.add_argument("--experiment_setting", type = str, default = "setting0") 
-parser.add_argument("--eval_mode", action="store_true", default = False) 
-parser.add_argument("--embedding_pretrained", action = "store_true", default = False) 
-parser.add_argument("--kernel_size", type = int, default = 4) 
-parser.add_argument("--use_plain_model", action = "store_true", default = False) 
-
-args = parser.parse_args() 
-if args.embedding_pretrained: 
-    args.group2lr = None # we enforce it 
-print(args) 
-''' 
 
 # defining tokenizer 
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
@@ -982,8 +965,8 @@ for i in range(len(train_dataset)):
         print("type of k is {} and k is {}".format(type(k), k)) 
         print("type of v is {} and v is {}".format(type(v), v)) 
 ''' 
-train_dataset = train_dataset.map(encode_with_truncation2, batched = True, num_proc = 16) # 16 or 8 
-test_dataset = test_dataset.map(encode_with_truncation2, batched = True, num_proc = 16) # 16 or 8 
+train_dataset = train_dataset.map(encode_with_truncation2, batched = True, num_proc = 32) # 16 or 8 
+test_dataset = test_dataset.map(encode_with_truncation2, batched = True, num_proc = 32) # 16 or 8 
 
 collection_verify = [] 
 for i in range(10): 
@@ -1019,9 +1002,23 @@ train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.0
 
 total_seq_count = 0 
 total_found_seg_collector = 0 
-for example in tqdm(train_dataset): 
-    total_seq_count += example["total_pos"].reshape(-1).sum(dim = 0).item() 
-    total_found_seg_collector += example["total_found_num"].sum(dim = 0).item() 
+
+def ran_worker(start_idx, end_idx): 
+    total_seq_count = 0 
+    total_found_seg_collector = 0 
+    
+    for i in range(start_idx, end_idx): 
+        example = train_dataset[i] 
+        total_seq_count += example["total_pos"].reshape(-1).sum(dim = 0).item() 
+        total_found_seg_collector += example["total_found_num"].sum(dim = 0).item() 
+    
+    return {"total_seq_count": total_seq_count, "total_found_seg_collector": total_found_seg_collector} 
+
+with mp.Pool(processes = 8) as pool: 
+    results = pool.map(ran_worker, list(range(0, len(train_dataset), int((len(train_dataset) + 7)/8)))) 
+    for result in results: 
+        total_seq_count += result["total_seq_count"] 
+        total_found_seg_collector += result["total_found_seg_collector"] 
 
 print("percentage of found segments is {} total seq found is {} total word in the train dataset is {}".format(total_found_seg_collector / total_seq_count, total_found_seg_collector, total_seq_count)) 
 
