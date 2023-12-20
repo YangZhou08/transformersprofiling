@@ -1004,8 +1004,8 @@ total_seq_count = 0
 total_found_seg_collector = 0 
 
 def ran_worker(*boundstartend): 
-    start_idx = boundstartend[0] 
-    end_idx = boundstartend[1] 
+    # start_idx = boundstartend[0] 
+    (start_idx, end_idx) = boundstartend 
     total_seq_count = 0 
     total_found_seg_collector = 0 
     
@@ -1020,7 +1020,7 @@ with mp.Pool(processes = 8) as pool:
     listrank = list(range(0, len(train_dataset), int((len(train_dataset) + 7)/8))) 
     listrank2 = listrank[1 : ] + [len(train_dataset)] 
     arguments = zip(listrank, listrank2) 
-    arguments = [[a, b] for (a, b) in arguments] 
+    arguments = list(arguments) 
     results = pool.map(ran_worker, arguments) 
     for result in results: 
         total_seq_count += result["total_seq_count"] 
