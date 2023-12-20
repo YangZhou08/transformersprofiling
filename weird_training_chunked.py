@@ -466,7 +466,6 @@ class CustomTrainer(Trainer):
         loss, 
         input_attention_mask, 
         outside_step, 
-        old_label_mask, 
     ): 
         with torch.no_grad(): 
             from sklearn.metrics import accuracy_score, precision_recall_fscore_support
@@ -721,12 +720,12 @@ class CustomTrainer(Trainer):
             # print(colored("the shape of logits is {}".format(logits.shape), "yellow")) 
             # print(colored("the shape of labels is {}".format(labels.shape), "yellow")) 
             total_loss += loss.item() 
-            old_labels = inputs["input_ids"].clone() 
-            old_labels[old_labels == self.tokenizer.pad_token_id] = -100 
-            old_labels = old_labels[:, 1:] 
-            old_labels = old_labels[:, : -(self.n + 1)] 
-            old_labels = (old_labels != -100).to(torch.bool) 
-            local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"], step, old_labels) 
+            # old_labels = inputs["input_ids"].clone() 
+            # old_labels[old_labels == self.tokenizer.pad_token_id] = -100 
+            # old_labels = old_labels[:, 1:] 
+            # old_labels = old_labels[:, : -(self.n + 1)] 
+            # old_labels = (old_labels != -100).to(torch.bool) 
+            local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"], step) 
             total_correct_words += local_metrics["correct_words"] 
             total_words += local_metrics["total_words"] 
             total_length_token += local_metrics["total_counted_pos"] 
