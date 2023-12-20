@@ -1030,7 +1030,7 @@ print("percentage of found segments is {} total seq found is {} total word in th
 
 param_group = [] 
 module_projection_name = "output_n_projection.weight" 
-model = LlamaCausalLMWeirdTwo.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+model = LlamaCausalLMWeirdTwo.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models, lookaheadcount = args.n).to(torch.bfloat16).to(torch_device) 
 model.set_lookaheadcount(args.n) 
 for name, param in model.named_parameters(): 
     if name == module_projection_name: 
