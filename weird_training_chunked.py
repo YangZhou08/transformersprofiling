@@ -469,7 +469,7 @@ class CustomTrainer(Trainer):
         with torch.no_grad(): 
             from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
-            # print("length of logits is {}".format(len(logits))) 
+            print("length of logits is {}".format(len(logits))) 
             for index in range(len(logits)): 
                 print("logits[{}] is {}".format(index, logits[index].shape)) 
             exit(0) 
@@ -952,7 +952,7 @@ for i in range(10):
                     collection_verify.append(v[i]) 
 
 for it in collection_verify: 
-    print(colored(tokenizer.decode(torch.tensor(it)), "blue"), end = ", ") 
+    print(colored(tokenizer.decode(torch.tensor(it)), "blue"), end = ", ") # collection verified are the ngrams that appeared inthat 10 examples, not representative to the entire 10^5 ngrams collected 
 
 # print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
 train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask', 'labels', 'total_pos', 'total_found_num']) 
@@ -974,7 +974,8 @@ for example in train_dataset:
     total_found_seg_collector += example["total_found_num"].sum(dim = 0).item() 
 
 print("percentage of found segments is {} total seq found is {} total word in the train dataset is {}".format(total_found_seg_collector / total_seq_count, total_found_seg_collector, total_seq_count)) 
-time.sleep(3) 
+if has_wandb: 
+    wandb.log({"percentage of found segments": total_found_seg_collector / total_seq_count, "total seq found": total_found_seg_collector, "total word in the train dataset": total_seq_count}) 
 
 param_group = [] 
 module_projection_name = "output_n_projection.weight" 
