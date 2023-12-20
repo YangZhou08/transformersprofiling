@@ -869,8 +869,8 @@ tokenizer.padding_side = "left"
 
 # backup dataset 
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1.json', split = "train") 
-# onedataset = load_dataset('json', data_files = datasetsrc, split = "train[:1000]") 
 onedataset = load_dataset('json', data_files = datasetsrc, split = "train[:3000]") 
+# onedataset = load_dataset('json', data_files = datasetsrc, split = "train") 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 d = onedataset.train_test_split(test_size = 0.05) 
 # print(d["train"], d["test"]) 
@@ -935,15 +935,6 @@ for i in range(len(train_dataset)):
 train_dataset = train_dataset.map(encode_with_truncation2, batched = True, num_proc = 4) 
 test_dataset = test_dataset.map(encode_with_truncation2, batched = True, num_proc = 4) 
 
-total_seq_count = 0 
-total_found_seg_collector = 0 
-for example in train_dataset: 
-    total_seq_count += example["total_pos"].reshape(-1).sum(dim = 0).item() 
-    total_found_seg_collector += example["total_found_num"].sum(dim = 0).item() 
-
-print("percentage of found segments is {} total seq found is {} total word in the train dataset is {}".format(total_found_seg_collector / total_seq_count, total_found_seg_collector, total_seq_count)) 
-time.sleep(3) 
-
 collection_verify = [] 
 for i in range(10): 
     print(type(train_dataset[i])) 
@@ -975,6 +966,15 @@ datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer, kernel_s
 train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.05 = 36k 
                                                  # 356k * 0.99 = 352k 356k * 0.01 = 3.6k 
 ''' 
+
+total_seq_count = 0 
+total_found_seg_collector = 0 
+for example in train_dataset: 
+    total_seq_count += example["total_pos"].reshape(-1).sum(dim = 0).item() 
+    total_found_seg_collector += example["total_found_num"].sum(dim = 0).item() 
+
+print("percentage of found segments is {} total seq found is {} total word in the train dataset is {}".format(total_found_seg_collector / total_seq_count, total_found_seg_collector, total_seq_count)) 
+time.sleep(3) 
 
 param_group = [] 
 module_projection_name = "output_n_projection.weight" 
