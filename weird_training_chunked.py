@@ -789,10 +789,9 @@ class CustomTrainer(Trainer):
         
         # have an extra reference only when hotness measure is activated 
         length_diff = total_unfiltered_length - total_length_token # this is the number of tokens that are not filtered by the hotness measure 
-        extra_ref_acceptance_length = length_diff + total_acceptance_length # for all the tokens that doesn't have their corresponding ngram in the list, we use one entire forward pass to process them 
+        extra_ref_acceptance_length = total_acceptance_length # for all the tokens that doesn't have their corresponding ngram in the list, we use one entire forward pass to process them 
         print(colored("average_accpetance_length is {} total_acceptance_length is {} total_length_counted_token is {}".format(total_acceptance_length / total_length_token, total_acceptance_length, total_length_token), "cyan")) 
         print(colored("extra_ref_acceptance_length is {} extra_ref_total_acceptance_length {} extra_ref_total_unfiltered_length {}".format(extra_ref_acceptance_length / total_unfiltered_length, extra_ref_acceptance_length, total_unfiltered_length), "yellow")) 
-        exit(0) 
 
         metrics = {"accuracy": global_accuracy, "average_acceptance_length": total_acceptance_length / total_length_token} 
         print(colored(metrics, "magenta")) 
