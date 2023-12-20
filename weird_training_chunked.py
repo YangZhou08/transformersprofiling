@@ -510,7 +510,7 @@ class CustomTrainer(Trainer):
                 shift_labels.append(labels[:, i : i + original_seq_len - self.n].contiguous()) 
             shift_labels = torch.stack(shift_labels, dim = 2) # dimension (batch_size, seq_len - n, n) 
             ''' 
-            
+            shift_labels = label_actual_mask 
             print("shift_labels has shape {}".format(shift_labels.shape)) 
             # shift_labels[shift_labels.unsqueeze(-1).expand(-1, -1, 3)] = -100 
             # total_acc_poscount = (~(label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n).to(torch.bool))).to(torch.long).view(-1).sum(dim = 0).item() 
