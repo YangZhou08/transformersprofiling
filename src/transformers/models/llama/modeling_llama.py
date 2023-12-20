@@ -1493,10 +1493,10 @@ class LlamaModelWeirdAttentionMap(LlamaPreTrainedModel):
 class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
     _tied_weights_keys = ["lm_head.weight"]
 
-    def __init__(self, kernel_size, config): 
+    def __init__(self, config): 
         super().__init__(config)
         self.model = LlamaModelWeirdAttentionMap(config) 
-        self.lookaheadcount = kernel_size 
+        # self.lookaheadcount = kernel_size 
         self.output_n_projection = nn.Linear(config.hidden_size, config.hidden_size * self.lookaheadcount, bias = False) 
         self.vocab_size = config.vocab_size
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False) 
@@ -1522,6 +1522,9 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
 
     def get_decoder(self):
         return self.model 
+    
+    def set_lookaheadcount(self, lookaheadcount): 
+        self.lookaheadcount = lookaheadcount 
     
     @staticmethod 
     def plot_attention_map(attention_maps, layer_num, head_num, seq_length, filename):
