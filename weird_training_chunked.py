@@ -503,7 +503,7 @@ class CustomTrainer(Trainer):
             
             # computing the total accuracy of prediction 
             
-            if self.labels.shape[-1] != self.n: 
+            if labels.shape[-1] != self.n: 
                 shift_labels = [] 
                 # original_seq_len = original_model_logits.shape[1] 
                 original_seq_len = model_output_logits.shape[1] 
