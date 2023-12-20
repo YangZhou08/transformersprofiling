@@ -1003,7 +1003,7 @@ train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.0
 total_seq_count = 0 
 total_found_seg_collector = 0 
 
-def ran_worker(*boundstartend): 
+def ran_worker(boundstartend): 
     # start_idx = boundstartend[0] 
     (start_idx, end_idx) = boundstartend 
     total_seq_count = 0 
