@@ -902,8 +902,8 @@ tokenizer.padding_side = "left"
 
 # backup dataset 
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1.json', split = "train") 
-onedataset = load_dataset('json', data_files = datasetsrc, split = "train[:3000]") 
-# onedataset = load_dataset('json', data_files = datasetsrc, split = "train") 
+# onedataset = load_dataset('json', data_files = datasetsrc, split = "train[:3000]") 
+onedataset = load_dataset('json', data_files = datasetsrc, split = "train") 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 d = onedataset.train_test_split(test_size = 0.05) 
 # print(d["train"], d["test"]) 
@@ -1061,9 +1061,9 @@ training_args = TrainingArguments(
     # evaluation_strategy="steps",    # evaluate each `logging_steps` steps 
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size = 40, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size = 55, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
-    per_device_eval_batch_size= 35,  # evaluation batch size
+    per_device_eval_batch_size= 45,  # evaluation batch size
     # logging_steps=1, 
     logging_steps = 300,          # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
