@@ -965,8 +965,8 @@ for i in range(len(train_dataset)):
         print("type of k is {} and k is {}".format(type(k), k)) 
         print("type of v is {} and v is {}".format(type(v), v)) 
 ''' 
-train_dataset = train_dataset.map(encode_with_truncation2, batched = True, num_proc = 32) # 16 or 8 
-test_dataset = test_dataset.map(encode_with_truncation2, batched = True, num_proc = 32) # 16 or 8 
+train_dataset = train_dataset.map(encode_with_truncation2, batched = True, num_proc = 16) # 16 or 8 
+test_dataset = test_dataset.map(encode_with_truncation2, batched = True, num_proc = 16) # 16 or 8 
 
 collection_verify = [] 
 for i in range(10): 
