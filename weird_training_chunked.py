@@ -979,7 +979,7 @@ if has_wandb:
 
 param_group = [] 
 module_projection_name = "output_n_projection.weight" 
-model = LlamaCausalLMWeirdTwo.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+model = LlamaCausalLMWeirdTwo.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models, kernel_size = args.n).to(torch.bfloat16).to(torch_device) 
 for name, param in model.named_parameters(): 
     if name == module_projection_name: 
         print("we got inside this if statement") 
@@ -1101,7 +1101,7 @@ trainer = CustomTrainer(
     optimizers = (custom_optimizer, None), 
     common_n_gram_list = hot_1000_3_grams, 
     use_filtered_hot_labels = False, 
-    n = 4, 
+    n = args.n, 
 ) 
 
 torch.autograd.set_detect_anomaly(True) 
