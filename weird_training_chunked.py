@@ -940,6 +940,7 @@ for example in train_dataset:
     total_found_seg_collector += example["total_found_num"].sum(dim = 0).item() 
 
 print("percentage of found segments is {} total seq found is {} total word in the train dataset is {}".format(total_found_seg_collector / total_seq_count, total_found_seg_collector, total_seq_count)) 
+time.sleep(3) 
 
 collection_verify = [] 
 for i in range(10): 
