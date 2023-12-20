@@ -517,6 +517,7 @@ class CustomTrainer(Trainer):
             total_acc_poscount = (label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n).to(torch.bool)).to(torch.long).view(-1).sum(dim = 0).item() 
             model_output_logits2 = model_output_logits[:, :-(self.n), :, :].contiguous() 
             pred = torch.argmax(model_output_logits2, dim = -1) 
+            print("pred has shape {}, while shift_labels has shape {}".format(pred.shape, shift_labels.shape)) 
             assert pred.shape == shift_labels.shape 
             correctness_matrix = (pred == shift_labels).to(torch.long) # 1 for for matching while 0 is for not matching 
             # filter the matrix with the original filter 
