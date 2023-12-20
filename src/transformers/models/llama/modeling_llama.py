@@ -1493,13 +1493,13 @@ class LlamaModelWeirdAttentionMap(LlamaPreTrainedModel):
 class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
     _tied_weights_keys = ["lm_head.weight"]
 
-    def __init__(self, config): 
-        super().__init__(config)
-        self.model = LlamaModelWeirdAttentionMap(config) 
+    def __init__(self, *args, lookaheadcount = 3, **kwargs): 
+        super().__init__(*args, **kwargs) 
+        self.model = LlamaModelWeirdAttentionMap(*args, **kwargs) 
         self.lookaheadcount = 3 
-        self.output_n_projection = nn.Linear(config.hidden_size, config.hidden_size * self.lookaheadcount, bias = False) 
-        self.vocab_size = config.vocab_size
-        self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False) 
+        self.output_n_projection = nn.Linear(self.config.hidden_size, self.config.hidden_size * self.lookaheadcount, bias = False) 
+        self.vocab_size = self.config.vocab_size 
+        self.lm_head = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias=False) 
         self.act = nn.SiLU() 
 
         # Initialize weights and apply final processing
