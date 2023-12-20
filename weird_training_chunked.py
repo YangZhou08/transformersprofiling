@@ -845,7 +845,7 @@ class CustomDataset:
             filename = "c4synthesized_file1_kernel{}.json".format(kernel_size) 
         else: 
             filename = "c4synthesized_file1.json" 
-        self.dataset = load_dataset('json', data_files = self.synthesize_dir + filename, split = "train[:3000]") 
+        self.dataset = load_dataset('json', data_files = self.synthesize_dir + filename, split = "train") 
         self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70} 
         self.kernel_size = kernel_size 
         # self.dataset = self.dataset["train"][0: 5120] 
@@ -902,8 +902,8 @@ tokenizer.padding_side = "left"
 
 # backup dataset 
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1.json', split = "train") 
-# onedataset = load_dataset('json', data_files = datasetsrc, split = "train[:3000]") 
-onedataset = load_dataset('json', data_files = datasetsrc, split = "train") 
+onedataset = load_dataset('json', data_files = datasetsrc, split = "train[:3000]") 
+# onedataset = load_dataset('json', data_files = datasetsrc, split = "train") 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 d = onedataset.train_test_split(test_size = 0.05) 
 # print(d["train"], d["test"]) 
@@ -1015,7 +1015,12 @@ def ran_worker(start_idx, end_idx):
     return {"total_seq_count": total_seq_count, "total_found_seg_collector": total_found_seg_collector} 
 
 with mp.Pool(processes = 8) as pool: 
-    results = pool.map(ran_worker, list(range(0, len(train_dataset), int((len(train_dataset) + 7)/8)))) 
+    listrank = list(range(0, len(train_dataset), int((len(train_dataset) + 7)/8))) 
+    listrank2 = listrank[1 : ] + [len(train_dataset)] 
+    arguments = zip(listrank, listrank2) 
+    if isinstance(arguments, list) == False: 
+        arguments = list(arguments) 
+    results = pool.map(ran_worker, arguments) 
     for result in results: 
         total_seq_count += result["total_seq_count"] 
         total_found_seg_collector += result["total_found_seg_collector"] 
