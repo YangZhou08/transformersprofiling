@@ -479,12 +479,12 @@ class CustomTrainer(Trainer):
             # original_model_logits = logits[1] # dimension (batch_size, seq_len, vocab_size) 
             model_output_logits = logits[0] # dimension (batch_size, seq_len, n, vocab_size) 
             label_actual_mask = logits[1] # dimension (batch_size, seq_len - n) 
-            
+            '''
             # besides, we also want to know how many of the tokens here actually has their ngram found out 
             assert old_label_mask.shape[1] == label_actual_mask.shape[1] and old_label_mask.shape[0] == label_actual_mask.shape[0] 
             old_label_mask = old_label_mask.to(torch.long) 
             total_unfiltered_tokens = torch.sum(old_label_mask.view(-1), dim = 0).item() 
-            
+            ''' 
             # print("as a sanity check, we see the datatype of label_actual_mask is {}".format(label_actual_mask.dtype)) 
             # input_attention_mask = input_attention_mask[:, :-1] 
             input_attention_mask = input_attention_mask[:, 1:] 
