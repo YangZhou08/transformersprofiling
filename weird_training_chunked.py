@@ -546,6 +546,7 @@ class CustomTrainer(Trainer):
             # pred has shape (batch_size, seq_len - n, n) 
             # pred = pred[:, self.generated_token_start_idx :, :] 
             total_unfiltered_tokens = (shift_labels.shape[1] - (self.generated_token_start_idx - 1)) * shift_labels.shape[0] 
+            print("total unfiltered tokens is {}".format(total_unfiltered_tokens)) 
             pred = pred[:, self.generated_token_start_idx - 1 :, :] 
             shift_labels = shift_labels[:, self.generated_token_start_idx - 1 :, :] 
             if labels.shape[-1] != self.n: 
