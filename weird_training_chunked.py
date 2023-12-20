@@ -1019,7 +1019,7 @@ with mp.Pool(processes = 8) as pool:
     listrank2 = listrank[1 : ] + [len(train_dataset)] 
     arguments = zip(listrank, listrank2) 
     if isinstance(arguments, list) == False: 
-        arguments = list(arguments) 
+        arguments = [[a, b] for (a, b) in arguments] 
     results = pool.map(ran_worker, arguments) 
     for result in results: 
         total_seq_count += result["total_seq_count"] 
