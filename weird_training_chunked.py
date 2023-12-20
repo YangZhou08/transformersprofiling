@@ -49,7 +49,7 @@ try:
 except ImportError:
     has_wandb = False 
 
-has_wandb = False # disable for debugging 
+# has_wandb = False # disable for debugging 
 
 from src.transformers.utils import ( 
     ADAPTER_CONFIG_NAME,
