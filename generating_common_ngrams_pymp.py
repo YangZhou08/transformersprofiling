@@ -46,7 +46,7 @@ if "lovelace" in hostname:
 elif "ada" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     # datasetsrc = "/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json" 
-    datasetsrc = "/home/beidic/yangzho6/c4llm_synthesized/c4synthesized_file1/c4synthesized_file1.json" 
+    datasetsrc = "/home/beidic/yangzho6/c4llm_synthesized/c4synthesized_file1.json" 
     dir_models = "/home/beidic/yangzho6/model_checkpoints" 
     synthesized_dir_path = "/home/beidic/yangzho6/c4llm_synthesized/" 
     # synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/tensor_dir/" 
