@@ -291,7 +291,7 @@ def log_dict_converterc(filename, preproc, tokenizer):
             return output_keys 
 
 class CustomTrainer(Trainer): 
-    def __init__(self, common_n_gram_list, n = 3, use_filtered_hot_labels = False, generated_token_start_idx = 64, *args, **kwargs): 
+    def __init__(self, common_n_gram_list, n = 3, use_filtered_hot_labels = False, generated_token_start_idx = 64, tokenizer = None, *args, **kwargs): 
         super().__init__(*args, **kwargs) 
         self.n = n 
         self.common_n_gram_list = common_n_gram_list 
@@ -299,6 +299,7 @@ class CustomTrainer(Trainer):
         self.training_mode = True 
         self.generated_token_start_idx = generated_token_start_idx 
         self.iteration_count = 0 
+        self.tokenizer = tokenizer 
     
     def compute_loss(self, model, inputs, return_outputs=False):
         """
@@ -465,6 +466,7 @@ class CustomTrainer(Trainer):
         loss, 
         input_attention_mask, 
         outside_step, 
+        old_label_mask, 
     ): 
         with torch.no_grad(): 
             from sklearn.metrics import accuracy_score, precision_recall_fscore_support
@@ -472,12 +474,17 @@ class CustomTrainer(Trainer):
             print("length of logits is {}".format(len(logits))) 
             for index in range(len(logits)): 
                 print("logits[{}] is {}".format(index, logits[index].shape)) 
-            exit(0) 
             # print(colored("printing out the type of logits {}".format(type(logits)), "red")) 
             
             # original_model_logits = logits[1] # dimension (batch_size, seq_len, vocab_size) 
             model_output_logits = logits[0] # dimension (batch_size, seq_len, n, vocab_size) 
             label_actual_mask = logits[1] # dimension (batch_size, seq_len - n) 
+            
+            # besides, we also want to know how many of the tokens here actually has their ngram found out 
+            assert old_label_mask.shape[1] == label_actual_mask.shape[1] and old_label_mask.shape[0] == label_actual_mask.shape[0] 
+            old_label_mask = old_label_mask.to(torch.long) 
+            total_unfiltered_tokens = torch.sum(old_label_mask.view(-1), dim = 0).item() 
+            
             # print("as a sanity check, we see the datatype of label_actual_mask is {}".format(label_actual_mask.dtype)) 
             # input_attention_mask = input_attention_mask[:, :-1] 
             input_attention_mask = input_attention_mask[:, 1:] 
@@ -522,6 +529,7 @@ class CustomTrainer(Trainer):
             # starting from 64th token, the rest 64th token should be used to compute the acceptance length 
             # pred has shape (batch_size, seq_len - n, n) 
             # pred = pred[:, self.generated_token_start_idx :, :] 
+            total_unfiltered_tokens = shift_labels.shape[1] - (self.generated_token_start_idx - 1) 
             pred = pred[:, self.generated_token_start_idx - 1 :, :] 
             shift_labels = shift_labels[:, self.generated_token_start_idx - 1 :, :] 
             label_accept = label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n)[:, self.generated_token_start_idx - 1 :] 
@@ -593,6 +601,7 @@ class CustomTrainer(Trainer):
                     # print("total acceptance length is {}".format(total_acceptance_length)) 
                     # print("total counted pos is {}".format(total_counted_pos)) 
         
+        print("total unfiltered tokens is {}".format(total_unfiltered_tokens)) 
         print("total acceptance length is {}".format(total_acceptance_length)) 
         print("total counted pos is {}".format(total_counted_pos)) 
         print("average acceptance length is {}".format(total_acceptance_length / total_counted_pos)) 
@@ -600,7 +609,8 @@ class CustomTrainer(Trainer):
         # use preds to compute f1 score 
         # f1 = precision_recall_fscore_support(labels, preds, average = "weighted") 
         # return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "interest_correct_words": interest_correct_count, "interest_total_words": interest_token_count} 
-        return {"correct_words": correct_words, "total_words": total_acc_poscount, "total_counted_pos": total_counted_pos, "total_acceptance_length": total_acceptance_length, **holding_diff_dimensionacc} 
+        # return {"correct_words": correct_words, "total_words": total_acc_poscount, "total_counted_pos": total_counted_pos, "total_acceptance_length": total_acceptance_length, **holding_diff_dimensionacc} 
+        return {"correct_words": correct_words, "total_words": total_acc_poscount, "total_counted_pos": total_counted_pos, "total_acceptance_length": total_acceptance_length, "total_unfiltered_token": total_unfiltered_tokens, **holding_diff_dimensionacc} 
     
     def evaluation_loop(
         self,
@@ -684,6 +694,7 @@ class CustomTrainer(Trainer):
         total_loss = 0 # used to compute the correct perplexity 
         total_length_token = 0 
         total_acceptance_length = 0 
+        total_unfiltered_length = 0 
 
         observed_num_examples = 0 
         total_num_steps = len(dataloader) 
@@ -710,11 +721,17 @@ class CustomTrainer(Trainer):
             # print(colored("the shape of logits is {}".format(logits.shape), "yellow")) 
             # print(colored("the shape of labels is {}".format(labels.shape), "yellow")) 
             total_loss += loss.item() 
-            local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"], step) 
+            old_labels = inputs["input_ids"].clone() 
+            old_labels[old_labels == self.tokenizer.pad_token_id] = -100 
+            old_labels = old_labels[:, 1:] 
+            old_labels = old_labels[:, : -(self.n + 1)] 
+            old_labels = (old_labels != -100).to(torch.bool) 
+            local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"], step, old_labels) 
             total_correct_words += local_metrics["correct_words"] 
             total_words += local_metrics["total_words"] 
             total_length_token += local_metrics["total_counted_pos"] 
             total_acceptance_length += local_metrics["total_acceptance_length"] 
+            total_unfiltered_length += local_metrics["total_unfiltered_token"] 
             for i in range(0, self.n): 
                 # holding_diff_dimensionacc["dimension acc {}".format(i)] = local_metrics["dimension acc {}".format(i)] 
                 holding_diff_dimensionacc["dimension acc {}".format(i)].append(local_metrics["dimension acc {}".format(i)]) 
@@ -749,12 +766,23 @@ class CustomTrainer(Trainer):
         for i in range(self.n): 
             holding_dimsionacc["dimension acc {}".format(i)] = sum(holding_diff_dimensionacc["dimension acc {}".format(i)])/len(holding_diff_dimensionacc["dimension acc {}".format(i)]) 
             print("dimension {} has accuracy {}".format(i, holding_dimsionacc["dimension acc {}".format(i)])) 
+        
+        # have an extra reference only when hotness measure is activated 
+        length_diff = total_unfiltered_length - total_length_token # this is the number of tokens that are not filtered by the hotness measure 
+        extra_ref_acceptance_length = length_diff + total_acceptance_length # for all the tokens that doesn't have their corresponding ngram in the list, we use one entire forward pass to process them 
 
         metrics = {"accuracy": global_accuracy, "average_acceptance_length": total_acceptance_length / total_length_token} 
         print(colored(metrics, "magenta")) 
         if has_wandb: 
-            wandb.log({"global_eval_accuracy": global_accuracy, "average_acceptance_length": total_acceptance_length / total_length_token, "total_acceptance_length": total_acceptance_length, "total_length_counted_tokens": total_length_token, **holding_dimsionacc}) 
-
+            wandb.log({"global_eval_accuracy": global_accuracy, 
+                       "average_acceptance_length": total_acceptance_length / total_length_token, 
+                       "total_acceptance_length": total_acceptance_length, 
+                       "total_length_counted_tokens": total_length_token, 
+                       "extra_ref_acceptance_length": extra_ref_acceptance_length / total_unfiltered_length, 
+                       "extra_ref_total_acceptance_length": extra_ref_acceptance_length, 
+                       "extra_ref_total_unfiltered_length": total_unfiltered_length, 
+                       **holding_dimsionacc
+            }) 
         # # Metrics!
         # if self.compute_metrics is not None and all_preds is not None and all_labels is not None:
         #     if args.include_inputs_for_metrics:
