@@ -252,6 +252,7 @@ if __name__ == "__main__":
     
     inputs = tokenizer(text_prompt, return_tensors = "pt", return_attention_mask = True) 
     inputattentionmask = inputs["attention_mask"] 
+    inputattentionmask = inputattentionmask.to(dtype = torch.float32) 
     (batch_size, seq_length) = inputs["input_ids"].shape 
     
     past_key_value_length = 0 
