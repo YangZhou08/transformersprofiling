@@ -254,6 +254,7 @@ if __name__ == "__main__":
     inputattentionmask = inputs["attention_mask"] 
     inputattentionmask = inputattentionmask.to(dtype = torch.float32) 
     (batch_size, seq_length) = inputs["input_ids"].shape 
+    inputs["input_ids"] = inputs["input_ids"].to(dtype = torch.float32) # just to have a input of torch.float32 type 
     
     past_key_value_length = 0 
     
