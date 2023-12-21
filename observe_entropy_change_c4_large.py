@@ -196,8 +196,8 @@ else:
 
 logger = logging.get_logger(__name__) 
 
-# tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
-tokenizer = AutoTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+# tokenizer = AutoTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
 # tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 if tokenizer.pad_token is not None: 
     print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
@@ -209,7 +209,7 @@ tokenizer.padding_side = "left"
 list_of_datasets = ["c4_file{}.json".format(i) for i in range(1, 16)] 
 list_of_datasets = ["c4_file1.json"] 
 list_of_datasets = [dir_unprocessed_dataset + path for path in list_of_datasets] 
-onedataset = load_dataset("json", data_files = list_of_datasets, split = "train") 
+onedataset = load_dataset("json", data_files = list_of_datasets, split = "train[:100]") 
 d = onedataset.train_test_spit(test_size = 0.005) # 0.995 for training, 0.005 for testing 
 
 def encode_with_truncation(examples): 
