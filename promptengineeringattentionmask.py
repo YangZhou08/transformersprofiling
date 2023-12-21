@@ -40,7 +40,9 @@ def _modify_decoder_attention_mask(combined_attention_mask, dtype, mask_list_pos
     for i in range(len(condensed_token_idx_list) - 1): 
         # row_mask[:, :, condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
         # row_mask[condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
-        row_mask[condensed_token_idx_list[i + 1] : , condensed_token_idx_list[i] : condensed_token_idx_list[i + 1]] = 1 
+        if i == 0: 
+            continue 
+        row_mask[condensed_token_idx_list[i + 1] : condensed_token_idx_list[-1], condensed_token_idx_list[i] : condensed_token_idx_list[i + 1]] = 1 
     # print("row mask shape {}".format(row_mask.shape)) 
     row_mask = row_mask[None, None, :, :].expand(mask_shape).to(torch.bool) 
     row_mask = row_mask.to(device = combined_attention_mask.device) 
