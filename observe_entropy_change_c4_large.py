@@ -239,5 +239,5 @@ for i in range(20):
     outputs_prob = nn.Softmax(dim = -1)(outputs.logits) 
     outputs_prob_max = torch.max(outputs_prob, dim = -1) 
     print(outputs_prob_max) 
-    plt.hist(outputs_prob_max[0].cpu().numpy()) 
+    plt.hist(outputs_prob_max[0].detach().cpu().numpy()) 
     plt.savefig("outputs_prob_max_{}.png".format(i)) 
