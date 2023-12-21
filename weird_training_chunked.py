@@ -561,7 +561,7 @@ class CustomTrainer(Trainer):
             acceptance_intermediate = acceptance_intermediate * label_accept # after filtering one is for keep and correct, zero is for discard 
             dim0  = acceptance_intermediate.shape[0] 
             dim1 = acceptance_intermediate.shape[1] 
-            denom = torch.sum(label_accept.view(-1), dim = 0).item() 
+            denom = torch.sum(label_accept.reshape(-1), dim = 0).item() 
             # print("dim0 is {} dim1 is {}".format(dim0, dim1)) # we have to make sure dim0 and dim1 are assigned before we reshape acceptance_intermediate 
             # print("pred, atch size {}, first 20 elements on dim 0 are {}".format(0, pred[0, : 20, 0])) 
             # print("pred, batch size {}, first 20 elements on dim 1 are {}".format(0, pred[0, :20, 1])) 
@@ -571,7 +571,7 @@ class CustomTrainer(Trainer):
             # print("acceptance_intermediate, batch size {}, first 20 elements are {}".format(0, acceptance_intermediate[0, : 20, 1])) 
             holding_diff_dimensionacc = {} 
             for i in range(0, self.n): 
-                print("dimension {} has prediction accuracy: {}".format(i, torch.sum(acceptance_intermediate[:, :, i].view(-1), dim = 0).item() / denom))
+                print(colored("dimension {} has prediction accuracy: {}".format(i, torch.sum(acceptance_intermediate[:, :, i].view(-1), dim = 0).item() / denom), "green")) 
                 holding_diff_dimensionacc["dimension acc {}".format(i)] = torch.sum(acceptance_intermediate[:, :, i].view(-1), dim = 0).item() / denom 
             acceptance_intermediate = acceptance_intermediate.reshape(-1, self.n) 
             
