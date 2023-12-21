@@ -540,6 +540,7 @@ class CustomTrainer(Trainer):
                 print("pred has shape {}, while shift_labels has shape {}".format(pred.shape, shift_labels.shape)) 
                 assert pred.shape == shift_labels.shape 
                 correctness_matrix = (pred == shift_labels).to(torch.long) # 1 for for matching while 0 is for not matching 
+                print("correctness_matrix has shape {} {}".format(correctness_matrix.shape, torch.sum(correctness_matrix.view(-1), dim = 0))) 
                 correctness_matrix = correctness_matrix * label_actual_mask 
                 correct_words = torch.sum(correctness_matrix.view(-1), dim = 0) 
                 print(colored("total counted words is {} correct words is {}".format(total_acc_poscount, correct_words), "yellow")) 
