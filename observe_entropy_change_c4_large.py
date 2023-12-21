@@ -235,7 +235,7 @@ for i in range(20):
     print(tokenizer.decode(input_ids)) 
     labels = input_ids.clone() 
     labels[labels == tokenizer.pad_token_id] = -100 
-    outputs = large_model(input_ids = input_ids, attention_mask = attention_mask, labels = labels) 
+    outputs = large_model(input_ids = input_ids.unsqueeze(0), attention_mask = attention_mask.unsqueeze(0), labels = labels.unsqueeze(0))  
     outputs_prob = nn.Softmax(dim = -1)(outputs.logits) 
     outputs_prob_max = torch.max(outputs_prob, dim = -1) 
     print(outputs_prob_max) 
