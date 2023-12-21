@@ -275,7 +275,6 @@ if __name__ == "__main__":
         attention_mask, 
         dtype = inputs["input_ids"].dtype, 
         mask_list_pos = mask_list_pos, 
-        start_idx = 0, 
     ) 
         
     visualize_attention_mask(seq_length, attention_mask[0][0], "after_modification_prompt.jpg") 
