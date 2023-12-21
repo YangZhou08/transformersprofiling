@@ -32,7 +32,7 @@ def _modify_decoder_attention_mask(combined_attention_mask, dtype, mask_list_pos
     # row_mask[row_idx_masked_out] = 1 
     # row_mask[mask_list_pos] = 1 
     
-    row_mask[mask_list_pos[0] :, 0 : mask_list_pos[0]] = 1 
+    # row_mask[mask_list_pos[0] :, 0 : mask_list_pos[0]] = 1 
 
     # column dimensional masking 
     # condensed_token_idx_list = row_idx_masked_out 
@@ -40,8 +40,6 @@ def _modify_decoder_attention_mask(combined_attention_mask, dtype, mask_list_pos
     for i in range(len(condensed_token_idx_list) - 1): 
         # row_mask[:, :, condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
         # row_mask[condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
-        if i == 0: 
-            continue 
         row_mask[condensed_token_idx_list[i + 1] : condensed_token_idx_list[-1], condensed_token_idx_list[i] : condensed_token_idx_list[i + 1]] = 1 
     # print("row mask shape {}".format(row_mask.shape)) 
     row_mask = row_mask[None, None, :, :].expand(mask_shape).to(torch.bool) 
