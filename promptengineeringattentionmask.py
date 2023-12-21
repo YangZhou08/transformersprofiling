@@ -24,8 +24,8 @@ def _modify_decoder_attention_mask(combined_attention_mask, dtype, mask_list_pos
         '''
         mask_shape = combined_attention_mask.shape # (batch_size, 1, tgt_seq_len, src_seq_len) 
         seq_len = mask_shape[-1] 
-        start_idx = start_idx if start_idx is not None else self.start_idx 
-        kernel_size = kernel_size if kernel_size is not None else self.sliding_window_length 
+        start_idx = start_idx 
+        kernel_size = kernel_size 
         
         # row dimensional masking 
         # row_idx_masked_out = [start_idx + i * (kernel_size + 1) for i in range((seq_len - start_idx) / (kernel_size + 1))] 
