@@ -265,7 +265,8 @@ if __name__ == "__main__":
         past_key_value_length, 
     ) 
     
-    visualize_attention_mask(seq_length, attention_mask, "before modification.jpg") 
+    # attention mask has shape (1, 1, seq_length, seq_length) 
+    visualize_attention_mask(seq_length, attention_mask[0][0], "before modification.jpg") 
     
     mask_list_pos = list(range(5, seq_length, 7)) 
     print("mask_list_pos {}".format(mask_list_pos)) 
@@ -278,4 +279,4 @@ if __name__ == "__main__":
         start_idx = 0, 
     ) 
         
-    visualize_attention_mask(seq_length, attention_mask, "after modification.jpg") 
+    visualize_attention_mask(seq_length, attention_mask[0][0], "after modification.jpg") 
