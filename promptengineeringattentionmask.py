@@ -274,7 +274,7 @@ if __name__ == "__main__":
     # modify the attention mask 
     _modify_decoder_attention_mask(
         attention_mask, 
-        dtype = inputs["input_ids"].type, 
+        dtype = inputs["input_ids"].dtype, 
         mask_list_pos = mask_list_pos, 
         start_idx = 0, 
     ) 
