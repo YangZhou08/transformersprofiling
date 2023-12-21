@@ -8,7 +8,7 @@ from src.transformers.modeling_attn_mask_utils import AttentionMaskConverter, _p
 from typing import List, Optional, Tuple, Union 
 
 
-def _modify_decoder_attention_mask(self, combined_attention_mask, dtype, mask_list_pos, start_idx = None, kernel_size = None): 
+def _modify_decoder_attention_mask(combined_attention_mask, dtype, mask_list_pos, start_idx = None, kernel_size = None): 
         ''' 
         Modify the attention mask based on the mask_list_pos, which is a list of position for separation 
         in the modeling_llama.py, this function is of name _modify_decoder_attention_mask_for_hardest 
@@ -213,7 +213,7 @@ def _make_causal_mask(
     ) 
 
 # this function happens after inputs_embeds has been made, so there shouldn't be problem related to condensed tokens 
-def _prepare_decoder_attention_mask(self, attention_mask, input_shape, inputs_embeds, past_key_values_length): 
+def _prepare_decoder_attention_mask(attention_mask, input_shape, inputs_embeds, past_key_values_length): 
     combined_attention_mask = None 
     if input_shape[-1] > 1: 
         combined_attention_mask = _make_causal_mask(
