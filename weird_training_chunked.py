@@ -533,18 +533,17 @@ class CustomTrainer(Trainer):
                 print(colored("total counted words is {} correct words is {}".format(total_acc_poscount, correct_words), "yellow")) 
             else: 
                 shift_labels = labels 
-                print("shift_labels total tokens: {}".format(shift_labels.numel())) 
+                # print("shift_labels total tokens: {}".format(shift_labels.numel())) 
                 total_acc_poscount = (labels != -100).to(torch.long).view(-1).sum(dim = 0).item() 
                 model_output_logits2 = model_output_logits[:, :-(self.n), :, :].contiguous() 
                 pred = torch.argmax(model_output_logits2, dim = -1) 
-                print("pred has shape {}, while shift_labels has shape {}".format(pred.shape, shift_labels.shape)) 
+                # print("pred has shape {}, while shift_labels has shape {}".format(pred.shape, shift_labels.shape)) 
                 assert pred.shape == shift_labels.shape 
                 correctness_matrix = (pred == shift_labels).to(torch.long) # 1 for for matching while 0 is for not matching 
-                print("correctness_matrix has shape {} {}".format(correctness_matrix.shape, torch.sum(correctness_matrix.view(-1), dim = 0))) 
+                # print("correctness_matrix has shape {} {}".format(correctness_matrix.shape, torch.sum(correctness_matrix.view(-1), dim = 0))) 
                 correctness_matrix = correctness_matrix * label_actual_mask 
                 correct_words = torch.sum(correctness_matrix.view(-1), dim = 0) 
                 print(colored("total counted words is {} correct words is {}".format(total_acc_poscount, correct_words), "yellow")) 
-                exit(0) 
             
             # nothing fancy now, just greedy speculative sampling 
             # starting from 64th token, the rest 64th token should be used to compute the acceptance length 
@@ -562,6 +561,7 @@ class CustomTrainer(Trainer):
             acceptance_intermediate = acceptance_intermediate * label_accept # after filtering one is for keep and correct, zero is for discard 
             dim0  = acceptance_intermediate.shape[0] 
             dim1 = acceptance_intermediate.shape[1] 
+            denom = torch.sum(label_accept.view(-1), dim = 0).item() 
             # print("dim0 is {} dim1 is {}".format(dim0, dim1)) # we have to make sure dim0 and dim1 are assigned before we reshape acceptance_intermediate 
             # print("pred, atch size {}, first 20 elements on dim 0 are {}".format(0, pred[0, : 20, 0])) 
             # print("pred, batch size {}, first 20 elements on dim 1 are {}".format(0, pred[0, :20, 1])) 
@@ -571,8 +571,8 @@ class CustomTrainer(Trainer):
             # print("acceptance_intermediate, batch size {}, first 20 elements are {}".format(0, acceptance_intermediate[0, : 20, 1])) 
             holding_diff_dimensionacc = {} 
             for i in range(0, self.n): 
-                print("dimension {} has prediction accuracy: {}".format(i, torch.sum(acceptance_intermediate[:, :, i].view(-1), dim = 0).item() / (dim0 * dim1))) 
-                holding_diff_dimensionacc["dimension acc {}".format(i)] = torch.sum(acceptance_intermediate[:, :, i].view(-1), dim = 0).item() / (dim0 * dim1) 
+                print("dimension {} has prediction accuracy: {}".format(i, torch.sum(acceptance_intermediate[:, :, i].view(-1), dim = 0).item() / denom))
+                holding_diff_dimensionacc["dimension acc {}".format(i)] = torch.sum(acceptance_intermediate[:, :, i].view(-1), dim = 0).item() / denom 
             acceptance_intermediate = acceptance_intermediate.reshape(-1, self.n) 
             
             row_indices, col_indices = torch.nonzero(~(acceptance_intermediate.to(torch.bool)), as_tuple = True) # this is very important, now one is for wrong or discard, zero is for correct and keep 
