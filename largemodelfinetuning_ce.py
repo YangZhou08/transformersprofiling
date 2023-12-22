@@ -333,7 +333,7 @@ def naive_grouping(examples):
     
     return {"input_ids_chunk": added_tensor, "attention_mask_chunk": practice_attention_mask} 
 
-train_dataset = train_dataset.map(naive_grouping, batch_size = 10, num_proc = 4) 
+train_dataset = train_dataset.map(naive_grouping, batch_size = 1, num_proc = 4) 
 exit(0) 
 test_dataset = test_dataset.map(naive_grouping, batched = True, num_proc = 8) 
 
