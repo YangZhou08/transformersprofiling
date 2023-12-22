@@ -272,7 +272,7 @@ def encode_with_truncation(examples):
 train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
 test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 4) 
 
-large_model = LlamaForCausalLM.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models).to(torch.bfloat16) 
+large_model = LlamaForCausalLM.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 # large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models) 
 large_model.train() 
@@ -309,15 +309,15 @@ small_model.config.pad_token_id = tokenizer.pad_token_id
 
 def naive_grouping(examples): 
     input_ids = examples["input_ids"] 
-    input_ids = torch.tensor(input_ids) 
+    input_ids = torch.tensor(input_ids).to(torch_device) 
     print("got here inside the naive_grouping function") 
     embedding_searched = large_model.get_input_embeddings()(input_ids) # shape (batch_size, seq_len, hidden_size) 
     print("embedding_searched shape {}".format(embedding_searched.shape)) 
     # operate on the seq_len dimension 
     # because of truncation and padding, the seq_len dimension is guaranteed to be multiples of 7 
     seq_length = embedding_searched.shape[1] 
-    added_tensor = torch.zeros((embedding_searched.shape[0], seq_length // 7, embedding_searched.shape[2])) 
-    practice_attention_mask = torch.ones_like(added_tensor) 
+    added_tensor = torch.zeros((embedding_searched.shape[0], seq_length // 7, embedding_searched.shape[2])).to(torch_device) 
+    practice_attention_mask = torch.ones_like(added_tensor).to(torch_device) 
     for i in range(seq_length // 7): 
         sum = torch.zeros((embedding_searched.shape[0], 1, embedding_searched.shape[2])) 
         all_pad = True 
@@ -337,7 +337,7 @@ train_dataset = train_dataset.map(naive_grouping, batch_size = 1, num_proc = 4)
 exit(0) 
 test_dataset = test_dataset.map(naive_grouping, batched = True, num_proc = 8) 
 
-large_model = large_model.to(torch_device) 
+# large_model = large_model.to(torch_device) 
 
 train_dataset.set_format(type = "torch", columns = ["input_ids_chunk", "attention_mask_chunk", "input_ids", "attention_mask"]) 
 test_dataset.set_format(type = "torch", columns = ["input_ids_chunk", "attention_mask_chunk", "input_ids", "attention_mask"]) 
