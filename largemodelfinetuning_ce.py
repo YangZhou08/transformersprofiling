@@ -310,6 +310,7 @@ small_model.config.pad_token_id = tokenizer.pad_token_id
 def naive_grouping(examples): 
     input_ids = examples["input_ids"] 
     input_ids = torch.tensor(input_ids) 
+    print("got here inside the naive_grouping function") 
     embedding_searched = large_model.get_input_embeddings()(input_ids) # shape (batch_size, seq_len, hidden_size) 
     print("embedding_searched shape {}".format(embedding_searched.shape)) 
     # operate on the seq_len dimension 
