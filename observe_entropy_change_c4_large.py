@@ -242,5 +242,6 @@ for i in range(20):
     outputs_prob_max = outputs_prob_max * attention_mask.unsqueeze(0) 
     outputs_prob_max = outputs_prob_max[0].detach().cpu().numpy() 
     print(outputs_prob_max) 
-    plt.bar(range(len(outputs_prob_max)), outputs_prob_max, width = 0.3, color = "orange") 
+    # plt.bar(range(len(outputs_prob_max)), outputs_prob_max, width = 0.3, color = "orange") 
+    plt.plot(range(len(outputs_prob_max)), outputs_prob_max, color = "orange", linewidth = 0.5, marker = "o", markersize = 0.5) 
     plt.savefig("outputs_prob_max_{}.png".format(i)) 
