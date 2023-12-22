@@ -244,7 +244,9 @@ for i in range(20):
     print(outputs_prob_max) 
     plt.figure(figsize = (20, 20)) 
     thresh = 0.4 
-    colors = ["blue" if outputs_prob_max[i] <= thresh else "range" for i in range(len(outputs_prob_max))] 
+    colors = ["blue" if outputs_prob_max[i] <= thresh else "orange" for i in range(len(outputs_prob_max))] 
+    ticks = [tokenizer.decode([input_ids[i]]) for i in range(len(input_ids))] 
     plt.bar(range(len(outputs_prob_max)), outputs_prob_max, width = 0.5, color = colors) 
+    plt.xticks(range(len(outputs_prob_max)), ticks, rotation = 90) 
     # plt.plot(range(len(outputs_prob_max)), outputs_prob_max, color = "orange", linewidth = 0.5, marker = "o", markersize = 0.5) 
     plt.savefig("outputs_prob_max_{}.png".format(i)) 
