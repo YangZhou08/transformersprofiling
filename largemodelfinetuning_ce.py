@@ -281,7 +281,7 @@ large_model.train()
 small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
 
 small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
-small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = kernel_size) 
+small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 7) 
 
 new_state_dict = {} 
 
