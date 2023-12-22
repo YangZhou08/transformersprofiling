@@ -237,7 +237,7 @@ for i in range(20):
     labels[labels == tokenizer.pad_token_id] = -100 
     outputs = large_model(input_ids = input_ids.unsqueeze(0), attention_mask = attention_mask.unsqueeze(0), labels = labels.unsqueeze(0))  
     outputs_prob = nn.Softmax(dim = -1)(outputs.logits) 
-    outputs_prob_max = torch.max(outputs_prob, dim = -1) 
+    outputs_prob_max, _ = torch.max(outputs_prob, dim = -1) 
     print("shape of outputs_prob_max is {} shape of attention_mask is {}".format(outputs_prob_max.shape, attention_mask.shape)) 
     outputs_prob_max = outputs_prob_max * attention_mask.unsqueeze(0) 
     outputs_prob_max = outputs_prob_max[0].detach().cpu().numpy() 
