@@ -248,8 +248,8 @@ class CustomTrainer(Trainer):
 
         return (loss, outputs) if return_outputs else loss 
 
-# tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
-tokenizer = AutoTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+# tokenizer = AutoTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
 # tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 if tokenizer.pad_token is not None: 
     print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
