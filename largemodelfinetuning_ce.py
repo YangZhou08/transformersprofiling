@@ -29,6 +29,8 @@ import time
 from torch.utils.data import random_split 
 from src.transformers import BitsAndBytesConfig 
 from packaging import version 
+from src.transformers.modeling_utils import PreTrainedModel, load_sharded_checkpoint, unwrap_model 
+from src.transformers.models.auto.modeling_auto import MODEL_FOR_CAUSAL_LM_MAPPING_NAMES, MODEL_MAPPING_NAMES 
 
 import datetime 
 import os 
@@ -154,6 +156,9 @@ if is_accelerate_available():
     if is_deepspeed_available():
         from accelerate.utils import DeepSpeedSchedulerWrapper 
 
+if is_peft_available():
+    from peft import PeftModel 
+
 import subprocess
 
 def get_git_commit_hash():
@@ -194,6 +199,54 @@ else:
     dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
 
 logger = logging.get_logger(__name__) 
+
+class CustomTrainer(Trainer): 
+    def __init__(self, n = 7, tokenizer = None, *args, **kwargs): 
+        super().__init__(*args, **kwargs) 
+        self.n = n 
+        self.tokenizer = tokenizer 
+    
+    def compute_loss(self, model, inputs, return_outputs=False):
+        """
+        How the loss is computed by Trainer. By default, all models return the loss in the first element.
+
+        Subclass and override for custom behavior.
+        """
+        if self.label_smoother is not None and "labels" in inputs:
+            labels = inputs.pop("labels")
+        else:
+            labels = None 
+        
+        print("printing out input keys and values shape, there are {} in total".format(len(inputs.keys()))) 
+        for key, value in inputs.items(): 
+            print("key {}, value shape {}".format(key, value.shape)) 
+        exit(0) 
+        outputs = model(**inputs)
+        # Save past state if it exists
+        # TODO: this needs to be fixed and made cleaner later.
+        if self.args.past_index >= 0:
+            self._past = outputs[self.args.past_index]
+
+        if labels is not None:
+            unwrapped_model = unwrap_model(model)
+            if is_peft_available() and isinstance(unwrapped_model, PeftModel):
+                model_name = unwrapped_model.base_model.model._get_name()
+            else:
+                model_name = unwrapped_model._get_name()
+            if model_name in MODEL_FOR_CAUSAL_LM_MAPPING_NAMES.values():
+                loss = self.label_smoother(outputs, labels, shift_labels=True)
+            else:
+                loss = self.label_smoother(outputs, labels)
+        else:
+            if isinstance(outputs, dict) and "loss" not in outputs:
+                raise ValueError(
+                    "The model did not return a loss from the inputs, only the following keys: "
+                    f"{','.join(outputs.keys())}. For reference, the inputs it received are {','.join(inputs.keys())}."
+                )
+            # We don't use .loss here since the model may return tuples instead of ModelOutput.
+            loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0]
+
+        return (loss, outputs) if return_outputs else loss 
 
 # tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 tokenizer = AutoTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
@@ -262,16 +315,30 @@ def naive_grouping(examples):
     # because of truncation and padding, the seq_len dimension is guaranteed to be multiples of 7 
     seq_length = embedding_searched.shape[1] 
     added_tensor = torch.zeros((embedding_searched.shape[0], seq_length // 7, embedding_searched.shape[2])) 
+    practice_attention_mask = torch.ones_like(added_tensor) 
     for i in range(seq_length // 7): 
         sum = torch.zeros((embedding_searched.shape[0], 1, embedding_searched.shape[2])) 
+        all_pad = True 
         for j in range(7): 
             sum += embedding_searched[:, i * 7 + j, :] 
             sum /= 7. 
+            if (input_ids[:, i * 7 + j] != tokenizer.pad_token_id): 
+                all_pad = False 
         added_tensor[:, i, :] = sum 
+        if all_pad: 
+            practice_attention_mask[:, i, :] = 0 
     print("added_tensor shape {}".format(added_tensor.shape)) 
+    
+    return {"input_ids_chunk": added_tensor, "attention_mask_chunk": practice_attention_mask} 
+
+train_dataset = train_dataset.map(naive_grouping, batched = True, num_proc = 8) 
+test_dataset = test_dataset.map(naive_grouping, batched = True, num_proc = 8) 
+
+train_dataset.set_format(type = "torch", columns = ["input_ids_chunk", "attention_mask_chunk", "input_ids", "attention_mask"]) 
+test_dataset.set_format(type = "torch", columns = ["input_ids_chunk", "attention_mask_chunk", "input_ids", "attention_mask"]) 
 
 param_group = [] 
-for param in large_model.parameters(); 
+for param in large_model.parameters(): 
     param.requires_grad = True 
     param_group.append(param) 
 print("length of param_group {}".format(len(param_group))) 
@@ -321,4 +388,18 @@ if has_wandb:
     wandblogconfigs["time_hash"] = hash_of_time 
     wandb.init(project = "chunkedlargefinetuning", config = wandblogconfigs, name = "large_small_ce{}_{}".format(today, "unmasked")) 
 
+trainer = CustomTrainer(
+    model = small_model, 
+    args = training_args, 
+    train_dataset = train_dataset, 
+    eval_dataset = test_dataset, 
+    data_collator = data_collator, 
+    optimizers = (custom_optimizer, None), 
+    tokenizer = tokenizer, 
+) 
 
+torch.autograd.set_detect_anomaly(True) 
+
+trainer.train() 
+
+wandb.finish() 
