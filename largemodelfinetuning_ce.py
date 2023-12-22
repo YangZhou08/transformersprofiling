@@ -258,7 +258,7 @@ else:
     print("We now use eos_token as pad token") 
 tokenizer.padding_side = "left" 
 
-list_of_datasets = ["c4_file{}.json".format(i) for i in range(1, 16)] 
+list_of_datasets = ["c4_file{}.json".format(i) for i in range(1, 3)] 
 list_of_datasets = [dir_unprocessed_dataset + path for path in list_of_datasets] 
 onedataset = load_dataset("json", data_files = list_of_datasets, split = "train") 
 d = onedataset.train_test_split(test_size = 0.005) # 0.995 for training, 0.005 for testing 
