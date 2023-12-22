@@ -272,7 +272,7 @@ def encode_with_truncation(examples):
 train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
 test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 4) 
 
-large_model = LlamaForCausalLM.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+large_model = LlamaForCausalLM.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models).to(torch.bfloat16) 
 # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 # large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models) 
 large_model.train() 
@@ -334,6 +334,8 @@ def naive_grouping(examples):
 
 train_dataset = train_dataset.map(naive_grouping, batched = True, num_proc = 8) 
 test_dataset = test_dataset.map(naive_grouping, batched = True, num_proc = 8) 
+
+large_model = large_model.to(torch_device) 
 
 train_dataset.set_format(type = "torch", columns = ["input_ids_chunk", "attention_mask_chunk", "input_ids", "attention_mask"]) 
 test_dataset.set_format(type = "torch", columns = ["input_ids_chunk", "attention_mask_chunk", "input_ids", "attention_mask"]) 
