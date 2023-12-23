@@ -252,9 +252,10 @@ for step, inputs in enumerate(train_dataloader):
     large_outputs = large_model.generate(input_ids = input_ids, max_length = 259, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step)) 
-    print("textsynthesized: {}".format(tokenizer.batch_decode(large_outputs.sequences))) 
-    print() 
-    if step > 10: 
+    for s in tokenizer.batch_decode(large_outputs.sequences): 
+        print(s) 
+        print() 
+    if step > 1: 
         exit(0) 
     '''
     list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
