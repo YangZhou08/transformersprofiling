@@ -173,6 +173,7 @@ def encode_with_truncation(examples):
     return tokenizer(examples["text"], truncation = True, padding = "max_length", 
                      max_length = max_length, return_special_tokens_mask = True) 
 datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
+datasetnew.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 '''
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
