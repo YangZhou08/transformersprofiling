@@ -1406,7 +1406,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
         inputs_embeds = extra_pass_in_embeds 
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
         outputs = self.model(
-            input_ids=input_ids,
+            input_ids=None, 
             attention_mask=attention_mask,
             position_ids=position_ids,
             past_key_values=past_key_values,
@@ -1415,7 +1415,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
-        )
+        ) 
 
         hidden_states = outputs[0] # we don't need the lm_head 
         # hidden_states has shape (batch_size, seq_length // 7, hidden states) 
@@ -2158,7 +2158,7 @@ class LlamaForCausalLMWeird(LlamaPreTrainedModel):
 
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
         outputs = self.model(
-            input_ids = None, 
+            input_ids = input_ids, 
             attention_mask=attention_mask,
             position_ids=position_ids,
             past_key_values=past_key_values,
