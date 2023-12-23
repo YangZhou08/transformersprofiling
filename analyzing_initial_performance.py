@@ -210,7 +210,7 @@ large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B
 
 small_model = large_model 
 
-batch_size = 50 
+batch_size = 200 
 dataloader = DataLoader(datasetnew, batch_size = batch_size) 
 
 # generated using GPT-4 
