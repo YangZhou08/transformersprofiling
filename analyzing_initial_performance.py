@@ -8,6 +8,7 @@ from datasets import load_dataset
 from src.transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM 
 from src.transformers import GPTNeoXForCausalLM 
 from src.transformers import LlamaConfig, LlamaPreTrainedModel 
+from src.transformers import LlamaTokenizer 
 
 from tqdm import tqdm
 # from sampling.utils import norm_logits, sample 
@@ -156,7 +157,8 @@ def compute_perplexity(model, tokenizer, text):
 
 # tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 # tokenizer = AutoTokenizer.from_pretrained("facebook/opt-125m", cache_dir = dir_models) 
-tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+# tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
 
 if tokenizer.pad_token is not None: 
     print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
@@ -210,7 +212,7 @@ large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B
 
 small_model = large_model 
 
-batch_size = 200 
+batch_size = 150 
 dataloader = DataLoader(datasetnew, batch_size = batch_size) 
 
 # generated using GPT-4 
