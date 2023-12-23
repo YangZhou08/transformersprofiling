@@ -361,7 +361,7 @@ def group_attention_map_chunked_generation(examples):
     return {"attention_mask_chunk": attention_mask_chunk} 
 
 train_dataset = train_dataset.map(group_attention_map_chunked_generation, batched = True, num_proc = 4) 
-test_dataset = test_dataset.map(naive_grouping, batched = True, num_proc = 8) 
+test_dataset = test_dataset.map(group_attention_map_chunked_generation, batched = True, num_proc = 4) 
 
 for i in range(10): 
     example = train_dataset[i] 
