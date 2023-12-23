@@ -747,7 +747,7 @@ class Trainer:
         columns = [k for k in signature_columns if k in dataset.column_names] 
         
         print(colored("things inside the columns: {}".format(columns), "red")) # NOTE debug print 
-        print(colored("keys in dataseettrain {}".format(dataset.keys()), "red")) # NOTE debug print 
+        print(colored("keys in dataseettrain {}".format(dataset[0].keys()), "red")) # NOTE debug print 
 
         if version.parse(datasets.__version__) < version.parse("1.4.0"):
             dataset.set_format(
