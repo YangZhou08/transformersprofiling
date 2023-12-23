@@ -361,8 +361,19 @@ def group_attention_map_chunked_generation(examples):
     return {"attention_mask_chunk": attention_mask_chunk} 
 
 train_dataset = train_dataset.map(group_attention_map_chunked_generation, batched = True, num_proc = 4) 
-exit(0) 
 test_dataset = test_dataset.map(naive_grouping, batched = True, num_proc = 8) 
+
+for i in range(10): 
+    example = train_dataset[i] 
+    input_ids = example["input_ids"] 
+    for j in range(input_ids.shape[0]): 
+        if j != 0 and j % 7 == 0: 
+            end = " | " 
+        else: 
+            end = " " 
+        print(input_ids[j], end = end) 
+    print() 
+    print("attention_mask_chunk {}".format(example["attention_mask_chunk"])) 
 
 # large_model = large_model.to(torch_device) 
 
