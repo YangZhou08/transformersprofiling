@@ -213,8 +213,9 @@ if is_accelerate_available():
 
 
 if TYPE_CHECKING:
-    import optuna
+    import optuna 
 
+from termcolor import colored 
 
 logger = logging.get_logger(__name__)
 
@@ -743,7 +744,10 @@ class Trainer:
                 " you can safely ignore this message."
             )
 
-        columns = [k for k in signature_columns if k in dataset.column_names]
+        columns = [k for k in signature_columns if k in dataset.column_names] 
+        
+        print(colored("things inside the columns: {}".format(columns), "red")) # NOTE debug print 
+        print(colored("keys in dataseettrain {}".format(dataset.keys()), "red")) # NOTE debug print 
 
         if version.parse(datasets.__version__) < version.parse("1.4.0"):
             dataset.set_format(

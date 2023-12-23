@@ -400,7 +400,7 @@ for i in range(10):
             end = " | " 
         else: 
             end = " " 
-        print(input_ids[j], end = end) 
+        print(input_ids[j].item(), end = end) 
     print() 
     print("attention_mask_chunk {}".format(example["attention_mask_chunk"])) 
 
