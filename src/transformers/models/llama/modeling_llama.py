@@ -2545,7 +2545,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         # column dimensional masking 
         # condensed_token_idx_list = row_idx_masked_out 
         condensed_token_idx_list = mask_list_pos 
-        for i in range(1, len(condensed_token_idx_list) - 1): # NOTE deliberately skip the first one 
+        print("condensed token idx list {}".format(condensed_token_idx_list)) 
+        for i in range(len(condensed_token_idx_list) - 1): # NOTE deliberately skip the first one 
             # row_mask[:, :, condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
             row_mask[condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
         # print("row mask shape {}".format(row_mask.shape)) 
