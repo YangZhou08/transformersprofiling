@@ -60,6 +60,32 @@ from src.transformers.utils import (
 if is_apex_available():
     from apex import amp 
 
+import socket
+
+hostname = socket.gethostname()
+print("Hostname:", hostname)
+
+if "lovelace" in hostname: 
+    # cache_dir = "/home/bc20/yang/transformersprofiling" 
+    datasetsrc = "/home/yangzho6/c4_parts/downloads/c4_file2.json" 
+    datasetparent = "/home/yangzho6/c4_parts/downloads/" 
+    dir_models = "/home/yangzho6/model_checkpoints" 
+    synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/" 
+    synthesized_data_path = "/home/yangzho6/c4llm_synthesized/tensor_dir/" 
+elif "ada" in hostname: 
+    # cache_dir = "/home/bc20/yang/transformersprofiling" 
+    datasetsrc = "/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json" 
+    datasetparent = "/home/beidic/yangzho6/c4_parts/downloads/" 
+    dir_models = "/home/beidic/yangzho6/model_checkpoints" 
+    synthesized_dir_path = "/home/beidic/yangzho6/c4llm_synthesized/" 
+    # synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/tensor_dir/" 
+    synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/tensor_dir2/" 
+else: 
+    # cache_dir = "/home/bc20/yang/transformersprofiling" 
+    dir_models = "/home/yangzho6/model_checkpoints" 
+    synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/" 
+    synthesized_data_path = "/home/yangzho6/c4llm_synthesized/tensor_dir/" 
+
 torch_device = "cuda:0" 
 
 class CustomDataset: 
@@ -126,15 +152,11 @@ def compute_perplexity(model, tokenizer, text):
     ppl = torch.exp(torch.stack(nlls).sum() / end_loc)
     return ppl.item() 
 
-dir_dataset = "/home/yangzho6/c4_parts" 
-dir_models = "/home/yangzho6/model_checkpoints" 
-dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
-
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train[:1000]") 
 
-tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+# tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 # tokenizer = AutoTokenizer.from_pretrained("facebook/opt-125m", cache_dir = dir_models) 
-# tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 
 if tokenizer.pad_token is not None: 
     print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
@@ -143,8 +165,10 @@ else:
     print("We now use eos_token as pad token") 
 tokenizer.padding_side = "left" 
 
-datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
-
+# datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
+d_files = ["c4_file{}.json".format(i) for i in range(1, 3)] 
+datasetnew = load_dataset('json', data_files = [datasetparent + name for name in d_files], split = "train") 
+'''
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 
@@ -169,15 +193,16 @@ except RuntimeError as r:
 small_model = small_model.to(torch_device) 
 small_model.eval_mode = True 
 # small_model.train() 
-'''
-small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
+''' 
+
+# small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
 
 # small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
-# large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 # large_model.eval() 
 
-# small_model = large_model 
-''' 
+small_model = large_model 
+
 batch_size = 50 
 dataloader = DataLoader(datasetnew, batch_size = batch_size) 
 
@@ -190,7 +215,7 @@ num_batches = 0
 count = 0 
 
 with torch.no_grad(): 
-    for batch in dataloader: 
+    for batch in tqdm(dataloader): 
         input_ids = batch["input_ids"].to(torch_device) 
         attention_mask = batch["attention_mask"].to(torch_device) 
         labels = input_ids.clone() 
