@@ -2388,14 +2388,14 @@ class LlamaForSequenceClassification(LlamaPreTrainedModel):
 class SimpleSmallModel(LlamaPreTrainedModel): 
     _tied_weights_keys = ["lm_head.weight"] 
     
-    def __init__(self, config, sliding_window_length = 4, hostname = None): 
+    def __init__(self, config, sliding_window_length = 4, hostname = None, target_model_dim = 4096): 
         super().__init__(config) 
         # copied from LlamaModel 
         self.padding_idx = config.pad_token_id 
         self.vocab_size = config.vocab_size 
         
         # cross model projection of the hidden states dimension 
-        self.target_model_dim = 4096 
+        self.target_model_dim = target_model_dim 
         self.embed_projection = nn.Linear(self.target_model_dim, config.hidden_size, bias = False) 
         self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx) 
         self.layers = nn.ModuleList([LlamaDecoderLayer(config) for _ in range(config.num_hidden_layers)])
