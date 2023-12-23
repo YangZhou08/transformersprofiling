@@ -249,7 +249,6 @@ class CustomTrainer(Trainer):
             return_dict = True, 
             original_attention_mask = original_attention_mask, 
         ) 
-        exit(0) 
         
         # Save past state if it exists
         # TODO: this needs to be fixed and made cleaner later.

@@ -2546,7 +2546,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         # condensed_token_idx_list = row_idx_masked_out 
         condensed_token_idx_list = mask_list_pos 
         print("condensed token idx list {}".format(condensed_token_idx_list)) 
-        for i in range(len(condensed_token_idx_list) - 1): # NOTE deliberately skip the first one 
+        for i in range(len(condensed_token_idx_list) - 1): 
             # row_mask[:, :, condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
             row_mask[condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
         # print("row mask shape {}".format(row_mask.shape)) 
