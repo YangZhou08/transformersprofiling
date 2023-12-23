@@ -201,7 +201,7 @@ training_args = TrainingArguments(
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=1,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size= 50, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size= 100, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=64,  # evaluation batch size
     logging_steps=1000,             # evaluate, log and save model checkpoints every 1000 step
@@ -249,6 +249,7 @@ for step, inputs in enumerate(train_dataloader):
 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     large_outputs = large_model.generate(input_ids = input_ids, max_length = max_length + dict_kernel_maxlength[kernel_size], do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
+    large_outputs = large_model.generate(input_ids = input_ids, max_length = 259, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step)) 
     print("textsynthesized: {}".format(tokenizer.batch_decode(large_outputs.sequences))) 
