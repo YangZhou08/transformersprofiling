@@ -7,6 +7,7 @@ from datasets import load_dataset
 
 from src.transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM 
 from src.transformers.models.llama.modeling_llama import LlamaForCausalLM 
+from src.transformers.models.llama.modeling_llama import LlamaTokenizer 
 from src.transformers import GPTNeoXForCausalLM 
 
 from tqdm import tqdm
@@ -161,7 +162,8 @@ small_model.eval()
 print() 
 
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
-tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+# tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
 # tokenizer.add_special_tokens({"pad_token":"<pad>"}) 
 # print("the tokenizer pad token id is {}".format(tokenizer.pad_token_id)) 
 # tokenizer.pad_token = "[PAD]" 
