@@ -168,7 +168,8 @@ tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir 
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "left" 
 
-large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) # pad_id = 2 
+# large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) # pad_id = 2 
+large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) # pad_id = 2 
 large_model.eval() 
 
 # max_length = small_model.config.max_position_embeddings 
@@ -250,6 +251,10 @@ for step, inputs in enumerate(train_dataloader):
     large_outputs = large_model.generate(input_ids = input_ids, max_length = max_length + dict_kernel_maxlength[kernel_size], do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step)) 
+    print("textsynthesized: {}".format(tokenizer.batch_decode(large_outputs.sequences))) 
+    if step > 10: 
+        exit(0) 
+    '''
     list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
     downsampled_vectors = trainer.downsample_vectors(list_of_last_hidden_states, kernel_size = kernel_size) 
     # break 
@@ -313,5 +318,6 @@ for step, inputs in enumerate(train_dataloader):
             "condensed_token_path": tensor_file_path, 
         } 
         json_file1.write(json.dumps(example_data) + "\n") 
+    ''' 
     
 json_file1.close() 
