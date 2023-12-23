@@ -2956,6 +2956,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             # inputs_embeds = self.embed_projection(inputs_embeds) 
             if condensed_embeds.dtype == torch.bfloat16: 
                 condensed_embeds = condensed_embeds.to(torch.float32) 
+            print("embed_projection dtype: {}".format(self.embed_projection.weight.dtype)) 
             if self.condensed_fashion == "projection_mode": 
                 condensed_embeds = self.embed_projection(condensed_embeds) 
             # print("condensed_embeds first ten numbers: {}".format(condensed_embeds.view(-1)[: 100])) 
