@@ -231,9 +231,11 @@ class CustomTrainer(Trainer):
         print("printing out input keys and values shape, there are {} in total".format(len(inputs.keys()))) 
         for key, value in inputs.items(): 
             print("key {}, value shape {}".format(key, value.shape)) 
-        exit(0) 
+        
         input_ids = inputs["input_ids"] 
         attention_mask = inputs["attention_mask_chunk"] 
+        original_attention_mask = inputs["attention_mask"] 
+        labels = inputs["labels"] 
         
         outputs = model(
             input_ids = input_ids, 
@@ -241,7 +243,9 @@ class CustomTrainer(Trainer):
             output_hidden_states = True, 
             output_attentions = True, 
             return_dict = True, 
+            original_attention_mask = original_attention_mask, 
         ) 
+        exit(0) 
         
         # Save past state if it exists
         # TODO: this needs to be fixed and made cleaner later.

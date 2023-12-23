@@ -1038,7 +1038,8 @@ class LlamaModel(LlamaPreTrainedModel):
             position_ids = torch.arange(
                 past_key_values_length, seq_length + past_key_values_length, dtype=torch.long, device=device
             )
-            position_ids = position_ids.unsqueeze(0)
+            position_ids = position_ids.unsqueeze(0) 
+            print(colored("position_ids: {}".format(position_ids), "red")) # TODO remove this print once this is make sure to be correct 
 
         if inputs_embeds is None:
             inputs_embeds = self.embed_tokens(input_ids)
@@ -1298,13 +1299,15 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
     
     _tied_weights_keys = ["lm_head.weight"]
 
-    def __init__(self, config):
-        super().__init__(config)
-        self.model = LlamaModel(config)
-        self.vocab_size = config.vocab_size
-        self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False) 
+    def __init__(self, *args, sliding_window_length = 7, addonsmallmodel, **kwargs): 
+        super().__init__(*args, **kwargs) 
+        self.model = LlamaModel(self.config) 
+        self.vocab_size = self.config.vocab_size 
+        # self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False) 
+        self.lm_head = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias = False) 
         
-        self.addonsmallmodel = None 
+        self.addonsmallmodel = addonsmallmodel 
+        self.sliding_window_length = sliding_window_length 
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -1360,8 +1363,9 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
         use_cache: Optional[bool] = None,
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
-        return_dict: Optional[bool] = None,
-    ) -> Union[Tuple, CausalLMOutputWithPast]:
+        return_dict: Optional[bool] = None, 
+        original_attention_mask = None, 
+    ) -> Union[Tuple, CausalLMOutputWithPast]: 
         r"""
         Args:
             labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
@@ -1414,6 +1418,29 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
         )
 
         hidden_states = outputs[0] # we don't need the lm_head 
+        # hidden_states has shape (batch_size, seq_length // 7, hidden states) 
+        
+        # interleave the hidden_states and the input_ids 
+        assert hidden_states.shape[1] == input_ids.shape[1] // 7 
+        addonmodeloutput = self.addonsmallmodel( 
+            input_ids = input_ids, 
+            attention_mask = original_attention_mask, 
+            position_ids = None, 
+            past_key_values = None, 
+            condensed_embeds = hidden_states, 
+            labels = None, 
+            use_cache = None, 
+            output_attentions = None, 
+            output_hidden_states = None, 
+            return_dict = None, 
+            start_idx = 0, # NOTE this is very important 
+            eval_mode = False, 
+            iteration_count = 1, 
+            condensed_fashion = "projection_mode", 
+            experiment_setting = "setting4", 
+        ) 
+        logits = addonmodeloutput[1] 
+        
         '''
         if self.config.pretraining_tp > 1:
             lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
@@ -1422,20 +1449,30 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
         else:
             logits = self.lm_head(hidden_states)
         logits = logits.float()
-        '''
-
-        loss = None
-        if labels is not None:
-            # Shift so that tokens < n predict n
-            shift_logits = logits[..., :-1, :].contiguous()
-            shift_labels = labels[..., 1:].contiguous()
-            # Flatten the tokens
-            loss_fct = CrossEntropyLoss()
-            shift_logits = shift_logits.view(-1, self.config.vocab_size)
-            shift_labels = shift_labels.view(-1)
-            # Enable model parallelism
-            shift_labels = shift_labels.to(shift_logits.device)
-            loss = loss_fct(shift_logits, shift_labels)
+        ''' 
+        
+        seq_length = input_ids.shape[1] + hidden_states.shape[1] 
+        assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
+        mask_list_pos = [i * (self.sliding_window_length + 1) for i in range(seq_length // (self.sliding_window_length + 1))] 
+        print(colored("mask_list_pos {}".format(mask_list_pos), "red")) 
+        loss = None 
+        if labels is not None: 
+            selected_indices = [] 
+            for i in range(0, seq_length): 
+                if i not in mask_list_pos: 
+                    selected_indices.append(i) 
+            print(colored("selected_indices {}".format(selected_indices), "red")) 
+            # select and shift the logits 
+            logits = logits[:, selected_indices, :] 
+            shift_logits = logits[..., :-1, :].contiguous() 
+            shift_labels = labels[..., 1:].contiguous() # shape (batch_size, seq_length - 1) 
+            # Flatten the tokens 
+            loss_fct = CrossEntropyLoss() 
+            shift_logits = shift_logits.view(-1, self.config.vocab_size) 
+            shift_labels = shift_labels.view(-1) 
+            # Enable model parallelism 
+            shift_labels = shift_labels.to(shift_logits.device) 
+            loss = loss_fct(shift_logits, shift_labels) 
 
         if not return_dict:
             output = (logits,) + outputs[1:]
@@ -2480,6 +2517,32 @@ class SimpleSmallModel(LlamaPreTrainedModel):
 
         combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
     
+    def _modify_decoder_attention_mask_for_large_model_addon(self, combined_attention_mask, dtype, mask_list_pos, kernel_size = None): 
+        # in this setting, we assume the starting idx to be 0 
+        mask_shape = combined_attention_mask.shape # (batch_size, 1, tgt_seq_len, src_seq_len) 
+        seq_len = mask_shape[-1] 
+        start_idx = 0 
+        kernel_size = kernel_size if kernel_size is not None else self.sliding_window_length 
+        
+        # row dimensional masking 
+        # row_idx_masked_out = [start_idx + i * (kernel_size + 1) for i in range((seq_len - start_idx) / (kernel_size + 1))] 
+        row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) # NOTE currently, this line only works for training 
+        # row_mask[row_idx_masked_out] = 1 
+        # row_mask[mask_list_pos] = 1 
+        row_mask[mask_list_pos, :] = 1 
+
+        # column dimensional masking 
+        # condensed_token_idx_list = row_idx_masked_out 
+        condensed_token_idx_list = mask_list_pos 
+        for i in range(len(condensed_token_idx_list) - 1): 
+            # row_mask[:, :, condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
+            row_mask[condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
+        # print("row mask shape {}".format(row_mask.shape)) 
+        row_mask = row_mask[None, None, :, :].expand(mask_shape).to(torch.bool) 
+        row_mask = row_mask.to(device = combined_attention_mask.device) 
+
+        combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
+    
     def _modify_decoder_attention_mask_for_harder(self, combined_attention_mask, dtype, mask_list_pos, start_idx = None, kernel_size = None): 
         mask_shape = combined_attention_mask.shape # (batch_size, 1, tgt_seq_len, src_seq_len) 
         seq_len = mask_shape[-1] 
@@ -2765,7 +2828,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
 # Example usage
 # plot_attention_map(attention_maps, layer_num=0, head_num=0, seq_length=128, filename='attention_map.png')
 
-    def forward(
+    def forward( 
         self,
         input_ids: torch.LongTensor = None, 
         attention_mask: Optional[torch.Tensor] = None,
@@ -2941,6 +3004,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 self._modify_decoder_attention_mask_for_harder2(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
             elif self.experiment_setting == "setting3": 
                 self._modify_decoder_attention_mask_for_hardest(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            elif self.experiment_setting == "setting4": 
+                self._modify_decoder_attention_mask_for_large_model_addon(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, kernel_size = self.sliding_window_length) 
             else: 
                 raise ValueError("We do not have the experiment setting you are looking for") 
             
