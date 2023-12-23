@@ -174,7 +174,7 @@ large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B
 large_model.eval() 
 
 # max_length = small_model.config.max_position_embeddings 
-max_length = 128 
+max_length = 64 
 # def encode_with_truncation(examples): 
     # return tokenizer(examples["text"], truncation=True, padding="max_length",
                 #    max_length=max_length, return_special_tokens_mask=True) 
@@ -250,7 +250,7 @@ for step, inputs in enumerate(train_dataloader):
 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     large_outputs = large_model.generate(input_ids = input_ids, max_length = max_length + dict_kernel_maxlength[kernel_size], do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
-    large_outputs = large_model.generate(input_ids = input_ids, max_length = 259, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
+    large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step)) 
     for s in tokenizer.batch_decode(large_outputs.sequences): 
