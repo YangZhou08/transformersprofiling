@@ -1424,6 +1424,8 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
         ) 
 
         hidden_states = outputs[0] # we don't need the lm_head 
+        print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
+        hidden_states = hidden_states.to(torch.float32) 
         # hidden_states has shape (batch_size, seq_length // 7, hidden states) 
         
         # interleave the hidden_states and the input_ids 
