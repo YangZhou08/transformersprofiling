@@ -222,7 +222,16 @@ class CustomTrainer(Trainer):
         for key, value in inputs.items(): 
             print("key {}, value shape {}".format(key, value.shape)) 
         exit(0) 
-        outputs = model(**inputs)
+        input_ids = inputs["input_ids"] 
+        attention_mask = inputs["attention_mask_chunk"] 
+        
+        outputs = model(
+            input_ids = input_ids, 
+            attention_mask = attention_mask, 
+            output_hidden_states = True, 
+            output_attentions = True, 
+            return_dict = True, 
+        ) 
         # Save past state if it exists
         # TODO: this needs to be fixed and made cleaner later.
         if self.args.past_index >= 0:
@@ -387,6 +396,8 @@ for param in large_model.parameters():
     param.requires_grad = True 
     param_group.append(param) 
 print("length of param_group {}".format(len(param_group))) 
+for param in small_model.parameters(): 
+    param.requires_grad = False 
 
 custom_optimizer = torch.optim.AdamW(param_group, lr = 5e-5) 
 # custom_optimizer = torch.optim.AdamW(param_group, lr = 1e-4) 
