@@ -425,12 +425,15 @@ for i in range(10):
 
 param_group = [] 
 for name, param in large_model.named_parameters(): 
-    print(name) 
-    param.requires_grad = True 
-    param_group.append(param) 
+    if "addonsmallmodel." in name: 
+        param.requires_grad = False 
+    else: 
+        print(name) 
+        param.requires_grad = True 
+        param_group.append(param) 
 print("length of param_group {}".format(len(param_group))) 
 for name, param in small_model.named_parameters(): 
-    print(colored("small model parameters {}".format(name), "yellow")) 
+    # print(colored("small model parameters {}".format(name), "yellow")) 
     param.requires_grad = False 
 exit(0) 
 
