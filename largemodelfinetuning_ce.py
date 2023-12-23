@@ -237,6 +237,10 @@ class CustomTrainer(Trainer):
         original_attention_mask = inputs["attention_mask"] 
         labels = inputs["labels"] 
         
+        batch_size, seq_len = original_attention_mask.shape 
+        addedon_length = seq_len // self.n 
+        original_attention_mask = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
+        
         outputs = model(
             input_ids = input_ids, 
             attention_mask = attention_mask, 
