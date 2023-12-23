@@ -235,7 +235,7 @@ class CustomTrainer(Trainer):
         input_ids = inputs["input_ids"] 
         attention_mask = inputs["attention_mask_chunk"] 
         original_attention_mask = inputs["attention_mask"] 
-        labels = inputs["labels"] 
+        label2 = inputs["labels"] 
         
         batch_size, seq_len = original_attention_mask.shape 
         addedon_length = seq_len // self.n 
@@ -248,6 +248,7 @@ class CustomTrainer(Trainer):
             output_attentions = True, 
             return_dict = True, 
             original_attention_mask = original_attention_mask, 
+            labels = label2, 
         ) 
         
         # Save past state if it exists
