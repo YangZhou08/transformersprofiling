@@ -1332,7 +1332,8 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
     
     def naive_grouping(self, input_ids): 
         embedding_searched = self.model.embed_tokens(input_ids) 
-        print("embedding_searched shape {}".format(embedding_searched.shape)) 
+        print("embedding_searched shape {} {}".format(embedding_searched.shape, embedding_searched.dtype)) 
+        exit(0) 
         seq_length = embedding_searched.shape[1] 
         
         assert seq_length % 7 == 0, "seq_length is not divisible by 7" 
