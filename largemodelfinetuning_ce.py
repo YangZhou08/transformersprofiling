@@ -297,11 +297,6 @@ def encode_with_truncation(examples):
 train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
 test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 4) 
 
-large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
-# large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
-# large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models) 
-large_model.train() 
-
 # TODO change the following code to use the checkpoint of the best trained window 7 model 
 small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
 
@@ -328,7 +323,12 @@ except RuntimeError as r:
 
 small_model = small_model.to(torch_device) 
 small_model.eval() # at start we avoid training the small model 
-large_model.set_addonsmallmodel(small_model) 
+
+large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model).to(torch.bfloat16).to(torch_device) 
+# large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+# large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models) 
+large_model.train() 
+# large_model.set_addonsmallmodel(small_model) 
 
 large_model.config.pad_token_id = tokenizer.pad_token_id 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
