@@ -424,12 +424,15 @@ for i in range(10):
     print("attention_mask_chunk {}".format(example["attention_mask_chunk"])) 
 
 param_group = [] 
-for param in large_model.parameters(): 
+for name, param in large_model.named_parameters(): 
+    print(name) 
     param.requires_grad = True 
     param_group.append(param) 
 print("length of param_group {}".format(len(param_group))) 
-for param in small_model.parameters(): 
+for name, param in small_model.named_parameters(): 
+    print(colored("small model parameters {}".format(name), "yellow")) 
     param.requires_grad = False 
+exit(0) 
 
 custom_optimizer = torch.optim.AdamW(param_group, lr = 5e-5) 
 # custom_optimizer = torch.optim.AdamW(param_group, lr = 1e-4) 
