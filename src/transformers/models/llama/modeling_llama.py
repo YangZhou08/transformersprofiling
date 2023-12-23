@@ -2671,8 +2671,12 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         mask = torch.rand(sequence_length, sequence_length) > 0.5  # Random mask for demo
         tensor[mask] = 0.0
         ''' 
-        # Convert to numpy for visualization
-        tensor_np = tensor.cpu().clone().numpy() 
+        # Convert to numpy for visualization 
+        tensordtype = tensor.dtype 
+        if tensordtype == torch.bfloat16: 
+            tensor_np = tensor.cpu().clone().to(torch.float32).numpy() 
+        else: 
+            tensor_np = tensor.cpu().clone().numpy() 
 
         # Replace -inf with 1 and 0 with 0 for visualization purposes
         # visual_tensor = np.where(tensor_np == float('-inf'), 1, 0) 
