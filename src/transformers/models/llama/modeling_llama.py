@@ -1338,7 +1338,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
         assert seq_length % 7 == 0, "seq_length is not divisible by 7" 
         added_tensor = torch.zeros((embedding_searched.shape[0], seq_length // 7, embedding_searched.shape[2])).to(input_ids.device) 
         for i in range(seq_length // 7): 
-            sum = torch.zeros((embedding_searched.shape[0], 1, embedding_searched.shape[2])) 
+            sum = torch.zeros((embedding_searched.shape[0], embedding_searched.shape[2])).to(input_ids.device) 
             for j in range(7): 
                 sum += embedding_searched[:, i * 7 + j, :] 
                 sum /= 7. 
