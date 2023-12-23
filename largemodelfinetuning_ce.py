@@ -374,6 +374,7 @@ for i in range(10):
         print(input_ids[j], end = end) 
     print() 
     print("attention_mask_chunk {}".format(example["attention_mask_chunk"])) 
+exit(0) 
 
 # large_model = large_model.to(torch_device) 
 
