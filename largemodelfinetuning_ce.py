@@ -341,6 +341,8 @@ def group_attention_map_chunked_generation(examples):
     input_ids = examples["input_ids"] 
     input_ids = torch.tensor(input_ids) 
     print("input_ids shape {}".format(input_ids.shape)) 
+    if len(input_ids.shape) == 1: 
+        input_ids = input_ids.unsqueeze(0) 
     
     seq_length = input_ids.shape[1] 
     attention_mask_chunk = torch.ones((input_ids.shape[0], seq_length // 7)) 
