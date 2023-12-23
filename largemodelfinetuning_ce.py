@@ -301,7 +301,7 @@ test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 
 small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
 
 small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
-small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 7) 
+small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 7, target_model_dim = 3200) 
 
 new_state_dict = {} 
 
