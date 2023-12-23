@@ -2950,7 +2950,10 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             print("this is only for debugging purposes, if you see this in the commandline output, this is not for anything else ohter than debugging") 
             self.embed_projection.weight.data.mul_(0.) # only for debugging purposes 
             ''' 
+            print(colored("condensed_embeds dtype: {} input_ids dtype: {}".format(condensed_embeds.dtype, input_ids.dtype), "yellow")) 
             # inputs_embeds = self.embed_projection(inputs_embeds) 
+            if condensed_embeds.dtype == torch.bfloat16: 
+                condensed_embeds = condensed_embeds.to(torch.float32) 
             if self.condensed_fashion == "projection_mode": 
                 condensed_embeds = self.embed_projection(condensed_embeds) 
             # print("condensed_embeds first ten numbers: {}".format(condensed_embeds.view(-1)[: 100])) 

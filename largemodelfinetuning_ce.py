@@ -325,7 +325,7 @@ try:
 except RuntimeError as r: 
     print(colored(r, "yellow")) 
 
-small_model = small_model.to(torch_device) 
+small_model = small_model.to(torch.float32).to(torch_device) 
 small_model.eval() # at start we avoid training the small model 
 
 large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model).to(torch.bfloat16).to(torch_device) 
