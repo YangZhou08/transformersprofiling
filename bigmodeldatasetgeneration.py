@@ -252,6 +252,7 @@ for step, inputs in enumerate(train_dataloader):
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step)) 
     print("textsynthesized: {}".format(tokenizer.batch_decode(large_outputs.sequences))) 
+    print() 
     if step > 10: 
         exit(0) 
     '''
