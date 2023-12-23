@@ -1350,6 +1350,9 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
     
     def set_addonsmallmodel(self, addonsmallmodel): 
         self.addonsmallmodel = addonsmallmodel 
+    
+    def set_smallmodelfull(self): 
+        self.addonsmallmodel = self.addonsmallmodel.to(torch.float32) 
 
     @add_start_docstrings_to_model_forward(LLAMA_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=CausalLMOutputWithPast, config_class=_CONFIG_FOR_DOC)
