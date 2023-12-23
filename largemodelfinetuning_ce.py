@@ -232,6 +232,7 @@ class CustomTrainer(Trainer):
             output_attentions = True, 
             return_dict = True, 
         ) 
+        
         # Save past state if it exists
         # TODO: this needs to be fixed and made cleaner later.
         if self.args.past_index >= 0:
@@ -390,6 +391,18 @@ for i in range(10):
 
 train_dataset.set_format(type = "torch", columns = ["attention_mask_chunk", "input_ids", "attention_mask"]) 
 test_dataset.set_format(type = "torch", columns = ["attention_mask_chunk", "input_ids", "attention_mask"]) 
+
+for i in range(10): 
+    example = train_dataset[i] 
+    input_ids = example["input_ids"] 
+    for j in range(input_ids.shape[0]): 
+        if j != 0 and j % 7 == 0: 
+            end = " | " 
+        else: 
+            end = " " 
+        print(input_ids[j], end = end) 
+    print() 
+    print("attention_mask_chunk {}".format(example["attention_mask_chunk"])) 
 
 param_group = [] 
 for param in large_model.parameters(): 
