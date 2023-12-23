@@ -1342,7 +1342,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
             for j in range(7): 
                 sum += embedding_searched[:, i * 7 + j, :] 
                 sum /= 7. 
-                print("sum dtype {}".format(sum.dtype)) 
+                # print("sum dtype {}".format(sum.dtype)) 
             added_tensor[:, i, :] = sum 
         print("added_tensor shape {}".format(added_tensor.shape)) 
         
@@ -1410,7 +1410,6 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
         # TODO delete the following line 
         for param in self.model.parameters(): 
             print("param dtype {}".format(param.dtype)) 
-            exit(0) 
         
         outputs = self.model(
             input_ids=None, 
