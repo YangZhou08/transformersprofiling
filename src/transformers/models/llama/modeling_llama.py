@@ -1302,7 +1302,9 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
         super().__init__(config)
         self.model = LlamaModel(config)
         self.vocab_size = config.vocab_size
-        self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
+        self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False) 
+        
+        self.addonsmallmodel = None 
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -1329,7 +1331,21 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
         embedding_searched = self.model.embed_tokens(input_ids) 
         print("embedding_searched shape {}".format(embedding_searched.shape)) 
         seq_length = embedding_searched.shape[1] 
+        
+        assert seq_length % 7 == 0, "seq_length is not divisible by 7" 
         added_tensor = torch.zeros((embedding_searched.shape[0], seq_length // 7, embedding_searched.shape[2])).to(input_ids.device) 
+        for i in range(seq_length // 7): 
+            sum = torch.zeros((embedding_searched.shape[0], 1, embedding_searched.shape[2])) 
+            for j in range(7): 
+                sum += embedding_searched[:, i * 7 + j, :] 
+                sum /= 7. 
+            added_tensor[:, i, :] = sum 
+        print("added_tensor shape {}".format(added_tensor.shape)) 
+        
+        return added_tensor 
+    
+    def set_addonsmallmodel(self, addonsmallmodel): 
+        self.addonsmallmodel = addonsmallmodel 
 
     @add_start_docstrings_to_model_forward(LLAMA_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=CausalLMOutputWithPast, config_class=_CONFIG_FOR_DOC)
@@ -1379,6 +1395,11 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         # inside this function callm, input is through input_embeds 
+        extra_pass_in_embeds = self.naive_grouping(input_ids) 
+        # the attention mask should be compatible to the new input_embeds 
+        assert attention_mask.shape[1] == extra_pass_in_embeds.shape[1], "attention_mask shape is not compatible to the new input_embeds" 
+        assert inputs_embeds is None, "inputs_embeds is not None" 
+        inputs_embeds = extra_pass_in_embeds 
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
         outputs = self.model(
             input_ids=input_ids,

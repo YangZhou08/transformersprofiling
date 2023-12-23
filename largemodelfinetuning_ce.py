@@ -25,6 +25,7 @@ from src.transformers import DataCollatorForLanguageModeling
 from src.transformers.generation.utils import GenerationConfig 
 from src.transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSmallModel 
 from src.transformers.models.llama.modeling_llama import LlamaCausalLMWeirdTwo 
+from src.transformers.models.llama.modeling_llama import LlamaWeirdLarge 
 import time 
 from torch.utils.data import random_split 
 from src.transformers import BitsAndBytesConfig 
@@ -272,7 +273,7 @@ def encode_with_truncation(examples):
 train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
 test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 4) 
 
-large_model = LlamaForCausalLM.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
 # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 # large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models) 
 large_model.train() 
@@ -303,6 +304,7 @@ except RuntimeError as r:
 
 small_model = small_model.to(torch_device) 
 small_model.eval() # at start we avoid training the small model 
+large_model.set_addonsmallmodel(small_model) 
 
 large_model.config.pad_token_id = tokenizer.pad_token_id 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
@@ -374,12 +376,11 @@ for i in range(10):
         print(input_ids[j], end = end) 
     print() 
     print("attention_mask_chunk {}".format(example["attention_mask_chunk"])) 
-exit(0) 
 
 # large_model = large_model.to(torch_device) 
 
-train_dataset.set_format(type = "torch", columns = ["input_ids_chunk", "attention_mask_chunk", "input_ids", "attention_mask"]) 
-test_dataset.set_format(type = "torch", columns = ["input_ids_chunk", "attention_mask_chunk", "input_ids", "attention_mask"]) 
+train_dataset.set_format(type = "torch", columns = ["attention_mask_chunk", "input_ids", "attention_mask"]) 
+test_dataset.set_format(type = "torch", columns = ["attention_mask_chunk", "input_ids", "attention_mask"]) 
 
 param_group = [] 
 for param in large_model.parameters(): 
