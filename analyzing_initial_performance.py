@@ -168,6 +168,11 @@ tokenizer.padding_side = "left"
 # datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
 d_files = ["c4_file{}.json".format(i) for i in range(1, 3)] 
 datasetnew = load_dataset('json', data_files = [datasetparent + name for name in d_files], split = "train") 
+max_length = 256 
+def encode_with_truncation(examples): 
+    return tokenizer(examples["text"], truncation = True, padding = "max_length", 
+                     max_length = max_length, return_special_tokens_mask = True) 
+datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
 '''
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
