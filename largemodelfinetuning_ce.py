@@ -266,7 +266,7 @@ d = onedataset.train_test_split(test_size = 0.005) # 0.995 for training, 0.005 f
 def encode_with_truncation(examples): 
     # return tokenizer(examples["text"], truncation = True, padding = "max_length", 
                     #  max_length = max_length, return_special_tokens_mask = True) 
-    return tokenizer(examples["text"], padding = "max_length", max_length = 256, 
+    return tokenizer(examples["text"], padding = "max_length", max_length = 259, 
                      return_attention_mask = True, return_tensors = "pt", truncation = True) 
 
 train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
@@ -308,6 +308,8 @@ large_model.config.pad_token_id = tokenizer.pad_token_id
 small_model.config.pad_token_id = tokenizer.pad_token_id 
 
 def naive_grouping(examples): 
+    # I found that using the multiprocessing in the dataset cannot process neural networks 
+    # this function is not used switching everything inside the neural network forward function 
     input_ids = examples["input_ids"] 
     input_ids = torch.tensor(input_ids).to(torch_device) 
     print("got here inside the naive_grouping function") 
@@ -332,6 +334,29 @@ def naive_grouping(examples):
     print("added_tensor shape {}".format(added_tensor.shape)) 
     
     return {"input_ids_chunk": added_tensor, "attention_mask_chunk": practice_attention_mask} 
+
+def group_attention_map_chunked_generation(examples): 
+    # this function is for generating the chunked attention mask 
+    
+    input_ids = examples["input_ids"] 
+    input_ids = torch.tensor(input_ids) 
+    print("input_ids shape {}".format(input_ids.shape)) 
+    
+    seq_length = input_ids.shape[1] 
+    attention_mask_chunk = torch.ones((input_ids.shape[0], seq_length // 7)) 
+    assert input_ids.shape[1] % 7 == 0 
+    
+    for i in range(input_ids.shape[0]): 
+        for j in range(seq_length // 7): 
+            all_pad = True 
+            for k in range(7): 
+                if input_ids[i, j * 7 + k] != tokenizer.pad_token_id: 
+                    all_pad = False 
+            
+            if all_pad: 
+                attention_mask_chunk[i, j] = 0 
+    
+    return {"attention_mask_chunk": attention_mask_chunk} 
 
 train_dataset = train_dataset.map(naive_grouping, batch_size = 1, num_proc = 4) 
 exit(0) 
