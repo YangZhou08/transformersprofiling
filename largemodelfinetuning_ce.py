@@ -329,7 +329,7 @@ small_model = small_model.to(torch.float32).to(torch_device)
 small_model.eval() # at start we avoid training the small model 
 
 large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model).to(torch.bfloat16).to(torch_device) 
-large_model.set_smallmodelfull() 
+large_model.set_smallmodelfull() # this function has proven to be very important 
 # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 # large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models) 
 large_model.train() 

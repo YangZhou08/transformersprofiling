@@ -1443,14 +1443,14 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
             use_cache = None, 
             output_attentions = None, 
             output_hidden_states = None, 
-            return_dict = None, 
+            return_dict = True, 
             start_idx = 0, # NOTE this is very important 
             eval_mode = False, 
             iteration_count = 1, 
             condensed_fashion = "projection_mode", 
             experiment_setting = "setting4", 
         ) 
-        logits = addonmodeloutput[1] 
+        logits = addonmodeloutput.logits 
         
         '''
         if self.config.pretraining_tp > 1:
