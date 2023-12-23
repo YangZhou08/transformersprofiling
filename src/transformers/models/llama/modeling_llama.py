@@ -1333,7 +1333,6 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
     def naive_grouping(self, input_ids): 
         embedding_searched = self.model.embed_tokens(input_ids) 
         print("embedding_searched shape {} {}".format(embedding_searched.shape, embedding_searched.dtype)) 
-        exit(0) 
         seq_length = embedding_searched.shape[1] 
         
         assert seq_length % 7 == 0, "seq_length is not divisible by 7" 
@@ -1405,7 +1404,13 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
         assert attention_mask.shape[1] == extra_pass_in_embeds.shape[1], "attention_mask shape is not compatible to the new input_embeds" 
         assert inputs_embeds is None, "inputs_embeds is not None" 
         inputs_embeds = extra_pass_in_embeds 
-        # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
+        print(colored("inputs_embeds shape {} dtype {}".format(inputs_embeds.shape, inputs_embeds.dtype), "yellow")) 
+        # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn) 
+        # TODO delete the following line 
+        for param in self.model.parameters(): 
+            print("param dtype {}".format(param.dtype)) 
+            exit(0) 
+        
         outputs = self.model(
             input_ids=None, 
             attention_mask=attention_mask,
