@@ -472,7 +472,7 @@ if has_wandb:
     wandb.init(project = "chunkedlargefinetuning", config = wandblogconfigs, name = "large_small_ce{}_{}".format(today, "unmasked")) 
 
 trainer = CustomTrainer(
-    model = small_model, 
+    model = large_model, 
     args = training_args, 
     train_dataset = train_dataset, 
     eval_dataset = test_dataset, 
