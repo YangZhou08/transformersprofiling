@@ -366,7 +366,7 @@ test_dataset = test_dataset.map(group_attention_map_chunked_generation, batched 
 for i in range(10): 
     example = train_dataset[i] 
     input_ids = example["input_ids"] 
-    for j in range(input_ids.shape[0]): 
+    for j in range(len(input_ids)): 
         if j != 0 and j % 7 == 0: 
             end = " | " 
         else: 
