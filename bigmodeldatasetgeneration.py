@@ -38,8 +38,8 @@ import socket
 hostname = socket.gethostname()
 print("Hostname:", hostname) 
 
-# model_name = "openllama3b" 
-model_name = "shearedllama2_7b" 
+model_name = "openllama3b" 
+# model_name = "shearedllama2_7b" 
 
 parser = argparse.ArgumentParser() 
 parser.add_argument("--kernel_size", type = int, default = 4) 
@@ -172,16 +172,22 @@ small_model.eval()
 print() 
 
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
-tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
-# tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
+if model_name == "shearedllama2_7b": 
+    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+elif model_name == "openllama3b": 
+    tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
+else: 
+    raise ValueError("model name should be one of shearedllama2_7b, openllama3b") 
 # tokenizer.add_special_tokens({"pad_token":"<pad>"}) 
 # print("the tokenizer pad token id is {}".format(tokenizer.pad_token_id)) 
 # tokenizer.pad_token = "[PAD]" 
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "left" 
 
-# large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) # pad_id = 2 
-large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) # pad_id = 2 
+if model_name == "openllama3b": 
+    large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) # pad_id = 2 
+else: 
+    large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) # pad_id = 2 
 # large_model = LlamaForCausalLM.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 large_model.eval() 
 
