@@ -214,7 +214,7 @@ large_model.eval()
 small_model = large_model 
 # small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
 
-batch_size = 120 
+batch_size = 100 
 dataloader = DataLoader(datasetnew, batch_size = batch_size) 
 
 # generated using GPT-4 
