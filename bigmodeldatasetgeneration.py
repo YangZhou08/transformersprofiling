@@ -36,21 +36,25 @@ dir_models = "/home/yangzho6/model_checkpoints"
 import socket
 
 hostname = socket.gethostname()
-print("Hostname:", hostname)
+print("Hostname:", hostname) 
+
+model_name = "openllama3b" 
+# model_name = "shearedllama2_7b" 
 
 if "lovelace" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     datasetsrc = "/home/yangzho6/c4_parts/downloads/c4_file2.json" 
+    datasetparent = "/home/yangzho6/c4_parts/downloads/" 
     dir_models = "/home/yangzho6/model_checkpoints" 
-    synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/" 
-    synthesized_data_path = "/home/yangzho6/c4llm_synthesized/tensor_dir/" 
+    synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/{}".format(model_name)  
+    synthesized_data_path = "/home/yangzho6/c4llm_synthesized/{}/tensor_dir/".format(model_name) 
 elif "ada" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     datasetsrc = "/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json" 
     dir_models = "/home/beidic/yangzho6/model_checkpoints" 
-    synthesized_dir_path = "/home/beidic/yangzho6/c4llm_synthesized/" 
+    synthesized_dir_path = "/home/beidic/yangzho6/c4llm_synthesized/{}/".format(model_name) 
     # synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/tensor_dir/" 
-    synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/tensor_dir2/" 
+    synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/{}/tensor_dir2/".format(model_name) 
 else: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_models = "/home/yangzho6/model_checkpoints" 
@@ -65,7 +69,8 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
 # onedataset = load_dataset('json', data_files = ['/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', '/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json'], split = "train") 
 # onedataset = load_dataset("json", data_files = '/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
-onedataset = load_dataset("json", data_files = datasetsrc, split = "train[:1000]") 
+d_files = ["c4_file{}.json".format(i) for i in range(1, 5)] 
+onedataset = load_dataset("json", data_files = d_files, split = "train") 
 
 class CustomTrainer(Trainer): 
     def __init__(self, large_model = None, *args, **kwargs): 
@@ -204,7 +209,7 @@ training_args = TrainingArguments(
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=1,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size= 100, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size= 120, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=64,  # evaluation batch size
     logging_steps=1000,             # evaluate, log and save model checkpoints every 1000 step
@@ -251,19 +256,18 @@ for step, inputs in enumerate(train_dataloader):
     temperature = 1 
 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
-    # large_outputs = large_model.generate(input_ids = input_ids, max_length = max_length + dict_kernel_maxlength[kernel_size], do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
-    large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
+    large_outputs = large_model.generate(input_ids = input_ids, max_length = max_length + dict_kernel_maxlength[kernel_size], do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
+    # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step)) 
-    for i in range(input_ids.shape[0]): 
-        example = large_outputs.sequences[i] 
-        print(tokenizer.decode(example[: max_length])) 
-        print(colored(tokenizer.decode(example[max_length : ]), "blue")) 
-        print() 
-    if step > 1: 
-        exit(0) 
-    '''
+    # for i in range(input_ids.shape[0]): 
+    #     example = large_outputs.sequences[i] 
+    #     print(tokenizer.decode(example[: max_length])) 
+    #     print(colored(tokenizer.decode(example[max_length : ]), "blue")) 
+    #     print() 
+    # if step > 1: 
+    
     list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
     downsampled_vectors = trainer.downsample_vectors(list_of_last_hidden_states, kernel_size = kernel_size) 
     # break 
@@ -327,6 +331,5 @@ for step, inputs in enumerate(train_dataloader):
             "condensed_token_path": tensor_file_path, 
         } 
         json_file1.write(json.dumps(example_data) + "\n") 
-    ''' 
     
 json_file1.close() 
