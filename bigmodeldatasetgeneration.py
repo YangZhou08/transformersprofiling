@@ -191,7 +191,7 @@ def encode_with_truncation(examples):
                      max_length = max_length, return_special_tokens_mask = True) 
 
 # train_dataset = onedataset["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
-train_dataset = onedataset.map(encode_with_truncation, batched = True, num_proc = 4) 
+train_dataset = onedataset.map(encode_with_truncation, batched = True, num_proc = 16 if model_name == "openllama3b" else 4) 
 # train_dataset = d['train'].map(encode_with_truncation, batched = True, num_proc = 4) 
 # test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
 
@@ -257,7 +257,8 @@ for step, inputs in enumerate(train_dataloader):
     temperature = 1 
 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
-    large_outputs = large_model.generate(input_ids = input_ids, max_length = max_length + dict_kernel_maxlength[kernel_size], do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
+    # large_outputs = large_model.generate(input_ids = input_ids, max_length = max_length + dict_kernel_maxlength[kernel_size], do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
+    large_outputs = large_model.generate(input_ids = input_ids, max_length = max_length + dict_kernel_maxlength[kernel_size], do_sample = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
