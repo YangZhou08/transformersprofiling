@@ -70,7 +70,7 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
 # onedataset = load_dataset('json', data_files = ['/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', '/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json'], split = "train") 
 # onedataset = load_dataset("json", data_files = '/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
-d_files = ["c4_file{}.json".format(i) for i in range(4, 6)] 
+d_files = ["c4_file{}.json".format(i) for i in range(1, 4)] 
 print(colored("the processing files are {}".format(d_files), "yellow")) 
 onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train") 
 
@@ -193,7 +193,7 @@ def encode_with_truncation(examples):
                      max_length = max_length, return_special_tokens_mask = True) 
 
 # train_dataset = onedataset["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
-train_dataset = onedataset.map(encode_with_truncation, batched = True, num_proc = 16 if model_name == "openllama3b" else 4) 
+train_dataset = onedataset.map(encode_with_truncation, batched = True, num_proc = 16) 
 # train_dataset = d['train'].map(encode_with_truncation, batched = True, num_proc = 4) 
 # test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
 
@@ -265,13 +265,12 @@ for step, inputs in enumerate(train_dataloader):
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step)) 
-    for i in range(input_ids.shape[0]): 
-        example = large_outputs.sequences[i] 
-        print(tokenizer.decode(example[: max_length])) 
-        print(colored(tokenizer.decode(example[max_length : ]), "blue")) 
-        print() 
+    # for i in range(input_ids.shape[0]): 
+    #     example = large_outputs.sequences[i] 
+    #     print(tokenizer.decode(example[: max_length])) 
+    #     print(colored(tokenizer.decode(example[max_length : ]), "blue")) 
+    #     print() 
     # if step > 1: 
-    exit(0) 
     
     list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
     downsampled_vectors = trainer.downsample_vectors(list_of_last_hidden_states, kernel_size = kernel_size) 
