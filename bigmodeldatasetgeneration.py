@@ -71,6 +71,7 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # onedataset = load_dataset('json', data_files = ['/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', '/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json'], split = "train") 
 # onedataset = load_dataset("json", data_files = '/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
 d_files = ["c4_file{}.json".format(i) for i in range(1, 4)] 
+print(colored("the processing files are {}".format(d_files), "yellow")) 
 onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train") 
 
 class CustomTrainer(Trainer): 
@@ -149,6 +150,7 @@ class CustomTrainer(Trainer):
 parser = argparse.ArgumentParser() 
 parser.add_argument("--kernel_size", type = int, default = 4) 
 parser.add_argument("--advanced_data_layout", type = bool, default = False) 
+parser.add_argument("--path_d", type = int, default = 0) 
 
 args = parser.parse_args() 
 
@@ -228,8 +230,8 @@ trainer = CustomTrainer(
     data_collator = data_collator, 
 ) 
 
-synthesized_data_path = synthesized_data_path[: -1] + "_kernel_{}/".format(args.kernel_size) 
-json_file_name = "c4synthesized_file1_kernel{}.json".format(args.kernel_size) 
+synthesized_data_path = synthesized_data_path[: -1] + "_kernel_{}_{}/".format(args.kernel_size, args.path_d) 
+json_file_name = "c4synthesized_file1_kernel{}_{}.json".format(args.kernel_size, args.path_d) 
 
 os.makedirs(synthesized_data_path, exist_ok = True) 
 # json_file_name = "c4synthesized_file1.json" 
