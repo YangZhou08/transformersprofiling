@@ -70,7 +70,7 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
 # onedataset = load_dataset('json', data_files = ['/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', '/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json'], split = "train") 
 # onedataset = load_dataset("json", data_files = '/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
-d_files = ["c4_file{}.json".format(i) for i in range(4, 6)] 
+d_files = ["c4_file{}.json".format(i) for i in range(1, 4)] 
 onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train") 
 
 class CustomTrainer(Trainer): 
