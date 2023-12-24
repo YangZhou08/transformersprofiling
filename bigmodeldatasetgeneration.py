@@ -41,6 +41,13 @@ print("Hostname:", hostname)
 # model_name = "openllama3b" 
 model_name = "shearedllama2_7b" 
 
+parser = argparse.ArgumentParser() 
+parser.add_argument("--kernel_size", type = int, default = 4) 
+parser.add_argument("--advanced_data_layout", type = bool, default = False) 
+parser.add_argument("--path_d", type = int, default = 0) 
+
+args = parser.parse_args() 
+
 if "lovelace" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     datasetsrc = "/home/yangzho6/c4_parts/downloads/c4_file2.json" 
@@ -70,7 +77,8 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
 # onedataset = load_dataset('json', data_files = ['/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', '/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json'], split = "train") 
 # onedataset = load_dataset("json", data_files = '/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
-d_files = ["c4_file{}.json".format(i) for i in range(4, 6)] 
+interest_idx_file = [1, 2, 3] if args.path_d == 0 else [4, 5] 
+d_files = ["c4_file{}.json".format(i) for i in interest_idx_file] 
 print(colored("the processing files are {}".format(d_files), "yellow")) 
 onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train") 
 
@@ -146,13 +154,6 @@ class CustomTrainer(Trainer):
         print("the loss is {}".format(loss)) 
 
         return (loss, outputs) if return_outputs else loss 
-
-parser = argparse.ArgumentParser() 
-parser.add_argument("--kernel_size", type = int, default = 4) 
-parser.add_argument("--advanced_data_layout", type = bool, default = False) 
-parser.add_argument("--path_d", type = int, default = 0) 
-
-args = parser.parse_args() 
 
 small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
 small_model.eval() 
@@ -261,7 +262,6 @@ for step, inputs in enumerate(train_dataloader):
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = max_length + dict_kernel_maxlength[kernel_size], do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = True, output_hidden_states = True, return_dict_in_generate = True) 
-    do_sample = True, output_hidden_states = True, return_dict_in_generate = True
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
