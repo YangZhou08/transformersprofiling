@@ -46,7 +46,7 @@ if "lovelace" in hostname:
     datasetsrc = "/home/yangzho6/c4_parts/downloads/c4_file2.json" 
     datasetparent = "/home/yangzho6/c4_parts/downloads/" 
     dir_models = "/home/yangzho6/model_checkpoints" 
-    synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/{}".format(model_name)  
+    synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/{}/".format(model_name)  
     synthesized_data_path = "/home/yangzho6/c4llm_synthesized/{}/tensor_dir/".format(model_name) 
 elif "ada" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
@@ -70,7 +70,7 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # onedataset = load_dataset('json', data_files = ['/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', '/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json'], split = "train") 
 # onedataset = load_dataset("json", data_files = '/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
 d_files = ["c4_file{}.json".format(i) for i in range(1, 5)] 
-onedataset = load_dataset("json", data_files = d_files, split = "train") 
+onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train") 
 
 class CustomTrainer(Trainer): 
     def __init__(self, large_model = None, *args, **kwargs): 
@@ -261,12 +261,13 @@ for step, inputs in enumerate(train_dataloader):
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step)) 
-    # for i in range(input_ids.shape[0]): 
-    #     example = large_outputs.sequences[i] 
-    #     print(tokenizer.decode(example[: max_length])) 
-    #     print(colored(tokenizer.decode(example[max_length : ]), "blue")) 
-    #     print() 
+    for i in range(input_ids.shape[0]): 
+        example = large_outputs.sequences[i] 
+        print(tokenizer.decode(example[: max_length])) 
+        print(colored(tokenizer.decode(example[max_length : ]), "blue")) 
+        print() 
     # if step > 1: 
+    exit(0) 
     
     list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
     downsampled_vectors = trainer.downsample_vectors(list_of_last_hidden_states, kernel_size = kernel_size) 
