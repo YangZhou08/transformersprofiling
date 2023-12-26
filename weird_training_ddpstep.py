@@ -480,7 +480,8 @@ class CustomTrainer(Trainer):
             # f.close() 
             # self.artifact.add_file("key_notes{}.md".format(self.commit_hash), name = "key_notes.md") 
             # wandb.log_artifact(self.artifact) 
-        torch.distributed.barrier() 
+        if self.accelerator.state.num_processes > 1: 
+            torch.distributed.barrier() 
                 
         # print("the shape of preds is {}".format(preds.shape)) 
         # use loss to compute perplexity 
