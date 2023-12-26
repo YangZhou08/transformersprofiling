@@ -735,6 +735,7 @@ class CustomTrainer(Trainer):
 
         observed_num_examples = 0 
         total_num_steps = len(dataloader) 
+        local_device = None 
         # Main evaluation loop
         for step, inputs in enumerate(tqdm(dataloader, desc = "description")): 
             # Update the observed num examples
@@ -748,6 +749,8 @@ class CustomTrainer(Trainer):
             # Prediction step 
             ignore_keys = ["hidden_states", "attentions", "past_key_values"] 
             loss, logits, labels = self.prediction_step(model, inputs, False, ignore_keys=ignore_keys) 
+            if local_device == None: 
+                local_device = loss.device 
             # print(ignore_keys) 
             # print(colored("the loss is {}".format(loss), "yellow")) 
             # print(colored("the shape of logits is {} {}".format(logits.shape, "yellow"))) 
@@ -768,12 +771,12 @@ class CustomTrainer(Trainer):
         if self.accelerator.is_main_process: 
             print("rank {} total_loss before aggregation is {}".format(self.accelerator.state.process_index, total_loss)) 
         # all gather the metrics 
-        total_loss = self.gather_function(torch.tensor(total_loss).reshape(1, -1)).sum(dim = -1).item() 
-        total_correct_words = self.gather_function(torch.tensor(total_correct_words).reshape(1, -1)).sum(dim = -1).item() 
-        total_words = self.gather_function(torch.tensor(total_words).reshape(-1, 1)).sum(dim = -1).item() 
-        sum_of_perplexity = self.gather_function(torch.tensor(sum_of_perplexity).reshape(1, -1)).sum(dim = -1).item() 
-        interest_total_words = self.gather_function(torch.tensor(interest_total_words).reshape(1, -1)).sum(dim = -1).item() 
-        interest_correct_words = self.gather_function(torch.tensor(interest_correct_words).reshape(1, -1)).sum(dim = -1).item() 
+        total_loss = self.gather_function(torch.tensor(total_loss).reshape(1, -1).to(local_device)).sum(dim = -1).item() 
+        total_correct_words = self.gather_function(torch.tensor(total_correct_words).reshape(1, -1).to(local_device)).sum(dim = -1).item() 
+        total_words = self.gather_function(torch.tensor(total_words).reshape(-1, 1).to(local_device)).sum(dim = -1).item() 
+        sum_of_perplexity = self.gather_function(torch.tensor(sum_of_perplexity).reshape(1, -1).to(local_device)).sum(dim = -1).item() 
+        interest_total_words = self.gather_function(torch.tensor(interest_total_words).reshape(1, -1).to(local_device)).sum(dim = -1).item() 
+        interest_correct_words = self.gather_function(torch.tensor(interest_correct_words).reshape(1, -1).to(local_device)).sum(dim = -1).item() 
         if self.accelerator.is_main_process: 
             print("rank {} total_loss before aggregation is {}".format(self.accelerator.state.process_index, total_loss)) 
         # After all calls to `.gather_function`, reset to `gather_for_metrics`:
