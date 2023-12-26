@@ -311,8 +311,6 @@ def apply_differently_rotary_pos_emb(q, k, cosq, sinq, cosk, sink, position_ids,
     sinq = sinq[position_ids].unsqueeze(unsqueeze_dim) 
 
     if inv_freq is not None: 
-        print("inv_freq length is: {}".format(len(inv_freq))) 
-        print("position_ids length is: {}".format(len(position_ids))) 
         # print(position_ids) 
         # inv_freq = inv_freq[position_ids] 
         if len(position_ids.shape) != 1: 
@@ -1039,7 +1037,7 @@ class LlamaModel(LlamaPreTrainedModel):
                 past_key_values_length, seq_length + past_key_values_length, dtype=torch.long, device=device
             )
             position_ids = position_ids.unsqueeze(0) 
-            print(colored("position_ids: {}".format(position_ids), "red")) # TODO remove this print once this is make sure to be correct 
+            # print(colored("position_ids: {}".format(position_ids), "red")) # TODO remove this print once this is make sure to be correct 
 
         if inputs_embeds is None:
             inputs_embeds = self.embed_tokens(input_ids)
@@ -1939,7 +1937,6 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
             original_prob_output = None 
         # hidden_states should have dimension (batch_size, seq_length, hidden_size) 
         # after the output_tripple_projection, we expect it should be (batch_size, seq_length, hidden_size * n) 
-        print("hidden_states has shape {}".format(hidden_states.shape)) 
         hidden_states = hidden_states.to(torch.float32) 
         hidden_states = self.output_n_projection(hidden_states) 
         hidden_states = hidden_states.reshape(hidden_states.shape[0], hidden_states.shape[1], self.lookaheadcount, -1) 
@@ -1961,7 +1958,6 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
             # shift_logits = logits[..., :-1, :].contiguous() 
             # shift_labels = labels[..., 1:].contiguous() 
             shift_logits = logits[:, :-(self.lookaheadcount), :, :].contiguous() 
-            print("shift logits shape {}".format(shift_logits.shape)) 
             # only changing logits sequenc length dimension 
             if labels.shape[-1] != self.lookaheadcount: 
                 shift_labels = [] # hold all the shifted versions together 
@@ -1974,9 +1970,6 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
                 label_actual_mask = label_actual_mask.unsqueeze(-1).expand(-1, -1, self.lookaheadcount) 
                 shift_labels[label_actual_mask] = -100 
                 # print(shift_labels[0]) 
-                print("shift logits shape {}".format(shift_logits.shape)) 
-                print("shift labels shape {}".format(shift_labels.shape)) 
-                print("checking use_filtered_hot_labels: {}".format(use_filtered_hot_labels)) 
 
                 if use_filtered_hot_labels: 
                     # interact with only the hot 1000 tokens 
@@ -1992,7 +1985,6 @@ class LlamaCausalLMWeirdTwo(LlamaPreTrainedModel):
                     # print("first five of shift labels {}".format(shift_labels[: 5, :, 0])) 
             else: 
                 shift_labels = labels 
-                print("shift labels shape {}".format(shift_labels.shape)) 
             output_actual_labelmasks = (shift_labels != -100)[:, :, 0] # shape would be of dimension (batch_size, seq_length) 
 
             # Flatten the tokens

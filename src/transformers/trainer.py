@@ -732,7 +732,6 @@ class Trainer:
             return dataset
         self._set_signature_columns_if_needed()
         signature_columns = self._signature_columns 
-        print("signature_columns", signature_columns) # NOTE debug print 
 
         ignored_columns = list(set(dataset.column_names) - set(signature_columns))
         if len(ignored_columns) > 0:
@@ -745,9 +744,6 @@ class Trainer:
             )
 
         columns = [k for k in signature_columns if k in dataset.column_names] 
-        
-        print(colored("things inside the columns: {}".format(columns), "red")) # NOTE debug print 
-        print(colored("keys in dataseettrain {}".format(dataset[0].keys()), "red")) # NOTE debug print 
 
         if version.parse(datasets.__version__) < version.parse("1.4.0"):
             dataset.set_format(
@@ -930,31 +926,12 @@ class Trainer:
         `create_scheduler`) in a subclass.
         """
         self.create_optimizer() 
-        print("inside create_optimier_and_scheduler function call, self.optimizer is {}".format(self.optimizer)) 
         if IS_SAGEMAKER_MP_POST_1_10 and smp.state.cfg.fp16:
             # If smp >= 1.10 and fp16 is enabled, we unwrap the optimizer
             optimizer = self.optimizer.optimizer
         else:
             optimizer = self.optimizer
         self.create_scheduler(num_training_steps=num_training_steps, optimizer=optimizer) 
-        print("inside create_optimizer_and_scheduler function call, self.lr_scheduler is {}".format(self.lr_scheduler)) 
-        # code generated from GPT-4 
-        scheduler = self.lr_scheduler 
-        print(f"Scheduler Type: {scheduler.__class__.__name__}")
-        print(f"Initial Learning Rate: {scheduler.base_lrs}")
-        print(f"Current Learning Rate: {scheduler.get_last_lr()}")
-        print(f"Step Size: {scheduler.step_size if hasattr(scheduler, 'step_size') else 'N/A'}")
-        print(f"Gamma: {scheduler.gamma if hasattr(scheduler, 'gamma') else 'N/A'}")
-        print(f"Last Epoch: {scheduler.last_epoch}")
-        print(f"State Dictionary: {scheduler.state_dict()}") 
-        # ... and so on for the other fields 
-
-        # If your scheduler is metric-based like ReduceLROnPlateau
-        if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
-            print(f"Metrics: {scheduler.last_epoch_metric}")
-            print(f"Best Metric: {scheduler.best}")
-            print(f"Cooldown Period: {scheduler.cooldown_counter}")
-            print(f"Patience: {scheduler.patience}") 
 
     def get_decay_parameter_names(self, model) -> List[str]:
         """
@@ -3009,18 +2986,6 @@ class Trainer:
         for checkpoint in checkpoints_to_be_deleted:
             logger.info(f"Deleting older checkpoint [{checkpoint}] due to args.save_total_limit")
             shutil.rmtree(checkpoint, ignore_errors=True)
-    
-    # this function is only for debugging purposes 
-    def evaluation_loop2(
-        self,
-        dataloader: DataLoader,
-        description: str,
-        prediction_loss_only: Optional[bool] = None,
-        ignore_keys: Optional[List[str]] = None,
-        metric_key_prefix: str = "eval",
-    ) -> EvalLoopOutput: 
-        print("got inside the class") 
-        pass 
 
     def evaluate(
         self,
@@ -3058,16 +3023,6 @@ class Trainer:
         eval_dataloader = self.get_eval_dataloader(eval_dataset)
         start_time = time.time()
 
-        # below line is only for debugging 
-        output = self.evaluation_loop2(
-            eval_dataloader,
-            description="Evaluation",
-            # No point gathering the predictions if there are no metrics, otherwise we defer to
-            # self.args.prediction_loss_only
-            prediction_loss_only=True if self.compute_metrics is None else None,
-            ignore_keys=ignore_keys,
-            metric_key_prefix=metric_key_prefix,
-        ) 
         eval_loop = self.prediction_loop if self.args.use_legacy_prediction_loop else self.evaluation_loop
         output = eval_loop(
             eval_dataloader,
@@ -3477,7 +3432,6 @@ class Trainer:
                         logits_mb = raw_outputs
                     logits = smp_nested_concat(logits_mb)
             else: 
-                print("has_labels: {}".format(has_labels)) 
                 if has_labels or loss_without_labels:
                     with self.compute_loss_context_manager():
                         loss, outputs = self.compute_loss(model, inputs, return_outputs=True)
