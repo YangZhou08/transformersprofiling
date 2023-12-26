@@ -49,8 +49,8 @@ except ImportError:
     has_wandb = False 
 
 # has_wandb = False # disable for debugging 
-model_name = "openllama3b" 
-# model_name = "shearedllama2_7b" 
+# model_name = "openllama3b" 
+model_name = "shearedllama2_7b" 
 
 from src.transformers.utils import ( 
     ADAPTER_CONFIG_NAME,
@@ -988,7 +988,12 @@ if not args.use_plain_model:
     small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
 
     small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
-    small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 3200) 
+    if model_name == "openllama3b": 
+        small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 3200) 
+    elif model_name == "shearedllama2_7b": 
+        small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 2560) 
+    else: 
+        small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 4096) 
 
     new_state_dict = {} 
 
