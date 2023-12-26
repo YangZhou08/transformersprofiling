@@ -1059,7 +1059,8 @@ data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = Fal
 # model_path = "/home/yangzho6/model_checkpoints" 
 model_path = dir_models 
 training_args = TrainingArguments(
-    output_dir=model_path,          # output directory to where save model checkpoint
+    output_dir=model_path,          # output directory to where save model checkpoint 
+    # resume_from_checkpoint="./model_output/checkpoint-500", 
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
