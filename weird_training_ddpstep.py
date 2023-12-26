@@ -774,12 +774,12 @@ class CustomTrainer(Trainer):
         aggregated_loss = self.gather_function(torch.tensor(total_loss).reshape(1, -1).to(local_device)) 
         if self.accelerator.is_main_process: 
             print("rank {} total_loss after aggregation is {}".format(self.accelerator.state.process_index, aggregated_loss)) 
-        total_loss = self.gather_function(torch.tensor(total_loss).reshape(1, -1).to(local_device)).sum(dim = -1).item() 
-        total_correct_words = self.gather_function(torch.tensor(total_correct_words).reshape(1, -1).to(local_device)).sum(dim = -1).item() 
-        total_words = self.gather_function(torch.tensor(total_words).reshape(-1, 1).to(local_device)).sum(dim = -1).item() 
-        sum_of_perplexity = self.gather_function(torch.tensor(sum_of_perplexity).reshape(1, -1).to(local_device)).sum(dim = -1).item() 
-        interest_total_words = self.gather_function(torch.tensor(interest_total_words).reshape(1, -1).to(local_device)).sum(dim = -1).item() 
-        interest_correct_words = self.gather_function(torch.tensor(interest_correct_words).reshape(1, -1).to(local_device)).sum(dim = -1).item() 
+        total_loss = self.gather_function(torch.tensor(total_loss).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
+        total_correct_words = self.gather_function(torch.tensor(total_correct_words).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
+        total_words = self.gather_function(torch.tensor(total_words).reshape(-1, 1).to(local_device)).view(-1).sum(dim = -1).item() 
+        sum_of_perplexity = self.gather_function(torch.tensor(sum_of_perplexity).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
+        interest_total_words = self.gather_function(torch.tensor(interest_total_words).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
+        interest_correct_words = self.gather_function(torch.tensor(interest_correct_words).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
         if self.accelerator.is_main_process: 
             print("rank {} total_loss before aggregation is {}".format(self.accelerator.state.process_index, total_loss)) 
         # After all calls to `.gather_function`, reset to `gather_for_metrics`:
@@ -1005,7 +1005,7 @@ if not args.use_plain_model:
     except RuntimeError as r: 
         print(colored(r, "yellow")) 
 
-    small_model = small_model.to(torch_device) 
+    small_model = small_model.to(torch_device).to(torch.bfloat16) 
     small_model.train() 
 
     # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
