@@ -742,7 +742,7 @@ class CustomDataset:
             item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
         ''' 
         item["condensed_embeds"] = tensor 
-        keys = "input_ids" in item.__dict__.keys() 
+        keys = item.keys() 
         assert "input_ids" in keys and "attention_mask" in keys 
 
         return item 
