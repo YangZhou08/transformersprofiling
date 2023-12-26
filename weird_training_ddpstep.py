@@ -705,10 +705,21 @@ class CustomDataset:
     def __len__(self): 
         return len(self.dataset) 
     
+    def preprocess_dataset(self): 
+        def encode_with_truncation(examples): 
+            # return tokenizer(examples["text"], truncation = True, padding = "max_length", 
+                            #  max_length = max_length, return_special_tokens_mask = True) 
+            return tokenizer(examples["text"], padding = "max_length", max_length = self.max_length, 
+                            return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                            add_special_tokens = True) 
+        
+        self.dataset = self.dataset.map(encode_with_truncation, batched = True, num_proc = 4) 
+        self.dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+    
     def __getitem__(self, idx): 
         item = self.dataset[idx] 
         tensor = torch.load(item["condensed_token_path"]) 
-
+        '''
         if self.tokenizer is not None: 
             encoded_text = self.tokenizer( 
                 item["text"], 
@@ -724,8 +735,10 @@ class CustomDataset:
             
             item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension
             item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
-        
+        ''' 
         item["condensed_embeds"] = tensor 
+        keys = "input_ids" in item.__dict__.keys() 
+        assert "input_ids" in keys and "attention_mask" in keys 
 
         return item 
 
@@ -795,6 +808,7 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 kernel_size = args.kernel_size 
 
 datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
+datasetnew.preprocess_dataset() 
 train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.05 = 36k 
                                                  # 356k * 0.99 = 352k 356k * 0.01 = 3.6k 
 
