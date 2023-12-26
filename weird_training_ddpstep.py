@@ -1090,16 +1090,6 @@ training_args = TrainingArguments(
     warmup_steps = 100, 
 ) 
 
-max_length = 128 
-if has_wandb: 
-    project_setting = args.experiment_setting if args.eval_mode is False else "finetuning" 
-    today = datetime.date.today() 
-    wandblogconfigs = {**(training_args.to_dict()), **(args.__dict__)} 
-    wandblogconfigs["git_commit"] = commit_hash 
-    wandblogconfigs["time_hash"] = hash_of_time 
-    # wandb.init(project = "llm160m", config = training_args, name="{}_{}".format(today, project_setting)) 
-    wandb.init(project = "llm160m", config = wandblogconfigs, name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain")) 
-
 weightmodelfirst = next(small_model.parameters()) 
 # print(weightmodelfirst.dtype) 
 print(colored(weightmodelfirst.dtype, "red")) 
@@ -1158,6 +1148,16 @@ trainer = CustomTrainer(
     eval_mode = args.eval_mode, 
     time_hash = hash_of_time, 
 ) 
+
+max_length = 128 
+if trainer.accelerator.is_main_process and has_wandb: 
+    project_setting = args.experiment_setting if args.eval_mode is False else "finetuning" 
+    today = datetime.date.today() 
+    wandblogconfigs = {**(training_args.to_dict()), **(args.__dict__)} 
+    wandblogconfigs["git_commit"] = commit_hash 
+    wandblogconfigs["time_hash"] = hash_of_time 
+    # wandb.init(project = "llm160m", config = training_args, name="{}_{}".format(today, project_setting)) 
+    wandb.init(project = "llm160m", config = wandblogconfigs, name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain")) 
 
 print("experiment-setting is {}".format(trainer.experiment_setting)) 
 
