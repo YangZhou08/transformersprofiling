@@ -713,8 +713,13 @@ class CustomDataset:
                             return_attention_mask = True, return_tensors = "pt", truncation = True, 
                             add_special_tokens = True) 
         
+        def loading_condensed_embeds(examples): 
+            # not used because it consumes too much memory 
+            return {"condensed_embeds": torch.load(examples["condensed_token_path"])} 
+        
         self.dataset = self.dataset.map(encode_with_truncation, batched = True, num_proc = 4) 
-        self.dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+        # self.dataset = self.dataset.map(loading_condensed_embeds, batched = True, num_proc = 4) 
+        # self.dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
     
     def __getitem__(self, idx): 
         item = self.dataset[idx] 
