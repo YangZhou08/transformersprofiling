@@ -726,7 +726,7 @@ class CustomDataset:
     def __getitem__(self, idx): 
         item = self.dataset[idx] 
         tensor = torch.load(item["condensed_token_path"]) 
-        '''
+        
         if self.tokenizer is not None: 
             encoded_text = self.tokenizer( 
                 item["text"], 
@@ -742,11 +742,11 @@ class CustomDataset:
             
             item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension
             item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
-        ''' 
+        
         item["condensed_embeds"] = tensor 
         # print(colored("the shape of condensed_embeds is {}".format(tensor.shape), "yellow")) 
-        item["input_ids"] = torch.tensor(item["input_ids"]) 
-        item["attention_mask"] = torch.tensor(item["attention_mask"]) 
+        # item["input_ids"] = torch.tensor(item["input_ids"]) 
+        # item["attention_mask"] = torch.tensor(item["attention_mask"]) 
 
         return item 
 
@@ -816,7 +816,7 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 kernel_size = args.kernel_size 
 
 datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
-datasetnew.preprocess_dataset() 
+# datasetnew.preprocess_dataset() 
 train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.05 = 36k 
                                                  # 356k * 0.99 = 352k 356k * 0.01 = 3.6k 
 
