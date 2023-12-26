@@ -2956,6 +2956,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 condensed_embeds = condensed_embeds.to(torch.float32) 
             print("embed_projection dtype: {}".format(self.embed_projection.weight.dtype)) 
             if self.condensed_fashion == "projection_mode": 
+                print(colored("condensed_embeds dtype: {}".format(condensed_embeds.dtype), "red")) 
                 condensed_embeds = self.embed_projection(condensed_embeds) 
             # print("condensed_embeds first ten numbers: {}".format(condensed_embeds.view(-1)[: 100])) 
             # print("condensed_embeds has nan numbers: {}".format(torch.isnan(condensed_embeds.view(-1)).any())) 
