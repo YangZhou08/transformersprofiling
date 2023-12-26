@@ -313,6 +313,7 @@ class CustomTrainer(Trainer):
             ) 
         else: 
             condensed_embeds = inputs["condensed_embeds"] 
+            print(colored("the shape of condensed_embeds is {}".format(condensed_embeds.shape), "yellow")) 
             batch_size, seq_len = attention_mask.shape 
             addedon_length = condensed_embeds.shape[1] 
             # print("get the input sentence: {}".format(tokenizer.decode(input_ids[0]))) 
@@ -742,7 +743,7 @@ class CustomDataset:
             item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
         ''' 
         item["condensed_embeds"] = tensor 
-        print(colored("the shape of condensed_embeds is {}".format(tensor.shape), "yellow")) 
+        # print(colored("the shape of condensed_embeds is {}".format(tensor.shape), "yellow")) 
         item["input_ids"] = torch.tensor(item["input_ids"]) 
         item["attention_mask"] = torch.tensor(item["attention_mask"]) 
 
