@@ -242,6 +242,7 @@ class CustomTrainer(Trainer):
         self.commit_hash = commit_hash 
         self.eval_mode = eval_mode 
         self.time_hash = time_hash 
+        self.dtype = dtype 
     
     def _save_checkpoint(self, model, trial, metrics = None): 
         # In all cases, including ddp/dp/deepspeed, self.model is always a reference to the model we
@@ -452,7 +453,7 @@ class CustomTrainer(Trainer):
         # print("labels are {}".format(labels[0])) 
         print("type of the model is {}".format(type(model))) 
         if isinstance(getattr(model, "module", model), SimpleSmallModel) or isinstance(model, SimpleSmallModel) == True: 
-            condensed_embeds = inputs["condensed_embeds"]
+            condensed_embeds = inputs["condensed_embeds"].to(self.dtype) 
             print(colored("the shape of condensed_embeds is {}".format(condensed_embeds.shape), "yellow")) 
             batch_size, seq_len = attention_mask.shape 
             addedon_length = condensed_embeds.shape[1] 
