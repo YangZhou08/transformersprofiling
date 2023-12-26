@@ -631,7 +631,8 @@ class CustomTrainer(Trainer):
             # self.artifact.add_file("key_notes{}.md".format(self.commit_hash), name = "key_notes.md") 
             # wandb.log_artifact(self.artifact) 
         if self.accelerator.state.num_processes > 1: 
-            torch.distributed.barrier() 
+            # torch.distributed.barrier() # I found that barrier() works, but it still not as good as wait_for_everyone() 
+            self.accelerator.wait_for_everyone() 
                 
         # print("the shape of preds is {}".format(preds.shape)) 
         # use loss to compute perplexity 
@@ -1008,6 +1009,7 @@ if not args.use_plain_model:
         print(colored(r, "yellow")) 
 
     small_model = small_model.to(torch_device) 
+    small_model = small_model.to(torch.bfloat16).to(torch_device) 
     small_model.train() 
 
     # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
@@ -1019,6 +1021,7 @@ else:
     # print(config) 
     # small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
     # small_model = AutoModelForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
+    small_model = LlamaCausalLMWeirdTwo.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
     small_model = LlamaCausalLMWeirdTwo.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
     small_model.train() 
 
