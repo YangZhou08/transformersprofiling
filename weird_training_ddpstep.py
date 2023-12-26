@@ -1007,7 +1007,7 @@ if not args.use_plain_model:
     except RuntimeError as r: 
         print(colored(r, "yellow")) 
 
-    small_model = small_model.to(torch_device).to(torch.bfloat16) 
+    small_model = small_model.to(torch_device) 
     small_model.train() 
 
     # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
@@ -1149,7 +1149,8 @@ trainer = CustomTrainer(
     tokenizer = tokenizer, 
     eval_mode = args.eval_mode, 
     time_hash = hash_of_time, 
-    dtype = torch.bfloat16, # TODO find a way to automatically do it 
+    # dtype = torch.bfloat16, # TODO find a way to automatically do it 
+    dtype = weightmodelfirst.dtype, 
 ) 
 
 max_length = 128 
