@@ -79,6 +79,7 @@ from src.transformers.utils import (
     is_torch_tpu_available,
     logging,
     strtobool,
+    is_torch_npu_available, 
 ) 
 
 from src.transformers.trainer_pt_utils import (
@@ -180,7 +181,28 @@ print("the hash of time is {}".format(hash_of_time))
 import socket
 
 hostname = socket.gethostname()
-print("Hostname:", hostname)
+print("Hostname:", hostname) 
+
+# Name of the files used for checkpointing
+TRAINING_ARGS_NAME = "training_args.bin"
+TRAINER_STATE_NAME = "trainer_state.json"
+OPTIMIZER_NAME = "optimizer.pt"
+OPTIMIZER_NAME_BIN = "optimizer.bin"
+SCHEDULER_NAME = "scheduler.pt"
+SCALER_NAME = "scaler.pt" 
+
+import warnings 
+if is_sagemaker_mp_enabled():
+    import smdistributed.modelparallel.torch as smp
+    from smdistributed.modelparallel import __version__ as SMP_VERSION
+
+    IS_SAGEMAKER_MP_POST_1_10 = version.parse(SMP_VERSION) >= version.parse("1.10")
+
+    from .trainer_pt_utils import smp_forward_backward, smp_forward_only, smp_gather, smp_nested_concat
+else:
+    IS_SAGEMAKER_MP_POST_1_10 = False 
+from src.transformers.training_args import OptimizerNames, ParallelMode, TrainingArguments 
+import random 
 
 if "lovelace" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
