@@ -742,8 +742,8 @@ class CustomDataset:
             item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
         ''' 
         item["condensed_embeds"] = tensor 
-        keys = item.keys() 
-        assert "input_ids" in keys and "attention_mask" in keys 
+        item["input_ids"] = torch.tensor(item["input_ids"]) 
+        item["attention_mask"] = torch.tensor(item["attention_mask"]) 
 
         return item 
 
