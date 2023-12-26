@@ -30,6 +30,7 @@ import time
 from torch.utils.data import random_split 
 from src.transformers import BitsAndBytesConfig 
 from packaging import version 
+import torch.nn.parallel.distributed.DistributedDataParallel as DDP 
 
 import datetime 
 import os 
@@ -301,18 +302,7 @@ class CustomTrainer(Trainer):
         # print("the input ids are {}".format(input_ids[0])) 
         # print("labels are {}".format(labels[0])) 
         print("type of the model is {}".format(type(model))) 
-        if getattr(model, "module", None) != SimpleSmallModel and isinstance(model, SimpleSmallModel) != True: 
-            outputs = model(
-                input_ids = input_ids, 
-                attention_mask = attention_mask, 
-                labels = label2, 
-                # condensed_embeds = condensed_embeds, 
-                output_hidden_states = True, 
-                output_attentions = True, 
-                return_dict = True, 
-                # eval_mode = True, 
-            ) 
-        else: 
+        if getattr(model, "module", None) == SimpleSmallModel or isinstance(model, SimpleSmallModel) == True: 
             condensed_embeds = inputs["condensed_embeds"] 
             print(colored("the shape of condensed_embeds is {}".format(condensed_embeds.shape), "yellow")) 
             batch_size, seq_len = attention_mask.shape 
@@ -360,6 +350,18 @@ class CustomTrainer(Trainer):
                 print(outputs.hidden_states[i][0][64][: 10]) 
             exit(0) 
             ''' 
+            
+        else: 
+            outputs = model(
+                input_ids = input_ids, 
+                attention_mask = attention_mask, 
+                labels = label2, 
+                # condensed_embeds = condensed_embeds, 
+                output_hidden_states = True, 
+                output_attentions = True, 
+                return_dict = True, 
+                # eval_mode = True, 
+            ) 
         
         # print(outputs.hidden_states[0].shape) 
         # print(outputs.hidden_states[0][0][0][: 10]) 
