@@ -2952,8 +2952,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             ''' 
             print(colored("condensed_embeds dtype: {} input_ids dtype: {}".format(condensed_embeds.dtype, input_ids.dtype), "yellow")) 
             # inputs_embeds = self.embed_projection(inputs_embeds) 
-            if condensed_embeds.dtype == torch.bfloat16: 
-                condensed_embeds = condensed_embeds.to(torch.float32) 
+            # if condensed_embeds.dtype == torch.bfloat16: 
+            #     condensed_embeds = condensed_embeds.to(torch.float32) 
             print("embed_projection dtype: {}".format(self.embed_projection.weight.dtype)) 
             if self.condensed_fashion == "projection_mode": 
                 print(colored("condensed_embeds dtype: {}".format(condensed_embeds.dtype), "red")) 
