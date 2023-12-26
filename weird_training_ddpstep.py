@@ -301,7 +301,7 @@ class CustomTrainer(Trainer):
         # print("the input ids are {}".format(input_ids[0])) 
         # print("labels are {}".format(labels[0])) 
         print("type of the model is {}".format(type(model))) 
-        if not isinstance(model.model, SimpleSmallModel): 
+        if not isinstance(model.module, SimpleSmallModel): 
             outputs = model(
                 input_ids = input_ids, 
                 attention_mask = attention_mask, 
