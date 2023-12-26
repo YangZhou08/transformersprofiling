@@ -30,7 +30,7 @@ import time
 from torch.utils.data import random_split 
 from src.transformers import BitsAndBytesConfig 
 from packaging import version 
-import torch.nn.parallel.distributed.DistributedDataParallel as DDP 
+# import torch.nn.parallel.distributed.DistributedDataParallel as DDP 
 
 import datetime 
 import os 
