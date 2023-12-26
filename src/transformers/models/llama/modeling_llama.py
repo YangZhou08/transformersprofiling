@@ -549,8 +549,6 @@ class LlamaAttention(nn.Module):
             attn_weights = attn_weights.to(value_states.dtype)
         attn_weights = nn.functional.dropout(attn_weights, p=self.attention_dropout, training=self.training)
         attn_output = torch.matmul(attn_weights, value_states) 
-        print(colored("We got here this time"), "red") 
-        exit(0) 
 
         if attn_output.size() != (bsz, self.num_heads, q_len, self.head_dim):
             raise ValueError(
