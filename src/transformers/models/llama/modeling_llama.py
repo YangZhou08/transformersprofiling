@@ -2763,7 +2763,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
 
         # Extract the specific attention map
         # attention_map = attention_maps[layer_num][head_num] 
-        attention_map = attention_maps[layer_num][0][head_num].cpu().detach().numpy() 
+        attention_map = attention_maps[layer_num][0][head_num].to(torch.float32).cpu().detach().numpy() 
         
         # Create a mask for exact zeros
         zero_mask = attention_map == 0
