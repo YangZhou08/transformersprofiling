@@ -302,7 +302,7 @@ class CustomTrainer(Trainer):
         # print("the input ids are {}".format(input_ids[0])) 
         # print("labels are {}".format(labels[0])) 
         print("type of the model is {}".format(type(model))) 
-        if getattr(model, "module", None) == SimpleSmallModel or isinstance(model, SimpleSmallModel) == True: 
+        if isinstance(getattr(model, "module", model), SimpleSmallModel) or isinstance(model, SimpleSmallModel) == True: 
             condensed_embeds = inputs["condensed_embeds"] 
             print(colored("the shape of condensed_embeds is {}".format(condensed_embeds.shape), "yellow")) 
             batch_size, seq_len = attention_mask.shape 
