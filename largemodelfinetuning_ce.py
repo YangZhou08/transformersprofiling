@@ -555,7 +555,7 @@ tokenizer.padding_side = "left"
 list_of_datasets = ["c4_file{}.json".format(i) for i in range(1, 16)] 
 list_of_datasets = [dir_unprocessed_dataset + path for path in list_of_datasets] 
 onedataset = load_dataset("json", data_files = list_of_datasets, split = "train") 
-d = onedataset.train_test_split(test_size = 0.005) # 0.995 for training, 0.005 for testing 
+d = onedataset.train_test_split(test_size = 0.001) # 0.995 for training, 0.005 for testing 
 
 def encode_with_truncation(examples): 
     # return tokenizer(examples["text"], truncation = True, padding = "max_length", 
@@ -563,8 +563,8 @@ def encode_with_truncation(examples):
     return tokenizer(examples["text"], padding = "max_length", max_length = 259, 
                      return_attention_mask = True, return_tensors = "pt", truncation = True) 
 
-train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
-test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 4) 
+train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 8) 
+test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 8) 
 
 # TODO change the following code to use the checkpoint of the best trained window 7 model 
 small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
@@ -656,8 +656,8 @@ def group_attention_map_chunked_generation(examples):
     
     return {"attention_mask_chunk": attention_mask_chunk} 
 
-train_dataset = train_dataset.map(group_attention_map_chunked_generation, batched = True, num_proc = 4) 
-test_dataset = test_dataset.map(group_attention_map_chunked_generation, batched = True, num_proc = 4) 
+train_dataset = train_dataset.map(group_attention_map_chunked_generation, batched = True, num_proc = 8) 
+test_dataset = test_dataset.map(group_attention_map_chunked_generation, batched = True, num_proc = 8) 
 
 for i in range(10): 
     example = train_dataset[i] 

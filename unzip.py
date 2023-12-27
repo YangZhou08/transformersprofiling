@@ -19,6 +19,6 @@ files = [
     "1535b9418e75602286d29c74147902418f6186c766759e9fb1665c59fa59f9ea"
 ] 
 
-for i in range(1, len(files) + 1): 
+for i in range(1, len(files) + 1):
     os.system("zcat " + datasetpath + files[i] + " > " + datasetpath + "c4_file{}.json".format(i)) 
     print("Done with file {}".format(i)) 
