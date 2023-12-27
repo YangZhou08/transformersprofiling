@@ -1410,8 +1410,6 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
         print(colored("inputs_embeds shape {} dtype {}".format(inputs_embeds.shape, inputs_embeds.dtype), "yellow")) 
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn) 
         # TODO delete the following line 
-        for param in self.model.parameters(): 
-            print("param dtype {}".format(param.dtype)) 
         
         outputs = self.model(
             input_ids=None, 
@@ -1483,6 +1481,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
             # Enable model parallelism 
             shift_labels = shift_labels.to(shift_logits.device) 
             loss = loss_fct(shift_logits, shift_labels) 
+            print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
 
         if not return_dict:
             output = (logits,) + outputs[1:]
