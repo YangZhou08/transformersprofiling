@@ -213,6 +213,7 @@ class CustomTrainer(Trainer):
         self.n = n 
         self.tokenizer = tokenizer 
         # self.start_idx = start_idx 
+        self.iteration_count = 0 
     
     def _set_signature_columns_if_needed(self): 
         if self._signature_columns is None:
@@ -233,6 +234,9 @@ class CustomTrainer(Trainer):
             labels = inputs.pop("labels")
         else:
             labels = None 
+            
+        self.iteration_count += 1 
+        print(colored("iteration_count {}".format(self.iteration_count), "yellow")) 
         
         input_ids = inputs["input_ids"] 
         attention_mask = inputs["attention_mask_chunk"] 
@@ -280,6 +284,33 @@ class CustomTrainer(Trainer):
         
         print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
         print(colored("rank {} l2_distance {}".format(self.accelerator.state.process_index, l2_distance), "yellow")) 
+        if self.accelerator.is_main_process and self.iteration_count % 1000 == 0 and has_wandb: 
+            print(colored("generating images ... at iteration {}".format(self.iteration_count), "yellow")) 
+            for layer in [0, 6, 11]: 
+                for head in [0, 6, 11]: 
+                    '''
+                    if isinstance(outputs.attentions, tuple): 
+                        print("the attention mask have shape {}".format(len(outputs.attentions))) 
+                        print("the attention mask first element has shape {}".format(outputs.attentions[0].shape)) 
+                    else: 
+                        print("the attention mask has shape {}".format(outputs.attentions.shape)) 
+                    ''' 
+                    # SimpleSmallModel.plot_attention_map(outputs.attentions, 0, 0, 144, "testing_attention_map.jpg") 
+                    plot_name = "testing_attention_map_{}_{}_{}.jpg".format(self.commit_hash, self.time_hash, self.experiment_setting) 
+                    SimpleSmallModel.plot_attention_map(outputs.attentions, layer, head, input_ids.shape[1] + addedon_length, plot_name) 
+                    # print(outputs.attentions[0][0][0][64]) 
+                    # time.sleep(0.1) # ensure the file is written to disk 
+                    field_name = "layer{}_head{}".format(layer, head) 
+
+                    try: 
+                        wandb.log({field_name: wandb.Image(plot_name)}) 
+                    except Exception as e: 
+                        print(f"An error has occured during logging attention map: {e}") 
+                        # try again 
+                        # time.sleep(1) 
+                        # if try_count < 2: 
+                        #     wandb.log({field_name: wandb.Image("testing_attention_map.jpg")}) 
+                        #     try_count += 1 
         return (loss, outputs) if return_outputs else loss 
 
     def local_compute_metrics(
@@ -292,13 +323,13 @@ class CustomTrainer(Trainer):
     ): 
         
         from sklearn.metrics import accuracy_score, precision_recall_fscore_support 
-        print("length of logits {}".format(len(logits))) 
-        print("logits[0].shape {}".format(logits[0].shape)) 
-        print("logits[1].shape {}".format(logits[1].shape))
+        # print("length of logits {}".format(len(logits))) 
+        # print("logits[0].shape {}".format(logits[0].shape)) 
+        # print("logits[1].shape {}".format(logits[1].shape))
         assert len(logits) == 2 
         l2dist = logits[1].reshape(-1) 
         logits = logits[0] 
-        print(l2dist) 
+        # print(l2dist) 
         logits = logits[:, :-1, :] 
         # input_attention_mask = input_attention_mask[:, :-1] 
         input_attention_mask = input_attention_mask[:, 1:] 
@@ -506,8 +537,8 @@ class CustomTrainer(Trainer):
             if not key.startswith(f"{metric_key_prefix}_"): 
                 metrics[f"{metric_key_prefix}_{key}"] = metrics.pop(key) 
         
-        print(metrics) 
-        exit(0) 
+        # print(metrics) 
+        # exit(0) 
         
         return EvalLoopOutput(predictions=all_preds, label_ids=all_labels, metrics=metrics, num_samples=num_samples) 
 

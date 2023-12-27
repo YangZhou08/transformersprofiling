@@ -1348,6 +1348,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
                 # print("sum dtype {}".format(sum.dtype)) 
             added_tensor[:, i, :] = sum 
         print("added_tensor shape {}".format(added_tensor.shape)) 
+        exit(0) 
         
         return added_tensor 
     
