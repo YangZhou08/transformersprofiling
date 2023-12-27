@@ -1299,7 +1299,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
     
     _tied_weights_keys = ["lm_head.weight"]
 
-    def __init__(self, *args, sliding_window_length = 7, addonsmallmodel, **kwargs): 
+    def __init__(self, *args, sliding_window_length = 7, addonsmallmodel, use_mse_loss = False, **kwargs): 
         super().__init__(*args, **kwargs) 
         self.model = LlamaModel(self.config) 
         self.vocab_size = self.config.vocab_size 
@@ -1308,6 +1308,8 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
         
         self.addonsmallmodel = addonsmallmodel 
         self.sliding_window_length = sliding_window_length 
+        self.small_model_dtype = self.addonsmallmodel.embed_projection.weight.dtype 
+        self.use_mse_loss = use_mse_loss 
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -1450,64 +1452,90 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
 
         hidden_states = outputs[0] # we don't need the lm_head 
         print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
-        hidden_states = hidden_states.to(torch.float32) 
-        intermediate_l2_dist = self.l2distancecompute(inputs_embeds, hidden_states) 
-        # hidden_states has shape (batch_size, seq_length // 7, hidden states) 
+        if self.small_model_dtype == torch.float32: 
+            hidden_states = hidden_states.to(torch.float32) 
+        # intermediate_l2_dist = self.l2distancecompute(inputs_embeds, hidden_states) 
         
-        # interleave the hidden_states and the input_ids 
-        assert hidden_states.shape[1] == input_ids.shape[1] // 7 
-        addonmodeloutput = self.addonsmallmodel( 
-            input_ids = input_ids, 
-            attention_mask = original_attention_mask, 
-            position_ids = None, 
-            past_key_values = None, 
-            condensed_embeds = hidden_states, 
-            labels = None, 
-            use_cache = None, 
-            output_attentions = None, 
-            output_hidden_states = None, 
-            return_dict = True, 
-            start_idx = 0, # NOTE this is very important 
-            eval_mode = False, 
-            iteration_count = 1, 
-            condensed_fashion = "projection_mode", 
-            experiment_setting = "setting4", 
-        ) 
-        logits = addonmodeloutput.logits 
-        
-        '''
-        if self.config.pretraining_tp > 1:
-            lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
-            logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]
-            logits = torch.cat(logits, dim=-1)
-        else:
-            logits = self.lm_head(hidden_states)
-        logits = logits.float()
-        ''' 
-        
-        seq_length = input_ids.shape[1] + hidden_states.shape[1] 
-        assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
-        mask_list_pos = [i * (self.sliding_window_length + 1) for i in range(seq_length // (self.sliding_window_length + 1))] 
-        print(colored("mask_list_pos {}".format(mask_list_pos), "red")) 
-        loss = None 
-        if labels is not None: 
-            selected_indices = [] 
-            for i in range(0, seq_length): 
-                if i not in mask_list_pos: 
-                    selected_indices.append(i) 
-            print(colored("selected_indices {}".format(selected_indices), "red")) 
-            # select and shift the logits 
-            logits = logits[:, selected_indices, :] 
-            shift_logits = logits[..., :-1, :].contiguous() 
-            shift_labels = labels[..., 1:].contiguous() # shape (batch_size, seq_length - 1) 
-            # Flatten the tokens 
-            loss_fct = CrossEntropyLoss() 
-            shift_logits = shift_logits.view(-1, self.config.vocab_size) 
-            shift_labels = shift_labels.view(-1) 
-            # Enable model parallelism 
-            shift_labels = shift_labels.to(shift_logits.device) 
-            loss = loss_fct(shift_logits, shift_labels) 
-            # print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
+        if self.use_mse_loss: 
+            practical_mask = attention_mask.unsqueeze(-1).expand_as(inputs_embeds) 
+            labels = inputs_embeds.detach().clone() 
+            labels = labels[practical_mask == 0] = 0 
+            hidden_states = hidden_states[practical_mask == 0] = 0 
+            hidden_states = hidden_states[:, :-1, :] 
+            assert labels.shape == hidden_states.shape 
+            mse_loss = nn.MSELoss() 
+            intermediate_l2_dist = mse_loss(hidden_states, labels) 
+            loss = intermediate_l2_dist 
+            
+        else: 
+            input_ids2 = inputs_embeds.detach().clone() 
+            practical_mask = attention_mask.unsqueeze(-1).expand_as(inputs_embeds) 
+            input_ids2 = inputs_embeds[practical_mask == 0] = 0 
+            input_ids2 = input_ids2[:, 1:, :] 
+            hidden_states2 = hidden_states.detach().clone() 
+            hidden_states2 = hidden_states2[practical_mask == 0] = 0 
+            hidden_states2 = hidden_states2[:, :-1, :] 
+            assert input_ids2.shape == hidden_states2.shape 
+            
+            mse_loss = nn.MSELoss() 
+            intermediate_l2_dist = mse_loss(input_ids2, hidden_states2) 
+            
+            # hidden_states has shape (batch_size, seq_length // 7, hidden states) 
+            
+            # interleave the hidden_states and the input_ids 
+            assert hidden_states.shape[1] == input_ids.shape[1] // 7 
+            addonmodeloutput = self.addonsmallmodel( 
+                input_ids = input_ids, 
+                attention_mask = original_attention_mask, 
+                position_ids = None, 
+                past_key_values = None, 
+                condensed_embeds = hidden_states, 
+                labels = None, 
+                use_cache = None, 
+                output_attentions = None, 
+                output_hidden_states = None, 
+                return_dict = True, 
+                start_idx = 0, # NOTE this is very important 
+                eval_mode = False, 
+                iteration_count = 1, 
+                condensed_fashion = "projection_mode", 
+                experiment_setting = "setting4", 
+            ) 
+            logits = addonmodeloutput.logits 
+            
+            '''
+            if self.config.pretraining_tp > 1:
+                lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
+                logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]
+                logits = torch.cat(logits, dim=-1)
+            else:
+                logits = self.lm_head(hidden_states)
+            logits = logits.float()
+            ''' 
+            
+            seq_length = input_ids.shape[1] + hidden_states.shape[1] 
+            assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
+            mask_list_pos = [i * (self.sliding_window_length + 1) for i in range(seq_length // (self.sliding_window_length + 1))] 
+            print(colored("mask_list_pos {}".format(mask_list_pos), "red")) 
+            loss = None 
+            if labels is not None: 
+                selected_indices = [] 
+                for i in range(0, seq_length): 
+                    if i not in mask_list_pos: 
+                        selected_indices.append(i) 
+                print(colored("selected_indices {}".format(selected_indices), "red")) 
+                # select and shift the logits 
+                logits = logits[:, selected_indices, :] 
+                shift_logits = logits[..., :-1, :].contiguous() 
+                shift_labels = labels[..., 1:].contiguous() # shape (batch_size, seq_length - 1) 
+                # Flatten the tokens 
+                loss_fct = CrossEntropyLoss() 
+                shift_logits = shift_logits.view(-1, self.config.vocab_size) 
+                shift_labels = shift_labels.view(-1) 
+                # Enable model parallelism 
+                shift_labels = shift_labels.to(shift_logits.device) 
+                loss = loss_fct(shift_logits, shift_labels) 
+                # print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
 
         if not return_dict:
             output = (logits,) + outputs[1:]
