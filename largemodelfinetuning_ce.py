@@ -296,13 +296,6 @@ class CustomTrainer(Trainer):
             print(colored("generating images ... at iteration {}".format(self.iteration_count), "yellow")) 
             for layer in [0, 6, 11]: 
                 for head in [0, 6, 11]: 
-                    '''
-                    if isinstance(outputs.attentions, tuple): 
-                        print("the attention mask have shape {}".format(len(outputs.attentions))) 
-                        print("the attention mask first element has shape {}".format(outputs.attentions[0].shape)) 
-                    else: 
-                        print("the attention mask has shape {}".format(outputs.attentions.shape)) 
-                    ''' 
                     # SimpleSmallModel.plot_attention_map(outputs.attentions, 0, 0, 144, "testing_attention_map.jpg") 
                     plot_name = "testing_attention_map_{}_{}.jpg".format(self.commit_hash, self.time_hash) 
                     SimpleSmallModel.plot_attention_map(outputs.attentions, layer, head, input_ids.shape[1] + addedon_length, plot_name) 
@@ -737,10 +730,10 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size= 2,  # evaluation batch size
     # logging_steps=1, 
-    logging_steps = 300,          # evaluate, log and save model checkpoints every 1000 step
+    logging_steps = 1,          # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 300, 
+    save_steps = 1, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     # learning_rate=2e-4, 
