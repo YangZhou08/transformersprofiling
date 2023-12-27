@@ -1481,7 +1481,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
             # Enable model parallelism 
             shift_labels = shift_labels.to(shift_logits.device) 
             loss = loss_fct(shift_logits, shift_labels) 
-            print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
+            # print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
 
         if not return_dict:
             output = (logits,) + outputs[1:]

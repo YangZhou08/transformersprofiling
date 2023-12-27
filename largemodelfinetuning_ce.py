@@ -275,8 +275,9 @@ class CustomTrainer(Trainer):
                     f"{','.join(outputs.keys())}. For reference, the inputs it received are {','.join(inputs.keys())}."
                 )
             # We don't use .loss here since the model may return tuples instead of ModelOutput.
-            loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0]
-
+            loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
+        
+        print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
         return (loss, outputs) if return_outputs else loss 
 
     def local_compute_metrics(
