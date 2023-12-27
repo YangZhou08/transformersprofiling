@@ -1548,7 +1548,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
 
         return CausalLMOutputWithPastLargeDistance(
             loss=loss,
-            logits=logits,
+            logits = None, 
             past_key_values=outputs.past_key_values,
             hidden_states=outputs.hidden_states,
             # attentions=outputs.attentions, 
