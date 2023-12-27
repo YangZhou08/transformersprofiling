@@ -298,6 +298,7 @@ class CustomTrainer(Trainer):
         assert len(logits) == 2 
         logits = logits[0] 
         l2dist = logits[1] 
+        print(l2dist) 
         logits = logits[:, :-1, :] 
         # input_attention_mask = input_attention_mask[:, :-1] 
         input_attention_mask = input_attention_mask[:, 1:] 
