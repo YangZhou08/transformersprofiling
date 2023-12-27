@@ -518,6 +518,7 @@ class CustomTrainer(Trainer):
                 print(colored(metrics, "magenta")) 
                 wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy, "l2_distance": l2_distance}) 
         else: 
+            metrics = {} 
             wandb.log({"global_eval_loss": total_loss / total_num_steps}) 
         
         # # Metrics!
