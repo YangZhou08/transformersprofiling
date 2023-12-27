@@ -561,7 +561,7 @@ tokenizer.padding_side = "left"
 
 list_of_datasets = ["c4_file{}.json".format(i) for i in range(1, 6)] 
 list_of_datasets = [dir_unprocessed_dataset + path for path in list_of_datasets] 
-onedataset = load_dataset("json", data_files = list_of_datasets, split = "train[:1000]") 
+onedataset = load_dataset("json", data_files = list_of_datasets, split = "train") 
 d = onedataset.train_test_split(test_size = 0.001) # 0.995 for training, 0.005 for testing 
 
 def encode_with_truncation(examples): 
