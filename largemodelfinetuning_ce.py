@@ -296,8 +296,8 @@ class CustomTrainer(Trainer):
         print("logits[0].shape {}".format(logits[0].shape)) 
         print("logits[1].shape {}".format(logits[1].shape))
         assert len(logits) == 2 
+        l2dist = logits[1].reshape(-1) 
         logits = logits[0] 
-        l2dist = logits[1].reshape(1) 
         print(l2dist) 
         logits = logits[:, :-1, :] 
         # input_attention_mask = input_attention_mask[:, :-1] 
