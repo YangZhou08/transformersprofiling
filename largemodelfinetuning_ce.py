@@ -462,11 +462,12 @@ class CustomTrainer(Trainer):
             # print(colored("the shape of logits is {}".format(logits.shape), "yellow")) 
             # print(colored("the shape of labels is {}".format(labels.shape), "yellow")) 
             total_loss += loss.item() 
-            local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"], step) 
-            total_correct_words += local_metrics["correct_words"] 
-            total_words += local_metrics["total_words"] 
-            sum_of_perplexity += local_metrics["perplexity"] 
-            l2_distance += local_metrics["l2_distance"] 
+            if self.model.use_mse_loss != True: 
+                local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"], step) 
+                total_correct_words += local_metrics["correct_words"] 
+                total_words += local_metrics["total_words"] 
+                sum_of_perplexity += local_metrics["perplexity"] 
+                l2_distance += local_metrics["l2_distance"] 
 
             if is_torch_tpu_available(): 
                 xm.mark_step() 
@@ -477,10 +478,11 @@ class CustomTrainer(Trainer):
         if self.accelerator.is_main_process: 
             print("rank {} total_loss after aggregation is {}".format(self.accelerator.state.process_index, aggregated_loss)) 
         total_loss = self.gather_function(torch.tensor(total_loss).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).div(self.accelerator.state.num_processes).item() 
-        total_correct_words = self.gather_function(torch.tensor(total_correct_words).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
-        total_words = self.gather_function(torch.tensor(total_words).reshape(-1, 1).to(local_device)).view(-1).sum(dim = -1).item() 
-        sum_of_perplexity = self.gather_function(torch.tensor(sum_of_perplexity).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
-        l2_distance = self.gather_function(torch.tensor(l2_distance).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).div(self.accelerator.state.num_processes).item() 
+        if self.model.use_mse_loss != True: 
+            total_correct_words = self.gather_function(torch.tensor(total_correct_words).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
+            total_words = self.gather_function(torch.tensor(total_words).reshape(-1, 1).to(local_device)).view(-1).sum(dim = -1).item() 
+            sum_of_perplexity = self.gather_function(torch.tensor(sum_of_perplexity).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
+            l2_distance = self.gather_function(torch.tensor(l2_distance).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).div(self.accelerator.state.num_processes).item() 
         
         # After all calls to `.gather_function`, reset to `gather_for_metrics`:
         self.gather_function = self.accelerator.gather_for_metrics 
@@ -503,15 +505,18 @@ class CustomTrainer(Trainer):
         if num_samples == 0 and observed_num_examples > 0:
             num_samples = observed_num_examples 
         
-        global_perplexity = np.exp(total_loss / total_num_steps) 
-        global_accuracy = total_correct_words / total_words 
-        all_losses = total_loss / total_num_steps 
-        l2_distance = l2_distance / total_num_steps 
+        if not self.model.use_mse_loss: 
+            global_perplexity = np.exp(total_loss / total_num_steps) 
+            global_accuracy = total_correct_words / total_words 
+            all_losses = total_loss / total_num_steps 
+            l2_distance = l2_distance / total_num_steps 
 
-        metrics = {"perplexity": global_perplexity, "accuracy": global_accuracy, "l2_distance": l2_distance} 
-        if self.accelerator.is_main_process: 
-            print(colored(metrics, "magenta")) 
-            wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy, "l2_distance": l2_distance}) 
+            metrics = {"perplexity": global_perplexity, "accuracy": global_accuracy, "l2_distance": l2_distance} 
+            if self.accelerator.is_main_process: 
+                print(colored(metrics, "magenta")) 
+                wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy, "l2_distance": l2_distance}) 
+        else: 
+            wandb.log({"global_eval_loss": total_loss / total_num_steps}) 
         
         # # Metrics!
         # if self.compute_metrics is not None and all_preds is not None and all_labels is not None:
@@ -552,7 +557,7 @@ else:
     print("We now use eos_token as pad token") 
 tokenizer.padding_side = "left" 
 
-list_of_datasets = ["c4_file{}.json".format(i) for i in range(1, 16)] 
+list_of_datasets = ["c4_file{}.json".format(i) for i in range(1, 6)] 
 list_of_datasets = [dir_unprocessed_dataset + path for path in list_of_datasets] 
 onedataset = load_dataset("json", data_files = list_of_datasets, split = "train") 
 d = onedataset.train_test_split(test_size = 0.001) # 0.995 for training, 0.005 for testing 
@@ -593,7 +598,8 @@ except RuntimeError as r:
 small_model = small_model.to(torch.bfloat16).to(torch_device) 
 small_model.eval() # at start we avoid training the small model 
 
-large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = False).to(torch.bfloat16).to(torch_device) 
+# large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = False).to(torch.bfloat16).to(torch_device) 
+large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = True).to(torch.bfloat16).to(torch_device) 
 # large_model.set_smallmodelfull() # this function has proven to be very important 
 # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 # large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models) 
