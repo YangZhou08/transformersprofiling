@@ -202,11 +202,17 @@ else:
 
 logger = logging.get_logger(__name__) 
 
+parser = argparse.ArgumentParser() 
+parser.add_argument("--use_pretrained_small_model", action = "store_true") 
+
+args = parser.parse_args() 
+
 class CustomTrainer(Trainer): 
     def __init__(self, n = 7, tokenizer = None, *args, **kwargs): 
         super().__init__(*args, **kwargs) 
         self.n = n 
         self.tokenizer = tokenizer 
+        # self.start_idx = start_idx 
     
     def _set_signature_columns_if_needed(self): 
         if self._signature_columns is None:
@@ -227,10 +233,6 @@ class CustomTrainer(Trainer):
             labels = inputs.pop("labels")
         else:
             labels = None 
-        
-        print("printing out input keys and values shape, there are {} in total".format(len(inputs.keys()))) 
-        for key, value in inputs.items(): 
-            print("key {}, value shape {}".format(key, value.shape)) 
         
         input_ids = inputs["input_ids"] 
         attention_mask = inputs["attention_mask_chunk"] 
@@ -276,6 +278,221 @@ class CustomTrainer(Trainer):
             loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0]
 
         return (loss, outputs) if return_outputs else loss 
+
+    def local_compute_metrics(
+        self, 
+        logits, 
+        labels, 
+        loss, 
+        input_attention_mask, 
+        outside_step, 
+    ): 
+        
+        from sklearn.metrics import accuracy_score, precision_recall_fscore_support 
+        
+        logits = logits[:, :-1, :] 
+        # input_attention_mask = input_attention_mask[:, :-1] 
+        input_attention_mask = input_attention_mask[:, 1:] 
+        labels = labels[:, 1:] 
+        preds = torch.argmax(logits, dim = -1) 
+        if self.accelerator.is_main_process and outside_step == 0: 
+            print("*** evaluating at step {} ***".format(self.iteration_count)) 
+            mask_correctness = (preds == labels).to(torch.bool) 
+            pred_outputs = preds[: 20] 
+            for i in range(len(pred_outputs)): 
+                for j in range(mask_correctness.shape[1]): 
+                    if mask_correctness[i][j]: 
+                        prediction_text += colored(self.tokenizer.decode(pred_outputs[i][j]), "green") 
+                    else: 
+                        prediction_text += colored(self.tokenizer.decode(pred_outputs[i][j]), "red") 
+                print(prediction_text) 
+                print() 
+                
+                mask_filtered = labels[i][input_attention_mask[i] == 1] 
+                mask_filtered[mask_filtered == -100] = 0 
+                labels_output = self.tokenizer.decode(mask_filtered) 
+                print(colored(labels_output, "cyan")) 
+                print() 
+                print() 
+        
+        if self.accelerator.state.num_processes > 1: 
+            self.accelerator.wait_for_everyone() 
+            
+        perplexity = torch.exp(loss).mean().item() 
+        indices_to_keep = input_attention_mask == 1 # not sure whether we need this 
+        total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
+        correct_words = torch.sum((preds[indices_to_keep] == labels[indices_to_keep]).view(-1), dim = 0).item() 
+        print("correct words: {} and total words: {}".format(correct_words, total_valid_tokens)) 
+        return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens} 
+                
+    def evaluation_loop(
+        self,
+        dataloader: DataLoader,
+        description: str,
+        prediction_loss_only: Optional[bool] = None,
+        ignore_keys: Optional[List[str]] = None,
+        metric_key_prefix: str = "eval",
+    ) -> EvalLoopOutput: 
+        """
+        Prediction/evaluation loop, shared by `Trainer.evaluate()` and `Trainer.predict()`.
+
+        Works both with or without labels.
+        """
+        # NOTE: note that this modification is only helpful for single GPU training 
+        args = self.args
+
+        prediction_loss_only = prediction_loss_only if prediction_loss_only is not None else args.prediction_loss_only 
+        
+        # if eval is called w/o train, handle model prep here
+        if self.is_deepspeed_enabled and self.deepspeed is None:
+            _, _ = deepspeed_init(self, num_training_steps=0, inference=True)
+
+        model = self._wrap_model(self.model, training=False, dataloader=dataloader) 
+        
+        if len(self.accelerator._models) == 0 and model is self.model:
+            model = (
+                self.accelerator.prepare(model)
+                if self.is_deepspeed_enabled
+                else self.accelerator.prepare_model(model, evaluation_mode=True)
+            )
+
+            if self.is_fsdp_enabled:
+                self.model = model
+
+            # for the rest of this function `model` is the outside model, whether it was wrapped or not
+            if model is not self.model:
+                self.model_wrapped = model
+
+            # backward compatibility
+            if self.is_deepspeed_enabled:
+                self.deepspeed = self.model_wrapped 
+        
+        # if full fp16 or bf16 eval is wanted and this ``evaluation`` or ``predict`` isn't called
+        # while ``train`` is running, cast it to the right dtype first and then put on device
+        if not self.is_in_train:
+            if args.fp16_full_eval:
+                model = model.to(dtype=torch.float16, device=args.device)
+            elif args.bf16_full_eval:
+                model = model.to(dtype=torch.bfloat16, device=args.device) 
+        
+        batch_size = self.args.eval_batch_size 
+        model.eval() 
+        
+        self.callback_handler.eval_dataloader = dataloader
+        # Do this before wrapping.
+        eval_dataset = getattr(dataloader, "dataset", None) 
+        
+        if args.past_index >= 0:
+            self._past = None 
+        
+        all_losses = None 
+        all_preds = None 
+        all_labels = None 
+        
+        total_correct_words = 0 
+        total_words = 0 
+        sum_of_perplexity = 0 # used to compute the average perplexity 
+        total_loss = 0 # used to compute the correct perplexity 
+        
+        observed_num_examples = 0 
+        total_num_steps = len(dataloader) 
+        local_device = None 
+        # Main evaluation loop
+        for step, inputs in enumerate(tqdm(dataloader, desc = "description")): 
+            # Update the observed num examples
+            observed_batch_size = find_batch_size(inputs) 
+            if observed_batch_size is not None:
+                observed_num_examples += observed_batch_size 
+                # For batch samplers, batch_size is not known by the dataloader in advance.
+                if batch_size is None:
+                    batch_size = observed_batch_size
+            
+            # Prediction step 
+            ignore_keys = ["hidden_states", "attentions", "past_key_values"] 
+            loss, logits, labels = self.prediction_step(model, inputs, False, ignore_keys=ignore_keys) 
+            if local_device == None: 
+                local_device = loss.device 
+            
+            # print(ignore_keys) 
+            # print(colored("the loss is {}".format(loss), "yellow")) 
+            # print(colored("the shape of logits is {} {}".format(logits.shape, "yellow"))) 
+            # print(colored("the shape of logits if {} {}".format(len(logits), logits[0].shape), "yellow")) 
+            # print(colored("the shape of logits is {}".format(logits.shape), "yellow")) 
+            # print(colored("the shape of labels is {}".format(labels.shape), "yellow")) 
+            total_loss += loss.item() 
+            local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"], step) 
+            total_correct_words += local_metrics["correct_words"] 
+            total_words += local_metrics["total_words"] 
+            sum_of_perplexity += local_metrics["perplexity"] 
+
+            if is_torch_tpu_available(): 
+                xm.mark_step() 
+            
+        if self.accelerator.is_main_process: 
+            print("rank {} total_loss before aggregation is {}".format(self.accelerator.state.process_index, total_loss)) 
+        aggregated_loss = self.gather_function(torch.tensor(total_loss).reshape(1, -1).to(local_device)) 
+        if self.accelerator.is_main_process: 
+            print("rank {} total_loss after aggregation is {}".format(self.accelerator.state.process_index, aggregated_loss)) 
+        total_loss = self.gather_function(torch.tensor(total_loss).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).div(self.accelerator.state.num_processes).item() 
+        total_correct_words = self.gather_function(torch.tensor(total_correct_words).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
+        total_words = self.gather_function(torch.tensor(total_words).reshape(-1, 1).to(local_device)).view(-1).sum(dim = -1).item() 
+        sum_of_perplexity = self.gather_function(torch.tensor(sum_of_perplexity).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
+        
+        # After all calls to `.gather_function`, reset to `gather_for_metrics`:
+        self.gather_function = self.accelerator.gather_for_metrics 
+        if args.past_index and hasattr(self, "_past"): 
+            # Clean the state at the end of the evaluation loop
+            delattr(self, "_past") 
+        
+        # Number of samples
+        if has_length(eval_dataset): 
+            num_samples = len(eval_dataset) 
+        # The instance check is weird and does not actually check for the type, but whether the dataset has the right
+        # methods. Therefore we need to make sure it also has the attribute.
+        elif isinstance(eval_dataset, IterableDatasetShard) and getattr(eval_dataset, "num_examples", 0) > 0:
+            num_samples = eval_dataset.num_examples 
+        else: 
+            if has_length(dataloader):
+                num_samples = self.num_examples(dataloader)
+            else:  # both len(dataloader.dataset) and len(dataloader) fail
+                num_samples = observed_num_examples
+        if num_samples == 0 and observed_num_examples > 0:
+            num_samples = observed_num_examples 
+        
+        global_perplexity = np.exp(total_loss / total_num_steps) 
+        global_accuracy = total_correct_words / total_words 
+        all_losses = total_loss / total_num_steps 
+
+        metrics = {"perplexity": global_perplexity, "accuracy": global_accuracy} 
+        if self.accelerator.is_main_process: 
+            print(colored(metrics, "magenta")) 
+            wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy}) 
+        
+        # # Metrics!
+        # if self.compute_metrics is not None and all_preds is not None and all_labels is not None:
+        #     if args.include_inputs_for_metrics:
+        #         metrics = self.compute_metrics(
+        #             EvalPrediction(predictions=all_preds, label_ids=all_labels, inputs=all_inputs)
+        #         )
+        #     else:
+        #         metrics = self.compute_metrics(EvalPrediction(predictions=all_preds, label_ids=all_labels))
+        # else:
+        #     metrics = {}
+        # # To be JSON-serializable, we need to remove numpy types or zero-d tensors
+        metrics = denumpify_detensorize(metrics) 
+        
+        if all_losses is not None: 
+            # metrics[f"{metric_key_prefix}_loss"] = all_losses.mean().item() 
+            metrics[f"{metric_key_prefix}_loss"] = all_losses 
+        if hasattr(self, "jit_compilation_time"): 
+            metrics[f"{metric_key_prefix}_jit_compilation_time"] = self.jit_compilation_time
+        
+        # Prefix all keys with metric_key_prefix + '_'
+        for key in list(metrics.keys()): 
+            if not key.startswith(f"{metric_key_prefix}_"): 
+                metrics[f"{metric_key_prefix}_{key}"] = metrics.pop(key)
+        
+        return EvalLoopOutput(predictions=all_preds, label_ids=all_labels, metrics=metrics, num_samples=num_samples) 
 
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 # tokenizer = AutoTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
@@ -325,7 +542,7 @@ try:
 except RuntimeError as r: 
     print(colored(r, "yellow")) 
 
-small_model = small_model.to(torch.float32).to(torch_device) 
+small_model = small_model.to(torch.bfloat16).to(torch_device) 
 small_model.eval() # at start we avoid training the small model 
 
 large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model).to(torch.bfloat16).to(torch_device) 
@@ -434,7 +651,11 @@ for name, param in large_model.named_parameters():
 print("length of param_group {}".format(len(param_group))) 
 for name, param in small_model.named_parameters(): 
     # print(colored("small model parameters {}".format(name), "yellow")) 
-    param.requires_grad = False 
+    if args.use_pretrained_small_model: 
+        param.requires_grad = False 
+    else: 
+        param.requires_grad = True 
+        param_group.append(param) 
 
 custom_optimizer = torch.optim.AdamW(param_group, lr = 5e-5) 
 # custom_optimizer = torch.optim.AdamW(param_group, lr = 1e-4) 
@@ -474,13 +695,6 @@ training_args = TrainingArguments(
     evaluation_strategy = "steps", 
 ) 
 
-if has_wandb: 
-    today = datetime.date.today() 
-    wandblogconfigs = training_args.to_dict() 
-    wandblogconfigs["git_commit"] = commit_hash 
-    wandblogconfigs["time_hash"] = hash_of_time 
-    wandb.init(project = "chunkedlargefinetuning", config = wandblogconfigs, name = "large_small_ce{}_{}".format(today, "unmasked")) 
-
 trainer = CustomTrainer(
     model = large_model, 
     args = training_args, 
@@ -490,6 +704,13 @@ trainer = CustomTrainer(
     optimizers = (custom_optimizer, None), 
     tokenizer = tokenizer, 
 ) 
+
+if trainer.accelerator.is_main_process and has_wandb: 
+    today = datetime.date.today() 
+    wandblogconfigs = training_args.to_dict() 
+    wandblogconfigs["git_commit"] = commit_hash 
+    wandblogconfigs["time_hash"] = hash_of_time 
+    wandb.init(project = "chunkedlargefinetuning", config = wandblogconfigs, name = "large_small_ce{}_{}".format(today, "unmasked")) 
 
 torch.autograd.set_detect_anomaly(True) 
 
