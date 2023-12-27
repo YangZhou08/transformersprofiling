@@ -1454,6 +1454,9 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
         print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
         if self.small_model_dtype == torch.float32: 
             hidden_states = hidden_states.to(torch.float32) 
+        elif self.small_model_dtype == torch.bfloat16: 
+            hidden_states = hidden_states.to(torch.bfloat16) 
+        print(colored("small_model_type: {}".format(self.small_model_dtype), "red")) 
         # intermediate_l2_dist = self.l2distancecompute(inputs_embeds, hidden_states) 
         
         if self.use_mse_loss: 
