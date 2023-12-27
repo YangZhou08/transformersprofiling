@@ -292,7 +292,7 @@ class CustomTrainer(Trainer):
         
         print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
         print(colored("rank {} l2_distance {}".format(self.accelerator.state.process_index, l2_distance), "yellow")) 
-        if self.accelerator.is_main_process and self.iteration_count % 1000 == 0 and has_wandb: 
+        if self.accelerator.is_main_process and self.iteration_count % 1000 == 0 and has_wandb and self.model.use_mse_loss != True: 
             print(colored("generating images ... at iteration {}".format(self.iteration_count), "yellow")) 
             for layer in [0, 6, 11]: 
                 for head in [0, 6, 11]: 

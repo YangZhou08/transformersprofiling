@@ -1552,7 +1552,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
             past_key_values=outputs.past_key_values,
             hidden_states=outputs.hidden_states,
             # attentions=outputs.attentions, 
-            attentions = addonmodeloutput.attentions, # delibrately using the model's attention mask with modifications 
+            attentions = None, # delibrately using the model's attention mask with modifications 
             l2_distance = intermediate_l2_dist, 
         ) 
 
