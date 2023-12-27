@@ -1460,7 +1460,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
             practical_mask = attention_mask.unsqueeze(-1).expand_as(inputs_embeds) 
             labels = inputs_embeds.detach().clone() 
             labels[practical_mask == 0] = 0 
-            hidden_states = hidden_states[practical_mask == 0] = 0 
+            hidden_states[practical_mask == 0] = 0 
             hidden_states = hidden_states[:, :-1, :] 
             assert labels.shape == hidden_states.shape 
             mse_loss = nn.MSELoss() 
@@ -1473,7 +1473,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
             input_ids2[practical_mask == 0] = 0 
             input_ids2 = input_ids2[:, 1:, :] 
             hidden_states2 = hidden_states.detach().clone() 
-            hidden_states2 = hidden_states2[practical_mask == 0] = 0 
+            hidden_states2[practical_mask == 0] = 0 
             hidden_states2 = hidden_states2[:, :-1, :] 
             assert input_ids2.shape == hidden_states2.shape 
             
