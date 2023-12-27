@@ -1496,7 +1496,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
                 condensed_embeds = hidden_states, 
                 labels = None, 
                 use_cache = None, 
-                output_attentions = None, 
+                output_attentions = True, 
                 output_hidden_states = None, 
                 return_dict = True, 
                 start_idx = 0, # NOTE this is very important 
