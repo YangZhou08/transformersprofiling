@@ -20,4 +20,5 @@ files = [
 ] 
 
 for i in range(len(files)): 
-    os.system("zcat " + datasetpath + files[i] + " > " + datasetpath + "c4_file{i}.json") 
+    os.system("zcat " + datasetpath + files[i] + " > " + datasetpath + "c4_file{}.json".format(i)) 
+    print("Done with file {}".format(i)) 
