@@ -1335,7 +1335,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
     
     def naive_grouping(self, input_ids): 
         embedding_searched = self.model.embed_tokens(input_ids) 
-        print("embedding_searched shape {} {}".format(embedding_searched.shape, embedding_searched.dtype)) 
+        # print("embedding_searched shape {} {}".format(embedding_searched.shape, embedding_searched.dtype)) 
         seq_length = embedding_searched.shape[1] 
         
         assert seq_length % 7 == 0, "seq_length is not divisible by 7" 
@@ -1347,8 +1347,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
                 sum /= 7. 
                 # print("sum dtype {}".format(sum.dtype)) 
             added_tensor[:, i, :] = sum 
-        print("added_tensor shape {}".format(added_tensor.shape)) 
-        exit(0) 
+        # print("added_tensor shape {}".format(added_tensor.shape)) 
         
         return added_tensor 
     
@@ -1458,7 +1457,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
             hidden_states = hidden_states.to(torch.float32) 
         elif self.small_model_dtype == torch.bfloat16: 
             hidden_states = hidden_states.to(torch.bfloat16) 
-        print(colored("small_model_type: {}".format(self.small_model_dtype), "red")) 
+        # print(colored("small_model_type: {}".format(self.small_model_dtype), "red")) 
         # intermediate_l2_dist = self.l2distancecompute(inputs_embeds, hidden_states) 
         
         if self.use_mse_loss: 
@@ -1521,14 +1520,14 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
             seq_length = input_ids.shape[1] + hidden_states.shape[1] 
             assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
             mask_list_pos = [i * (self.sliding_window_length + 1) for i in range(seq_length // (self.sliding_window_length + 1))] 
-            print(colored("mask_list_pos {}".format(mask_list_pos), "red")) 
+            # print(colored("mask_list_pos {}".format(mask_list_pos), "red")) 
             loss = None 
             if labels is not None: 
                 selected_indices = [] 
                 for i in range(0, seq_length): 
                     if i not in mask_list_pos: 
                         selected_indices.append(i) 
-                print(colored("selected_indices {}".format(selected_indices), "red")) 
+                # print(colored("selected_indices {}".format(selected_indices), "red")) 
                 # select and shift the logits 
                 logits = logits[:, selected_indices, :] 
                 shift_logits = logits[..., :-1, :].contiguous() 
@@ -1551,7 +1550,8 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
             logits=logits,
             past_key_values=outputs.past_key_values,
             hidden_states=outputs.hidden_states,
-            attentions=outputs.attentions, 
+            # attentions=outputs.attentions, 
+            attentions = addonmodeloutput.attentions, # delibrately using the model's attention mask with modifications 
             l2_distance = intermediate_l2_dist, 
         ) 
 

@@ -234,8 +234,7 @@ class CustomTrainer(Trainer):
             labels = inputs.pop("labels")
         else:
             labels = None 
-            
-        self.iteration_count += 1 
+        
         print(colored("iteration_count {}".format(self.iteration_count), "yellow")) 
         
         input_ids = inputs["input_ids"] 
@@ -311,6 +310,7 @@ class CustomTrainer(Trainer):
                         # if try_count < 2: 
                         #     wandb.log({field_name: wandb.Image("testing_attention_map.jpg")}) 
                         #     try_count += 1 
+        self.iteration_count += 1 
         return (loss, outputs) if return_outputs else loss 
 
     def local_compute_metrics(
