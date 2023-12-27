@@ -435,7 +435,7 @@ class CustomTrainer(Trainer):
             total_correct_words += local_metrics["correct_words"] 
             total_words += local_metrics["total_words"] 
             sum_of_perplexity += local_metrics["perplexity"] 
-            l2_distance = local_metrics["l2_distance"] 
+            l2_distance += local_metrics["l2_distance"] 
 
             if is_torch_tpu_available(): 
                 xm.mark_step() 
