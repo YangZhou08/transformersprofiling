@@ -292,9 +292,9 @@ class CustomTrainer(Trainer):
     ): 
         
         from sklearn.metrics import accuracy_score, precision_recall_fscore_support 
-        # print("length of logits {}".format(len(logits))) 
-        # print("logits[0].shape {}".format(logits[0].shape)) 
-        # print("logits[1].shape {}".format(logits[1].shape)) 
+        print("length of logits {}".format(len(logits))) 
+        print("logits[0].shape {}".format(logits[0].shape)) 
+        print("logits[1].shape {}".format(logits[1].shape))
         assert len(logits) == 2 
         logits = logits[0] 
         l2dist = logits[1] 
@@ -311,9 +311,9 @@ class CustomTrainer(Trainer):
                 prediction_text = "the prediction is: " 
                 for j in range(mask_correctness.shape[1]): 
                     if mask_correctness[i][j]: 
-                        prediction_text += colored(self.tokenizer.decode(pred_outputs[i][j]), "green") 
+                        prediction_text += colored(self.tokenizer.decode(pred_outputs[i][j]), "green") + " " 
                     else: 
-                        prediction_text += colored(self.tokenizer.decode(pred_outputs[i][j]), "red") 
+                        prediction_text += colored(self.tokenizer.decode(pred_outputs[i][j]), "red") + " " 
                 print(prediction_text) 
                 print() 
                 
