@@ -308,6 +308,7 @@ class CustomTrainer(Trainer):
             mask_correctness = (preds == labels).to(torch.bool) 
             pred_outputs = preds[: 20] 
             for i in range(len(pred_outputs)): 
+                prediction_text = "the prediction is: " 
                 for j in range(mask_correctness.shape[1]): 
                     if mask_correctness[i][j]: 
                         prediction_text += colored(self.tokenizer.decode(pred_outputs[i][j]), "green") 
