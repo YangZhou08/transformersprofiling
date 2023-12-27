@@ -1464,6 +1464,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
             practical_mask = attention_mask.unsqueeze(-1).expand_as(inputs_embeds) 
             labels = inputs_embeds.detach().clone() 
             labels[practical_mask == 0] = 0 
+            labels = labels[:, 1:, :] 
             hidden_states[practical_mask == 0] = 0 
             hidden_states = hidden_states[:, :-1, :] 
             assert labels.shape == hidden_states.shape 
