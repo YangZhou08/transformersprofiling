@@ -276,8 +276,10 @@ class CustomTrainer(Trainer):
                 )
             # We don't use .loss here since the model may return tuples instead of ModelOutput.
             loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
+            l2_distance = outputs["l2_distance"] if isinstance(outputs, dict) else outputs[-1] 
         
         print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
+        print(colored("rank {} l2_distance {}".format(self.accelerator.state.process_index, l2_distance), "yellow")) 
         return (loss, outputs) if return_outputs else loss 
 
     def local_compute_metrics(

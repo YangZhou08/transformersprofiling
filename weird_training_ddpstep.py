@@ -977,6 +977,7 @@ datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = t
 # datasetnew.preprocess_dataset() 
 train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.05 = 36k 
                                                  # 356k * 0.99 = 352k 356k * 0.01 = 3.6k 
+                                                 # 5 * 356k = 1780000, 1780000 * 0.98 = 1744400, 1780000 * 0.02 = 35600 
 
 if not args.use_plain_model: 
     print(colored("we use custom small", "cyan")) 

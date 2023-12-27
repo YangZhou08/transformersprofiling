@@ -32,6 +32,7 @@ from ...activations import ACT2FN
 from ...modeling_attn_mask_utils import AttentionMaskConverter, _prepare_4d_causal_attention_mask
 from ...modeling_outputs import BaseModelOutputWithPast, CausalLMOutputWithPast, SequenceClassifierOutputWithPast 
 from ...modeling_outputs import CausalLMOutputWithPastWithOriginalOutput 
+from ...modeling_outputs import CausalLMOutputWithPastLargeDistance 
 from ...modeling_utils import PreTrainedModel
 from ...pytorch_utils import ALL_LAYERNORM_LAYERS, is_torch_greater_or_equal_than_1_13
 from ...utils import (
@@ -1352,6 +1353,30 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
     
     def set_smallmodelfull(self): 
         self.addonsmallmodel = self.addonsmallmodel.to(torch.float32) 
+    
+    def l2distancecompute(self, inputs, hidden_states): 
+        input_used = inputs.clone().detach()[:, 1:, :]
+        hidden_states_used = hidden_states.clone().detach()[:, :-1, :] 
+        assert input_used.shape == hidden_states_used.shape 
+        dmod = input_used.shape[-1] 
+        input_used = input_used.reshape(-1, dmod) 
+        hidden_states_used = hidden_states_used.reshape(-1, dmod) 
+        # compute the difference 
+        diff = input_used - hidden_states_used 
+        
+        # compute the square 
+        diff = diff ** 2
+        
+        # sum up the square 
+        diff = torch.sum(diff, dim = 1) 
+        
+        # take square root 
+        diff = torch.sqrt(diff) 
+        
+        # average the l2 distance 
+        diff = torch.mean(diff) 
+        
+        return diff 
 
     @add_start_docstrings_to_model_forward(LLAMA_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=CausalLMOutputWithPast, config_class=_CONFIG_FOR_DOC)
@@ -1426,6 +1451,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
         hidden_states = outputs[0] # we don't need the lm_head 
         print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
         hidden_states = hidden_states.to(torch.float32) 
+        intermediate_l2_dist = self.l2distancecompute(inputs_embeds, hidden_states) 
         # hidden_states has shape (batch_size, seq_length // 7, hidden states) 
         
         # interleave the hidden_states and the input_ids 
@@ -1487,13 +1513,14 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
             output = (logits,) + outputs[1:]
             return (loss,) + output if loss is not None else output
 
-        return CausalLMOutputWithPast(
+        return CausalLMOutputWithPastLargeDistance(
             loss=loss,
             logits=logits,
             past_key_values=outputs.past_key_values,
             hidden_states=outputs.hidden_states,
-            attentions=outputs.attentions,
-        )
+            attentions=outputs.attentions, 
+            l2_distance = intermediate_l2_dist, 
+        ) 
 
     def prepare_inputs_for_generation(
         self, input_ids, past_key_values=None, attention_mask=None, inputs_embeds=None, **kwargs
