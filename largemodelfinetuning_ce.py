@@ -561,7 +561,7 @@ tokenizer.padding_side = "left"
 
 list_of_datasets = ["c4_file{}.json".format(i) for i in range(1, 6)] 
 list_of_datasets = [dir_unprocessed_dataset + path for path in list_of_datasets] 
-onedataset = load_dataset("json", data_files = list_of_datasets, split = "train") 
+onedataset = load_dataset("json", data_files = list_of_datasets, split = "train[:1000]") 
 d = onedataset.train_test_split(test_size = 0.001) # 0.995 for training, 0.005 for testing 
 
 def encode_with_truncation(examples): 
@@ -601,7 +601,7 @@ small_model = small_model.to(torch.bfloat16).to(torch_device)
 small_model.eval() # at start we avoid training the small model 
 
 # large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = False).to(torch.bfloat16).to(torch_device) 
-large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = False).to(torch.bfloat16).to(torch_device) 
+large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = True).to(torch.bfloat16).to(torch_device) 
 # large_model.set_smallmodelfull() # this function has proven to be very important 
 # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 # large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models) 
@@ -730,10 +730,10 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size= 2,  # evaluation batch size
     # logging_steps=1, 
-    logging_steps = 500,          # evaluate, log and save model checkpoints every 1000 step
+    logging_steps = 1,          # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 500, 
+    save_steps = 1, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     # learning_rate=2e-4, 
