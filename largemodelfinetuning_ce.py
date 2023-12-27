@@ -292,10 +292,12 @@ class CustomTrainer(Trainer):
     ): 
         
         from sklearn.metrics import accuracy_score, precision_recall_fscore_support 
-        print("length of logits {}".format(len(logits))) 
-        print("logits[0].shape {}".format(logits[0].shape)) 
-        print("logits[1].shape {}".format(logits[1].shape)) 
-        exit(0) 
+        # print("length of logits {}".format(len(logits))) 
+        # print("logits[0].shape {}".format(logits[0].shape)) 
+        # print("logits[1].shape {}".format(logits[1].shape)) 
+        assert len(logits) == 2 
+        logits = logits[0] 
+        l2dist = logits[1] 
         logits = logits[:, :-1, :] 
         # input_attention_mask = input_attention_mask[:, :-1] 
         input_attention_mask = input_attention_mask[:, 1:] 
@@ -329,7 +331,7 @@ class CustomTrainer(Trainer):
         total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
         correct_words = torch.sum((preds[indices_to_keep] == labels[indices_to_keep]).view(-1), dim = 0).item() 
         print("correct words: {} and total words: {}".format(correct_words, total_valid_tokens)) 
-        return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens} 
+        return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "l2_distance": l2dist.item()} 
                 
     def evaluation_loop(
         self,
@@ -399,6 +401,7 @@ class CustomTrainer(Trainer):
         total_words = 0 
         sum_of_perplexity = 0 # used to compute the average perplexity 
         total_loss = 0 # used to compute the correct perplexity 
+        l2_distance = 0 
         
         observed_num_examples = 0 
         total_num_steps = len(dataloader) 
@@ -430,6 +433,7 @@ class CustomTrainer(Trainer):
             total_correct_words += local_metrics["correct_words"] 
             total_words += local_metrics["total_words"] 
             sum_of_perplexity += local_metrics["perplexity"] 
+            l2_distance = local_metrics["l2_distance"] 
 
             if is_torch_tpu_available(): 
                 xm.mark_step() 
@@ -443,6 +447,7 @@ class CustomTrainer(Trainer):
         total_correct_words = self.gather_function(torch.tensor(total_correct_words).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
         total_words = self.gather_function(torch.tensor(total_words).reshape(-1, 1).to(local_device)).view(-1).sum(dim = -1).item() 
         sum_of_perplexity = self.gather_function(torch.tensor(sum_of_perplexity).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
+        l2_distance = self.gather_function(torch.tensor(l2_distance).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).div(self.accelerator.state.num_processes).item() 
         
         # After all calls to `.gather_function`, reset to `gather_for_metrics`:
         self.gather_function = self.accelerator.gather_for_metrics 
@@ -468,11 +473,12 @@ class CustomTrainer(Trainer):
         global_perplexity = np.exp(total_loss / total_num_steps) 
         global_accuracy = total_correct_words / total_words 
         all_losses = total_loss / total_num_steps 
+        l2_distance = l2_distance / total_num_steps 
 
-        metrics = {"perplexity": global_perplexity, "accuracy": global_accuracy} 
+        metrics = {"perplexity": global_perplexity, "accuracy": global_accuracy, "l2_distance": l2_distance} 
         if self.accelerator.is_main_process: 
             print(colored(metrics, "magenta")) 
-            wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy}) 
+            wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy, "l2_distance": l2_distance}) 
         
         # # Metrics!
         # if self.compute_metrics is not None and all_preds is not None and all_labels is not None:
@@ -496,7 +502,9 @@ class CustomTrainer(Trainer):
         # Prefix all keys with metric_key_prefix + '_'
         for key in list(metrics.keys()): 
             if not key.startswith(f"{metric_key_prefix}_"): 
-                metrics[f"{metric_key_prefix}_{key}"] = metrics.pop(key)
+                metrics[f"{metric_key_prefix}_{key}"] = metrics.pop(key) 
+        
+        print(metrics) 
         
         return EvalLoopOutput(predictions=all_preds, label_ids=all_labels, metrics=metrics, num_samples=num_samples) 
 
