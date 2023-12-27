@@ -161,7 +161,7 @@ if is_accelerate_available():
 if is_peft_available():
     from peft import PeftModel 
 
-import subprocess
+import subprocess 
 
 def get_git_commit_hash():
     try:
@@ -208,12 +208,21 @@ parser.add_argument("--use_pretrained_small_model", action = "store_true")
 args = parser.parse_args() 
 
 class CustomTrainer(Trainer): 
-    def __init__(self, n = 7, tokenizer = None, *args, **kwargs): 
+    def __init__(self, 
+                 n = 7, 
+                 tokenizer = None, 
+                 commit_hash = None, 
+                 time_hash = None, 
+                 *args, 
+                 **kwargs, 
+    ): 
         super().__init__(*args, **kwargs) 
         self.n = n 
         self.tokenizer = tokenizer 
         # self.start_idx = start_idx 
         self.iteration_count = 0 
+        self.commit_hash = commit_hash 
+        self.time_hash = time_hash 
     
     def _set_signature_columns_if_needed(self): 
         if self._signature_columns is None:
@@ -295,7 +304,7 @@ class CustomTrainer(Trainer):
                         print("the attention mask has shape {}".format(outputs.attentions.shape)) 
                     ''' 
                     # SimpleSmallModel.plot_attention_map(outputs.attentions, 0, 0, 144, "testing_attention_map.jpg") 
-                    plot_name = "testing_attention_map_{}_{}_{}.jpg".format(self.commit_hash, self.time_hash, self.experiment_setting) 
+                    plot_name = "testing_attention_map_{}_{}.jpg".format(self.commit_hash, self.time_hash) 
                     SimpleSmallModel.plot_attention_map(outputs.attentions, layer, head, input_ids.shape[1] + addedon_length, plot_name) 
                     # print(outputs.attentions[0][0][0][64]) 
                     # time.sleep(0.1) # ensure the file is written to disk 
@@ -757,6 +766,8 @@ trainer = CustomTrainer(
     data_collator = data_collator, 
     optimizers = (custom_optimizer, None), 
     tokenizer = tokenizer, 
+    time_hash = hash_of_time, 
+    commit_hash = commit_hash, 
 ) 
 
 if trainer.accelerator.is_main_process and has_wandb: 
