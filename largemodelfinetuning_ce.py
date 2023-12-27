@@ -304,7 +304,7 @@ class CustomTrainer(Trainer):
         labels = labels[:, 1:] 
         preds = torch.argmax(logits, dim = -1) 
         if self.accelerator.is_main_process and outside_step == 0: 
-            print("*** evaluating at step {} ***".format(self.iteration_count)) 
+            # print("*** evaluating at step {} ***".format(self.iteration_count)) 
             mask_correctness = (preds == labels).to(torch.bool) 
             pred_outputs = preds[: 20] 
             for i in range(len(pred_outputs)): 
