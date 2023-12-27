@@ -1309,6 +1309,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
         self.addonsmallmodel = addonsmallmodel 
         self.sliding_window_length = sliding_window_length 
         self.small_model_dtype = self.addonsmallmodel.embed_projection.weight.dtype 
+        print(colored("small_model_dtype {}".format(self.small_model_dtype), "red")) 
         self.use_mse_loss = use_mse_loss 
 
         # Initialize weights and apply final processing
