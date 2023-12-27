@@ -292,7 +292,10 @@ class CustomTrainer(Trainer):
     ): 
         
         from sklearn.metrics import accuracy_score, precision_recall_fscore_support 
-        
+        print("length of logits {}".format(len(logits))) 
+        print("logits[0].shape {}".format(logits[0].shape)) 
+        print("logits[1].shape {}".format(logits[1].shape)) 
+        exit(0) 
         logits = logits[:, :-1, :] 
         # input_attention_mask = input_attention_mask[:, :-1] 
         input_attention_mask = input_attention_mask[:, 1:] 
@@ -677,10 +680,10 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size= 2,  # evaluation batch size
     # logging_steps=1, 
-    logging_steps = 300,          # evaluate, log and save model checkpoints every 1000 step
+    logging_steps = 1,          # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 300, 
+    save_steps = 1, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     # learning_rate=2e-4, 
