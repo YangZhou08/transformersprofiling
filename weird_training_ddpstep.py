@@ -1012,8 +1012,8 @@ if not args.use_plain_model:
     except RuntimeError as r: 
         print(colored(r, "yellow")) 
 
-    # small_model = small_model.to(torch_device) 
-    small_model = small_model.to(torch.bfloat16).to(torch_device) 
+    small_model = small_model.to(torch_device) 
+    # small_model = small_model.to(torch.bfloat16).to(torch_device) 
     small_model.train() 
 
     # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
