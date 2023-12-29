@@ -1,1 +1,1 @@
-accelerate launch --main_process_port 29503 --num_processes 2 --num_machines 1 weird_training_ddpstep.py --experiment_setting setting3 --kernel_size 7 
+accelerate launch --main_process_port 29501 --num_processes 2 --num_machines 1 weird_training_ddpstep.py --experiment_setting setting3 --kernel_size 7 
