@@ -48,10 +48,6 @@ try:
 except ImportError:
     has_wandb = False 
 
-# has_wandb = False # disable for debugging 
-# model_name = "openllama3b" 
-model_name = "shearedllama2_7b" 
-
 from src.transformers.utils import ( 
     ADAPTER_CONFIG_NAME,
     ADAPTER_SAFE_WEIGHTS_NAME,
@@ -218,6 +214,30 @@ else:
     dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
 
 logger = logging.get_logger(__name__) 
+
+parser = argparse.ArgumentParser(
+                    prog='ProgramName',
+                    description='What the program does',
+                    epilog='Text at the bottom of help') 
+
+parser.add_argument("--group1lr", type = float, default = 2e-4) 
+parser.add_argument("--group2lr", type = float, default = 2e-3) 
+parser.add_argument("--experiment_setting", type = str, default = "setting0") 
+parser.add_argument("--eval_mode", action="store_true", default = False) 
+parser.add_argument("--embedding_pretrained", action = "store_true", default = False) 
+parser.add_argument("--kernel_size", type = int, default = 4) 
+parser.add_argument("--use_plain_model", action = "store_true", default = False) 
+parser.add_argument("--model_name", type = str, default = "openllama3b") 
+
+args = parser.parse_args() 
+if args.embedding_pretrained: 
+    args.group2lr = None # we enforce it 
+print(args) 
+
+# has_wandb = False # disable for debugging 
+# model_name = "openllama3b" 
+# model_name = "shearedllama2_7b" 
+model_name = args.model_name 
 
 class CustomTrainer(Trainer): 
     def __init__(
@@ -913,24 +933,6 @@ class CustomDataset:
             train_size = int(train_size * len(self)) 
         eval_size = len(self) - train_size 
         return random_split(self, [train_size, eval_size]) 
-
-parser = argparse.ArgumentParser(
-                    prog='ProgramName',
-                    description='What the program does',
-                    epilog='Text at the bottom of help') 
-
-parser.add_argument("--group1lr", type = float, default = 2e-4) 
-parser.add_argument("--group2lr", type = float, default = 2e-3) 
-parser.add_argument("--experiment_setting", type = str, default = "setting0") 
-parser.add_argument("--eval_mode", action="store_true", default = False) 
-parser.add_argument("--embedding_pretrained", action = "store_true", default = False) 
-parser.add_argument("--kernel_size", type = int, default = 4) 
-parser.add_argument("--use_plain_model", action = "store_true", default = False) 
-
-args = parser.parse_args() 
-if args.embedding_pretrained: 
-    args.group2lr = None # we enforce it 
-print(args) 
 
 # defining tokenizer 
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
