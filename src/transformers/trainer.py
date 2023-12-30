@@ -1712,7 +1712,8 @@ class Trainer:
                 deepspeed_load_checkpoint(self.model_wrapped, resume_from_checkpoint)
             elif is_sagemaker_mp_enabled() or self.is_fsdp_enabled:
                 self._load_from_checkpoint(resume_from_checkpoint, self.model_wrapped)
-
+        
+        print("loading the optimizer and scheduler") 
         # Check if saved optimizer or scheduler states exist
         self._load_optimizer_and_scheduler(resume_from_checkpoint)
 
@@ -2471,7 +2472,8 @@ class Trainer:
             self._rotate_checkpoints(use_mtime=True, output_dir=run_dir)
 
     def _load_optimizer_and_scheduler(self, checkpoint):
-        """If optimizer and scheduler states exist, load them."""
+        """If optimizer and scheduler states exist, load them.""" 
+        print(colored("we got inside the load optimizer and scheduler function", "red")) 
         if checkpoint is None:
             return
 
