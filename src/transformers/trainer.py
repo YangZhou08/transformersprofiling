@@ -1713,7 +1713,7 @@ class Trainer:
             elif is_sagemaker_mp_enabled() or self.is_fsdp_enabled:
                 self._load_from_checkpoint(resume_from_checkpoint, self.model_wrapped)
         
-        print("loading the optimizer and scheduler") 
+        print("loading the optimizer and scheduler from here {}".format(resume_from_checkpoint)) 
         # Check if saved optimizer or scheduler states exist
         self._load_optimizer_and_scheduler(resume_from_checkpoint)
 
