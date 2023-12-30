@@ -2512,7 +2512,8 @@ class Trainer:
                 xm.send_cpu_data_to_device(lr_scheduler_state, self.args.device)
 
                 self.optimizer.load_state_dict(optimizer_state)
-                self.lr_scheduler.load_state_dict(lr_scheduler_state)
+                self.lr_scheduler.load_state_dict(lr_scheduler_state) 
+                print("got inside this function and we found the checkpoint file to be {} and {}".format(optimizer_state, lr_scheduler_state)) 
             else:
                 if is_sagemaker_mp_enabled():
                     if os.path.isfile(os.path.join(checkpoint, "user_content.pt")):
