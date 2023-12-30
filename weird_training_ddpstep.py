@@ -1251,6 +1251,7 @@ training_args = TrainingArguments(
     # lr_scheduler_type = "cosine", 
     warmup_steps = 100, 
 ) 
+print(colored("resum_from_checkpoint is {}".format(args.resume_from_checkpoint), "red")) 
 weightmodelfirst = next(small_model.parameters()) 
 # print(weightmodelfirst.dtype) 
 print(colored(weightmodelfirst.dtype, "red")) 
