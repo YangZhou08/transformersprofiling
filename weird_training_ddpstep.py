@@ -1343,6 +1343,6 @@ trainer = Trainer(
 
 torch.autograd.set_detect_anomaly(True) 
 
-trainer.train() 
+trainer.train(resume_from_checkpoint = args.resume_from_checkpoint) 
 
 wandb.finish() 
