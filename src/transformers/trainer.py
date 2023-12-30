@@ -2500,7 +2500,8 @@ class Trainer:
                     )
                 )
             )
-        )
+        ) 
+        print("checkpoint_file_exists is {} lrscheduler is {}".format(checkpoint_file_exists, os.path.isfile(os.path.join(checkpoint, SCHEDULER_NAME)))) 
         if checkpoint_file_exists and os.path.isfile(os.path.join(checkpoint, SCHEDULER_NAME)):
             # Load in optimizer and scheduler states
             if is_torch_tpu_available():
