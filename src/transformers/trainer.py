@@ -1564,7 +1564,6 @@ class Trainer:
     def _inner_training_loop(
         self, batch_size=None, args=None, resume_from_checkpoint=None, trial=None, ignore_keys_for_eval=None
     ):  
-        print("resume_from_checkpoint {}".format(resume_from_checkpoint)) 
         self.accelerator.free_memory()
         self._train_batch_size = batch_size
         logger.debug(f"Currently training with a batch size of: {self._train_batch_size}")
@@ -1714,7 +1713,6 @@ class Trainer:
             elif is_sagemaker_mp_enabled() or self.is_fsdp_enabled:
                 self._load_from_checkpoint(resume_from_checkpoint, self.model_wrapped)
         
-        print("loading the optimizer and scheduler from here {}".format(resume_from_checkpoint)) 
         # Check if saved optimizer or scheduler states exist
         self._load_optimizer_and_scheduler(resume_from_checkpoint)
 
@@ -2474,7 +2472,7 @@ class Trainer:
 
     def _load_optimizer_and_scheduler(self, checkpoint):
         """If optimizer and scheduler states exist, load them.""" 
-        print(colored("we got inside the load optimizer and scheduler function {}".format(checkpoint), "red")) 
+        # print(colored("we got inside the load optimizer and scheduler function {}".format(checkpoint), "red")) 
         if checkpoint is None:
             return
 
@@ -2502,7 +2500,7 @@ class Trainer:
                 )
             )
         ) 
-        print("checkpoint_file_exists is {} lrscheduler is {}".format(checkpoint_file_exists, os.path.isfile(os.path.join(checkpoint, SCHEDULER_NAME)))) 
+        # print("checkpoint_file_exists is {} lrscheduler is {}".format(checkpoint_file_exists, os.path.isfile(os.path.join(checkpoint, SCHEDULER_NAME)))) 
         if checkpoint_file_exists and os.path.isfile(os.path.join(checkpoint, SCHEDULER_NAME)):
             # Load in optimizer and scheduler states
             if is_torch_tpu_available():
@@ -2564,8 +2562,7 @@ class Trainer:
                 with warnings.catch_warnings(record=True) as caught_warnings:
                     self.lr_scheduler.load_state_dict(torch.load(os.path.join(checkpoint, SCHEDULER_NAME))) 
                 print("optimizer and lrscheduler are", self.optimizer, self.lr_scheduler) 
-                print("printingout checkpoint {}".format(checkpoint)) 
-                exit(0) 
+                # print("printingout checkpoint {}".format(checkpoint)) 
                 reissue_pt_warnings(caught_warnings)
 
     def hyperparameter_search(
