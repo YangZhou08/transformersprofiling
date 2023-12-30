@@ -369,7 +369,8 @@ class CustomTrainer(Trainer):
 
         inner_training_loop = find_executable_batch_size(
             self._inner_training_loop, self._train_batch_size, args.auto_find_batch_size
-        )
+        ) 
+        print("resume_from_checkpoint is {}".format(resume_from_checkpoint)) 
         if args.push_to_hub:
             try:
                 # Disable progress bars when uploading models during checkpoints to avoid polluting stdout
