@@ -1024,7 +1024,7 @@ if not args.use_plain_model and args.resume_from_checkpoint is None:
 
     # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
 elif args.resume_from_checkpoint is not None: 
-    small_model = SimpleSmallModel.from_pretrained(args.resum_from_checkpoint).to(torch_device) 
+    small_model = SimpleSmallModel.from_pretrained(args.resume_from_checkpoint).to(torch_device) 
     small_model.train() 
 else: 
     print(colored("we use plain model", "cyan")) 
