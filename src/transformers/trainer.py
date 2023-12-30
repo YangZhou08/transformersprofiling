@@ -1563,7 +1563,8 @@ class Trainer:
 
     def _inner_training_loop(
         self, batch_size=None, args=None, resume_from_checkpoint=None, trial=None, ignore_keys_for_eval=None
-    ):
+    ):  
+        print("resume_from_checkpoint {}".format(resume_from_checkpoint)) 
         self.accelerator.free_memory()
         self._train_batch_size = batch_size
         logger.debug(f"Currently training with a batch size of: {self._train_batch_size}")
