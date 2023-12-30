@@ -239,6 +239,7 @@ else:
 # model_name = "openllama3b" 
 # model_name = "shearedllama2_7b" 
 model_name = args.model_name 
+text_eval = "{}evaluation_printout_{}_{}_{}.txt".format(dir_models, self.commit_hash, self.time_hash, self.model_name) 
 
 class CustomTrainer(Trainer): 
     def __init__(
@@ -250,6 +251,7 @@ class CustomTrainer(Trainer):
             time_hash = None, 
             dtype = None, 
             model_name = None, 
+            text_eval = None, 
             *args, 
             **kwargs, 
     ): 
@@ -266,6 +268,7 @@ class CustomTrainer(Trainer):
         self.time_hash = time_hash 
         self.dtype = dtype 
         self.model_name = model_name 
+        self.text_eval = text_eval 
     
     '''
     def _save_checkpoint(self, model, trial, metrics = None): 
@@ -654,7 +657,7 @@ class CustomTrainer(Trainer):
                 # wandb.log({"key notes: ": prediction_text + label_text}) 
                 # f.write(prediction_text + "\n" + label_text + "\n") 
                 
-            with open("{}evaluation_printout_{}_{}_{}.txt".format(dir_models, self.commit_hash, self.time_hash, self.model_name), "a") as f: 
+            with open(self.text_eval, "a") as f: 
                 f.write("*** at step {} {}".format(self.iteration_count, self.state.global_step)) 
                 f.write("\n") 
                 for i, text in enumerate(write_out_text): 
@@ -1103,7 +1106,7 @@ model_path = dir_models + "{}_{}_{}_{}_{}/".format(model_name, args.experiment_s
 training_args = TrainingArguments(
     output_dir=model_path,          # output directory to where save model checkpoint 
     # resume_from_checkpoint="./model_output/checkpoint-500", 
-    resume_from_checkpoint = args.resume_from_checkpoint, 
+    # resume_from_checkpoint = args.resume_from_checkpoint, 
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
@@ -1186,6 +1189,7 @@ trainer = CustomTrainer(
     # dtype = torch.bfloat16, # TODO find a way to automatically do it 
     dtype = weightmodelfirst.dtype, 
     model_name = model_name, 
+    text_eval = model_path + text_eval, 
 ) 
 
 max_length = 128 
