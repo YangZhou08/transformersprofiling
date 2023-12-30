@@ -213,6 +213,7 @@ class CustomTrainer(Trainer):
                  tokenizer = None, 
                  commit_hash = None, 
                  time_hash = None, 
+                 model_name = None, 
                  *args, 
                  **kwargs, 
     ): 
@@ -223,6 +224,7 @@ class CustomTrainer(Trainer):
         self.iteration_count = 0 
         self.commit_hash = commit_hash 
         self.time_hash = time_hash 
+        self.model_name = model_name 
     
     def _set_signature_columns_if_needed(self): 
         if self._signature_columns is None:
@@ -337,6 +339,7 @@ class CustomTrainer(Trainer):
         input_attention_mask = input_attention_mask[:, 1:] 
         labels = labels[:, 1:] 
         preds = torch.argmax(logits, dim = -1) 
+        write_out_text = [] 
         if self.accelerator.is_main_process and outside_step == 0: 
             # print("*** evaluating at step {} ***".format(self.iteration_count)) 
             mask_correctness = (preds == labels).to(torch.bool) 
@@ -354,9 +357,19 @@ class CustomTrainer(Trainer):
                 mask_filtered = labels[i][input_attention_mask[i] == 1] 
                 mask_filtered[mask_filtered == -100] = 0 
                 labels_output = self.tokenizer.decode(mask_filtered) 
+                write_out_text.append(prediction_text + "\n" + labels_output + "\n") 
                 print(colored(labels_output, "cyan")) 
                 print() 
                 print() 
+            
+            with open("{}evaluation_printout_{}_{}_{}_{}_{}.txt".format(dir_models, self.commit_hash, self.time_hash, self.state.global_step, self.n, self.model_name), "a") as f: 
+                f.write("*** at step {} {}".format(self.iteration_count, self.state.global_step)) 
+                f.write("\n") 
+                for i, text in enumerate(write_out_text): 
+                    f.write("example {}/{}\n".format(i, len(write_out_text))) 
+                    f.write(text) 
+                    f.write("\n") 
+                f.write("\n") 
         
         if self.accelerator.state.num_processes > 1: 
             self.accelerator.wait_for_everyone() 
@@ -714,7 +727,7 @@ for name, param in small_model.named_parameters():
         param.requires_grad = True 
         param_group.append(param) 
 
-custom_optimizer = torch.optim.AdamW(param_group, lr = 5e-5) 
+custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-4) 
 # custom_optimizer = torch.optim.AdamW(param_group, lr = 1e-4) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 

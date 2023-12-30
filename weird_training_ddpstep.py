@@ -249,6 +249,7 @@ class CustomTrainer(Trainer):
             eval_mode = False, 
             time_hash = None, 
             dtype = None, 
+            model_name = None, 
             *args, 
             **kwargs, 
     ): 
@@ -264,6 +265,7 @@ class CustomTrainer(Trainer):
         self.eval_mode = eval_mode 
         self.time_hash = time_hash 
         self.dtype = dtype 
+        self.model_name = model_name 
     
     def _save_checkpoint(self, model, trial, metrics = None): 
         # In all cases, including ddp/dp/deepspeed, self.model is always a reference to the model we
@@ -626,8 +628,10 @@ class CustomTrainer(Trainer):
             mask_correctness = (preds[: 20, 63 :] == labels[: 20, 63 :]).to(torch.bool) 
             # print(mask_correctness.shape) 
             pred_outputs = preds[: 20] 
+            write_out_text = [] 
             for i in range(len(pred_outputs)): 
-                prediction_text = "the prediction is: {}".format(self.tokenizer.decode(pred_outputs[i][: 63])) 
+                prediction_prefix = self.tokenizer.decode(pred_outputs[i][: 63]) 
+                prediction_text = "the prediction is: {}".format(prediction_prefix) 
                 for j in range(mask_correctness.shape[1]): 
                     if mask_correctness[i][j]: 
                         prediction_text += colored(self.tokenizer.decode(pred_outputs[i][63 + j]), "green") + " " 
@@ -642,11 +646,21 @@ class CustomTrainer(Trainer):
                 label_text = "the label is: {}".format(colored(labels_outputs1, "yellow")) 
                 print(label_text, end = " ") 
                 labels_outputs2 = self.tokenizer.decode(mask_filtered[63 :]) 
+                write_out_text.append("the prediction is: " + prediction_prefix + " " + prediction_text + "\n" + "the label is: " + label_text + " " + labels_outputs2 + "\n") 
                 print(colored(labels_outputs2, "cyan")) 
                 print() 
                 print() 
                 # wandb.log({"key notes: ": prediction_text + label_text}) 
                 # f.write(prediction_text + "\n" + label_text + "\n") 
+                
+            with open("{}evaluation_printout_{}_{}_{}_{}.txt".format(dir_models, self.commit_hash, self.time_hash, self.state.global_step, self.model_name), "a") as f: 
+                f.write("*** at step {} {}".format(self.iteration_count, self.state.global_step)) 
+                f.write("\n") 
+                for i, text in enumerate(write_out_text): 
+                    f.write("example {}/{}\n".format(i, len(write_out_text))) 
+                    f.write(text) 
+                    f.write("\n") 
+                f.write("\n") 
             # f.write("\n") 
             # f.close() 
             # self.artifact.add_file("key_notes{}.md".format(self.commit_hash), name = "key_notes.md") 
@@ -1096,10 +1110,10 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=128,  # evaluation batch size
     # logging_steps=1, 
-    logging_steps = 500,            # evaluate, log and save model checkpoints every 1000 step
+    logging_steps = 1,            # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 500, 
+    save_steps = 1, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     learning_rate=2e-4, 
@@ -1170,6 +1184,7 @@ trainer = CustomTrainer(
     time_hash = hash_of_time, 
     # dtype = torch.bfloat16, # TODO find a way to automatically do it 
     dtype = weightmodelfirst.dtype, 
+    model_name = model_name, 
 ) 
 
 max_length = 128 
