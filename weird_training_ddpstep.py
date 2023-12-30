@@ -228,6 +228,7 @@ parser.add_argument("--embedding_pretrained", action = "store_true", default = F
 parser.add_argument("--kernel_size", type = int, default = 4) 
 parser.add_argument("--use_plain_model", action = "store_true", default = False) 
 parser.add_argument("--model_name", type = str, default = "openllama3b") 
+parser.add_argument("--resume_from_checkpoint", type = str, default = None) 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
@@ -937,7 +938,10 @@ class CustomDataset:
 # defining tokenizer 
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
 # tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
-tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+if args.resume_from_checkpoint is None: 
+    tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+else: 
+    tokenizer = AutoTokenizer.from_pretrained(args.resume_from_checkpoint) 
 # tokenizer = AutoTokenizer.from_pretrained("facebook/opt-125m", cache_dir = dir_models) 
 # tokenizer.add_special_tokens({"pad_token":"<pad>"}) 
 # print("the tokenizer pad token id is {}".format(tokenizer.pad_token_id)) 
@@ -981,7 +985,7 @@ train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.0
                                                  # 356k * 0.99 = 352k 356k * 0.01 = 3.6k 
                                                  # 5 * 356k = 1780000, 1780000 * 0.98 = 1744400, 1780000 * 0.02 = 35600 
 
-if not args.use_plain_model: 
+if not args.use_plain_model and args.resume_from_checkpoint is None: 
     print(colored("we use custom small", "cyan")) 
     # handling simplesmallmodel 
     # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
@@ -1019,6 +1023,9 @@ if not args.use_plain_model:
     small_model.train() 
 
     # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
+elif args.resume_from_checkpoint is not None: 
+    small_model = SimpleSmallModel.from_pretrained(args.resum_from_checkpoint).to(torch_device) 
+    small_model.train() 
 else: 
     print(colored("we use plain model", "cyan")) 
     # alternative pretrained model 
@@ -1078,6 +1085,7 @@ model_path = dir_models
 training_args = TrainingArguments(
     output_dir=model_path,          # output directory to where save model checkpoint 
     # resume_from_checkpoint="./model_output/checkpoint-500", 
+    resume_from_checkpoint = args.resume_from_checkpoint, 
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
@@ -1100,7 +1108,6 @@ training_args = TrainingArguments(
     # lr_scheduler_type = "cosine", 
     warmup_steps = 100, 
 ) 
-
 weightmodelfirst = next(small_model.parameters()) 
 # print(weightmodelfirst.dtype) 
 print(colored(weightmodelfirst.dtype, "red")) 
