@@ -1114,10 +1114,10 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=128,  # evaluation batch size
     # logging_steps=1, 
-    logging_steps = 1,            # evaluate, log and save model checkpoints every 1000 step
+    logging_steps = 500,            # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 1, 
+    save_steps = 500, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     learning_rate=2e-4, 
@@ -1199,6 +1199,8 @@ if trainer.accelerator.is_main_process and has_wandb:
     wandblogconfigs = {**(training_args.to_dict()), **(args.__dict__)} 
     wandblogconfigs["git_commit"] = commit_hash 
     wandblogconfigs["time_hash"] = hash_of_time 
+    wandblogconfigs["model_name"] = model_name 
+    wandblogconfigs["texteval"] = model_path + text_eval 
     # wandb.init(project = "llm160m", config = training_args, name="{}_{}".format(today, project_setting)) 
     wandb.init(project = "llm160m", config = wandblogconfigs, name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain")) 
 
