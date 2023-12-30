@@ -372,6 +372,9 @@ class CustomTrainer(Trainer):
             self._inner_training_loop, self._train_batch_size, args.auto_find_batch_size
         ) 
         print("resume_from_checkpoint is {}".format(resume_from_checkpoint)) 
+        
+        print("the optimizer parameter group list 0 is {}".format(len(self.optimizer.param_groups[0]['params']))) 
+        print("the optimizer parameter group list 1 is {}".format(len(self.optimizer.param_groups[1]['params']))) 
         if args.push_to_hub:
             try:
                 # Disable progress bars when uploading models during checkpoints to avoid polluting stdout
@@ -1228,7 +1231,7 @@ model_path = dir_models + "{}_{}_{}_{}_{}/".format(model_name, args.experiment_s
 training_args = TrainingArguments(
     output_dir=model_path,          # output directory to where save model checkpoint 
     # resume_from_checkpoint="./model_output/checkpoint-500", 
-    resume_from_checkpoint = args.resume_from_checkpoint, 
+    # resume_from_checkpoint = args.resume_from_checkpoint, 
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
