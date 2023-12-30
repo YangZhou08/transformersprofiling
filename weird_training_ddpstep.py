@@ -239,7 +239,7 @@ else:
 # model_name = "openllama3b" 
 # model_name = "shearedllama2_7b" 
 model_name = args.model_name 
-text_eval = "{}evaluation_printout_{}_{}_{}.txt".format(dir_models, commit_hash, hash_of_time, model_name) 
+text_eval = "evaluation_printout_{}_{}_{}.txt".format(commit_hash, hash_of_time, model_name) 
 
 class CustomTrainer(Trainer): 
     def __init__(
