@@ -2513,7 +2513,6 @@ class Trainer:
 
                 self.optimizer.load_state_dict(optimizer_state)
                 self.lr_scheduler.load_state_dict(lr_scheduler_state) 
-                print("got inside this function and we found the checkpoint file to be {} and {}".format(optimizer_state, lr_scheduler_state)) 
             else:
                 if is_sagemaker_mp_enabled():
                     if os.path.isfile(os.path.join(checkpoint, "user_content.pt")):
@@ -2557,9 +2556,12 @@ class Trainer:
                     else:
                         self.optimizer.load_state_dict(
                             torch.load(os.path.join(checkpoint, OPTIMIZER_NAME), map_location=map_location)
-                        )
+                        ) 
+                        print(colored("got inside this function and we found the checkpoint file to be {} and {}".format(optimizer_state, lr_scheduler_state))) 
                 with warnings.catch_warnings(record=True) as caught_warnings:
-                    self.lr_scheduler.load_state_dict(torch.load(os.path.join(checkpoint, SCHEDULER_NAME)))
+                    self.lr_scheduler.load_state_dict(torch.load(os.path.join(checkpoint, SCHEDULER_NAME))) 
+                print("printingout checkpoint {}".format(checkpoint)) 
+                exit(0) 
                 reissue_pt_warnings(caught_warnings)
 
     def hyperparameter_search(
