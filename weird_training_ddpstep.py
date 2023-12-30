@@ -1024,7 +1024,10 @@ if not args.use_plain_model and args.resume_from_checkpoint is None:
 
     # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
 elif args.resume_from_checkpoint is not None: 
-    small_model = SimpleSmallModel.from_pretrained(args.resume_from_checkpoint).to(torch_device) 
+    if model_name == "openllama3b": 
+        small_model = SimpleSmallModel.from_pretrained(args.resume_from_checkpoint, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 3200) 
+    elif model_name == "shearedllama2_7b": 
+        small_model = SimpleSmallModel.from_pretrained(args.resume_from_checkpoint, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 2560) 
     small_model.train() 
 else: 
     print(colored("we use plain model", "cyan")) 

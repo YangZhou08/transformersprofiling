@@ -2445,9 +2445,10 @@ class LlamaForSequenceClassification(LlamaPreTrainedModel):
 class SimpleSmallModel(LlamaPreTrainedModel): 
     _tied_weights_keys = ["lm_head.weight"] 
     
-    def __init__(self, config, sliding_window_length = 4, hostname = None, target_model_dim = 4096): 
-        super().__init__(config) 
+    def __init__(self, *args, sliding_window_length = 4, hostname = None, target_model_dim = 4096, **kwargs): 
+        super().__init__(*args, **kwargs) 
         # copied from LlamaModel 
+        config = self.config 
         self.padding_idx = config.pad_token_id 
         self.vocab_size = config.vocab_size 
         
