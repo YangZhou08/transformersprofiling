@@ -304,7 +304,8 @@ class CustomTrainer(Trainer):
                 gathering predictions for evaluation during the training.
             kwargs (`Dict[str, Any]`, *optional*):
                 Additional keyword arguments used to hide deprecated arguments
-        """
+        """ 
+        print(colored("resume from checkpoint: {}".format(resume_from_checkpoint), "yellow")) 
         if resume_from_checkpoint is False:
             resume_from_checkpoint = None
 
