@@ -269,6 +269,14 @@ class CustomTrainer(Trainer):
         self.dtype = dtype 
         self.model_name = model_name 
         self.text_eval = text_eval 
+        
+        if self.args.resume_from_checkpoint is not None: 
+            self.time_checkpoint = int(self.args.resume_from_checkpoint.split("-")[-1]) 
+            print(colored("resuming from checkpoint {}".format(self.time_checkpoint), "yellow")) 
+            print(colored("the learning rate is {}".format(self.optimizer.param_groups[0]["lr"]), "yellow")) 
+            print(colored("the step count is {}".format(self.state.global_step), "yellow")) 
+            if self.iteration_count == 0: 
+                self.iteration_count = 4 * self.state.global_step 
     
     '''
     def _save_checkpoint(self, model, trial, metrics = None): 
@@ -1106,7 +1114,7 @@ model_path = dir_models + "{}_{}_{}_{}_{}/".format(model_name, args.experiment_s
 training_args = TrainingArguments(
     output_dir=model_path,          # output directory to where save model checkpoint 
     # resume_from_checkpoint="./model_output/checkpoint-500", 
-    # resume_from_checkpoint = args.resume_from_checkpoint, 
+    resume_from_checkpoint = args.resume_from_checkpoint, 
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
