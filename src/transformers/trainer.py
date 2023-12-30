@@ -2473,7 +2473,7 @@ class Trainer:
 
     def _load_optimizer_and_scheduler(self, checkpoint):
         """If optimizer and scheduler states exist, load them.""" 
-        print(colored("we got inside the load optimizer and scheduler function", "red")) 
+        print(colored("we got inside the load optimizer and scheduler function {}".format(checkpoint), "red")) 
         if checkpoint is None:
             return
 
