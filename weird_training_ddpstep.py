@@ -200,19 +200,6 @@ else:
 from src.transformers.training_args import OptimizerNames, ParallelMode, TrainingArguments 
 import random 
 
-if "lovelace" in hostname: 
-    # cache_dir = "/home/bc20/yang/transformersprofiling" 
-    dir_models = "/home/yangzho6/model_checkpoints" 
-    dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
-elif "ada" in hostname: 
-    # cache_dir = "/home/bc20/yang/transformersprofiling" 
-    dir_models = "/home/beidic/yangzho6/model_checkpoints" 
-    dir_sdata = "/home/beidic/yangzho6/c4llm_synthesized/" 
-else: 
-    # cache_dir = "/home/bc20/yang/transformersprofiling" 
-    dir_models = "/home/yangzho6/model_checkpoints" 
-    dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
-
 logger = logging.get_logger(__name__) 
 
 parser = argparse.ArgumentParser(
@@ -234,6 +221,19 @@ args = parser.parse_args()
 if args.embedding_pretrained: 
     args.group2lr = None # we enforce it 
 print(args) 
+
+if "lovelace" in hostname: 
+    # cache_dir = "/home/bc20/yang/transformersprofiling" 
+    dir_models = "/home/yangzho6/model_checkpoints/" 
+    dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+elif "ada" in hostname: 
+    # cache_dir = "/home/bc20/yang/transformersprofiling" 
+    dir_models = "/home/beidic/yangzho6/model_checkpoints/" 
+    dir_sdata = "/home/beidic/yangzho6/c4llm_synthesized/" 
+else: 
+    # cache_dir = "/home/bc20/yang/transformersprofiling" 
+    dir_models = "/home/yangzho6/model_checkpoints/" 
+    dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
 
 # has_wandb = False # disable for debugging 
 # model_name = "openllama3b" 
@@ -267,6 +267,7 @@ class CustomTrainer(Trainer):
         self.dtype = dtype 
         self.model_name = model_name 
     
+    '''
     def _save_checkpoint(self, model, trial, metrics = None): 
         # In all cases, including ddp/dp/deepspeed, self.model is always a reference to the model we
         # want to save except FullyShardedDDP.
@@ -392,7 +393,7 @@ class CustomTrainer(Trainer):
         # Maybe delete some older checkpoints.
         if self.args.should_save:
             self._rotate_checkpoints(use_mtime=True, output_dir=run_dir)
-    
+    ''' 
     def training_step(self, model, inputs): 
         model.train() 
         inputs = self._prepare_inputs(inputs) 
@@ -653,7 +654,7 @@ class CustomTrainer(Trainer):
                 # wandb.log({"key notes: ": prediction_text + label_text}) 
                 # f.write(prediction_text + "\n" + label_text + "\n") 
                 
-            with open("{}evaluation_printout_{}_{}_{}_{}.txt".format(dir_models, self.commit_hash, self.time_hash, self.state.global_step, self.model_name), "a") as f: 
+            with open("{}evaluation_printout_{}_{}_{}.txt".format(dir_models, self.commit_hash, self.time_hash, self.model_name), "a") as f: 
                 f.write("*** at step {} {}".format(self.iteration_count, self.state.global_step)) 
                 f.write("\n") 
                 for i, text in enumerate(write_out_text): 
@@ -1098,7 +1099,7 @@ data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = Fal
 
 # model_path = "/home/bc20/yang" 
 # model_path = "/home/yangzho6/model_checkpoints" 
-model_path = dir_models 
+model_path = dir_models + "{}_{}_{}_{}_{}/".format(model_name, args.experiment_setting, args.kernel_size, commit_hash, hash_of_time) 
 training_args = TrainingArguments(
     output_dir=model_path,          # output directory to where save model checkpoint 
     # resume_from_checkpoint="./model_output/checkpoint-500", 
