@@ -1081,11 +1081,11 @@ class CustomDataset:
 # defining tokenizer 
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
 # tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
-if args.resume_from_checkpoint is None: 
-    tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
-else: 
-    tokenizer = AutoTokenizer.from_pretrained(args.resume_from_checkpoint) 
-# tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+# if args.resume_from_checkpoint is None: 
+#     tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+# else: 
+#     tokenizer = AutoTokenizer.from_pretrained(args.resume_from_checkpoint) 
+tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 # tokenizer = AutoTokenizer.from_pretrained("facebook/opt-125m", cache_dir = dir_models) 
 # tokenizer.add_special_tokens({"pad_token":"<pad>"}) 
 # print("the tokenizer pad token id is {}".format(tokenizer.pad_token_id)) 
@@ -1167,12 +1167,6 @@ if not args.use_plain_model or args.resume_from_checkpoint is not None:
     small_model.train() 
 
     # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
-elif args.resume_from_checkpoint is not None: 
-    if model_name == "openllama3b": 
-        small_model = SimpleSmallModel.from_pretrained(args.resume_from_checkpoint, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 3200) 
-    elif model_name == "shearedllama2_7b": 
-        small_model = SimpleSmallModel.from_pretrained(args.resume_from_checkpoint, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 2560) 
-    small_model.train() 
 else: 
     print(colored("we use plain model", "cyan")) 
     # alternative pretrained model 
