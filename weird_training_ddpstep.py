@@ -522,10 +522,6 @@ class CustomTrainer(Trainer):
     ''' 
     def training_step(self, model, inputs): 
         model.train() 
-        print("the optimizer parameter group list 0 is {}".format(len(self.optimizer.param_groups[0]['params']))) 
-        print("learning rate of parameter group 0 is {}".format(self.optimizer.param_groups[0]['lr'])) 
-        print("the optimizer parameter group list 1 is {}".format(len(self.optimizer.param_groups[1]['params']))) 
-        print("learning rate of parameter group 1 is {}".format(self.optimizer.param_groups[1]['lr'])) 
         inputs = self._prepare_inputs(inputs) 
         '''
         for k, v in inputs.items(): 
@@ -603,6 +599,8 @@ class CustomTrainer(Trainer):
         input_ids = inputs["input_ids"] 
         attention_mask = inputs["attention_mask"] 
         label2 = inputs["labels"] 
+        print("the optimizer parameter group list 0 is {} learning rate is {}".format(len(self.optimizer.param_groups[0]['params']), self.optimizer.param_groups[0]['lr'])) 
+        print("the optimizer parameter group list 1 is {} learning rate is {}".format(len(self.optimizer.param_groups[1]['params'])), self.optimizer.param_groups[1]['lr']) 
         # print("the input ids are {}".format(input_ids[0])) 
         # print("labels are {}".format(labels[0])) 
         print("type of the model is {}".format(type(model))) 
