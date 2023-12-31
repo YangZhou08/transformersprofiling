@@ -1,1 +1,1 @@
-accelerate launch --main_process_port 29502 --num_processes 2 --num_machines 1 weird_training_ddpstep.py --resume_from_checkpoint /home/beidic/yangzho6/model_checkpoints/SimpleSmallModellargemodelshearedllama2_7bkernelsize7date608185-2000 --experiment_setting setting0 --kernel_size 7 --model_name shearedllama2_7b 
+accelerate launch --main_process_port 29502 --num_processes 2 --num_machines 1 weird_training_ddpstep.py --experiment_setting setting3 --kernel_size 7 --model_name openllama3b 
