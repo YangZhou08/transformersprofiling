@@ -373,8 +373,9 @@ class CustomTrainer(Trainer):
         ) 
         print("resume_from_checkpoint is {}".format(resume_from_checkpoint)) 
         
-        # print("the optimizer parameter group list 0 is {}".format(len(self.optimizer.param_groups[0]['params']))) 
-        # print("the optimizer parameter group list 1 is {}".format(len(self.optimizer.param_groups[1]['params']))) 
+        print("the optimizer parameter group list 0 is {}".format(len(self.optimizer.param_groups[0]['params']))) 
+        print("the optimizer parameter group list 1 is {}".format(len(self.optimizer.param_groups[1]['params']))) 
+        exit(0) 
         if args.push_to_hub:
             try:
                 # Disable progress bars when uploading models during checkpoints to avoid polluting stdout
