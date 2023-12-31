@@ -1,1 +1,1 @@
-accelerate launch --main_process_port 29502 --num_processes 2 --num_machines 1 weird_training_ddpstep.py --experiment_setting setting3 --kernel_size 7 --model_name openllama3b 
+accelerate launch --main_process_port 29503 --num_processes 2 --num_machines 1 weird_training_ddpstep.py --experiment_setting setting3 --kernel_size 7 --model_name openllama3b 
