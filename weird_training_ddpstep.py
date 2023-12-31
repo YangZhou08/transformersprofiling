@@ -1016,7 +1016,7 @@ class CustomDataset:
             for i in range(0, 2): 
                 # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
                 filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
-                dfiles.append(self.synthesize_dir + "/{}/".format(model_name) + filename) 
+                dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
         else: 
             filename = "c4synthesized_file1.json" 
         self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
