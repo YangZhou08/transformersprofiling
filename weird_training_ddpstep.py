@@ -373,10 +373,6 @@ class CustomTrainer(Trainer):
         ) 
         print("resume_from_checkpoint is {}".format(resume_from_checkpoint)) 
         
-        print("the optimizer parameter group list 0 is {}".format(len(self.optimizer.param_groups[0]['params']))) 
-        print("learning rate of parameter group 0 is {}".format(self.optimizer.param_groups[0]['lr'])) 
-        print("the optimizer parameter group list 1 is {}".format(len(self.optimizer.param_groups[1]['params']))) 
-        exit(0) 
         if args.push_to_hub:
             try:
                 # Disable progress bars when uploading models during checkpoints to avoid polluting stdout
@@ -526,6 +522,11 @@ class CustomTrainer(Trainer):
     ''' 
     def training_step(self, model, inputs): 
         model.train() 
+        print("the optimizer parameter group list 0 is {}".format(len(self.optimizer.param_groups[0]['params']))) 
+        print("learning rate of parameter group 0 is {}".format(self.optimizer.param_groups[0]['lr'])) 
+        print("the optimizer parameter group list 1 is {}".format(len(self.optimizer.param_groups[1]['params']))) 
+        print("learning rate of parameter group 1 is {}".format(self.optimizer.param_groups[1]['lr'])) 
+        exit(0) 
         inputs = self._prepare_inputs(inputs) 
         '''
         for k, v in inputs.items(): 
