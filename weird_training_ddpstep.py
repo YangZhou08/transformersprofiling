@@ -1081,10 +1081,11 @@ class CustomDataset:
 # defining tokenizer 
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
 # tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
-if args.resume_from_checkpoint is None: 
-    tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
-else: 
-    tokenizer = AutoTokenizer.from_pretrained(args.resume_from_checkpoint) 
+# if args.resume_from_checkpoint is None: 
+#     tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+# else: 
+#     tokenizer = AutoTokenizer.from_pretrained(args.resume_from_checkpoint) 
+tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 # tokenizer = AutoTokenizer.from_pretrained("facebook/opt-125m", cache_dir = dir_models) 
 # tokenizer.add_special_tokens({"pad_token":"<pad>"}) 
 # print("the tokenizer pad token id is {}".format(tokenizer.pad_token_id)) 
