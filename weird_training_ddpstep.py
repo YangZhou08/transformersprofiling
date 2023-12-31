@@ -46,6 +46,11 @@ if TYPE_CHECKING:
 
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 
+# Set a global seed for reproducibility
+seed_value = 42
+from src.transformers import set_seed 
+set_seed(seed_value) 
+
 try:
     import wandb
     has_wandb = True
@@ -599,8 +604,8 @@ class CustomTrainer(Trainer):
         input_ids = inputs["input_ids"] 
         attention_mask = inputs["attention_mask"] 
         label2 = inputs["labels"] 
-        print("the optimizer parameter group list 0 is {} learning rate is {}".format(len(self.optimizer.param_groups[0]['params']), self.optimizer.param_groups[0]['lr'])) 
-        print("the optimizer parameter group list 1 is {} learning rate is {}".format(len(self.optimizer.param_groups[1]['params']), self.optimizer.param_groups[1]['lr'])) 
+        # print("the optimizer parameter group list 0 is {} learning rate is {}".format(len(self.optimizer.param_groups[0]['params']), self.optimizer.param_groups[0]['lr'])) 
+        # print("the optimizer parameter group list 1 is {} learning rate is {}".format(len(self.optimizer.param_groups[1]['params']), self.optimizer.param_groups[1]['lr'])) 
         # print("the input ids are {}".format(input_ids[0])) 
         # print("labels are {}".format(labels[0])) 
         print("type of the model is {}".format(type(model))) 
@@ -1047,7 +1052,11 @@ class CustomDataset:
     
     def __getitem__(self, idx): 
         item = self.dataset[idx] 
-        tensor = torch.load(item["condensed_token_path"]) 
+        try: 
+            tensor = torch.load(item["condensed_token_path"]) 
+        except IOError as e: 
+            print(colored("///IOError occured replacing with an empty tensor///", "red")) 
+            tensor = torch.zeros((28, 2560 if model_name == "shearedllama2_7b" else 3200), dtype = torch.float32) 
         
         if self.tokenizer is not None: 
             encoded_text = self.tokenizer( 
