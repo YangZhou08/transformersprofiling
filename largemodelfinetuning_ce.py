@@ -204,7 +204,7 @@ logger = logging.get_logger(__name__)
 
 parser = argparse.ArgumentParser() 
 parser.add_argument("--use_pretrained_small_model", action = "store_true") 
-parser.add_argument("--finetuned_small_model_checkpoint", action = "store_true") 
+parser.add_argument("--finetuned_small_model_checkpoint", type = str, default = None) 
 
 args = parser.parse_args() 
 
