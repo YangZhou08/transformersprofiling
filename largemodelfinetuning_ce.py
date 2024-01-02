@@ -204,6 +204,7 @@ logger = logging.get_logger(__name__)
 
 parser = argparse.ArgumentParser() 
 parser.add_argument("--use_pretrained_small_model", action = "store_true") 
+parser.add_argument("--finetuned_small_model_checkpoint", action = "store_true") 
 
 args = parser.parse_args() 
 
@@ -241,6 +242,7 @@ class CustomTrainer(Trainer):
 
         Subclass and override for custom behavior.
         """
+        print("self.optimizer has {} parameter groups, we have {} parameters, and the learning rate is {}".format(len(self.optimizer.param_groups), len(self.optimizer.param_groups[0]["params"]), self.optimizer.param_groups[0]["lr"])) 
         if self.label_smoother is not None and "labels" in inputs:
             labels = inputs.pop("labels")
         else:
@@ -591,28 +593,32 @@ test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 
 small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
 
 small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
-small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 7, target_model_dim = 3200) 
+if not args.use_pretrained_small_model: 
+    small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 7, target_model_dim = 3200) 
 
-new_state_dict = {} 
+    new_state_dict = {} 
 
-for key in small_state_dict_for_model.keys(): 
-    new_key = key 
-    if 'lm_head' in key: 
-        print("got here found the following key {}".format(key)) 
-    if 'model.' in key: 
-        new_key = key[6 :] 
-    print(new_key) 
-    new_state_dict[new_key] = small_state_dict_for_model[key] 
-# if args.embedding_pretrained: 
-#     new_state_dict["embed_projection.weight"] = torch.load("linearprojectionweighttesting.pt") 
+    for key in small_state_dict_for_model.keys(): 
+        new_key = key 
+        if 'lm_head' in key: 
+            print("got here found the following key {}".format(key)) 
+        if 'model.' in key: 
+            new_key = key[6 :] 
+        print(new_key) 
+        new_state_dict[new_key] = small_state_dict_for_model[key] 
+    # if args.embedding_pretrained: 
+    #     new_state_dict["embed_projection.weight"] = torch.load("linearprojectionweighttesting.pt") 
 
-try: 
-    small_model.load_state_dict(new_state_dict) 
-except RuntimeError as r: 
-    print(colored(r, "yellow")) 
+    try: 
+        small_model.load_state_dict(new_state_dict) 
+    except RuntimeError as r: 
+        print(colored(r, "yellow")) 
 
-small_model = small_model.to(torch.bfloat16).to(torch_device) 
-small_model.eval() # at start we avoid training the small model 
+    small_model = small_model.to(torch.bfloat16).to(torch_device) 
+    small_model.train() 
+else: 
+    small_model = SimpleSmallModel.from_pretrained(args.finetuned_small_model_checkpoint).to(torch.bfloat16).to(torch_device) 
+    small_model.eval() 
 
 # large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = False).to(torch.bfloat16).to(torch_device) 
 large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = True).to(torch.bfloat16).to(torch_device) 
