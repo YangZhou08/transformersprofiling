@@ -535,8 +535,9 @@ class CustomTrainer(Trainer):
                 print(colored(metrics, "magenta")) 
                 wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy, "l2_distance": l2_distance}) 
         else: 
-            metrics = {} 
-            wandb.log({"global_eval_loss": total_loss / total_num_steps}) 
+            if self.accelerator.is_main_process: 
+                metrics = {} 
+                wandb.log({"global_eval_loss": total_loss / total_num_steps}) 
         
         # # Metrics!
         # if self.compute_metrics is not None and all_preds is not None and all_labels is not None:
@@ -629,8 +630,8 @@ else:
     small_model = SimpleSmallModel.from_pretrained(args.finetuned_small_model_checkpoint, sliding_window_length = args.kernel_size, hostname = hostname, target_model_dim = large_dim).to(torch.bfloat16).to(torch_device) 
     small_model.eval() 
 
-# large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = False).to(torch.bfloat16).to(torch_device) 
-large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = True).to(torch.bfloat16).to(torch_device) 
+large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = False).to(torch.bfloat16).to(torch_device) 
+# large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = True).to(torch.bfloat16).to(torch_device) 
 # large_model.set_smallmodelfull() # this function has proven to be very important 
 # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 # large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models) 
