@@ -205,6 +205,7 @@ logger = logging.get_logger(__name__)
 parser = argparse.ArgumentParser() 
 parser.add_argument("--use_pretrained_small_model", action = "store_true") 
 parser.add_argument("--finetuned_small_model_checkpoint", type = str, default = None) 
+parser.add_argument("--large_model", type = str, default = "openllama3b") 
 
 args = parser.parse_args() 
 
@@ -617,7 +618,13 @@ if not args.use_pretrained_small_model:
     small_model = small_model.to(torch.bfloat16).to(torch_device) 
     small_model.train() 
 else: 
-    small_model = SimpleSmallModel.from_pretrained(args.finetuned_small_model_checkpoint).to(torch.bfloat16).to(torch_device) 
+    if args.large_model == "openllama3b": 
+        large_dim = 3200 
+    elif args.large_model == "shearedllama2_7b": 
+        large_dim = 2560 
+    else: 
+        large_dim = 4096 
+    small_model = SimpleSmallModel.from_pretrained(args.finetuned_small_model_checkpoint, sliding_window_length = args.kernel_size, hostname = hostname, target_model_dim = large_dim).to(torch.bfloat16).to(torch_device) 
     small_model.eval() 
 
 # large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = False).to(torch.bfloat16).to(torch_device) 
