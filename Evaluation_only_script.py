@@ -1085,6 +1085,12 @@ small_model.config.pad_token_id = tokenizer.pad_token_id
 small_model = small_model.to(torch_device) 
 small_model.eval() 
 
+training_args = TrainingArguments(
+    per_device_eval_batch_size = 128, 
+    do_train = False, 
+    do_eval = True, 
+) 
+
 trainer = CustomTrainer(
     model = small_model, 
     data_collator = data_collator, 
