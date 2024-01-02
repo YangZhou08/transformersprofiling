@@ -1082,7 +1082,7 @@ small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir
 target_model_dim = 3200 if model_name == "openllama3b" else 2560 
 small_model = SimpleSmallModel.from_pretrained(args.loading_from_checkpoint, sliding_window_length = args.kernel_size, hostname = hostname, target_model_dim = target_model_dim) 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
-small_model = small_model.to(torch_device) 
+small_model = small_model.to(torch_device).to(torch.bfloat16) 
 small_model.eval() 
 
 training_args = TrainingArguments(
@@ -1107,4 +1107,4 @@ trainer = CustomTrainer(
 
 # results = trainer.evaluate(eval_dataset = test_set) 
 # print(results) 
-small_model.save_pretrained("../model_checkpoints/llama-160m_deciphering_{}_{}_{}".format(args.model_name, args.experiment_setting, hash_of_time)) 
+# small_model.save_pretrained("../model_checkpoints/llama-160m_deciphering_{}_{}_{}".format(args.model_name, args.experiment_setting, hash_of_time)) 
