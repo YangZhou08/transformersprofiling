@@ -203,6 +203,7 @@ else:
 logger = logging.get_logger(__name__) 
 
 parser = argparse.ArgumentParser() 
+parser.add_argument("--kernel_size", type = int, default = 7) 
 parser.add_argument("--use_pretrained_small_model", action = "store_true") 
 parser.add_argument("--finetuned_small_model_checkpoint", type = str, default = None) 
 parser.add_argument("--large_model", type = str, default = "openllama3b") 
