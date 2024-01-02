@@ -639,15 +639,15 @@ large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2"
 large_model.train() 
 # large_model.set_addonsmallmodel(small_model) 
 small_model_state_dict = SimpleSmallModel.from_pretrained(args.finetuned_small_model_checkpoint, sliding_window_length = args.kernel_size, hostname = hostname, target_model_dim = large_dim).state_dict() 
-
+'''
 new_state_dict = {} 
 
 for key in small_model_state_dict.keys(): 
     new_key = "addonsmallmodel." + key 
     print(new_key) 
     new_state_dict[new_key] = small_model_state_dict[key] 
-
-large_model.addonsmallmodel.load_state_dict(new_state_dict) 
+''' 
+large_model.addonsmallmodel.load_state_dict(small_model_state_dict) 
 if args.use_pretrained_small_model: 
     large_model.addonsmallmodel.eval() 
 
