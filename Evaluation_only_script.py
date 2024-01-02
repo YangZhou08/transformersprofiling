@@ -1086,6 +1086,7 @@ small_model = small_model.to(torch_device)
 small_model.eval() 
 
 training_args = TrainingArguments(
+    output_dir = dir_models, 
     per_device_eval_batch_size = 128, 
     do_train = False, 
     do_eval = True, 
