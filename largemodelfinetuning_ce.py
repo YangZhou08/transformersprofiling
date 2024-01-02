@@ -638,7 +638,7 @@ large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2"
 # large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models) 
 large_model.train() 
 # large_model.set_addonsmallmodel(small_model) 
-small_model_state_dict = SimpleSmallModel.from_pretrained(args.finetuned_small_model_checkpoint).state_dict() 
+small_model_state_dict = SimpleSmallModel.from_pretrained(args.finetuned_small_model_checkpoint, sliding_window_length = args.kernwl_size, hostname = hostname, target_model_dim = large_dim).state_dict() 
 
 new_state_dict = {} 
 
