@@ -1395,7 +1395,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None, 
         original_attention_mask = None, 
-    ) -> Union[Tuple, CausalLMOutputWithPast]: 
+    ) -> Union[Tuple, CausalLMOutputWithPastLargeDistance]: 
         r"""
         Args:
             labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
@@ -1551,7 +1551,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
             past_key_values=outputs.past_key_values,
             hidden_states=outputs.hidden_states,
             # attentions=outputs.attentions, 
-            attentions = None, # delibrately using the model's attention mask with modifications 
+            attentions = addonmodeloutput.attentions, # delibrately using the model's attention mask with modifications 
             l2_distance = intermediate_l2_dist, 
         ) 
 
