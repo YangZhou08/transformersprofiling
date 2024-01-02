@@ -1092,7 +1092,8 @@ training_args = TrainingArguments(
     do_eval = True, 
 ) 
 
-trainer = CustomTrainer(
+trainer = CustomTrainer( 
+    args = training_args, 
     model = small_model, 
     data_collator = data_collator, 
     experiment_setting = args.experiment_setting, 
