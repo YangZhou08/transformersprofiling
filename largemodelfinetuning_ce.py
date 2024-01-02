@@ -597,6 +597,12 @@ test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 
 small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
 
 small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
+if args.large_model == "openllama3b": 
+    large_dim = 3200 
+elif args.large_model == "shearedllama2_7b": 
+    large_dim = 2560 
+else: 
+    large_dim = 4096 
 if not args.use_pretrained_small_model: 
     small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 7, target_model_dim = 3200) 
 
@@ -621,12 +627,6 @@ if not args.use_pretrained_small_model:
     small_model = small_model.to(torch.bfloat16).to(torch_device) 
     small_model.train() 
 else: 
-    if args.large_model == "openllama3b": 
-        large_dim = 3200 
-    elif args.large_model == "shearedllama2_7b": 
-        large_dim = 2560 
-    else: 
-        large_dim = 4096 
     small_model = SimpleSmallModel(small_config, sliding_window_length = args.kernel_size, hostname = hostname, target_model_dim = large_dim).to(torch.bfloat16).to(torch_device) 
     # I found that the weights need to be loaded again once the large model is loaded 
     small_model.eval() 
