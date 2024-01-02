@@ -1094,6 +1094,7 @@ trainer = CustomTrainer(
     dtype = small_model.dtype, 
     model_name = model_name, 
     text_eval = "just_evaluation_{}.txt".format(hash_of_time), 
+    tokenizer = tokenizer, 
 ) 
 
 results = trainer.evaluate(eval_dataset = test_set) 
