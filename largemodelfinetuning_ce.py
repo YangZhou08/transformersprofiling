@@ -581,7 +581,7 @@ tokenizer.padding_side = "left"
 list_of_datasets = ["c4_file{}.json".format(i) for i in range(1, 6)] 
 list_of_datasets = [dir_unprocessed_dataset + path for path in list_of_datasets] 
 # onedataset = load_dataset("json", data_files = list_of_datasets, split = "train") 
-onedataset = load_dataset("json", data_files = list_of_datasets, split = "train") 
+onedataset = load_dataset("json", data_files = list_of_datasets, split = "train[:2000]") 
 d = onedataset.train_test_split(test_size = 0.005) # 0.995 for training, 0.005 for testing 
 
 def encode_with_truncation(examples): 
@@ -627,7 +627,8 @@ else:
         large_dim = 2560 
     else: 
         large_dim = 4096 
-    small_model = SimpleSmallModel.from_pretrained(args.finetuned_small_model_checkpoint, sliding_window_length = args.kernel_size, hostname = hostname, target_model_dim = large_dim).to(torch.bfloat16).to(torch_device) 
+    small_model = SimpleSmallModel(sliding_window_length = args.kernel_size, hostname = hostname, target_model_dim = large_dim).to(torch.bfloat16).to(torch_device) 
+    # I found that the weights need to be loaded again once the large model is loaded 
     small_model.eval() 
 
 large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = False).to(torch.bfloat16).to(torch_device) 
@@ -637,6 +638,18 @@ large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2"
 # large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models) 
 large_model.train() 
 # large_model.set_addonsmallmodel(small_model) 
+small_model_state_dict = SimpleSmallModel.from_pretrained(args.finetuned_small_model_checkpoint).state_dict() 
+
+new_state_dict = {} 
+
+for key in small_model_state_dict.keys(): 
+    new_key = "addonsmallmodel." + key 
+    print(new_key) 
+    new_state_dict[new_key] = small_model_state_dict[key] 
+
+large_model.addonsmallmodel.load_state_dict(new_state_dict) 
+if args.use_pretrained_small_model: 
+    large_model.addonsmallmodel.eval() 
 
 large_model.config.pad_token_id = tokenizer.pad_token_id 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
