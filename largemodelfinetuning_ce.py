@@ -747,7 +747,6 @@ for name, param in large_model.named_parameters():
         print(name) 
         param.requires_grad = True 
         param_group.append(param) 
-print("length of param_group {}".format(len(param_group))) 
 for name, param in small_model.named_parameters(): 
     # print(colored("small model parameters {}".format(name), "yellow")) 
     if args.use_pretrained_small_model: 
@@ -755,6 +754,7 @@ for name, param in small_model.named_parameters():
     else: 
         param.requires_grad = True 
         param_group.append(param) 
+print("length of param_group {}".format(len(param_group))) 
 
 custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-4) 
 # custom_optimizer = torch.optim.AdamW(param_group, lr = 1e-4) 
