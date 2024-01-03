@@ -223,3 +223,5 @@ for keys in small_model_state_dict.keys():
         output_together = False 
     else: 
         print(colored("we have identical parameter with keys, large model keys: {}, {}".format(large_model_keys, keys), "green")) 
+
+print("output together: {}".format(output_together)) 
