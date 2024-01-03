@@ -540,13 +540,15 @@ class LlamaAttention(nn.Module):
 
         attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query_states.dtype) 
         # Note the next line is critical, since right now the softmax of all the values -inf is a very strange number 
+        '''
         if "mask_list_pos" in kwargs: 
             # print("found it") 
             mask = torch.ones((attn_weights.shape[-2], attn_weights.shape[-1]), device = attn_weights.device) 
             mask[kwargs["mask_list_pos"], :] = 0.0 
             # attn_weights[:, :, kwargs["mask_list_pos"], :] = 0.0 
             attn_weights = attn_weights * mask 
-            attn_weights = attn_weights.to(value_states.dtype)
+            attn_weights = attn_weights.to(value_states.dtype) 
+        ''' 
         attn_weights = nn.functional.dropout(attn_weights, p=self.attention_dropout, training=self.training)
         attn_output = torch.matmul(attn_weights, value_states) 
 
@@ -3416,6 +3418,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         else: 
             if self.experiment_setting == "setting0": 
                 # self._modify_decoder_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+                print("got here") 
                 self._modify_decoder_attention_mask_neo(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
             elif self.experiment_setting == "setting1": 
                 self._modify_decoder_attention_mask_for_harder(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 

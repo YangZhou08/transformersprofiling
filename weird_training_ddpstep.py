@@ -734,7 +734,8 @@ class CustomTrainer(Trainer):
                         # if try_count < 2: 
                         #     wandb.log({field_name: wandb.Image("testing_attention_map.jpg")}) 
                         #     try_count += 1 
-
+        
+        exit(0) 
         # inspect the hidden states here 
 
         return (loss, outputs) if return_outputs else loss 
