@@ -249,6 +249,7 @@ class CustomTrainer(Trainer):
         Subclass and override for custom behavior.
         """
         print("self.optimizer has {} parameter groups, we have {} parameters, and the learning rate is {}".format(len(self.optimizer.param_groups), len(self.optimizer.param_groups[0]["params"]), self.optimizer.param_groups[0]["lr"])) 
+        exit(0) 
         if self.label_smoother is not None and "labels" in inputs:
             labels = inputs.pop("labels")
         else:
