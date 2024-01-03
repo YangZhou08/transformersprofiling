@@ -209,6 +209,8 @@ parser.add_argument("--finetuned_small_model_checkpoint", type = str, default = 
 parser.add_argument("--large_model", type = str, default = "openllama3b") 
 
 args = parser.parse_args() 
+model_name = args.large_model 
+text_eval = "evaluating_printout_{}_{}_{}.txt".format(commit_hash, hash_of_time, model_name) 
 
 class CustomTrainer(Trainer): 
     def __init__(self, 
@@ -217,6 +219,7 @@ class CustomTrainer(Trainer):
                  commit_hash = None, 
                  time_hash = None, 
                  model_name = None, 
+                 text_eval = None, 
                  *args, 
                  **kwargs, 
     ): 
@@ -228,6 +231,7 @@ class CustomTrainer(Trainer):
         self.commit_hash = commit_hash 
         self.time_hash = time_hash 
         self.model_name = model_name 
+        self.text_eval = text_eval 
     
     def _set_signature_columns_if_needed(self): 
         if self._signature_columns is None:
@@ -763,7 +767,7 @@ data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = Fal
 
 # model_path = "/home/bc20/yang" 
 # model_path = "/home/yangzho6/model_checkpoints" 
-model_path = dir_models + "smallmodelopenllamav3" 
+model_path = dir_models + "largemodel{}_{}_{}".format(args.model_name, commit_hash, hash_of_time) 
 training_args = TrainingArguments(
     output_dir=model_path,          # output directory to where save model checkpoint
     # evaluation_strategy="steps",    # evaluate each `logging_steps` steps 
@@ -805,6 +809,7 @@ trainer = CustomTrainer(
     tokenizer = tokenizer, 
     time_hash = hash_of_time, 
     commit_hash = commit_hash, 
+    text_eval = model_path + text_eval, 
 ) 
 
 if trainer.accelerator.is_main_process and has_wandb: 
