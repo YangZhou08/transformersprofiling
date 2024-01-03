@@ -3440,6 +3440,9 @@ class Trainer:
                     with self.compute_loss_context_manager():
                         loss, outputs = self.compute_loss(model, inputs, return_outputs=True)
                     loss = loss.mean().detach()
+                    for k in outputs.keys(): 
+                        print(k) 
+                    print("ignore_keys: {}".format(ignore_keys + ["loss"])) 
 
                     if isinstance(outputs, dict):
                         logits = tuple(v for k, v in outputs.items() if k not in ignore_keys + ["loss"])
