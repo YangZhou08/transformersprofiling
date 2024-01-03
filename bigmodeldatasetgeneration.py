@@ -84,8 +84,8 @@ interest_idx_file = [1, 2, 3, 4, 5]
 d_files = ["c4_file{}.json".format(i) for i in interest_idx_file] 
 print(colored("the processing files are {}".format(d_files), "yellow")) 
 print(colored("Using model name {} for synthesized data".format(model_name), "yellow")) 
-onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train") 
-# onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train[:2000]") 
+# onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train") 
+onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train[:2000]") 
 
 class CustomTrainer(Trainer): 
     def __init__(self, large_model = None, *args, **kwargs): 
@@ -234,7 +234,7 @@ training_args = TrainingArguments(
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=1,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size=30, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size=128, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=64,  # evaluation batch size
     # logging_steps=1000,             # evaluate, log and save model checkpoints every 1000 step
