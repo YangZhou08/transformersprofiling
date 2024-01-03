@@ -84,8 +84,8 @@ interest_idx_file = [1, 2, 3, 4, 5]
 d_files = ["c4_file{}.json".format(i) for i in interest_idx_file] 
 print(colored("the processing files are {}".format(d_files), "yellow")) 
 print(colored("Using model name {} for synthesized data".format(model_name), "yellow")) 
-# onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train") 
-onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train[:2000]") 
+onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train") 
+# onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train[:2000]") 
 
 class CustomTrainer(Trainer): 
     def __init__(self, large_model = None, *args, **kwargs): 
@@ -288,12 +288,11 @@ for step, inputs in enumerate(train_dataloader):
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step)) 
-    for i in range(input_ids.shape[0]): 
-        example = large_outputs.sequences[i] 
-        print(tokenizer.decode(example[: max_length])) 
-        print(colored(tokenizer.decode(example[max_length : ]), "blue")) 
-        print() 
-    exit(0) 
+    # for i in range(input_ids.shape[0]): 
+    #     example = large_outputs.sequences[i] 
+    #     print(tokenizer.decode(example[: max_length])) 
+    #     print(colored(tokenizer.decode(example[max_length : ]), "blue")) 
+    #     print() 
     # if step > 1: 
     
     list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
