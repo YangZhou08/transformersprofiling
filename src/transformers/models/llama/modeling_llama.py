@@ -2897,6 +2897,32 @@ class SimpleSmallModel(LlamaPreTrainedModel):
 
         combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
     
+    # def _modify_decoder_attention_mask(self, combined_attention_mask, dtype, start_idx = None, kernel_size = None): 
+    def _modify_decoder_attention_mask_neo(self, combined_attention_mask, dtype, mask_list_pos, start_idx = None, kernel_size = None): 
+        mask_shape = combined_attention_mask.shape # (batch_size, 1, tgt_seq_len, src_seq_len) 
+        seq_len = mask_shape[-1] 
+        start_idx = start_idx if start_idx is not None else self.start_idx 
+        kernel_size = kernel_size if kernel_size is not None else self.sliding_window_length 
+        
+        # row dimensional masking 
+        # row_idx_masked_out = [start_idx + i * (kernel_size + 1) for i in range((seq_len - start_idx) / (kernel_size + 1))] 
+        row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) # NOTE currently, this line only works for training 
+        # row_mask[row_idx_masked_out] = 1 
+        # row_mask[mask_list_pos] = 1 
+        # row_mask[mask_list_pos, :] = 1 
+
+        # column dimensional masking 
+        # condensed_token_idx_list = row_idx_masked_out 
+        condensed_token_idx_list = mask_list_pos 
+        for i in range(len(condensed_token_idx_list) - 1): 
+            # row_mask[:, :, condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
+            row_mask[condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
+        # print("row mask shape {}".format(row_mask.shape)) 
+        row_mask = row_mask[None, None, :, :].expand(mask_shape).to(torch.bool) 
+        row_mask = row_mask.to(device = combined_attention_mask.device) 
+
+        combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
+    
     def _modify_decoder_attention_mask_for_large_model_addon(self, combined_attention_mask, dtype, mask_list_pos, kernel_size = None): 
         # in this setting, we assume the starting idx to be 0 
         mask_shape = combined_attention_mask.shape # (batch_size, 1, tgt_seq_len, src_seq_len) 
@@ -3389,6 +3415,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             self._convert_to_normal_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
         else: 
             if self.experiment_setting == "setting0": 
+                # self._modify_decoder_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
                 self._modify_decoder_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
             elif self.experiment_setting == "setting1": 
                 self._modify_decoder_attention_mask_for_harder(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
@@ -3484,13 +3511,14 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             logits = self.lm_head(hidden_states) 
         logits = logits.float() 
 
+        mask_list_pos22 = [x - 1 for x in mask_list_pos] # just trying 
         loss = None 
         if labels is not None: 
             # Shift so that tokens < n predict n 
             selected_indices = list(range(start_idx)) 
             for i in range(start_idx, seq_length): 
                 # if i not in self.mask_list_pos: 
-                if i not in mask_list_pos: 
+                if i not in mask_list_pos22: 
                     selected_indices.append(i) 
             # shift_logits = shift_logits[:, selected_indices, :] 
             logits = logits[:, selected_indices, :] 
