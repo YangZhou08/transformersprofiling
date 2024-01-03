@@ -768,7 +768,7 @@ data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = Fal
 
 # model_path = "/home/bc20/yang" 
 # model_path = "/home/yangzho6/model_checkpoints" 
-model_path = dir_models + "largemodel{}_{}_{}".format(args.large_model, commit_hash, hash_of_time) 
+model_path = dir_models + "largemodel{}_{}_{}/".format(args.large_model, commit_hash, hash_of_time) 
 training_args = TrainingArguments(
     output_dir=model_path,          # output directory to where save model checkpoint
     # evaluation_strategy="steps",    # evaluate each `logging_steps` steps 
@@ -778,10 +778,10 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size= 10,  # evaluation batch size
     # logging_steps=1, 
-    logging_steps = 1,          # evaluate, log and save model checkpoints every 1000 step
+    logging_steps = 500,         # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 1, 
+    save_steps = 500, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     # learning_rate=2e-4, 
