@@ -84,8 +84,8 @@ interest_idx_file = [1, 2, 3, 4, 5]
 d_files = ["c4_file{}.json".format(i) for i in interest_idx_file] 
 print(colored("the processing files are {}".format(d_files), "yellow")) 
 print(colored("Using model name {} for synthesized data".format(model_name), "yellow")) 
-onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train") 
-# onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train[:2000]") 
+# onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train") 
+onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train[:2000]") 
 
 class CustomTrainer(Trainer): 
     def __init__(self, large_model = None, *args, **kwargs): 
