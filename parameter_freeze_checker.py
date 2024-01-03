@@ -202,7 +202,8 @@ else:
 
 logger = logging.get_logger(__name__) 
 
-large_model_checkpoint = "/home/yangzho6/model_checkpoints/largemodelopenllama3b_a36f01d_866695" 
+# large_model_checkpoint = "/home/yangzho6/model_checkpoints/largemodelopenllama3b_a36f01d_866695" 
+large_model_checkpoint = "/home/yangzho6/model_checkpoints/largemodelopenllama3b_a36f01d_866695/checkpoint-500" 
 small_model_checkpoint = "/home/yangzho6/model_checkpoints/llama-160m_deciphering_openallama3b_setting0_070600" 
 
 large_model_state_dict = LlamaWeirdLarge.from_pretrained(large_model_checkpoint).state_dict() 
