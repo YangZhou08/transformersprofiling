@@ -1802,7 +1802,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
             hidden_states = hidden_states[:, :-1, :] # NOTE this is very important 
             
             # interleave the hidden_states and the input_ids 
-            assert hidden_states.shape[1] == input_ids.shape[1] // 7 
+            assert hidden_states.shape[1] == input_ids.shape[1] // 7 - 1 
             addonmodeloutput = self.addonsmallmodel( 
                 input_ids = input_ids, 
                 attention_mask = original_attention_mask, 
