@@ -1290,6 +1290,320 @@ class LlamaForCausalLM(LlamaPreTrainedModel):
             )
         return reordered_past 
 
+class LlamaWeirdLarge2(LlamaPreTrainedModel): 
+    """ 
+    Inside this class, the lm_head is not used 
+    We also have a groupping function call at the beginning of the forward function 
+    """ 
+    
+    _tied_weights_keys = ["lm_head.weight"]
+
+    def __init__(self, *args, sliding_window_length = 7, addonsmallmodel, use_mse_loss = False, **kwargs): 
+        super().__init__(*args, **kwargs) 
+        self.model = LlamaModel(self.config) 
+        self.vocab_size = self.config.vocab_size 
+        # self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False) 
+        self.lm_head = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias = False) 
+        
+        self.addonsmallmodel = addonsmallmodel 
+        self.sliding_window_length = sliding_window_length 
+        self.small_model_dtype = self.addonsmallmodel.embed_projection.weight.dtype 
+        print(colored("small_model_dtype {}".format(self.small_model_dtype), "red")) 
+        self.use_mse_loss = use_mse_loss 
+
+        # Initialize weights and apply final processing
+        self.post_init()
+
+    def get_input_embeddings(self):
+        return self.model.embed_tokens
+
+    def set_input_embeddings(self, value):
+        self.model.embed_tokens = value
+
+    def get_output_embeddings(self):
+        return self.lm_head
+
+    def set_output_embeddings(self, new_embeddings):
+        self.lm_head = new_embeddings
+
+    def set_decoder(self, decoder):
+        self.model = decoder
+
+    def get_decoder(self):
+        return self.model 
+    
+    def naive_grouping(self, input_ids): 
+        embedding_searched = self.model.embed_tokens(input_ids) 
+        # print("embedding_searched shape {} {}".format(embedding_searched.shape, embedding_searched.dtype)) 
+        seq_length = embedding_searched.shape[1] 
+        
+        assert seq_length % 7 == 0, "seq_length is not divisible by 7" 
+        added_tensor = torch.zeros((embedding_searched.shape[0], seq_length // 7, embedding_searched.shape[2])).to(input_ids.device).to(embedding_searched.dtype) 
+        for i in range(seq_length // 7): 
+            sum = torch.zeros((embedding_searched.shape[0], embedding_searched.shape[2])).to(input_ids.device).to(embedding_searched.dtype) 
+            for j in range(7): 
+                sum += embedding_searched[:, i * 7 + j, :] 
+                sum /= 7. 
+                # print("sum dtype {}".format(sum.dtype)) 
+            added_tensor[:, i, :] = sum 
+        # print("added_tensor shape {}".format(added_tensor.shape)) 
+        
+        return added_tensor 
+    
+    def set_addonsmallmodel(self, addonsmallmodel): 
+        self.addonsmallmodel = addonsmallmodel 
+    
+    def set_smallmodelfull(self): 
+        self.addonsmallmodel = self.addonsmallmodel.to(torch.float32) 
+    
+    def l2distancecompute(self, inputs, hidden_states): 
+        input_used = inputs.clone().detach()[:, 1:, :]
+        hidden_states_used = hidden_states.clone().detach()[:, :-1, :] 
+        assert input_used.shape == hidden_states_used.shape 
+        dmod = input_used.shape[-1] 
+        input_used = input_used.reshape(-1, dmod) 
+        hidden_states_used = hidden_states_used.reshape(-1, dmod) 
+        # compute the difference 
+        diff = input_used - hidden_states_used 
+        
+        # compute the square 
+        diff = diff ** 2
+        
+        # sum up the square 
+        diff = torch.sum(diff, dim = 1) 
+        
+        # take square root 
+        diff = torch.sqrt(diff) 
+        
+        # average the l2 distance 
+        diff = torch.mean(diff) 
+        
+        return diff 
+
+    @add_start_docstrings_to_model_forward(LLAMA_INPUTS_DOCSTRING)
+    @replace_return_docstrings(output_type=CausalLMOutputWithPast, config_class=_CONFIG_FOR_DOC)
+    def forward(
+        self,
+        input_ids: torch.LongTensor = None,
+        # attention_mask: Optional[torch.Tensor] = None,
+        position_ids: Optional[torch.LongTensor] = None,
+        past_key_values: Optional[List[torch.FloatTensor]] = None,
+        inputs_embeds: Optional[torch.FloatTensor] = None,
+        labels: Optional[torch.LongTensor] = None,
+        use_cache: Optional[bool] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        return_dict: Optional[bool] = None, 
+        original_attention_mask = None, 
+        condensed_embed_labels = None, 
+    ) -> Union[Tuple, CausalLMOutputWithPastLargeDistance]: 
+        r"""
+        Args:
+            labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+                config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+                (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Returns:
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, LlamaForCausalLM
+
+        >>> model = LlamaForCausalLM.from_pretrained(PATH_TO_CONVERTED_WEIGHTS)
+        >>> tokenizer = AutoTokenizer.from_pretrained(PATH_TO_CONVERTED_TOKENIZER)
+
+        >>> prompt = "Hey, are you conscious? Can you talk to me?"
+        >>> inputs = tokenizer(prompt, return_tensors="pt")
+
+        >>> # Generate
+        >>> generate_ids = model.generate(inputs.input_ids, max_length=30)
+        >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        "Hey, are you conscious? Can you talk to me?\nI'm not conscious, but I can talk to you."
+        ```""" 
+
+        output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
+        output_hidden_states = (
+            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
+        )
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+
+        # inside this function callm, input is through input_embeds 
+        extra_pass_in_embeds = self.naive_grouping(input_ids) 
+        # the attention mask should be compatible to the new input_embeds 
+        assert attention_mask.shape[1] == extra_pass_in_embeds.shape[1], "attention_mask shape is not compatible to the new input_embeds" 
+        assert inputs_embeds is None, "inputs_embeds is not None" 
+        inputs_embeds = extra_pass_in_embeds 
+        print(colored("inputs_embeds shape {} dtype {}".format(inputs_embeds.shape, inputs_embeds.dtype), "yellow")) 
+        # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn) 
+        # TODO delete the following line 
+        
+        outputs = self.model(
+            input_ids=None, 
+            attention_mask=attention_mask,
+            position_ids=position_ids,
+            past_key_values=past_key_values,
+            inputs_embeds=inputs_embeds,
+            use_cache=use_cache,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+            return_dict=return_dict,
+        ) 
+
+        hidden_states = outputs[0] # we don't need the lm_head 
+        print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
+        if self.small_model_dtype == torch.float32: 
+            hidden_states = hidden_states.to(torch.float32) 
+        elif self.small_model_dtype == torch.bfloat16: 
+            hidden_states = hidden_states.to(torch.bfloat16) 
+        # print(colored("small_model_type: {}".format(self.small_model_dtype), "red")) 
+        # intermediate_l2_dist = self.l2distancecompute(inputs_embeds, hidden_states) 
+        
+        if self.use_mse_loss: 
+            practical_mask = attention_mask.unsqueeze(-1).expand_as(inputs_embeds) 
+            labels = inputs_embeds.detach().clone() 
+            labels[practical_mask == 0] = 0 
+            labels = labels[:, 1:, :] 
+            hidden_states[practical_mask == 0] = 0 
+            hidden_states = hidden_states[:, :-1, :] 
+            assert labels.shape == hidden_states.shape 
+            mse_loss = nn.MSELoss() 
+            intermediate_l2_dist = mse_loss(hidden_states, labels) 
+            loss = intermediate_l2_dist 
+            
+        else: 
+            input_ids2 = inputs_embeds.detach().clone() 
+            practical_mask = attention_mask.unsqueeze(-1).expand_as(inputs_embeds) 
+            input_ids2[practical_mask == 0] = 0 
+            input_ids2 = input_ids2[:, 1:, :] 
+            hidden_states2 = hidden_states.detach().clone() 
+            hidden_states2[practical_mask == 0] = 0 
+            hidden_states2 = hidden_states2[:, :-1, :] 
+            assert input_ids2.shape == hidden_states2.shape 
+            
+            mse_loss = nn.MSELoss() 
+            intermediate_l2_dist = mse_loss(input_ids2, hidden_states2) 
+            
+            # hidden_states has shape (batch_size, seq_length // 7, hidden states) 
+            
+            # interleave the hidden_states and the input_ids 
+            assert hidden_states.shape[1] == input_ids.shape[1] // 7 
+            addonmodeloutput = self.addonsmallmodel( 
+                input_ids = input_ids, 
+                attention_mask = original_attention_mask, 
+                position_ids = None, 
+                past_key_values = None, 
+                condensed_embeds = hidden_states, 
+                labels = None, 
+                use_cache = None, 
+                output_attentions = True, 
+                output_hidden_states = None, 
+                return_dict = True, 
+                start_idx = 0, # NOTE this is very important 
+                eval_mode = False, 
+                iteration_count = 1, 
+                condensed_fashion = "projection_mode", 
+                experiment_setting = "setting4", 
+            ) 
+            logits = addonmodeloutput.logits 
+            
+            '''
+            if self.config.pretraining_tp > 1:
+                lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
+                logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]
+                logits = torch.cat(logits, dim=-1)
+            else:
+                logits = self.lm_head(hidden_states)
+            logits = logits.float()
+            ''' 
+            
+            seq_length = input_ids.shape[1] + hidden_states.shape[1] 
+            assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
+            mask_list_pos = [i * (self.sliding_window_length + 1) for i in range(seq_length // (self.sliding_window_length + 1))] 
+            # print(colored("mask_list_pos {}".format(mask_list_pos), "red")) 
+            loss = None 
+            if labels is not None: 
+                selected_indices = [] 
+                for i in range(0, seq_length): 
+                    if i not in mask_list_pos: 
+                        selected_indices.append(i) 
+                # print(colored("selected_indices {}".format(selected_indices), "red")) 
+                # select and shift the logits 
+                logits = logits[:, selected_indices, :] 
+                shift_logits = logits[..., :-1, :].contiguous() 
+                shift_labels = labels[..., 1:].contiguous() # shape (batch_size, seq_length - 1) 
+                # Flatten the tokens 
+                loss_fct = CrossEntropyLoss() 
+                shift_logits = shift_logits.view(-1, self.config.vocab_size) 
+                shift_labels = shift_labels.view(-1) 
+                # Enable model parallelism 
+                shift_labels = shift_labels.to(shift_logits.device) 
+                loss = loss_fct(shift_logits, shift_labels) 
+                # print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
+
+        if not return_dict:
+            output = (logits,) + outputs[1:]
+            return (loss,) + output if loss is not None else output
+
+        return CausalLMOutputWithPastLargeDistance(
+            loss=loss,
+            logits = logits, 
+            past_key_values=outputs.past_key_values,
+            hidden_states=outputs.hidden_states,
+            # attentions=outputs.attentions, 
+            attentions = addonmodeloutput.attentions, # delibrately using the model's attention mask with modifications 
+            l2_distance = intermediate_l2_dist, 
+        ) 
+
+    def prepare_inputs_for_generation(
+        self, input_ids, past_key_values=None, attention_mask=None, inputs_embeds=None, **kwargs
+    ):
+        if past_key_values is not None:
+            past_length = past_key_values[0][0].shape[2]
+
+            # Some generation methods already pass only the last input ID
+            if input_ids.shape[1] > past_length:
+                remove_prefix_length = past_length
+            else:
+                # Default to old behavior: keep only final ID
+                remove_prefix_length = input_ids.shape[1] - 1
+
+            input_ids = input_ids[:, remove_prefix_length:]
+
+        position_ids = kwargs.get("position_ids", None)
+        if attention_mask is not None and position_ids is None:
+            # create position_ids on the fly for batch generation
+            position_ids = attention_mask.long().cumsum(-1) - 1
+            position_ids.masked_fill_(attention_mask == 0, 1)
+            if past_key_values:
+                position_ids = position_ids[:, -input_ids.shape[1] :]
+
+        # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
+        if inputs_embeds is not None and past_key_values is None:
+            model_inputs = {"inputs_embeds": inputs_embeds}
+        else:
+            model_inputs = {"input_ids": input_ids}
+
+        model_inputs.update(
+            {
+                "position_ids": position_ids,
+                "past_key_values": past_key_values,
+                "use_cache": kwargs.get("use_cache"),
+                "attention_mask": attention_mask,
+            }
+        )
+        return model_inputs
+
+    @staticmethod
+    def _reorder_cache(past_key_values, beam_idx):
+        reordered_past = ()
+        for layer_past in past_key_values:
+            reordered_past += (
+                tuple(past_state.index_select(0, beam_idx.to(past_state.device)) for past_state in layer_past),
+            )
+        return reordered_past 
+
 class LlamaWeirdLarge(LlamaPreTrainedModel): 
     """ 
     Inside this class, the lm_head is not used 
@@ -1485,6 +1799,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
             intermediate_l2_dist = mse_loss(input_ids2, hidden_states2) 
             
             # hidden_states has shape (batch_size, seq_length // 7, hidden states) 
+            hidden_states = hidden_states[:, :-1, :] # NOTE this is very important 
             
             # interleave the hidden_states and the input_ids 
             assert hidden_states.shape[1] == input_ids.shape[1] // 7 
@@ -1499,11 +1814,11 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
                 output_attentions = True, 
                 output_hidden_states = None, 
                 return_dict = True, 
-                start_idx = 0, # NOTE this is very important 
+                start_idx = 7, # NOTE this is very important 
                 eval_mode = False, 
                 iteration_count = 1, 
                 condensed_fashion = "projection_mode", 
-                experiment_setting = "setting4", 
+                experiment_setting = "setting0", 
             ) 
             logits = addonmodeloutput.logits 
             
@@ -1519,12 +1834,13 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
             
             seq_length = input_ids.shape[1] + hidden_states.shape[1] 
             assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
-            mask_list_pos = [i * (self.sliding_window_length + 1) for i in range(seq_length // (self.sliding_window_length + 1))] 
+            # mask_list_pos = [i * (self.sliding_window_length + 1) for i in range(seq_length // (self.sliding_window_length + 1))] 
+            mask_list_pos = [7 + i * (self.sliding_window_length + 1) for i in range((seq_length - 7) // (self.sliding_window_length + 1))] 
             # print(colored("mask_list_pos {}".format(mask_list_pos), "red")) 
             loss = None 
             if labels is not None: 
-                selected_indices = [] 
-                for i in range(0, seq_length): 
+                selected_indices = list(range(7)) 
+                for i in range(7, seq_length): 
                     if i not in mask_list_pos: 
                         selected_indices.append(i) 
                 # print(colored("selected_indices {}".format(selected_indices), "red")) 
@@ -3080,8 +3396,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 self._modify_decoder_attention_mask_for_harder2(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
             elif self.experiment_setting == "setting3": 
                 self._modify_decoder_attention_mask_for_hardest(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
-            elif self.experiment_setting == "setting4": 
-                self._modify_decoder_attention_mask_for_large_model_addon(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, kernel_size = self.sliding_window_length) 
+            # elif self.experiment_setting == "setting4": 
+            #     self._modify_decoder_attention_mask_for_large_model_addon(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, kernel_size = self.sliding_window_length) 
             else: 
                 raise ValueError("We do not have the experiment setting you are looking for") 
             

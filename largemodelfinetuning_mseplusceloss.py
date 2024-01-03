@@ -256,10 +256,11 @@ class CustomTrainer(Trainer):
         
         print(colored("iteration_count {}".format(self.iteration_count), "yellow")) 
         
-        input_ids = inputs["input_ids"] 
-        attention_mask = inputs["attention_mask_chunk"] 
-        original_attention_mask = inputs["attention_mask"] 
-        label2 = inputs["labels"] 
+        input_ids = inputs["input_ids"][:, 64 :] 
+        # attention_mask = inputs["attention_mask_chunk"] 
+        condensed_embeds_labels = inputs["condensed_embeds"] 
+        original_attention_mask = inputs["attention_mask"][:, 64 :] 
+        label2 = inputs["labels"][:, 64 :] 
         
         batch_size, seq_len = original_attention_mask.shape 
         addedon_length = seq_len // self.n 
@@ -573,6 +574,88 @@ class CustomTrainer(Trainer):
         
         return EvalLoopOutput(predictions=all_preds, label_ids=all_labels, metrics=metrics, num_samples=num_samples) 
 
+class CustomDataset: 
+    def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7): 
+        # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
+        self.synthesize_dir = data_dir 
+        # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json", split = "train") 
+        # self.dataset = load_dataset('json', data_files = [self.synthesize_dir + 'c4synthesized_file1.json', self.synthesize_dir + 'c4synthesized_file2.json'], split="train") 
+        dfiles = [] 
+        if kernel_size != 4: 
+            if hostname == "ada": 
+                for i in range(0, 2): 
+                    # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+                    filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+                    dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+            else: 
+                filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
+                dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+        else: 
+            filename = "c4synthesized_file1.json" 
+        self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
+        self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
+        self.kernel_size = kernel_size 
+        # self.dataset = self.dataset["train"][0: 5120] 
+
+        self.tokenizer = tokenizer 
+        self.max_length = max_length 
+    
+    def __len__(self): 
+        return len(self.dataset) 
+    
+    def preprocess_dataset(self): 
+        def encode_with_truncation(examples): 
+            # return tokenizer(examples["text"], truncation = True, padding = "max_length", 
+                            #  max_length = max_length, return_special_tokens_mask = True) 
+            return tokenizer(examples["text"], padding = "max_length", max_length = self.max_length, 
+                            return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                            add_special_tokens = True) 
+        
+        def loading_condensed_embeds(examples): 
+            # not used because it consumes too much memory 
+            return {"condensed_embeds": torch.load(examples["condensed_token_path"])} 
+        
+        self.dataset = self.dataset.map(encode_with_truncation, batched = True, num_proc = 4) 
+        # self.dataset = self.dataset.map(loading_condensed_embeds, batched = True, num_proc = 4) 
+        # self.dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+    
+    def __getitem__(self, idx): 
+        item = self.dataset[idx] 
+        try: 
+            tensor = torch.load(item["condensed_token_path"]) 
+        except IOError as e: 
+            print(colored("///IOError occured replacing with an empty tensor///", "red")) 
+            tensor = torch.zeros((28, 2560 if model_name == "shearedllama2_7b" else 3200), dtype = torch.float32) 
+        
+        if self.tokenizer is not None: 
+            encoded_text = self.tokenizer( 
+                item["text"], 
+                # add_special_tokens = False, 
+                add_special_tokens = True, 
+                padding = "max_length", 
+                # max_length = 64 + self.dict_kernel_maxlength[self.kernel_size], 
+                max_length = self.max_length, 
+                return_attention_mask = True, 
+                return_tensors = "pt", 
+                truncation = True, 
+            ) 
+            
+            item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension
+            item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
+        
+        item["condensed_embeds"] = tensor 
+        # print(colored("the shape of condensed_embeds is {}".format(tensor.shape), "yellow")) 
+        # item["input_ids"] = torch.tensor(item["input_ids"]) 
+        # item["attention_mask"] = torch.tensor(item["attention_mask"]) 
+
+        return item 
+
+    def split(self, train_size): 
+        if isinstance(train_size, float): 
+            train_size = int(train_size * len(self)) 
+        eval_size = len(self) - train_size 
+        return random_split(self, [train_size, eval_size]) 
+
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 # tokenizer = AutoTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
 # tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
@@ -583,20 +666,9 @@ else:
     print("We now use eos_token as pad token") 
 tokenizer.padding_side = "left" 
 
-list_of_datasets = ["c4_file{}.json".format(i) for i in range(1, 6)] 
-list_of_datasets = [dir_unprocessed_dataset + path for path in list_of_datasets] 
-# onedataset = load_dataset("json", data_files = list_of_datasets, split = "train") 
-onedataset = load_dataset("json", data_files = list_of_datasets, split = "train[:2000]") 
-d = onedataset.train_test_split(test_size = 0.005) # 0.995 for training, 0.005 for testing 
-
-def encode_with_truncation(examples): 
-    # return tokenizer(examples["text"], truncation = True, padding = "max_length", 
-                    #  max_length = max_length, return_special_tokens_mask = True) 
-    return tokenizer(examples["text"], padding = "max_length", max_length = 259, 
-                     return_attention_mask = True, return_tensors = "pt", truncation = True) 
-
-train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 8) 
-test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 8) 
+kernel_size = args.kernel_size 
+datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
+train_set, test_set = datasetnew.split(0.98) 
 
 # TODO change the following code to use the checkpoint of the best trained window 7 model 
 small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
@@ -687,36 +759,9 @@ def naive_grouping(examples):
     
     return {"input_ids_chunk": added_tensor, "attention_mask_chunk": practice_attention_mask} 
 
-def group_attention_map_chunked_generation(examples): 
-    # this function is for generating the chunked attention mask 
-    
-    input_ids = examples["input_ids"] 
-    input_ids = torch.tensor(input_ids) 
-    print("input_ids shape {}".format(input_ids.shape)) 
-    if len(input_ids.shape) == 1: 
-        input_ids = input_ids.unsqueeze(0) 
-    
-    seq_length = input_ids.shape[1] 
-    attention_mask_chunk = torch.ones((input_ids.shape[0], seq_length // 7)) 
-    assert input_ids.shape[1] % 7 == 0 
-    
-    for i in range(input_ids.shape[0]): 
-        for j in range(seq_length // 7): 
-            all_pad = True 
-            for k in range(7): 
-                if input_ids[i, j * 7 + k] != tokenizer.pad_token_id: 
-                    all_pad = False 
-            
-            if all_pad: 
-                attention_mask_chunk[i, j] = 0 
-    
-    return {"attention_mask_chunk": attention_mask_chunk} 
-
-train_dataset = train_dataset.map(group_attention_map_chunked_generation, batched = True, num_proc = 8) 
-test_dataset = test_dataset.map(group_attention_map_chunked_generation, batched = True, num_proc = 8) 
-
 for i in range(10): 
-    example = train_dataset[i] 
+    # example = train_dataset[i] 
+    example = train_set[i] 
     input_ids = example["input_ids"] 
     for j in range(len(input_ids)): 
         if j != 0 and j % 7 == 0: 
@@ -729,11 +774,9 @@ for i in range(10):
 
 # large_model = large_model.to(torch_device) 
 
-train_dataset.set_format(type = "torch", columns = ["attention_mask_chunk", "input_ids", "attention_mask"]) 
-test_dataset.set_format(type = "torch", columns = ["attention_mask_chunk", "input_ids", "attention_mask"]) 
-
 for i in range(10): 
-    example = train_dataset[i] 
+    # example = train_dataset[i] 
+    example = train_set[i] 
     input_ids = example["input_ids"] 
     for j in range(input_ids.shape[0]): 
         if j != 0 and j % 7 == 0: 
@@ -803,8 +846,10 @@ training_args = TrainingArguments(
 trainer = CustomTrainer(
     model = large_model, 
     args = training_args, 
-    train_dataset = train_dataset, 
-    eval_dataset = test_dataset, 
+    # train_dataset = train_dataset, 
+    train_dataset = train_set, 
+    # eval_dataset = test_dataset, 
+    eval_dataset = test_set, 
     data_collator = data_collator, 
     optimizers = (custom_optimizer, None), 
     tokenizer = tokenizer, 
