@@ -256,11 +256,12 @@ class CustomTrainer(Trainer):
         
         print(colored("iteration_count {}".format(self.iteration_count), "yellow")) 
         
-        input_ids = inputs["input_ids"][:, 64 :] 
+        input_ids = inputs["input_ids"] # (batch_size, 203) 
         # attention_mask = inputs["attention_mask_chunk"] 
-        condensed_embeds_labels = inputs["condensed_embeds"] 
-        original_attention_mask = inputs["attention_mask"][:, 64 :] 
-        label2 = inputs["labels"][:, 64 :] 
+        condensed_embeds_labels = inputs["condensed_embeds"] # (batch_size, 28, 3200) 
+        original_attention_mask = inputs["attention_mask"] # (batch_size, 203) 
+        label2 = inputs["labels"] # (batch_size, 203) 
+        attention_mask = torch.ones((input_ids.shape[0], condensed_embeds_labels.shape[1] + 1), dtype = torch.long).to(input_ids.device) 
         
         batch_size, seq_len = original_attention_mask.shape 
         addedon_length = seq_len // self.n 
@@ -272,10 +273,10 @@ class CustomTrainer(Trainer):
             output_hidden_states = True, 
             output_attentions = True, 
             return_dict = True, 
+            condensed_embed_labels = condensed_embeds_labels, 
             original_attention_mask = original_attention_mask, 
             labels = label2, 
         ) 
-        
         # Save past state if it exists
         # TODO: this needs to be fixed and made cleaner later.
         if self.args.past_index >= 0:
@@ -629,7 +630,7 @@ class CustomDataset:
         
         if self.tokenizer is not None: 
             encoded_text = self.tokenizer( 
-                item["text"], 
+                item["text"][58 :], # 6 word-level tokens + BOS to be the first chunk 
                 # add_special_tokens = False, 
                 add_special_tokens = True, 
                 padding = "max_length", 
@@ -640,7 +641,9 @@ class CustomDataset:
                 truncation = True, 
             ) 
             
-            item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension
+            print("text is {}".format(item["text"[58 :]])) 
+            item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
+            print("input_ids is {}".format(item["input_ids"])) 
             item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
         
         item["condensed_embeds"] = tensor 
@@ -667,7 +670,7 @@ else:
 tokenizer.padding_side = "left" 
 
 kernel_size = args.kernel_size 
-datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
+datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
 train_set, test_set = datasetnew.split(0.98) 
 
 # TODO change the following code to use the checkpoint of the best trained window 7 model 

@@ -1312,6 +1312,7 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
         self.small_model_dtype = self.addonsmallmodel.embed_projection.weight.dtype 
         print(colored("small_model_dtype {}".format(self.small_model_dtype), "red")) 
         self.use_mse_loss = use_mse_loss 
+        self.alpha = 0.5 
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -1387,7 +1388,7 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
     def forward(
         self,
         input_ids: torch.LongTensor = None,
-        # attention_mask: Optional[torch.Tensor] = None,
+        attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
         past_key_values: Optional[List[torch.FloatTensor]] = None,
         inputs_embeds: Optional[torch.FloatTensor] = None,
@@ -1462,91 +1463,81 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
         # print(colored("small_model_type: {}".format(self.small_model_dtype), "red")) 
         # intermediate_l2_dist = self.l2distancecompute(inputs_embeds, hidden_states) 
         
-        if self.use_mse_loss: 
-            practical_mask = attention_mask.unsqueeze(-1).expand_as(inputs_embeds) 
-            labels = inputs_embeds.detach().clone() 
-            labels[practical_mask == 0] = 0 
-            labels = labels[:, 1:, :] 
-            hidden_states[practical_mask == 0] = 0 
-            hidden_states = hidden_states[:, :-1, :] 
-            assert labels.shape == hidden_states.shape 
-            mse_loss = nn.MSELoss() 
-            intermediate_l2_dist = mse_loss(hidden_states, labels) 
-            loss = intermediate_l2_dist 
+        practical_mask = attention_mask.unsqueeze(-1).expand_as(inputs_embeds) 
+        labels = condensed_embed_labels 
+        hidden_states[practical_mask == 0] = 0 
+        hidden_states = hidden_states[:, :-1, :] # NOTE this is very important 
+        assert labels.shape == hidden_states.shape 
+        mse_loss = nn.MSELoss() 
+        intermediate_l2_dist = mse_loss(hidden_states, labels).detach() 
             
+        # hidden_states has shape (batch_size, seq_length // 7, hidden states) 
+        # hidden_states = hidden_states[:, :-1, :] 
+        
+        # interleave the hidden_states and the input_ids 
+        assert hidden_states.shape[1] == input_ids.shape[1] // 7 - 1 
+        addonmodeloutput = self.addonsmallmodel( 
+            input_ids = input_ids, 
+            attention_mask = original_attention_mask, 
+            position_ids = None, 
+            past_key_values = None, 
+            condensed_embeds = hidden_states, 
+            labels = None, 
+            use_cache = None, 
+            output_attentions = True, 
+            output_hidden_states = None, 
+            return_dict = True, 
+            start_idx = 7, # NOTE this is very important 
+            eval_mode = False, 
+            iteration_count = 1, 
+            condensed_fashion = "projection_mode", 
+            experiment_setting = "setting4", 
+        ) 
+        
+        logits = addonmodeloutput.logits 
+        
+        '''
+        if self.config.pretraining_tp > 1:
+            lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
+            logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]
+            logits = torch.cat(logits, dim=-1)
+        else:
+            logits = self.lm_head(hidden_states)
+        logits = logits.float()
+        ''' 
+        
+        seq_length = input_ids.shape[1] + hidden_states.shape[1] 
+        assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
+        # mask_list_pos = [i * (self.sliding_window_length + 1) for i in range(seq_length // (self.sliding_window_length + 1))] 
+        mask_list_pos = [7 + i * (self.sliding_window_length + 1) for i in range((seq_length - 7) // (self.sliding_window_length + 1))] 
+        # print(colored("mask_list_pos {}".format(mask_list_pos), "red")) 
+        loss = None 
+        if labels is not None: 
+            selected_indices = list(range(7)) 
+            for i in range(7, seq_length): 
+                if i not in mask_list_pos: 
+                    selected_indices.append(i) 
+            # print(colored("selected_indices {}".format(selected_indices), "red")) 
+            # select and shift the logits 
+            logits = logits[:, selected_indices, :] 
+            shift_logits = logits[..., :-1, :].contiguous() 
+            shift_labels = labels[..., 1:].contiguous() # shape (batch_size, seq_length - 1) 
+            # Flatten the tokens 
+            loss_fct = CrossEntropyLoss() 
+            shift_logits = shift_logits.view(-1, self.config.vocab_size) 
+            shift_labels = shift_labels.view(-1) 
+            # Enable model parallelism 
+            shift_labels = shift_labels.to(shift_logits.device) 
+            loss = loss_fct(shift_logits, shift_labels) 
+            # print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
+        if loss is not None: 
+            loss = self.alpha * loss + (1 - self.alpha) * mse_loss 
         else: 
-            input_ids2 = inputs_embeds.detach().clone() 
-            practical_mask = attention_mask.unsqueeze(-1).expand_as(inputs_embeds) 
-            input_ids2[practical_mask == 0] = 0 
-            input_ids2 = input_ids2[:, 1:, :] 
-            hidden_states2 = hidden_states.detach().clone() 
-            hidden_states2[practical_mask == 0] = 0 
-            hidden_states2 = hidden_states2[:, :-1, :] 
-            assert input_ids2.shape == hidden_states2.shape 
-            
-            mse_loss = nn.MSELoss() 
-            intermediate_l2_dist = mse_loss(input_ids2, hidden_states2) 
-            
-            # hidden_states has shape (batch_size, seq_length // 7, hidden states) 
-            
-            # interleave the hidden_states and the input_ids 
-            assert hidden_states.shape[1] == input_ids.shape[1] // 7 
-            addonmodeloutput = self.addonsmallmodel( 
-                input_ids = input_ids, 
-                attention_mask = original_attention_mask, 
-                position_ids = None, 
-                past_key_values = None, 
-                condensed_embeds = hidden_states, 
-                labels = None, 
-                use_cache = None, 
-                output_attentions = True, 
-                output_hidden_states = None, 
-                return_dict = True, 
-                start_idx = 0, # NOTE this is very important 
-                eval_mode = False, 
-                iteration_count = 1, 
-                condensed_fashion = "projection_mode", 
-                experiment_setting = "setting4", 
-            ) 
-            logits = addonmodeloutput.logits 
-            
-            '''
-            if self.config.pretraining_tp > 1:
-                lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
-                logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]
-                logits = torch.cat(logits, dim=-1)
-            else:
-                logits = self.lm_head(hidden_states)
-            logits = logits.float()
-            ''' 
-            
-            seq_length = input_ids.shape[1] + hidden_states.shape[1] 
-            assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
-            mask_list_pos = [i * (self.sliding_window_length + 1) for i in range(seq_length // (self.sliding_window_length + 1))] 
-            # print(colored("mask_list_pos {}".format(mask_list_pos), "red")) 
-            loss = None 
-            if labels is not None: 
-                selected_indices = [] 
-                for i in range(0, seq_length): 
-                    if i not in mask_list_pos: 
-                        selected_indices.append(i) 
-                # print(colored("selected_indices {}".format(selected_indices), "red")) 
-                # select and shift the logits 
-                logits = logits[:, selected_indices, :] 
-                shift_logits = logits[..., :-1, :].contiguous() 
-                shift_labels = labels[..., 1:].contiguous() # shape (batch_size, seq_length - 1) 
-                # Flatten the tokens 
-                loss_fct = CrossEntropyLoss() 
-                shift_logits = shift_logits.view(-1, self.config.vocab_size) 
-                shift_labels = shift_labels.view(-1) 
-                # Enable model parallelism 
-                shift_labels = shift_labels.to(shift_logits.device) 
-                loss = loss_fct(shift_logits, shift_labels) 
-                # print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
+            loss = mse_loss 
 
         if not return_dict:
             output = (logits,) + outputs[1:]
-            return (loss,) + output if loss is not None else output
+            return (loss,) + output if loss is not None else output 
 
         return CausalLMOutputWithPastLargeDistance(
             loss=loss,
@@ -1820,8 +1811,9 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
                 eval_mode = False, 
                 iteration_count = 1, 
                 condensed_fashion = "projection_mode", 
-                experiment_setting = "setting0", 
+                experiment_setting = "setting4", 
             ) 
+            
             logits = addonmodeloutput.logits 
             
             '''
@@ -3417,8 +3409,6 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             self._convert_to_normal_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
         else: 
             if self.experiment_setting == "setting0": 
-                # self._modify_decoder_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
-                print("got here") 
                 self._modify_decoder_attention_mask_neo(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
             elif self.experiment_setting == "setting1": 
                 self._modify_decoder_attention_mask_for_harder(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
@@ -3426,6 +3416,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 self._modify_decoder_attention_mask_for_harder2(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
             elif self.experiment_setting == "setting3": 
                 self._modify_decoder_attention_mask_for_hardest(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            elif self.experiment_setting == "setting4": 
+                self._modify_decoder_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
             # elif self.experiment_setting == "setting4": 
             #     self._modify_decoder_attention_mask_for_large_model_addon(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, kernel_size = self.sliding_window_length) 
             else: 
