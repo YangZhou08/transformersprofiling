@@ -1468,8 +1468,9 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
         hidden_states[practical_mask == 0] = 0 
         hidden_states = hidden_states[:, :-1, :] # NOTE this is very important 
         assert labels.shape == hidden_states.shape 
-        mse_loss = nn.MSELoss() 
-        intermediate_l2_dist = mse_loss(hidden_states, labels).detach() 
+        mse_lossfunc = nn.MSELoss() 
+        mse_loss = mse_lossfunc(hidden_states, labels) 
+        intermediate_l2_dist = mse_loss.clone().detach() 
             
         # hidden_states has shape (batch_size, seq_length // 7, hidden states) 
         # hidden_states = hidden_states[:, :-1, :] 
