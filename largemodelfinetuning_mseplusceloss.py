@@ -254,6 +254,9 @@ class CustomTrainer(Trainer):
         else:
             labels = None 
         
+        for key, values in inputs.items(): 
+            print("key: {} and values have shape {}".format(key, values.shape)) 
+        
         print(colored("iteration_count {}".format(self.iteration_count), "yellow")) 
         
         input_ids = inputs["input_ids"] # (batch_size, 203) 
