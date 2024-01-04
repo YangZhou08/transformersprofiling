@@ -33,6 +33,7 @@ from ...modeling_attn_mask_utils import AttentionMaskConverter, _prepare_4d_caus
 from ...modeling_outputs import BaseModelOutputWithPast, CausalLMOutputWithPast, SequenceClassifierOutputWithPast 
 from ...modeling_outputs import CausalLMOutputWithPastWithOriginalOutput 
 from ...modeling_outputs import CausalLMOutputWithPastLargeDistance 
+from ...modeling_outputs import CausalLMOutputWithPastLargeDistance2 
 from ...modeling_utils import PreTrainedModel
 from ...pytorch_utils import ALL_LAYERNORM_LAYERS, is_torch_greater_or_equal_than_1_13
 from ...utils import (
@@ -1399,7 +1400,7 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
         return_dict: Optional[bool] = None, 
         original_attention_mask = None, 
         condensed_embed_labels = None, 
-    ) -> Union[Tuple, CausalLMOutputWithPastLargeDistance]: 
+    ) -> Union[Tuple, CausalLMOutputWithPastLargeDistance2]: 
         r"""
         Args:
             labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
@@ -1531,10 +1532,12 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
             shift_labels = shift_labels.view(-1) 
             # Enable model parallelism 
             shift_labels = shift_labels.to(shift_logits.device) 
-            loss = loss_fct(shift_logits, shift_labels) 
+            ce_loss = loss_fct(shift_logits, shift_labels) 
+            loss = ce_loss 
             # print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
         if loss is not None: 
-            loss = self.alpha * loss + (1 - self.alpha) * mse_loss 
+            # loss = self.alpha * loss + (1 - self.alpha) * mse_loss 
+            loss = self.alpha * ce_loss + (1 - self.alpha) * mse_loss 
         else: 
             loss = mse_loss 
 
@@ -1542,7 +1545,7 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
             output = (logits,) + outputs[1:]
             return (loss,) + output if loss is not None else output 
 
-        return CausalLMOutputWithPastLargeDistance(
+        return CausalLMOutputWithPastLargeDistance2(
             loss=loss,
             logits = logits, 
             past_key_values=outputs.past_key_values,
@@ -1550,6 +1553,7 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
             # attentions=outputs.attentions, 
             attentions = addonmodeloutput.attentions, # delibrately using the model's attention mask with modifications 
             l2_distance = intermediate_l2_dist, 
+            ce_loss = ce_loss.detach().clone(), 
         ) 
 
     def prepare_inputs_for_generation(
