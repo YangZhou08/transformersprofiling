@@ -1523,6 +1523,7 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
             logits = logits[:, selected_indices, :] 
             shift_logits = logits[..., :-1, :].contiguous() 
             shift_labels = labels[..., 1:].contiguous() # shape (batch_size, seq_length - 1) 
+            print("shift_logits shape {}; shift_labels shape {}".format(shift_logits.shape, shift_labels.shape)) 
             # Flatten the tokens 
             loss_fct = CrossEntropyLoss() 
             shift_logits = shift_logits.view(-1, self.config.vocab_size) 
@@ -3507,14 +3508,14 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             logits = self.lm_head(hidden_states) 
         logits = logits.float() 
 
-        mask_list_pos22 = [x - 1 for x in mask_list_pos] # just trying 
+        # mask_list_pos22 = [x - 1 for x in mask_list_pos] # just trying 
         loss = None 
         if labels is not None: 
             # Shift so that tokens < n predict n 
-            selected_indices = list(range(start_idx - 1)) 
+            selected_indices = list(range(start_idx)) 
             for i in range(start_idx - 1, seq_length): 
-                # if i not in self.mask_list_pos: 
-                if i not in mask_list_pos22: 
+                if i not in self.mask_list_pos: 
+                # if i not in mask_list_pos22: 
                     selected_indices.append(i) 
             # shift_logits = shift_logits[:, selected_indices, :] 
             logits = logits[:, selected_indices, :] 
