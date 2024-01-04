@@ -641,9 +641,9 @@ class CustomDataset:
                 truncation = True, 
             ) 
             
-            print("text is {}".format(item["text"][58 :])) 
+            # print("text is {}".format(item["text"][58 :])) 
             item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
-            print("input_ids is {}, the length is {}".format(item["input_ids"], item["input_ids"].shape[0])) 
+            # print("input_ids is {}, the length is {}".format(item["input_ids"], item["input_ids"].shape[0])) 
             item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
         
         item["condensed_embeds"] = tensor 
@@ -672,6 +672,10 @@ tokenizer.padding_side = "left"
 kernel_size = args.kernel_size 
 datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
 train_set, test_set = datasetnew.split(0.98) 
+
+for i in range(0, 2): 
+    item = train_set[i] 
+    print("the shape of condensed_embeds is {}".format(item["condensed_embeds"].shape)) 
 
 # TODO change the following code to use the checkpoint of the best trained window 7 model 
 small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
