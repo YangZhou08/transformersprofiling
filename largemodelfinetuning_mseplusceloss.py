@@ -269,7 +269,7 @@ class CustomTrainer(Trainer):
         attention_mask = torch.ones((input_ids.shape[0], condensed_embeds_labels.shape[1] + 1), dtype = torch.long).to(input_ids.device) 
         
         batch_size, seq_len = original_attention_mask.shape 
-        addedon_length = seq_len // self.n 
+        addedon_length = (seq_len - 7) // self.n 
         original_attention_mask = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
         
         outputs = model(
@@ -840,6 +840,7 @@ trainer = CustomTrainer(
     time_hash = hash_of_time, 
     commit_hash = commit_hash, 
     text_eval = model_path + text_eval, 
+    n = 7, 
 ) 
 
 if trainer.accelerator.is_main_process and has_wandb: 
