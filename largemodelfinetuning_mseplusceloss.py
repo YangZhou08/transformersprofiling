@@ -241,6 +241,7 @@ class CustomTrainer(Trainer):
             # Labels may be named label or label_ids, the default data collator handles that.
             self._signature_columns += list(set(["label", "label_ids"] + self.label_names)) 
         self._signature_columns += ["attention_mask_chunk"] 
+        self._signature_columns += ["condensed_embeds"] 
     
     def compute_loss(self, model, inputs, return_outputs=False):
         """
