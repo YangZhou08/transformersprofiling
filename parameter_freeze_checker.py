@@ -203,7 +203,8 @@ else:
 logger = logging.get_logger(__name__) 
 
 # large_model_checkpoint = "/home/yangzho6/model_checkpoints/largemodelopenllama3b_a36f01d_866695" 
-large_model_checkpoint = "/home/yangzho6/model_checkpoints/largemodelopenllama3b_a36f01d_866695/checkpoint-500" 
+# large_model_checkpoint = "/home/yangzho6/model_checkpoints/largemodelopenllama3b_a36f01d_866695/checkpoint-500" 
+large_model_checkpoint = "/home/yangzho6/model_checkpoints/largemodelopenllama3b_7b8b2cd_690836/checkpoint-5000" 
 small_model_checkpoint = "/home/yangzho6/model_checkpoints/llama-160m_deciphering_openallama3b_setting0_070600" 
 
 small_model = SimpleSmallModel.from_pretrained(small_model_checkpoint, sliding_window_length = 7, hostname = hostname, target_model_dim = 3200) 

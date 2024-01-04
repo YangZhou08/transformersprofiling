@@ -1741,7 +1741,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
         assert attention_mask.shape[1] == extra_pass_in_embeds.shape[1], "attention_mask shape is not compatible to the new input_embeds" 
         assert inputs_embeds is None, "inputs_embeds is not None" 
         inputs_embeds = extra_pass_in_embeds 
-        print(colored("inputs_embeds shape {} dtype {}".format(inputs_embeds.shape, inputs_embeds.dtype), "yellow")) 
+        print(colored("inputs_embeds shape {} dtype {}".format(inputs_embeds.shape, inputs_embeds.dtype), "yellow")) # shape (batch_size, 37, 3200) 
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn) 
         # TODO delete the following line 
         
@@ -1758,7 +1758,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
         ) 
 
         hidden_states = outputs[0] # we don't need the lm_head 
-        print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
+        print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) # shape (batch_size, 37, 3200) 
         if self.small_model_dtype == torch.float32: 
             hidden_states = hidden_states.to(torch.float32) 
         elif self.small_model_dtype == torch.bfloat16: 
@@ -1783,7 +1783,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
             practical_mask = attention_mask.unsqueeze(-1).expand_as(inputs_embeds) 
             input_ids2[practical_mask == 0] = 0 
             input_ids2 = input_ids2[:, 1:, :] 
-            hidden_states2 = hidden_states.detach().clone() 
+            hidden_states2 = hidden_states.detach().clone() # essential to make hidden_states outside the computation graph (when making the mse loss) 
             hidden_states2[practical_mask == 0] = 0 
             hidden_states2 = hidden_states2[:, :-1, :] 
             assert input_ids2.shape == hidden_states2.shape 
