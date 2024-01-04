@@ -1464,12 +1464,13 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
         # intermediate_l2_dist = self.l2distancecompute(inputs_embeds, hidden_states) 
         
         practical_mask = attention_mask.unsqueeze(-1).expand_as(inputs_embeds) 
-        labels = condensed_embed_labels 
+        mselabels = condensed_embed_labels 
         hidden_states[practical_mask == 0] = 0 
         hidden_states = hidden_states[:, :-1, :] # NOTE this is very important 
-        assert labels.shape == hidden_states.shape 
+        # assert labels.shape == hidden_states.shape 
+        assert mselabels.shape == hidden_states.shape 
         mse_lossfunc = nn.MSELoss() 
-        mse_loss = mse_lossfunc(hidden_states, labels) 
+        mse_loss = mse_lossfunc(hidden_states, mselabels) 
         intermediate_l2_dist = mse_loss.clone().detach() 
             
         # hidden_states has shape (batch_size, seq_length // 7, hidden states) 
