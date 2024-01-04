@@ -25,7 +25,8 @@ from src.transformers import DataCollatorForLanguageModeling
 from src.transformers.generation.utils import GenerationConfig 
 from src.transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSmallModel 
 from src.transformers.models.llama.modeling_llama import LlamaCausalLMWeirdTwo 
-from src.transformers.models.llama.modeling_llama import LlamaWeirdLarge 
+# from src.transformers.models.llama.modeling_llama import LlamaWeirdLarge 
+from src.transformers.models.llama.modeling_llama import LlamaWeirdLarge2 
 import time 
 from torch.utils.data import random_split 
 from src.transformers import BitsAndBytesConfig 
@@ -719,7 +720,7 @@ else:
     # I found that the weights need to be loaded again once the large model is loaded 
     small_model.eval() 
 
-large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = False).to(torch.bfloat16).to(torch_device) 
+large_model = LlamaWeirdLarge2.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = False).to(torch.bfloat16).to(torch_device) 
 # large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = True).to(torch.bfloat16).to(torch_device) 
 # large_model.set_smallmodelfull() # this function has proven to be very important 
 # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
