@@ -641,7 +641,7 @@ class CustomDataset:
                 truncation = True, 
             ) 
             
-            print("text is {}".format(item["text"[58 :]])) 
+            print("text is {}".format(item["text"][58 :])) 
             item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
             print("input_ids is {}".format(item["input_ids"])) 
             item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
