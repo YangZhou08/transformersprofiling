@@ -643,7 +643,7 @@ class CustomDataset:
             
             print("text is {}".format(item["text"][58 :])) 
             item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
-            print("input_ids is {}".format(item["input_ids"])) 
+            print("input_ids is {}, the length is {}".format(item["input_ids"], item["input_ids"].shape[0])) 
             item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
         
         item["condensed_embeds"] = tensor 
@@ -761,34 +761,6 @@ def naive_grouping(examples):
     print("added_tensor shape {}".format(added_tensor.shape)) 
     
     return {"input_ids_chunk": added_tensor, "attention_mask_chunk": practice_attention_mask} 
-
-for i in range(10): 
-    # example = train_dataset[i] 
-    example = train_set[i] 
-    input_ids = example["input_ids"] 
-    for j in range(len(input_ids)): 
-        if j != 0 and j % 7 == 0: 
-            end = " | " 
-        else: 
-            end = " " 
-        print(input_ids[j], end = end) 
-    print() 
-    print("attention_mask_chunk {}".format(example["attention_mask_chunk"])) 
-
-# large_model = large_model.to(torch_device) 
-
-for i in range(10): 
-    # example = train_dataset[i] 
-    example = train_set[i] 
-    input_ids = example["input_ids"] 
-    for j in range(input_ids.shape[0]): 
-        if j != 0 and j % 7 == 0: 
-            end = " | " 
-        else: 
-            end = " " 
-        print(input_ids[j].item(), end = end) 
-    print() 
-    print("attention_mask_chunk {}".format(example["attention_mask_chunk"])) 
 
 param_group = [] 
 for name, param in large_model.named_parameters(): 
