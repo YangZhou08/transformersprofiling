@@ -623,7 +623,7 @@ class CustomDataset:
                 dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
         else: 
             filename = "c4synthesized_file1.json" 
-        self.dataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
+        self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
         self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
         self.kernel_size = kernel_size 
         # self.dataset = self.dataset["train"][0: 5120] 
@@ -826,9 +826,9 @@ training_args = TrainingArguments(
     # evaluation_strategy="steps",    # evaluate each `logging_steps` steps 
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size = 1, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size = 20, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
-    per_device_eval_batch_size= 1,  # evaluation batch size
+    per_device_eval_batch_size= 20,  # evaluation batch size
     # logging_steps=1, 
     logging_steps = 500,         # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
