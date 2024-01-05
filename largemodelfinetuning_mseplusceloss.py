@@ -351,7 +351,10 @@ class CustomTrainer(Trainer):
         print("logits[2].shape {}".format(logits[2].shape)) 
         assert len(logits) == 3 
         l2dist = logits[1].reshape(-1) 
-        ce_loss = logits[2].reshape(-1) 
+        if ce_loss is not None: 
+            ce_loss = logits[2].reshape(-1) 
+        else: 
+            ce_loss = 0 
         logits = logits[0] 
         # print(l2dist) 
         logits = logits[:, :-1, :] 
@@ -729,7 +732,7 @@ else:
     # I found that the weights need to be loaded again once the large model is loaded 
     small_model.eval() 
 
-large_model = LlamaWeirdLarge2.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = False).to(torch.bfloat16).to(torch_device) 
+large_model = LlamaWeirdLarge2.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = True).to(torch.bfloat16).to(torch_device) 
 # large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = True).to(torch.bfloat16).to(torch_device) 
 # large_model.set_smallmodelfull() # this function has proven to be very important 
 # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
@@ -810,9 +813,9 @@ training_args = TrainingArguments(
     # evaluation_strategy="steps",    # evaluate each `logging_steps` steps 
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size = 20, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size = 1, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
-    per_device_eval_batch_size= 20,  # evaluation batch size
+    per_device_eval_batch_size= 1,  # evaluation batch size
     # logging_steps=1, 
     logging_steps = 500,         # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 

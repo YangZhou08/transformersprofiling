@@ -1473,6 +1473,17 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
         mse_lossfunc = nn.MSELoss() 
         mse_loss = mse_lossfunc(hidden_states, mselabels) 
         intermediate_l2_dist = mse_loss.clone().detach() 
+        
+        if self.use_mse_loss: 
+            return CausalLMOutputWithPastLargeDistance2(
+                loss = mse_loss, 
+                logits = None, 
+                past_key_values = outputs.past_key_values, 
+                hidden_states=outputs.hidden_states,
+                attentions = outputs.attentions, 
+                l2_distance = intermediate_l2_dist, 
+                ce_loss = None, 
+            ) 
             
         # hidden_states has shape (batch_size, seq_length // 7, hidden states) 
         # hidden_states = hidden_states[:, :-1, :] 
