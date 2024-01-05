@@ -312,6 +312,19 @@ class CustomTrainer(Trainer):
         print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
         print(colored("rank {} ce_loss {}".format(self.accelerator.state.process_index, ce_loss), "yellow")) 
         print(colored("rank {} l2_distance {}".format(self.accelerator.state.process_index, l2_distance), "yellow")) 
+        if self.accelerator.is_main_process and has_wandb and self.iteration_count % 20 == 0: 
+            if len(self.optimizer.param_groups) > 1: 
+                wandb.log({"loss": loss, 
+                        "group1.lr": self.optimizer.param_groups[0]["lr"], 
+                        "group2.lr": self.optimizer.param_groups[1]["lr"], 
+                        # "iteration_count": self.iteration_count * 50 
+                        "iteration_count": self.iteration_count 
+                }) 
+            else: 
+                wandb.log({"loss": loss, 
+                        "group1.lr": self.optimizer.param_groups[0]["lr"], 
+                        "iteration_count": self.iteration_count 
+                }) 
         if self.accelerator.is_main_process and self.iteration_count % 1000 == 0 and has_wandb and self.model.use_mse_loss != True: 
             print(colored("generating images ... at iteration {}".format(self.iteration_count), "yellow")) 
             for layer in [0, 6, 11]: 
@@ -557,7 +570,7 @@ class CustomTrainer(Trainer):
             metrics = {"perplexity": global_perplexity, "accuracy": global_accuracy, "l2_distance": l2_distance, "ce_loss": ce_loss} 
             if self.accelerator.is_main_process: 
                 print(colored(metrics, "magenta")) 
-                wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy, "l2_distance": l2_distance, "ce_loss": ce_loss}) 
+                wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy, "l2_distance": l2_distance, "ce_loss": ce_loss, "eval_loss_upd": all_losses}) 
         else: 
             if self.accelerator.is_main_process: 
                 metrics = {} 
