@@ -527,7 +527,7 @@ class LlamaAttention(nn.Module):
                     f"Attention mask should be of size {(bsz, 1, q_len, kv_seq_len)}, but is {attention_mask.size()}"
                 )
             attn_weights = attn_weights + attention_mask
-        
+        '''
         # upcast attention to fp32
         # attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query_states.dtype) 
         # Note the next line is critical, since right now the softmax of all the values -inf is a very strange number 
@@ -537,11 +537,11 @@ class LlamaAttention(nn.Module):
             mask[kwargs["mask_list_pos"], :] = 0.0 
             # attn_weights[:, :, kwargs["mask_list_pos"], :] = 0.0 
             attn_weights = attn_weights * mask 
-        
+        ''' 
 
         attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query_states.dtype) 
         # Note the next line is critical, since right now the softmax of all the values -inf is a very strange number 
-        '''
+        
         if "mask_list_pos" in kwargs: 
             # print("found it") 
             mask = torch.ones((attn_weights.shape[-2], attn_weights.shape[-1]), device = attn_weights.device) 
@@ -549,7 +549,7 @@ class LlamaAttention(nn.Module):
             # attn_weights[:, :, kwargs["mask_list_pos"], :] = 0.0 
             attn_weights = attn_weights * mask 
             attn_weights = attn_weights.to(value_states.dtype) 
-        ''' 
+        
         attn_weights = nn.functional.dropout(attn_weights, p=self.attention_dropout, training=self.training)
         attn_output = torch.matmul(attn_weights, value_states) 
 
