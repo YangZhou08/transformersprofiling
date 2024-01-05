@@ -319,7 +319,7 @@ class CustomTrainer(Trainer):
                         "group1.lr": self.optimizer.param_groups[0]["lr"], 
                         "group2.lr": self.optimizer.param_groups[1]["lr"], 
                         # "iteration_count": self.iteration_count * 50 
-                        "iteration_count": self.iteration_count 
+                        "iteration_count": self.iteration_count, 
                         "ce_loss": ce_loss, 
                         "l2_distance": l2_distance, 
                 }) 
