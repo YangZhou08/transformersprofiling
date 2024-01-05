@@ -422,7 +422,7 @@ class CustomTrainer(Trainer):
         total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
         correct_words = torch.sum((preds[indices_to_keep] == labels[indices_to_keep]).view(-1), dim = 0).item() 
         print("correct words: {} and total words: {}".format(correct_words, total_valid_tokens)) 
-        return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "l2_distance": l2dist.item(), "ce_loss": ce_loss.item() if isinstance(ce_loss, torch.tensor) else ce_loss}) 
+        return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "l2_distance": l2dist.item(), "ce_loss": ce_loss.item() if isinstance(ce_loss, torch.tensor) else ce_loss} 
                 
     def evaluation_loop(
         self,
