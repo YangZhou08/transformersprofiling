@@ -1483,7 +1483,7 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
                 hidden_states=outputs.hidden_states,
                 attentions = outputs.attentions, 
                 l2_distance = intermediate_l2_dist, 
-                ce_loss = None, 
+                ce_loss = 0, 
             ) 
             
         # hidden_states has shape (batch_size, seq_length // 7, hidden states) 
