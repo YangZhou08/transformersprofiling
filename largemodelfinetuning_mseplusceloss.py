@@ -208,6 +208,7 @@ parser.add_argument("--kernel_size", type = int, default = 7)
 parser.add_argument("--use_pretrained_small_model", action = "store_true") 
 parser.add_argument("--finetuned_small_model_checkpoint", type = str, default = None) 
 parser.add_argument("--large_model", type = str, default = "openllama3b") 
+parser.add_argument("--use_mse_loss", action = "store_true") 
 
 args = parser.parse_args() 
 model_name = args.large_model 
@@ -750,7 +751,7 @@ else:
     # I found that the weights need to be loaded again once the large model is loaded 
     small_model.eval() 
 
-large_model = LlamaWeirdLarge2.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = True).to(torch.bfloat16).to(torch_device) 
+large_model = LlamaWeirdLarge2.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = args.use_mse_loss).to(torch.bfloat16).to(torch_device) 
 # large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = True).to(torch.bfloat16).to(torch_device) 
 # large_model.set_smallmodelfull() # this function has proven to be very important 
 # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
