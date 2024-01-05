@@ -1475,6 +1475,7 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
         intermediate_l2_dist = mse_loss.clone().detach() 
         
         if self.use_mse_loss: 
+            print(colored("mse_loss {}".format(mse_loss), "red")) 
             return CausalLMOutputWithPastLargeDistance2(
                 loss = mse_loss, 
                 logits = None, 
