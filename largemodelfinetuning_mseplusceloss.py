@@ -351,7 +351,7 @@ class CustomTrainer(Trainer):
         print("logits[2].shape {}".format(logits[2].shape)) 
         assert len(logits) == 3 
         l2dist = logits[1].reshape(-1) 
-        if ce_loss is not None: 
+        if self.model.use_mse_loss != True or ce_loss is None: 
             ce_loss = logits[2].reshape(-1) 
         else: 
             ce_loss = 0 
