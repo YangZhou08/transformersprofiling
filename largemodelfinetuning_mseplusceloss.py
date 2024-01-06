@@ -663,7 +663,13 @@ class CustomDataset:
             tensor = torch.load(item["condensed_token_path"]) 
         except IOError as e: 
             print(colored("///IOError occured replacing with an empty tensor///", "red")) 
-            tensor = torch.zeros((28, 2560 if model_name == "shearedllama2_7b" else 3200), dtype = torch.float32) 
+            if model_name == "shearedllama2_7b": 
+                dmodel = 2560 
+            elif model_name == "openllama3b": 
+                dmodel = 3200 
+            elif model_name == "tinyllama": 
+                dmodel = 2048 
+            tensor = torch.zeros((28, dmodel), dtype = torch.float32) 
         
         if self.tokenizer is not None: 
             encoded_text = self.tokenizer( 
@@ -722,10 +728,12 @@ if args.large_model == "openllama3b":
     large_dim = 3200 
 elif args.large_model == "shearedllama2_7b": 
     large_dim = 2560 
+elif args.large_model == "tinyllama": 
+    large_dim = 2048 
 else: 
     large_dim = 4096 
 if not args.use_pretrained_small_model: 
-    small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 7, target_model_dim = 3200) 
+    small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 7, target_model_dim = large_dim) 
 
     new_state_dict = {} 
 
@@ -752,25 +760,29 @@ else:
     # I found that the weights need to be loaded again once the large model is loaded 
     small_model.eval() 
 
-large_model = LlamaWeirdLarge2.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = args.use_mse_loss).to(torch.bfloat16).to(torch_device) 
+if args.large_model == "openllama3b": 
+    large_model = LlamaWeirdLarge2.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = args.use_mse_loss).to(torch.bfloat16).to(torch_device) 
+elif args.large_model == "tinyllama": 
+    large_model = LlamaWeirdLarge2.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = args.use_mse_loss).to(torch.bfloat16).to(torch_device) 
 # large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = True).to(torch.bfloat16).to(torch_device) 
 # large_model.set_smallmodelfull() # this function has proven to be very important 
 # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 # large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models) 
 large_model.train() 
 # large_model.set_addonsmallmodel(small_model) 
-small_model_state_dict = SimpleSmallModel.from_pretrained(args.finetuned_small_model_checkpoint, sliding_window_length = args.kernel_size, hostname = hostname, target_model_dim = large_dim).state_dict() 
-'''
-new_state_dict = {} 
-
-for key in small_model_state_dict.keys(): 
-    new_key = "addonsmallmodel." + key 
-    print(new_key) 
-    new_state_dict[new_key] = small_model_state_dict[key] 
-''' 
-large_model.addonsmallmodel.load_state_dict(small_model_state_dict) 
 if args.use_pretrained_small_model: 
-    large_model.addonsmallmodel.eval() 
+    small_model_state_dict = SimpleSmallModel.from_pretrained(args.finetuned_small_model_checkpoint, sliding_window_length = args.kernel_size, hostname = hostname, target_model_dim = large_dim).state_dict() 
+    '''
+    new_state_dict = {} 
+
+    for key in small_model_state_dict.keys(): 
+        new_key = "addonsmallmodel." + key 
+        print(new_key) 
+        new_state_dict[new_key] = small_model_state_dict[key] 
+    ''' 
+    large_model.addonsmallmodel.load_state_dict(small_model_state_dict) 
+    if args.use_pretrained_small_model: 
+        large_model.addonsmallmodel.eval() 
 
 large_model.config.pad_token_id = tokenizer.pad_token_id 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
