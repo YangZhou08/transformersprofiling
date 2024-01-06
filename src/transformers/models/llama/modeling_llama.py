@@ -527,28 +527,23 @@ class LlamaAttention(nn.Module):
                     f"Attention mask should be of size {(bsz, 1, q_len, kv_seq_len)}, but is {attention_mask.size()}"
                 )
             attn_weights = attn_weights + attention_mask
-        '''
+        
         # upcast attention to fp32
         # attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query_states.dtype) 
         # Note the next line is critical, since right now the softmax of all the values -inf is a very strange number 
-        if "mask_list_pos" in kwargs: 
-            # print("found it") 
-            mask = torch.ones((attn_weights.shape[-2], attn_weights.shape[-1]), device = attn_weights.device) 
-            mask[kwargs["mask_list_pos"], :] = 0.0 
-            # attn_weights[:, :, kwargs["mask_list_pos"], :] = 0.0 
-            attn_weights = attn_weights * mask 
-        ''' 
 
         attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query_states.dtype) 
         # Note the next line is critical, since right now the softmax of all the values -inf is a very strange number 
         
-        if "mask_list_pos" in kwargs: 
-            # print("found it") 
-            mask = torch.ones((attn_weights.shape[-2], attn_weights.shape[-1]), device = attn_weights.device) 
-            mask[kwargs["mask_list_pos"], :] = 0.0 
-            # attn_weights[:, :, kwargs["mask_list_pos"], :] = 0.0 
-            attn_weights = attn_weights * mask 
-            attn_weights = attn_weights.to(value_states.dtype) 
+        # using the following not the above 
+        if "mask_list_pos" in kwargs and "horizontal_bar_enabled" in kwargs: 
+            if kwargs["horizontal_bar_enabled"]: 
+                # print("found it") 
+                mask = torch.ones((attn_weights.shape[-2], attn_weights.shape[-1]), device = attn_weights.device) 
+                mask[kwargs["mask_list_pos"], :] = 0.0 
+                # attn_weights[:, :, kwargs["mask_list_pos"], :] = 0.0 
+                attn_weights = attn_weights * mask 
+                attn_weights = attn_weights.to(value_states.dtype) 
         
         attn_weights = nn.functional.dropout(attn_weights, p=self.attention_dropout, training=self.training)
         attn_output = torch.matmul(attn_weights, value_states) 
@@ -3436,7 +3431,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             elif self.experiment_setting == "setting3": 
                 self._modify_decoder_attention_mask_for_hardest(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
             elif self.experiment_setting == "setting4": 
-                self._modify_decoder_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+                # self._modify_decoder_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+                self._modify_decoder_attention_mask_neo(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
             # elif self.experiment_setting == "setting4": 
             #     self._modify_decoder_attention_mask_for_large_model_addon(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, kernel_size = self.sliding_window_length) 
             else: 
@@ -3490,6 +3486,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                     use_cache=use_cache,
                     padding_mask=padding_mask, 
                     mask_list_pos = mask_list_pos, 
+                    horizontal_bar_enabled = False if self.experiment_setting == "setting4" else True, 
                 ) 
 
             hidden_states = layer_outputs[0]
