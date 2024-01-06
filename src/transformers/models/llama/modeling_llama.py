@@ -1304,9 +1304,11 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         self.lm_head = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias = False) 
         
         # self.addonsmallmodel = addonsmallmodel 
-        self.addonsmallmodel = SimpleSmallModel(small_config, sliding_window_length = sliding_window_length, hostname = hostname, target_model_dim = large_dim) 
+        # self.addonsmallmodel = SimpleSmallModel(small_config, sliding_window_length = sliding_window_length, hostname = hostname, target_model_dim = large_dim) 
+        self.addonsmallmodel = None 
         self.sliding_window_length = sliding_window_length 
-        self.small_model_dtype = self.addonsmallmodel.embed_projection.weight.dtype 
+        # self.small_model_dtype = self.addonsmallmodel.embed_projection.weight.dtype 
+        self.small_model_dtype = torch.bfloat16 
         print(colored("small_model_dtype {}".format(self.small_model_dtype), "red")) 
         self.use_mse_loss = use_mse_loss 
         self.alpha = 0.5 
