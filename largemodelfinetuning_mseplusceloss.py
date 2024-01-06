@@ -754,8 +754,8 @@ if not args.use_pretrained_small_model:
     except RuntimeError as r: 
         print(colored(r, "yellow")) 
 
-    # small_model = small_model.to(torch.bfloat16).to(torch_device) 
-    # small_model.train() 
+    small_model = small_model.to(torch.bfloat16).to(torch_device) 
+    small_model.train() 
 else: 
     small_model = SimpleSmallModel(small_config, sliding_window_length = args.kernel_size, hostname = hostname, target_model_dim = large_dim).to(torch.bfloat16).to(torch_device) 
     # I found that the weights need to be loaded again once the large model is loaded 
