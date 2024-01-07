@@ -738,6 +738,7 @@ elif args.large_model == "tinyllama":
 else: 
     large_dim = 4096 
 if not args.use_pretrained_small_model: 
+    print(colored("not using pretrained small model", "green")) 
     small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 7, target_model_dim = large_dim) 
 
     new_state_dict = {} 
@@ -761,6 +762,7 @@ if not args.use_pretrained_small_model:
     small_model = small_model.to(torch.bfloat16).to(torch_device) 
     small_model.train() 
 else: 
+    print(colored("using pretrained small model", "green")) 
     small_model = SimpleSmallModel(small_config, sliding_window_length = args.kernel_size, hostname = hostname, target_model_dim = large_dim).to(torch.bfloat16).to(torch_device) 
     # I found that the weights need to be loaded again once the large model is loaded 
     small_model.eval() 
