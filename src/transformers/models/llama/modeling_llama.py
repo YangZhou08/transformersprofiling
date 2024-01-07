@@ -1537,11 +1537,12 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         # mask_list_pos = [i * (self.sliding_window_length + 1) for i in range(seq_length // (self.sliding_window_length + 1))] 
         mask_list_pos = [7 + i * (self.sliding_window_length + 1) for i in range((seq_length - 7) // (self.sliding_window_length + 1))] 
         # print(colored("mask_list_pos {}".format(mask_list_pos), "red")) 
+        mask_list_pos_plus = [x - 1 for x in mask_list_pos] 
         loss = None 
         if labels is not None: 
-            selected_indices = list(range(7)) 
-            for i in range(7, seq_length): 
-                if i not in mask_list_pos: 
+            selected_indices = list(range(6)) 
+            for i in range(6, seq_length): 
+                if i not in mask_list_pos_plus: 
                     selected_indices.append(i) 
             # print(colored("selected_indices {}".format(selected_indices), "red")) 
             # select and shift the logits 
