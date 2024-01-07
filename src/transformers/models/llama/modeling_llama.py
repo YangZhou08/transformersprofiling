@@ -3867,7 +3867,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         if labels is not None: 
             # Shift so that tokens < n predict n 
             selected_indices = list(range(start_idx)) 
-            for i in range(start_idx - 1, seq_length): 
+            for i in range(start_idx, seq_length): 
                 if i not in mask_list_pos: 
                 # if i not in mask_list_pos22: 
                     selected_indices.append(i) 
