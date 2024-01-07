@@ -598,8 +598,8 @@ tokenizer.padding_side = "left"
 
 list_of_datasets = ["c4_file{}.json".format(i) for i in range(1, 6)] 
 list_of_datasets = [dir_unprocessed_dataset + path for path in list_of_datasets] 
-# onedataset = load_dataset("json", data_files = list_of_datasets, split = "train") 
-onedataset = load_dataset("json", data_files = list_of_datasets, split = "train[:2000]") 
+onedataset = load_dataset("json", data_files = list_of_datasets, split = "train") 
+# onedataset = load_dataset("json", data_files = list_of_datasets, split = "train[:2000]") 
 d = onedataset.train_test_split(test_size = 0.005) # 0.995 for training, 0.005 for testing 
 
 def encode_with_truncation(examples): 
@@ -773,7 +773,6 @@ for name, param in small_model.named_parameters():
         param.requires_grad = True 
         param_group.append(param) 
 print("length of param_group {}".format(len(param_group))) 
-exit(0) 
 
 custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-4) 
 # custom_optimizer = torch.optim.AdamW(param_group, lr = 1e-4) 
@@ -788,9 +787,9 @@ training_args = TrainingArguments(
     # evaluation_strategy="steps",    # evaluate each `logging_steps` steps 
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size = 10, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size = 80, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
-    per_device_eval_batch_size= 10,  # evaluation batch size
+    per_device_eval_batch_size= 80,  # evaluation batch size
     # logging_steps=1, 
     logging_steps = 500,         # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
