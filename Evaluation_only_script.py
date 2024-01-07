@@ -1030,8 +1030,9 @@ class CustomDataset:
     def __getitem__(self, idx): 
         item = self.dataset[idx] 
         try: 
-            tensor = torch.load(item["condensed_token_path"]) 
-            print("tensor is {}".format(tensor)) 
+            # tensor = torch.load(item["condensed_token_path"]) 
+            tensor = torch.randn((28, 2560 if model_name == "shearedllama2_7b" else 3200), dtype = torch.float32) 
+            # print("tensor is {}".format(tensor)) 
         except IOError as e: 
             print(colored("///IOError occured replacing with an empty tensor///", "red")) 
             tensor = torch.zeros((28, 2560 if model_name == "shearedllama2_7b" else 3200), dtype = torch.float32) 
