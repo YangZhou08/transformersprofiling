@@ -214,6 +214,8 @@ parser.add_argument("--resume_from_checkpoint", type = str, default = None)
 
 args = parser.parse_args() 
 model_name = args.large_model 
+if args.use_pretrained_small_model: 
+    assert args.finetuned_small_model_checkpoint is not None 
 text_eval = "evaluating_printout_{}_{}_{}.txt".format(commit_hash, hash_of_time, model_name) 
 
 class CustomTrainer(Trainer): 
@@ -786,8 +788,7 @@ if args.use_pretrained_small_model:
         new_state_dict[new_key] = small_model_state_dict[key] 
     ''' 
     large_model.addonsmallmodel.load_state_dict(small_model_state_dict) 
-    if args.use_pretrained_small_model: 
-        large_model.addonsmallmodel.eval() 
+    large_model.addonsmallmodel.eval() 
 
 large_model.config.pad_token_id = tokenizer.pad_token_id 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
@@ -822,10 +823,10 @@ def naive_grouping(examples):
 
 param_group = [] 
 for name, param in large_model.named_parameters(): 
+    print(colored(name), "blue") 
     if "addonsmallmodel." in name: 
         param.requires_grad = False 
     else: 
-        print(name) 
         param.requires_grad = True 
         param_group.append(param) 
 for name, param in small_model.named_parameters(): 
@@ -836,6 +837,7 @@ for name, param in small_model.named_parameters():
         param.requires_grad = True 
         param_group.append(param) 
 print("length of param_group {}".format(len(param_group))) 
+exit(0) 
 
 custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-4) 
 # custom_optimizer = torch.optim.AdamW(param_group, lr = 1e-4) 

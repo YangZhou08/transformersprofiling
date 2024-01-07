@@ -668,6 +668,7 @@ for key in small_model_state_dict.keys():
 large_model.addonsmallmodel.load_state_dict(small_model_state_dict) 
 if args.use_pretrained_small_model: 
     large_model.addonsmallmodel.eval() 
+exit(0) 
 
 large_model.config.pad_token_id = tokenizer.pad_token_id 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
