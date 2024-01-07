@@ -759,10 +759,10 @@ for i in range(10):
 
 param_group = [] 
 for name, param in large_model.named_parameters(): 
+    print(colored(name, "blue")) 
     if "addonsmallmodel." in name: 
         param.requires_grad = False 
     else: 
-        print(name) 
         param.requires_grad = True 
         param_group.append(param) 
 for name, param in small_model.named_parameters(): 
@@ -773,6 +773,7 @@ for name, param in small_model.named_parameters():
         param.requires_grad = True 
         param_group.append(param) 
 print("length of param_group {}".format(len(param_group))) 
+exit(0) 
 
 custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-4) 
 # custom_optimizer = torch.optim.AdamW(param_group, lr = 1e-4) 
