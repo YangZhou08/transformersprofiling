@@ -1155,7 +1155,7 @@ if not args.use_plain_model or args.resume_from_checkpoint is not None:
     elif model_name == "shearedllama2_7b": 
         small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 2560) 
     else: 
-        small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 4096) 
+        small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 2048) 
 
     new_state_dict = {} 
 
