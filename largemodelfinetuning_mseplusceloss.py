@@ -210,6 +210,7 @@ parser.add_argument("--use_pretrained_small_model", action = "store_true")
 parser.add_argument("--finetuned_small_model_checkpoint", type = str, default = None) 
 parser.add_argument("--large_model", type = str, default = "openllama3b") 
 parser.add_argument("--use_mse_loss", action = "store_true") 
+parser.add_argument("--resume_from_checkpoint", type = str, default = None) 
 
 args = parser.parse_args() 
 model_name = args.large_model 
@@ -900,6 +901,9 @@ if trainer.accelerator.is_main_process and has_wandb:
 
 torch.autograd.set_detect_anomaly(True) 
 
-trainer.train() 
+if args.resume_from_checkpoint is not None: 
+    trainer.train(resume_from_checkpoint = args.resume_from_checkpoint) 
+else: 
+    trainer.train() 
 
 wandb.finish() 
