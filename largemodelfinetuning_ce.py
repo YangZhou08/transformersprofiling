@@ -308,12 +308,14 @@ class CustomTrainer(Trainer):
                         "group1.lr": self.optimizer.param_groups[0]["lr"], 
                         "group2.lr": self.optimizer.param_groups[1]["lr"], 
                         # "iteration_count": self.iteration_count * 50 
-                        "iteration_count": self.iteration_count 
+                        "iteration_count": self.iteration_count, 
+                        "l2_distance": l2_distance, 
                 }) 
             else: 
                 wandb.log({"loss": loss, 
                         "group1.lr": self.optimizer.param_groups[0]["lr"], 
-                        "iteration_count": self.iteration_count 
+                        "iteration_count": self.iteration_count, 
+                        "l2_distance": l2_distance, 
                 }) 
         if self.accelerator.is_main_process and self.iteration_count % 1000 == 0 and has_wandb and self.model.use_mse_loss != True: 
             print(colored("generating images ... at iteration {}".format(self.iteration_count), "yellow")) 
