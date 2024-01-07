@@ -211,6 +211,8 @@ parser.add_argument("--finetuned_small_model_checkpoint", type = str, default = 
 parser.add_argument("--large_model", type = str, default = "openllama3b") 
 parser.add_argument("--use_mse_loss", action = "store_true") 
 parser.add_argument("--resume_from_checkpoint", type = str, default = None) 
+parser.add_argument("--freeze_small_model", action = "store_true") 
+parser.add_argument("--freeze_large_model", action = "store_true") 
 
 args = parser.parse_args() 
 model_name = args.large_model 
@@ -829,19 +831,20 @@ for name, param in large_model.named_parameters():
     if "addonsmallmodel." in name: 
         param.requires_grad = False 
     else: 
-        param.requires_grad = True 
-        param_group.append(param) 
+        if not args.freeze_large_model: 
+            param.requires_grad = True 
+            param_group.append(param) 
 for name, param in small_model.named_parameters(): 
     # print(colored("small model parameters {}".format(name), "yellow")) 
-    if args.use_pretrained_small_model: 
+    # if args.use_pretrained_small_model: 
+    if args.freeze_small_model: 
         param.requires_grad = False 
     else: 
         param.requires_grad = True 
         param_group.append(param) 
 print("length of param_group {}".format(len(param_group))) 
-exit(0) 
 
-custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-4) 
+custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-5) 
 # custom_optimizer = torch.optim.AdamW(param_group, lr = 1e-4) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
