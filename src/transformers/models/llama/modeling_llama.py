@@ -1957,7 +1957,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
     """ 
     
     _tied_weights_keys = ["lm_head.weight"]
-
+    '''
     def __init__(self, *args, sliding_window_length = 7, addonsmallmodel, use_mse_loss = False, **kwargs): 
         super().__init__(*args, **kwargs) 
         self.model = LlamaModel(self.config) 
@@ -1973,7 +1973,20 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
 
         # Initialize weights and apply final processing
         self.post_init()
-
+    ''' 
+    def __init__(self, config): 
+        super().__init__(config) 
+        self.model = LlamaModel(config) 
+        self.vocab_size = config.vocab_size 
+        self.lm_head = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias = False) 
+        self.addonsmallmodel = None 
+        self.sliding_window_length = 7 
+        self.small_model_dtype = torch.bfloat16 
+        self.use_mse_loss = False 
+        self.alpha = 0.5 
+        
+        self.post_init() 
+        
     def get_input_embeddings(self):
         return self.model.embed_tokens
 

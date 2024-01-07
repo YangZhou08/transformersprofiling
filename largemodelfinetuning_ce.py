@@ -619,10 +619,12 @@ if args.large_model == "openllama3b":
     large_dim = 3200 
 elif args.large_model == "shearedllama2_7b": 
     large_dim = 2560 
+elif args.large_model == "tinyllama": 
+    large_dim = 2048 
 else: 
     large_dim = 4096 
 if not args.use_pretrained_small_model: 
-    small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 7, target_model_dim = 3200) 
+    small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 7, target_model_dim = large_dim) 
 
     new_state_dict = {} 
 
@@ -649,7 +651,11 @@ else:
     # I found that the weights need to be loaded again once the large model is loaded 
     small_model.eval() 
 
-large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = False).to(torch.bfloat16).to(torch_device) 
+if args.large_model == "openllama3b": 
+    large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = False).to(torch.bfloat16).to(torch_device) 
+elif args.large_model == "tinyllama": 
+    large_model = LlamaWeirdLarge.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    large_model.set_addonsmallmodel(small_model) 
 # large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = True).to(torch.bfloat16).to(torch_device) 
 # large_model.set_smallmodelfull() # this function has proven to be very important 
 # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
