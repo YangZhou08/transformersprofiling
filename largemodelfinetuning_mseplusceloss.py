@@ -825,7 +825,7 @@ def naive_grouping(examples):
 
 param_group = [] 
 for name, param in large_model.named_parameters(): 
-    print(colored(name), "blue") 
+    print(colored(name, "blue")) 
     if "addonsmallmodel." in name: 
         param.requires_grad = False 
     else: 
