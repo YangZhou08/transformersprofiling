@@ -274,7 +274,7 @@ class CustomTrainer(Trainer):
         
         # input_ids = inputs["input_ids"] # (batch_size, 203) 
         large_input_ids = inputs["large_input_ids"] # (batch_size, 203) 
-        small_input_ids = inputs["small_input_ids"] # (batch_size, 203) 
+        small_input_ids = inputs["input_ids"] # (batch_size, 203) 
         # attention_mask = inputs["attention_mask_chunk"] 
         condensed_embeds_labels = inputs["condensed_embeds"] # (batch_size, 28, 3200) 
         condensed_embeds_labels = condensed_embeds_labels.to(self.model.small_model_dtype) 
@@ -716,7 +716,7 @@ class CustomDataset:
             # print("text is {}".format(item["text"][58 :])) 
             item['large_input_ids'] = large_encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
             # print("input_ids is {}, the length is {}".format(item["input_ids"], item["input_ids"].shape[0])) 
-            item['small_input_ids'] = small_encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
+            item['input_ids'] = small_encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
             item['attention_mask'] = small_encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
         
         item["condensed_embeds"] = tensor 
