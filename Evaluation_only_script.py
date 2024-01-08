@@ -9,6 +9,7 @@ from datasets import load_dataset
 from src.transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM 
 from src.transformers import GPTNeoXForCausalLM 
 from src.transformers import LlamaConfig, LlamaPreTrainedModel 
+from src.transformers import LlamaTokenizer 
 
 from tqdm import tqdm
 # from sampling.utils import norm_logits, sample 
