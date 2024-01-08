@@ -181,7 +181,8 @@ if model_name == "shearedllama2_7b":
 elif model_name == "openllama3b": 
     tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
 elif model_name == "tinyllama": 
-    tokenizer = LlamaTokenizer.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models) 
+    # tokenizer = LlamaTokenizer.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models) 
+    tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 elif model_name == "phi-2": 
     tokenizer = AutoTokenizer.from_pretrained("microsoft/phi-2", cache_dir = dir_models) 
 else: 
@@ -258,7 +259,7 @@ json_file_name = "c4synthesized_file1_kernel{}_{}.json".format(args.kernel_size,
 os.makedirs(synthesized_data_path, exist_ok = True) 
 # json_file_name = "c4synthesized_file1.json" 
 # json_file_name = "c4synthesized_file2.json" 
-json_file1 = open(synthesized_dir_path + json_file_name, "a") 
+# json_file1 = open(synthesized_dir_path + json_file_name, "a") 
 
 train_dataloader = trainer.get_train_dataloader() 
 print("the length of the train dataloader is {}".format(len(train_dataloader))) 
@@ -288,11 +289,12 @@ for step, inputs in enumerate(train_dataloader):
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step)) 
-    # for i in range(input_ids.shape[0]): 
-    #     example = large_outputs.sequences[i] 
-    #     print(tokenizer.decode(example[: max_length])) 
-    #     print(colored(tokenizer.decode(example[max_length : ]), "blue")) 
-    #     print() 
+    for i in range(input_ids.shape[0]): 
+        example = large_outputs.sequences[i] 
+        print(tokenizer.decode(example[: max_length])) 
+        print(colored(tokenizer.decode(example[max_length : ]), "blue")) 
+        print() 
+    exit(0) 
     # if step > 1: 
     
     list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
