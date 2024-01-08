@@ -8,6 +8,7 @@ from datasets import load_dataset
 from src.transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM 
 from src.transformers import GPTNeoXForCausalLM 
 from src.transformers import LlamaConfig, LlamaPreTrainedModel 
+from src.transformers import LlamaTokenizer 
 
 from tqdm import tqdm
 # from sampling.utils import norm_logits, sample 
@@ -204,6 +205,8 @@ else:
 
 logger = logging.get_logger(__name__) 
 
+model_name = "openllama3b" 
+
 class CustomDataset: 
     def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7): 
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
@@ -296,4 +299,42 @@ class CustomDataset:
         eval_size = len(self) - train_size 
         return random_split(self, [train_size, eval_size]) 
 
+tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
 
+def naive_grouping(input_ids, model): 
+    embedding_searched = model.embed_tokens(input_ids) 
+    # print("embedding_searched shape {} {}".format(embedding_searched.shape, embedding_searched.dtype)) 
+    seq_length = embedding_searched.shape[1] 
+    
+    assert seq_length % 7 == 0, "seq_length is not divisible by 7" 
+    added_tensor = torch.zeros((embedding_searched.shape[0], seq_length // 7, embedding_searched.shape[2])).to(input_ids.device).to(embedding_searched.dtype) 
+    for i in range(seq_length // 7): 
+        sum = torch.zeros((embedding_searched.shape[0], embedding_searched.shape[2])).to(input_ids.device).to(embedding_searched.dtype) 
+        for j in range(7): 
+            sum += embedding_searched[:, i * 7 + j, :] 
+            sum /= 7. 
+            # print("sum dtype {}".format(sum.dtype)) 
+        added_tensor[:, i, :] = sum 
+    # print("added_tensor shape {}".format(added_tensor.shape)) 
+    
+    return added_tensor 
+
+# model = LlamaWeirdLarge2.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = 
+model = LlamaForCausalLM.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+
+datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = 7) 
+mse_loss = nn.MSELoss() 
+accumulated_loss = 0. 
+
+for i in range(len(datasetnew)): 
+    data1 = datasetnew[i] 
+    input_ids = data1["input_ids"].unsqueeze(1, -1).to(torch_device) 
+    added_tensor = naive_grouping(input_ids, model) 
+    print("added_tensor shape {}".format(added_tensor.shape)) 
+    added_tensor = added_tensor[:, : -1, :] 
+    print("added_tensor shape {}".format(added_tensor.shape)) 
+    loss = mse_loss(added_tensor, data1["condensed_embeds"].to(torch_device)) 
+    print(colored("loss is {}".format(loss), "yellow")) 
+    accumulated_loss += loss.item() 
+
+print(colored("averaged loss is {}".format(accumulated_loss / len(datasetnew)), "yellow")) 
