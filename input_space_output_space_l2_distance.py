@@ -332,13 +332,14 @@ datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = t
 mse_loss = nn.MSELoss() 
 accumulated_loss = 0. 
 
-for i in range(len(datasetnew)): 
+for i in tqdm(range(len(datasetnew))): 
     data1 = datasetnew[i] 
     input_ids = data1["input_ids"].reshape(1, -1).to(torch_device) 
     added_tensor = naive_grouping(input_ids, model) 
     print("added_tensor shape {}".format(added_tensor.shape)) 
     added_tensor = added_tensor[:, : -1, :] 
     print("added_tensor shape {}".format(added_tensor.shape)) 
+    print("condensed_embeds shape {}".format(data1["condensed_embeds"].shape)) 
     loss = mse_loss(added_tensor, data1["condensed_embeds"].to(torch_device)) 
     print(colored("loss is {}".format(loss), "yellow")) 
     accumulated_loss += loss.item() 
