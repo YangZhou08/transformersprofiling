@@ -300,6 +300,12 @@ class CustomDataset:
         return random_split(self, [train_size, eval_size]) 
 
 tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
+if tokenizer.pad_token is not None: 
+    print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
+else: 
+    tokenizer.pad_token = tokenizer.eos_token 
+    print("We now use eos_token as pad token") 
+    tokenizer.padding_side = "left" 
 
 def naive_grouping(input_ids, model): 
     embedding_searched = model.embed_tokens(input_ids) 
