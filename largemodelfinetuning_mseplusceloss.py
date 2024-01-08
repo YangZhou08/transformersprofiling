@@ -253,7 +253,8 @@ class CustomTrainer(Trainer):
         self._signature_columns += ["attention_mask_chunk"] 
         self._signature_columns += ["condensed_embeds"] 
         self._signature_columns += ["large_input_ids"] 
-        self._signature_columns += ["small_input_ids"] 
+        # self._signature_columns += ["small_input_ids"] 
+        self._signature_columns += ["input_ids"] 
     
     def compute_loss(self, model, inputs, return_outputs=False):
         """
