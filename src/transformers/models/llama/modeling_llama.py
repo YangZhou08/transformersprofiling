@@ -1724,7 +1724,9 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
     @replace_return_docstrings(output_type=CausalLMOutputWithPast, config_class=_CONFIG_FOR_DOC)
     def forward(
         self,
-        input_ids: torch.LongTensor = None,
+        # input_ids: torch.LongTensor = None, 
+        large_input_ids: torch.LongTensor = None, 
+        small_input_ids: torch.LongTensor = None, 
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
         past_key_values: Optional[List[torch.FloatTensor]] = None,
@@ -1770,7 +1772,7 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         # inside this function callm, input is through input_embeds 
-        extra_pass_in_embeds = self.naive_grouping(input_ids) 
+        extra_pass_in_embeds = self.naive_grouping(large_input_ids) 
         # the attention mask should be compatible to the new input_embeds 
         assert attention_mask.shape[1] == extra_pass_in_embeds.shape[1], "attention_mask shape is not compatible to the new input_embeds" 
         assert inputs_embeds is None, "inputs_embeds is not None" 
@@ -1826,9 +1828,10 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
         # hidden_states = hidden_states[:, :-1, :] 
         
         # interleave the hidden_states and the input_ids 
-        assert hidden_states.shape[1] == input_ids.shape[1] // 7 - 1 
+        assert hidden_states.shape[1] == small_input_ids.shape[1] // 7 - 1 
         addonmodeloutput = self.addonsmallmodel( 
-            input_ids = input_ids, 
+            # input_ids = input_ids, 
+            input_ids = small_input_ids, 
             attention_mask = original_attention_mask, 
             position_ids = None, 
             past_key_values = None, 

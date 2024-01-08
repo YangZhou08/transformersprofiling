@@ -8,6 +8,7 @@ from datasets import load_dataset
 from src.transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM 
 from src.transformers import GPTNeoXForCausalLM 
 from src.transformers import LlamaConfig, LlamaPreTrainedModel 
+from src.transformers import LlamaTokenizer 
 
 from tqdm import tqdm
 # from sampling.utils import norm_logits, sample 
@@ -251,6 +252,8 @@ class CustomTrainer(Trainer):
             self._signature_columns += list(set(["label", "label_ids"] + self.label_names)) 
         self._signature_columns += ["attention_mask_chunk"] 
         self._signature_columns += ["condensed_embeds"] 
+        self._signature_columns += ["large_input_ids"] 
+        self._signature_columns += ["small_input_ids"] 
     
     def compute_loss(self, model, inputs, return_outputs=False):
         """
@@ -269,20 +272,24 @@ class CustomTrainer(Trainer):
         
         print(colored("iteration_count {}".format(self.iteration_count), "yellow")) 
         
-        input_ids = inputs["input_ids"] # (batch_size, 203) 
+        # input_ids = inputs["input_ids"] # (batch_size, 203) 
+        large_input_ids = inputs["large_input_ids"] # (batch_size, 203) 
+        small_input_ids = inputs["small_input_ids"] # (batch_size, 203) 
         # attention_mask = inputs["attention_mask_chunk"] 
         condensed_embeds_labels = inputs["condensed_embeds"] # (batch_size, 28, 3200) 
         condensed_embeds_labels = condensed_embeds_labels.to(self.model.small_model_dtype) 
         original_attention_mask = inputs["attention_mask"] # (batch_size, 203) 
         label2 = inputs["labels"] # (batch_size, 203) 
-        attention_mask = torch.ones((input_ids.shape[0], condensed_embeds_labels.shape[1] + 1), dtype = torch.long).to(input_ids.device) 
+        attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 1), dtype = torch.long).to(large_input_ids.device) 
         
         batch_size, seq_len = original_attention_mask.shape 
         addedon_length = (seq_len - 7) // self.n 
-        original_attention_mask = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
+        original_attention_mask = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
         
         outputs = model(
-            input_ids = input_ids, 
+            # input_ids = input_ids, 
+            large_input_ids = large_input_ids, 
+            small_input_ids = small_input_ids, 
             attention_mask = attention_mask, 
             output_hidden_states = True, 
             output_attentions = True, 
@@ -344,7 +351,7 @@ class CustomTrainer(Trainer):
                 for head in [0, 6, 11]: 
                     # SimpleSmallModel.plot_attention_map(outputs.attentions, 0, 0, 144, "testing_attention_map.jpg") 
                     plot_name = "testing_attention_map_{}_{}.jpg".format(self.commit_hash, self.time_hash) 
-                    SimpleSmallModel.plot_attention_map(outputs.attentions, layer, head, input_ids.shape[1] + addedon_length, plot_name) 
+                    SimpleSmallModel.plot_attention_map(outputs.attentions, layer, head, small_input_ids.shape[1] + addedon_length, plot_name) 
                     # print(outputs.attentions[0][0][0][64]) 
                     # time.sleep(0.1) # ensure the file is written to disk 
                     field_name = "layer{}_head{}".format(layer, head) 
@@ -619,7 +626,8 @@ class CustomTrainer(Trainer):
         return EvalLoopOutput(predictions=all_preds, label_ids=all_labels, metrics=metrics, num_samples=num_samples) 
 
 class CustomDataset: 
-    def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7): 
+    # def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7): 
+    def __init__(self, data_dir, large_tokenizer = None, small_tokenizer = None, max_length = 256, kernel_size = 7): 
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
         self.synthesize_dir = data_dir 
         # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json", split = "train") 
@@ -643,7 +651,9 @@ class CustomDataset:
         self.kernel_size = kernel_size 
         # self.dataset = self.dataset["train"][0: 5120] 
 
-        self.tokenizer = tokenizer 
+        # self.tokenizer = tokenizer 
+        self.large_tokenizer = large_tokenizer 
+        self.small_tokenizer = small_tokenizer 
         self.max_length = max_length 
     
     def __len__(self): 
@@ -679,8 +689,8 @@ class CustomDataset:
                 dmodel = 2048 
             tensor = torch.zeros((28, dmodel), dtype = torch.float32) 
         
-        if self.tokenizer is not None: 
-            encoded_text = self.tokenizer( 
+        if self.large_tokenizer is not None and self.small_tokenizer is not None: 
+            large_encoded_text = self.large_tokenizer( 
                 item["text"][58 :], # 6 word-level tokens + BOS to be the first chunk 
                 # add_special_tokens = False, 
                 add_special_tokens = True, 
@@ -691,11 +701,23 @@ class CustomDataset:
                 return_tensors = "pt", 
                 truncation = True, 
             ) 
+            small_encoded_text = self.small_tokenizer(
+                item["text"][58 :], # 6 word-level tokens + BOS to be the first chunk 
+                # add_special_tokens = False, 
+                add_special_tokens = True, 
+                padding = "max_length", 
+                # max_length = 64 + self.dict_kernel_maxlength[self.kernel_size], 
+                max_length = self.max_length, 
+                return_attention_mask = True, 
+                return_tensors = "pt", 
+                truncation = True, 
+            )
             
             # print("text is {}".format(item["text"][58 :])) 
-            item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
+            item['large_input_ids'] = large_encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
             # print("input_ids is {}, the length is {}".format(item["input_ids"], item["input_ids"].shape[0])) 
-            item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
+            item['small_input_ids'] = small_encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
+            item['attention_mask'] = small_encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
         
         item["condensed_embeds"] = tensor 
         # print(colored("the shape of condensed_embeds is {}".format(tensor.shape), "yellow")) 
@@ -710,18 +732,23 @@ class CustomDataset:
         eval_size = len(self) - train_size 
         return random_split(self, [train_size, eval_size]) 
 
-tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+# tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+large_tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
+small_tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 # tokenizer = AutoTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
 # tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
-if tokenizer.pad_token is not None: 
-    print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
-else: 
-    tokenizer.pad_token = tokenizer.eos_token 
-    print("We now use eos_token as pad token") 
-tokenizer.padding_side = "left" 
+tokenizers = [large_tokenizer, small_tokenizer] 
+for tokenizer in tokenizers: 
+    if tokenizer.pad_token is not None: 
+        print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
+    else: 
+        tokenizer.pad_token = tokenizer.eos_token 
+        print("We now use eos_token as pad token") 
+    tokenizer.padding_side = "left" 
 
 kernel_size = args.kernel_size 
-datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
+# datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
+datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size) 
 train_set, test_set = datasetnew.split(0.98) 
 
 for i in range(0, 2): 
