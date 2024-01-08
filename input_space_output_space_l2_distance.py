@@ -334,7 +334,7 @@ accumulated_loss = 0.
 
 for i in range(len(datasetnew)): 
     data1 = datasetnew[i] 
-    input_ids = data1["input_ids"].unsqueeze(1, -1).to(torch_device) 
+    input_ids = data1["input_ids"].reshape(1, -1).to(torch_device) 
     added_tensor = naive_grouping(input_ids, model) 
     print("added_tensor shape {}".format(added_tensor.shape)) 
     added_tensor = added_tensor[:, : -1, :] 
