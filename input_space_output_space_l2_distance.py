@@ -308,7 +308,7 @@ else:
     tokenizer.padding_side = "left" 
 
 def naive_grouping(input_ids, model): 
-    embedding_searched = model.embed_tokens(input_ids) 
+    embedding_searched = model.model.embed_tokens(input_ids) 
     # print("embedding_searched shape {} {}".format(embedding_searched.shape, embedding_searched.dtype)) 
     seq_length = embedding_searched.shape[1] 
     
