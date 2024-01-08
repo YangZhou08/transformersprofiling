@@ -213,6 +213,7 @@ parser.add_argument("--use_mse_loss", action = "store_true")
 parser.add_argument("--resume_from_checkpoint", type = str, default = None) 
 parser.add_argument("--freeze_small_model", action = "store_true") 
 parser.add_argument("--freeze_large_model", action = "store_true") 
+parser.add_argument("--ce_loss_only", action = "store_true") 
 
 args = parser.parse_args() 
 model_name = args.large_model 
@@ -770,7 +771,7 @@ else:
     small_model.eval() 
 
 if args.large_model == "openllama3b": 
-    large_model = LlamaWeirdLarge2.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = args.use_mse_loss).to(torch.bfloat16).to(torch_device) 
+    large_model = LlamaWeirdLarge2.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = args.use_mse_loss, ce_loss_only = args.ce_loss_only).to(torch.bfloat16).to(torch_device) 
 elif args.large_model == "tinyllama": 
     # large_model = LlamaWeirdLarge2.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = args.use_mse_loss).to(torch.bfloat16).to(torch_device) 
     large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 

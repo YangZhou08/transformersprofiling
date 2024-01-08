@@ -1636,7 +1636,7 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
     
     _tied_weights_keys = ["lm_head.weight"]
 
-    def __init__(self, *args, sliding_window_length = 7, addonsmallmodel, use_mse_loss = False, **kwargs): 
+    def __init__(self, *args, sliding_window_length = 7, addonsmallmodel, use_mse_loss = False, ce_loss_only = False, **kwargs): 
         super().__init__(*args, **kwargs) 
         self.model = LlamaModel(self.config) 
         self.vocab_size = self.config.vocab_size 
@@ -1648,6 +1648,7 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
         self.small_model_dtype = self.addonsmallmodel.embed_projection.weight.dtype 
         print(colored("small_model_dtype {}".format(self.small_model_dtype), "red")) 
         self.use_mse_loss = use_mse_loss 
+        self.ce_loss_only = ce_loss_only 
         self.alpha = 0.5 
 
         # Initialize weights and apply final processing
@@ -1883,8 +1884,11 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
             loss = ce_loss 
             # print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
         if loss is not None: 
-            # loss = self.alpha * loss + (1 - self.alpha) * mse_loss 
-            loss = self.alpha * ce_loss + (1 - self.alpha) * mse_loss 
+            if self.ce_loss_only: 
+                loss = ce_loss 
+            else: 
+                # loss = self.alpha * loss + (1 - self.alpha) * mse_loss 
+                loss = self.alpha * ce_loss + (1 - self.alpha) * mse_loss 
         else: 
             loss = mse_loss 
 
