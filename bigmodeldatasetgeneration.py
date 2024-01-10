@@ -37,6 +37,7 @@ import socket
 
 hostname = socket.gethostname()
 print("Hostname:", hostname) 
+exit(0) 
 
 parser = argparse.ArgumentParser() 
 parser.add_argument("--kernel_size", type = int, default = 4) 
@@ -362,4 +363,4 @@ for step, inputs in enumerate(train_dataloader):
         } 
         json_file1.write(json.dumps(example_data) + "\n") 
     
-json_file1.close() 
+# json_file1.close() 
