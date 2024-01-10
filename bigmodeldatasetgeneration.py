@@ -276,7 +276,7 @@ for step, inputs in enumerate(train_dataloader):
     input_ids = inputs["input_ids"] 
     attention_mask = inputs["attention_mask"] 
     labels = inputs["labels"] 
-    top_k = 10
+    top_k = 100 
     top_p = 0.9 
 
     temperature = 1 
