@@ -203,6 +203,9 @@ else:
     dir_models = "/home/yangzho6/model_checkpoints/" 
     dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
 
+print("all import completed") 
+exit(0) 
+
 logger = logging.get_logger(__name__) 
 
 parser = argparse.ArgumentParser() 
