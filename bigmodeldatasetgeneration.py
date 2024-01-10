@@ -43,6 +43,7 @@ parser.add_argument("--kernel_size", type = int, default = 4)
 parser.add_argument("--advanced_data_layout", type = bool, default = False) 
 parser.add_argument("--path_d", type = int, default = 0) 
 parser.add_argument("--model_name", type = str, default = "openllama3b") 
+parser.add_argument("--topk", type = int, default = 10) 
 
 args = parser.parse_args() 
 
@@ -276,7 +277,7 @@ for step, inputs in enumerate(train_dataloader):
     input_ids = inputs["input_ids"] 
     attention_mask = inputs["attention_mask"] 
     labels = inputs["labels"] 
-    top_k = 100 
+    top_k = args.topk 
     top_p = 0.9 
 
     temperature = 1 
