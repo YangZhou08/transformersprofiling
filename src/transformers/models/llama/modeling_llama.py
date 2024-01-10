@@ -3409,6 +3409,31 @@ class SimpleSmallModel(LlamaPreTrainedModel):
 
         combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
     
+    def _modify_decoder_attention_mask_for_hardest_neo(self, combined_attention_mask, dtype, mask_list_pos, start_idx = None, kernel_size = None): 
+        mask_shape = combined_attention_mask.shape # (batch_size, 1, tgt_seq_len, src_seq_len) 
+        seq_len = mask_shape[-1] 
+        start_idx = start_idx if start_idx is not None else self.start_idx 
+        kernel_size = kernel_size if kernel_size is not None else self.sliding_window_length 
+        
+        # row dimensional masking 
+        # row_idx_masked_out = [start_idx + i * (kernel_size + 1) for i in range((seq_len - start_idx) / (kernel_size + 1))] 
+        row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) # NOTE currently, this line only works for training 
+        # row_mask[row_idx_masked_out] = 1 
+        # row_mask[mask_list_pos] = 1 
+
+        condensed_token_idx_list = mask_list_pos 
+        for i in range(len(condensed_token_idx_list)): 
+            if i == 0: 
+                row_mask[condensed_token_idx_list[i] : , : condensed_token_idx_list[i]] = 1 
+            else: 
+                row_mask[condensed_token_idx_list[i] : , condensed_token_idx_list[i - 1] : condensed_token_idx_list[i]] = 1 
+        
+        # print("row mask shape {}".format(row_mask.shape)) 
+        row_mask = row_mask[None, None, :, :].expand(mask_shape).to(torch.bool) 
+        row_mask = row_mask.to(device = combined_attention_mask.device) 
+
+        combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
+    
     def interleaving_embeddings_inputs(self, input_embeds, condensed_embeds, kernel_size = 4, start_idx = 64): 
         assert (input_embeds.shape[1] - start_idx)/kernel_size == condensed_embeds.shape[1] 
         combined_embeds = input_embeds[:, : start_idx, :] 
@@ -3795,7 +3820,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 self._modify_decoder_attention_mask_for_hardest(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
             elif self.experiment_setting == "setting4": 
                 # self._modify_decoder_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
-                self._modify_decoder_attention_mask_neo(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+                # self._modify_decoder_attention_mask_neo(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+                self._modify_decoder_attention_mask_for_hardest_neo(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
             # elif self.experiment_setting == "setting4": 
             #     self._modify_decoder_attention_mask_for_large_model_addon(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, kernel_size = self.sliding_window_length) 
             else: 
