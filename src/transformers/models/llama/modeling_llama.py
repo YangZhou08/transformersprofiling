@@ -1812,9 +1812,9 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
         mse_loss = mse_lossfunc(hidden_states, mselabels) 
         intermediate_l2_dist = mse_loss.clone().detach() 
         
-        mse_loss_input = nn.MSEloss() 
+        mse_lossfunc2 = nn.MSELoss() 
         inputs_embeds = inputs_embeds[:, 1:, :] 
-        mse_loss_input = mse_lossfunc(hidden_states, mselabels) 
+        mse_loss_input = mse_lossfunc2(hidden_states, inputs_embeds) 
         l2_distance_input = mse_loss_input.clone().detach() 
         
         if self.use_mse_loss: 
