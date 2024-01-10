@@ -4,13 +4,13 @@
 ### Section1: SBATCH directives to specify job configuration
 
 ## job name
-#SBATCH --job-name=cover160m
+#SBATCH --job-name=yangzho6 
 ## filename for job standard output (stdout)
 ## %j is the job id, %u is the user id
 
-#SBATCH --output=/data/home/beidic/zhuoming/log-%j.out
+#SBATCH --output=/data/home/beidic/yang/log-%j.out
 ## filename for job standard error output (stderr)
-#SBATCH --error=/data/home/beidic/zhuoming/log-%j.err
+#SBATCH --error=/data/home/beidic/yang/log-%j.err
 
 #SBATCH --time=6:00:00
 
