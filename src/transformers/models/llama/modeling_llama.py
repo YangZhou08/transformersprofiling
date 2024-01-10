@@ -1812,6 +1812,11 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
         mse_loss = mse_lossfunc(hidden_states, mselabels) 
         intermediate_l2_dist = mse_loss.clone().detach() 
         
+        mse_loss_input = nn.MSEloss() 
+        inputs_embeds = inputs_embeds[:, 1:, :] 
+        mse_loss_input = mse_lossfunc(hidden_states, mselabels) 
+        l2_distance_input = mse_loss_input.clone().detach() 
+        
         if self.use_mse_loss: 
             print(colored("mse_loss {}".format(mse_loss), "red")) 
             return CausalLMOutputWithPastLargeDistance2(
@@ -1909,6 +1914,7 @@ class LlamaWeirdLarge2(LlamaPreTrainedModel):
             attentions = addonmodeloutput.attentions, # delibrately using the model's attention mask with modifications 
             l2_distance = intermediate_l2_dist, 
             ce_loss = ce_loss.detach().clone(), 
+            l2_distance_input = l2_distance_input, 
         ) 
 
     def prepare_inputs_for_generation(

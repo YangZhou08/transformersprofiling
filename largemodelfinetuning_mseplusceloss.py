@@ -322,12 +322,14 @@ class CustomTrainer(Trainer):
                 )
             # We don't use .loss here since the model may return tuples instead of ModelOutput.
             loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
-            ce_loss = outputs["ce_loss"] if isinstance(outputs, dict) else outputs[-1] 
-            l2_distance = outputs["l2_distance"] if isinstance(outputs, dict) else outputs[-2] 
+            ce_loss = outputs["ce_loss"] if isinstance(outputs, dict) else outputs[-2] 
+            l2_distance = outputs["l2_distance"] if isinstance(outputs, dict) else outputs[-3] 
+            l2_distance_input = outputs["l2_distance_input"] if isinstance(outputs, dict) else outputs[-1] 
         
         print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
         print(colored("rank {} ce_loss {}".format(self.accelerator.state.process_index, ce_loss), "yellow")) 
         print(colored("rank {} l2_distance {}".format(self.accelerator.state.process_index, l2_distance), "yellow")) 
+        print(colored("rank {} l2_distance_input {}".format(self.accelerator.state.process_index, l2_distance_input), "yellow")) 
         if self.accelerator.is_main_process and has_wandb and self.iteration_count % 20 == 0: 
             if len(self.optimizer.param_groups) > 1: 
                 wandb.log({"loss": loss, 
@@ -337,6 +339,7 @@ class CustomTrainer(Trainer):
                         "iteration_count": self.iteration_count, 
                         "ce_loss": ce_loss, 
                         "l2_distance": l2_distance, 
+                        "l2_distance_input": l2_distance_input, 
                 }) 
             else: 
                 wandb.log({"loss": loss, 
@@ -344,6 +347,7 @@ class CustomTrainer(Trainer):
                         "iteration_count": self.iteration_count, 
                         "ce_loss": ce_loss, 
                         "l2_distance": l2_distance, 
+                        "l2_distance_input": l2_distance_input, 
                 }) 
                 
         if self.accelerator.is_main_process and self.iteration_count % 1000 == 0 and has_wandb and self.model.use_mse_loss != True: 
@@ -383,12 +387,14 @@ class CustomTrainer(Trainer):
         print("logits[0].shape {}".format(logits[0].shape)) 
         print("logits[1].shape {}".format(logits[1].shape)) 
         print("logits[2].shape {}".format(logits[2].shape)) 
+        print("logits[3].shape {}".format(logits[3].shape)) 
         assert len(logits) == 3 
         l2dist = logits[1].reshape(-1) 
         if self.model.use_mse_loss != True or ce_loss is None: 
             ce_loss = logits[2].reshape(-1) 
         else: 
             ce_loss = 0 
+        l2dist_input = logits[3].reshape(-1) 
         logits = logits[0] 
         # print(l2dist) 
         logits = logits[:, :-1, :] 
@@ -437,7 +443,7 @@ class CustomTrainer(Trainer):
         total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
         correct_words = torch.sum((preds[indices_to_keep] == labels[indices_to_keep]).view(-1), dim = 0).item() 
         print("correct words: {} and total words: {}".format(correct_words, total_valid_tokens)) 
-        return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "l2_distance": l2dist.item(), "ce_loss": ce_loss.item() if isinstance(ce_loss, torch.Tensor) else ce_loss} 
+        return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "l2_distance": l2dist.item(), "ce_loss": ce_loss.item() if isinstance(ce_loss, torch.Tensor) else ce_loss, "l2_distance_input": l2dist_input.item()} 
                 
     def evaluation_loop(
         self,
@@ -508,6 +514,7 @@ class CustomTrainer(Trainer):
         sum_of_perplexity = 0 # used to compute the average perplexity 
         total_loss = 0 # used to compute the correct perplexity 
         l2_distance = 0 
+        l2_distance_input = 0 
         ce_loss = 0 
         
         observed_num_examples = 0 
@@ -542,6 +549,7 @@ class CustomTrainer(Trainer):
                 total_words += local_metrics["total_words"] 
                 sum_of_perplexity += local_metrics["perplexity"] 
                 l2_distance += local_metrics["l2_distance"] 
+                l2_distance_input += local_metrics["l2_distance_input"] 
                 ce_loss += local_metrics["ce_loss"] 
 
             if is_torch_tpu_available(): 
@@ -558,6 +566,7 @@ class CustomTrainer(Trainer):
             total_words = self.gather_function(torch.tensor(total_words).reshape(-1, 1).to(local_device)).view(-1).sum(dim = -1).item() 
             sum_of_perplexity = self.gather_function(torch.tensor(sum_of_perplexity).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
             l2_distance = self.gather_function(torch.tensor(l2_distance).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).div(self.accelerator.state.num_processes).item() 
+            l2_distance_input = self.gather_function(torch.tensor(l2_distance_input).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).div(self.accelerator.state.num_processes).item() 
             ce_loss = self.gather_function(torch.tensor(ce_loss).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).div(self.accelerator.state.num_processes).item() 
         
         # After all calls to `.gather_function`, reset to `gather_for_metrics`:
@@ -586,12 +595,13 @@ class CustomTrainer(Trainer):
             global_accuracy = total_correct_words / total_words 
             all_losses = total_loss / total_num_steps 
             l2_distance = l2_distance / total_num_steps 
+            l2_distance_input = l2_distance_input / total_num_steps 
             ce_loss = ce_loss / total_num_steps 
 
-            metrics = {"perplexity": global_perplexity, "accuracy": global_accuracy, "l2_distance": l2_distance, "ce_loss": ce_loss} 
+            metrics = {"perplexity": global_perplexity, "accuracy": global_accuracy, "l2_distance": l2_distance, "ce_loss": ce_loss, "l2_distance_input": l2_distance_input} 
             if self.accelerator.is_main_process: 
                 print(colored(metrics, "magenta")) 
-                wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy, "l2_distance": l2_distance, "ce_loss": ce_loss, "eval_loss_upd": all_losses}) 
+                wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy, "l2_distance": l2_distance, "ce_loss": ce_loss, "eval_loss_upd": all_losses, "l2_distance_input": l2_distance_input}) 
         else: 
             if self.accelerator.is_main_process: 
                 metrics = {} 
