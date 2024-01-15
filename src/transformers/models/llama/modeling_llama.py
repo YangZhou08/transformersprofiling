@@ -3917,14 +3917,16 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             logits = self.lm_head(hidden_states) 
         logits = logits.float() 
 
-        # mask_list_pos22 = [x - 1 for x in mask_list_pos] # just trying 
+        mask_list_pos22 = [x - 1 for x in mask_list_pos] # just trying 
         loss = None 
         if labels is not None: 
             # Shift so that tokens < n predict n 
-            selected_indices = list(range(start_idx)) 
-            for i in range(start_idx, seq_length): 
-                if i not in mask_list_pos: 
-                # if i not in mask_list_pos22: 
+            # selected_indices = list(range(start_idx)) 
+            selected_indices = list(range(start_idx - 1)) 
+            # for i in range(start_idx, seq_length): 
+            for i in range(start_idx - 1, seq_length): 
+                # if i not in mask_list_pos: 
+                if i not in mask_list_pos22: 
                     selected_indices.append(i) 
             # shift_logits = shift_logits[:, selected_indices, :] 
             logits = logits[:, selected_indices, :] 
