@@ -37,14 +37,14 @@ import socket
 
 hostname = socket.gethostname()
 print("Hostname:", hostname) 
-exit(0) 
 
 parser = argparse.ArgumentParser() 
 parser.add_argument("--kernel_size", type = int, default = 4) 
 parser.add_argument("--advanced_data_layout", type = bool, default = False) 
 parser.add_argument("--path_d", type = int, default = 0) 
 parser.add_argument("--model_name", type = str, default = "openllama3b") 
-parser.add_argument("--topk", type = int, default = 10) 
+parser.add_argument("--topk", type = int, default = None) 
+parser.add_argument("--debug", type = bool, action = "store_true", default = False) 
 
 args = parser.parse_args() 
 
@@ -69,9 +69,11 @@ elif "ada" in hostname:
     synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/{}/tensor_dir2/".format(model_name) 
 else: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
-    dir_models = "/home/yangzho6/model_checkpoints" 
-    synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/" 
-    synthesized_data_path = "/home/yangzho6/c4llm_synthesized/tensor_dir/" 
+    datasetsrc = "/data/home/beidic/yang/c4/en/c4_file2.json" 
+    datasetparent = "/data/home/beidic/yang/c4/en/" 
+    dir_models = "/data/home/beidic/yang/model_checkpoints" 
+    synthesized_dir_path = "/data/home/beidic/yang/c4llm_synthesized/{}/".format(model_name) 
+    synthesized_data_path = "/data/home/beidic/yang/c4llm_synthesized/{}/tensor_dir/".format(model_name) 
 
 from termcolor import colored 
 
@@ -82,12 +84,15 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # onedataset = load_dataset('json', data_files = ['/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', '/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json'], split = "train") 
 # onedataset = load_dataset("json", data_files = '/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
 # interest_idx_file = [1, 2, 3] if args.path_d == 0 else [4, 5] 
-interest_idx_file = [1, 2, 3, 4, 5] 
+# interest_idx_file = [1, 2, 3, 4, 5] 
+interest_idx_file = [3 * args.path_d + i for i in range(3)] 
 d_files = ["c4_file{}.json".format(i) for i in interest_idx_file] 
-print(colored("the processing files are {}".format(d_files), "yellow")) 
-print(colored("Using model name {} for synthesized data".format(model_name), "yellow")) 
-# onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train") 
-onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train[:2000]") 
+print(colored("path_d: {}, the processing files are {}".format(args.path_d, d_files), "yellow")) 
+print(colored("path_d: {}, Using model name {} for synthesized data".format(args.path_d, model_name), "yellow")) 
+if not args.debug: 
+    onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train") 
+else: 
+    onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train[:2000]") 
 
 class CustomTrainer(Trainer): 
     def __init__(self, large_model = None, *args, **kwargs): 
@@ -222,7 +227,7 @@ train_dataset = onedataset.map(encode_with_truncation, batched = True, num_proc 
 # train_dataset = d['train'].map(encode_with_truncation, batched = True, num_proc = 4) 
 # test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
 
-print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
+print("path_d: {}, The model max length is {}".format(args.path_d, small_model.config.max_position_embeddings)) 
 
 train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 # test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
@@ -261,10 +266,10 @@ json_file_name = "c4synthesized_file1_kernel{}_{}.json".format(args.kernel_size,
 os.makedirs(synthesized_data_path, exist_ok = True) 
 # json_file_name = "c4synthesized_file1.json" 
 # json_file_name = "c4synthesized_file2.json" 
-# json_file1 = open(synthesized_dir_path + json_file_name, "a") 
+json_file1 = open(synthesized_dir_path + json_file_name, "a") 
 
 train_dataloader = trainer.get_train_dataloader() 
-print("the length of the train dataloader is {}".format(len(train_dataloader))) 
+print("path_d: {}, the length of the train dataloader is {}".format(args.path_d, len(train_dataloader))) 
 # dict_kernel_maxlength = {3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70} 
 dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
 # kernel_size = 4 
@@ -278,31 +283,36 @@ for step, inputs in enumerate(train_dataloader):
     input_ids = inputs["input_ids"] 
     attention_mask = inputs["attention_mask"] 
     labels = inputs["labels"] 
-    top_k = args.topk 
+    if args.topk is not None: 
+        top_k = args.topk 
     top_p = 0.9 
 
     temperature = 1 
 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = max_length + dict_kernel_maxlength[kernel_size], do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
-    large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = True, top_k = top_k, output_hidden_states = True, return_dict_in_generate = True) 
+    if args.topk is not None: 
+        large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = True, top_k = top_k, output_hidden_states = True, return_dict_in_generate = True) 
+    else: 
+        large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = True, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step)) 
-    for i in range(input_ids.shape[0]): 
-        example = large_outputs.sequences[i] 
-        print(tokenizer.decode(example[: max_length])) 
-        print(colored(tokenizer.decode(example[max_length : ]), "blue")) 
-        print() 
-    exit(0) 
+    if args.debug and args.path_d == 0: 
+        for i in range(input_ids.shape[0]): 
+            example = large_outputs.sequences[i] 
+            print(tokenizer.decode(example[: max_length])) 
+            print(colored(tokenizer.decode(example[max_length : ]), "blue")) 
+            print() 
+        exit(0) 
     # if step > 1: 
     
     list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
     downsampled_vectors = trainer.downsample_vectors(list_of_last_hidden_states, kernel_size = kernel_size) 
     # break 
-    if step % 100 == 0: 
+    if step % 100 == 0 and args.path_d == 0: 
         print("length of last hidden states list is {} and the shape of element is {}".format(len(list_of_last_hidden_states), list_of_last_hidden_states[0].shape)) 
         print("length of downsampled vectors is {} and the shape of element is {}".format(len(downsampled_vectors), downsampled_vectors[0].shape)) 
         print("downampled_vector has shape {}".format(len(downsampled_vectors))) 
@@ -322,7 +332,7 @@ for step, inputs in enumerate(train_dataloader):
     print("shape of condensed_token shape is {}".format(downsampled_vectors[0].shape)) 
     if step % 100 == 0: 
         # print(colored("the text synthesized is {}".format(textsynthesized[49]), "yellow")) 
-        print("step is {} and the text first synthesized is {}".format(step, textsynthesized[0])) 
+        print("path_d: {}, step is {} and the text first synthesized is {}".format(args.path_d, step, textsynthesized[0])) 
     
     for i in range(downsampled_vectors.shape[0]): 
         # print(i) 
@@ -363,4 +373,7 @@ for step, inputs in enumerate(train_dataloader):
         } 
         json_file1.write(json.dumps(example_data) + "\n") 
     
-# json_file1.close() 
+json_file1.close() 
+with open(synthesized_dir_path + "synthesized_file1_kernel{}_{}.json".format(args.kernel_size, args.path_d), "r") as f: 
+    data = json.load(f) 
+    print("path_d: {} length of the item in the file {}".format(args.path_d, len(data))) 

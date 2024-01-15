@@ -32,15 +32,10 @@ source activate base
 conda activate zoo-torch20 
 pip install -e . 
 which python 
-cd /data/home/beidic/yang/ 
-mkdir c4llm_synthesized 
-git lfs version 
-GIT_LFS_SKIP_SMUDGE=1 git clone https://huggingface.co/datasets/allenai/c4 
-cd c4 
-for i in {00000..00024}
-do
-    git lfs pull --include "en/c4-train.$i-of-01024.json.gz"
-    gzip -dk "en/c4-train.$i-of-01024.json.gz" 
-    mv "en/c4-train.$i-of-01024.json" "en/c4_file$i.json" 
-done
 cd /data/home/beidic/yang/transformersprofiling 
+
+CUDA_VISIBLE_DEVICES=0 python bigmodeldatasetgeneration.py --kernel_size 7 --model_name tinyllama --path_d 0 & 
+CUDA_VISIBLE_DEVICES=1 python bigmodeldatasetgeneration.py --kernel_size 7 --model_name tinyllama --path_d 1 & 
+CUDA_VISIBLE_DEVICES=2 python bigmodeldatasetgeneration.py --kernel_size 7 --model_name tinyllama --path_d 2 & 
+
+wait 
