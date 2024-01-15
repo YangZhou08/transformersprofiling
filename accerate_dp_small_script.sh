@@ -1,1 +1,1 @@
-accelerate launch --main_process_port 29505 --num_processes 1 --num_machines 1 weird_training_ddpstep.py --experiment_setting setting0 --kernel_size 7 --model_name tinyllama 
+accelerate launch --main_process_port 29505 --num_processes 2 --num_machines 1 weird_training_ddpstep.py --experiment_setting setting0 --kernel_size 7 --model_name tinyllama 
