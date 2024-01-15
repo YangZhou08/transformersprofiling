@@ -3872,6 +3872,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                     create_custom_forward(decoder_layer), hidden_states, attention_mask, position_ids
                 )
             else:
+                horizontal_bar_enabled = False 
                 layer_outputs = decoder_layer(
                     hidden_states,
                     attention_mask=attention_mask,
@@ -3881,7 +3882,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                     use_cache=use_cache,
                     padding_mask=padding_mask, 
                     mask_list_pos = mask_list_pos, 
-                    horizontal_bar_enabled = False if self.experiment_setting == "setting4" else True, 
+                    horizontal_bar_enabled = horizontal_bar_enabled, 
                 ) 
 
             hidden_states = layer_outputs[0]
