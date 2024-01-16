@@ -42,7 +42,7 @@ else:
     dir_models = "/home/yangzho6/model_checkpoints" 
 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
-onedataset = load_dataset("c4", "en", split = "train[:20]", streaming = True) 
+onedataset = load_dataset("c4", "en", split = "train", streaming = True) 
 print("length of the dataset is {}".format(len(onedataset))) 
 for i in range(len(onedataset)): 
     print(onedataset[i]) 
