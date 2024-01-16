@@ -45,6 +45,7 @@ else:
 onedataset = load_dataset("c4", "en", split = "train", streaming = True) 
 # print("length of the dataset is {}".format(len(onedataset))) 
 for i, example in enumerate(onedataset): 
-    print(example) 
+    print(example["text"]) 
+    print() 
     if i > 19: 
         break 
