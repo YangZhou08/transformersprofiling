@@ -30,10 +30,10 @@ source /data/home/beidic/.bashrc
 source /data/home/beidic/miniconda/etc/profile.d/conda.sh
 source activate base
 conda activate zoo-torch20 
+cd /data/home/beidic/yang/transformersprofiling
 pip install -e . 
 which python 
-cd /data/home/beidic/yang/ 
-mkdir c4llm_synthesized 
+cd /data/home/beidic/yang/  
 git lfs version 
 GIT_LFS_SKIP_SMUDGE=1 git clone https://huggingface.co/datasets/allenai/c4 
 cd c4 
