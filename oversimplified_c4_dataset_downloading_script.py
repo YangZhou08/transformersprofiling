@@ -43,9 +43,12 @@ else:
 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 onedataset = load_dataset("c4", "en", split = "train", streaming = True) 
+train_dataloader = torch.utils.data.DataLoader(onedataset, batch_size = 20, shuffle = False) 
 # print("length of the dataset is {}".format(len(onedataset))) 
+'''
 for i, example in enumerate(onedataset): 
     print(example["text"]) 
     print() 
     if i > 19: 
         break 
+''' 
