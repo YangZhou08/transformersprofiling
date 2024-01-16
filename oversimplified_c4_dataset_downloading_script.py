@@ -43,7 +43,7 @@ else:
 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 onedataset = load_dataset("c4", "en", split = "train", streaming = True) 
-print("length of the dataset is {}".format(len(onedataset))) 
+# print("length of the dataset is {}".format(len(onedataset))) 
 for i, example in enumerate(onedataset): 
     print(example) 
     if i > 19: 
