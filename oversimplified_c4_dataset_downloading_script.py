@@ -44,5 +44,5 @@ else:
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 onedataset = load_dataset("c4", "en", split = "train", streaming = True) 
 print("length of the dataset is {}".format(len(onedataset))) 
-for i in range(len(onedataset)): 
+for i in range(20): 
     print(onedataset[i]) 
