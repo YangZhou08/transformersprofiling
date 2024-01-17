@@ -72,8 +72,8 @@ else:
     datasetsrc = "/data/home/beidic/yang/c4/en/c4_file2.json" 
     datasetparent = "/data/home/beidic/yang/c4/en/" 
     dir_models = "/data/home/beidic/yang/model_checkpoints" 
-    synthesized_dir_path = "/data/home/beidic/yang/c4llm_synthesized/{}/".format(model_name) 
-    synthesized_data_path = "/data/home/beidic/yang/c4llm_synthesized/{}/tensor_dir/".format(model_name) 
+    synthesized_dir_path = "/data/home/beidic/yang/c4llm_synthesized/{}_topk{}/".format(model_name, args.topk if args.topk is not None else "na") 
+    synthesized_data_path = "/data/home/beidic/yang/c4llm_synthesized/{}_topk{}/tensor_dir/".format(model_name, args.topk if args.topk is not None else "na") 
 
 from termcolor import colored 
 
