@@ -44,6 +44,7 @@ parser.add_argument("--advanced_data_layout", type = bool, default = False)
 parser.add_argument("--path_d", type = int, default = 0) 
 parser.add_argument("--model_name", type = str, default = "openllama3b") 
 parser.add_argument("--topk", type = int, default = None) 
+parser.add_argument("--batch_size", type = int, default = 64) 
 parser.add_argument("--debug", action = "store_true") 
 
 args = parser.parse_args() 
@@ -243,7 +244,7 @@ training_args = TrainingArguments(
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=1,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size=10, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size=args.batch_size, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=64,  # evaluation batch size
     # logging_steps=1000,             # evaluate, log and save model checkpoints every 1000 step
