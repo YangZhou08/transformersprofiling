@@ -44,7 +44,7 @@ parser.add_argument("--advanced_data_layout", type = bool, default = False)
 parser.add_argument("--path_d", type = int, default = 0) 
 parser.add_argument("--model_name", type = str, default = "openllama3b") 
 parser.add_argument("--topk", type = int, default = None) 
-parser.add_argument("--debug", type = bool, action = "store_true", default = False) 
+parser.add_argument("--debug", type = bool, action = "store_true") 
 
 args = parser.parse_args() 
 
