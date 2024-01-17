@@ -71,7 +71,7 @@ elif "ada" in hostname:
 else: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     datasetsrc = "/data/home/beidic/yang/c4/en/c4_file2.json" 
-    datasetparent = "/data/home/beidic/yang/c4/en/" 
+    datasetparent = "/data/home/beidic/yang/c4_parts/downloads/" 
     dir_models = "/data/home/beidic/yang/model_checkpoints" 
     synthesized_dir_path = "/data/home/beidic/yang/c4llm_synthesized/{}_topk{}/".format(model_name, args.topk if args.topk is not None else "na") 
     synthesized_data_path = "/data/home/beidic/yang/c4llm_synthesized/{}_topk{}/tensor_dir/".format(model_name, args.topk if args.topk is not None else "na") 
