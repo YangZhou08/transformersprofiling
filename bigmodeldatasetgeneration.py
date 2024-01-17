@@ -57,16 +57,16 @@ if "lovelace" in hostname:
     datasetsrc = "/home/yangzho6/c4_parts/downloads/c4_file2.json" 
     datasetparent = "/home/yangzho6/c4_parts/downloads/" 
     dir_models = "/home/yangzho6/model_checkpoints" 
-    synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/{}/".format(model_name)  
-    synthesized_data_path = "/home/yangzho6/c4llm_synthesized/{}/tensor_dir/".format(model_name) 
+    synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/{}_topk{}/".format(model_name, args.topk if args.topk is not None else "na") 
+    synthesized_data_path = "/home/yangzho6/c4llm_synthesized/{}_topk{}/tensor_dir/".format(model_name, args.topk if args.topk is not None else "na") 
 elif "ada" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     datasetsrc = "/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json" 
     datasetparent = "/home/beidic/yangzho6/c4_parts/downloads/" 
     dir_models = "/home/beidic/yangzho6/model_checkpoints" 
-    synthesized_dir_path = "/home/beidic/yangzho6/c4llm_synthesized/{}/".format(model_name) 
+    synthesized_dir_path = "/home/beidic/yangzho6/c4llm_synthesized/{}_topk{}/".format(model_name, args.topk if args.topk is not None else "na") 
     # synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/tensor_dir/" 
-    synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/{}/tensor_dir2/".format(model_name) 
+    synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/{}_topk{}/tensor_dir2/".format(model_name, args.topk if args.topk is not None else "na") 
 else: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     datasetsrc = "/data/home/beidic/yang/c4/en/c4_file2.json" 
