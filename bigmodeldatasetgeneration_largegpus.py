@@ -46,12 +46,12 @@ parser.add_argument("--model_name", type = str, default = "openllama3b")
 parser.add_argument("--topk", type = int, default = None) 
 parser.add_argument("--batch_size", type = int, default = 64) 
 parser.add_argument("--debug", action = "store_true") 
-parser.add_argument("--datasetsubname", type = str, default = None) 
-# parser.add_argument("--task_id", type = int, default = 0) 
+# parser.add_argument("--datasetsubname", type = str, default = None) 
+parser.add_argument("--task_id", type = int, default = 0) 
 
 args = parser.parse_args() 
-if args.datasetsubname is None: 
-    raise ValueError("datasetsubname should be specified") 
+# if args.datasetsubname is None: 
+    # raise ValueError("datasetsubname should be specified") 
 
 # model_name = "openllama3b" 
 # model_name = "shearedllama2_7b" 
@@ -92,7 +92,7 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # say I want to use 96 GPUs 
 
 #step1 I need to know how large the number of lines in the datasetfile is 
-d_files = [datasetparent + "c4_file{}.json".format(i) for i in range(1, 4)] # number of files is 3 
+d_files = [datasetparent + "c4_file{}.json".format(i) for i in range(0, 3)] # number of files is 3 
 line_count = 0 
 for file in d_files: 
     result = subprocess.run(["wc", "-l", file], capture_output = True, text = True) 
@@ -118,10 +118,11 @@ print(colored("the global proc id is {} start_idx {} end_idx {}".format(global_p
 # print(colored("path_d: {}, the processing files are {}".format(args.path_d, d_files), "yellow")) 
 print(colored("path_d: {}, Using model name {} for synthesized data".format(args.path_d, model_name), "yellow")) 
 print(colored("path_d: {}, Using topk {} and debug is {}".format(args.path_d, args.topk, args.debug), "yellow")) 
+
 if not args.debug: 
-    onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train") 
+    onedataset = load_dataset("json", data_files = d_files, split = "train[{}:{}]".format(global_proc_id * each_gpu_line_count_ref, global_proc_id * each_gpu_line_count_ref + each_gpu_line_count)) 
 else: 
-    onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train[:2000]") 
+    onedataset = load_dataset("json", data_files = d_files, split = "train[:2000]") 
 
 class CustomTrainer(Trainer): 
     def __init__(self, large_model = None, *args, **kwargs): 
@@ -289,8 +290,8 @@ trainer = CustomTrainer(
     data_collator = data_collator, 
 ) 
 
-synthesized_data_path = synthesized_data_path[: -1] + "_kernel_{}_{}/".format(args.kernel_size, args.path_d) 
-json_file_name = "c4synthesized_file1_kernel{}_{}.json".format(args.kernel_size, args.path_d) 
+synthesized_data_path = synthesized_data_path[: -1] + "_kernel_{}_{}/".format(args.kernel_size, global_proc_id) 
+json_file_name = "c4synthesized_file1_kernel{}_{}.json".format(args.kernel_size, global_proc_id) 
 
 os.makedirs(synthesized_data_path, exist_ok = True) 
 # json_file_name = "c4synthesized_file1.json" 
@@ -403,6 +404,3 @@ for step, inputs in enumerate(train_dataloader):
         json_file1.write(json.dumps(example_data) + "\n") 
     
 json_file1.close() 
-with open(synthesized_dir_path + "synthesized_file1_kernel{}_{}.json".format(args.kernel_size, args.path_d), "r") as f: 
-    data = json.load(f) 
-    print("path_d: {} length of the item in the file {}".format(args.path_d, len(data))) 
