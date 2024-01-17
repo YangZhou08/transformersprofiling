@@ -85,7 +85,7 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # onedataset = load_dataset("json", data_files = '/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
 # interest_idx_file = [1, 2, 3] if args.path_d == 0 else [4, 5] 
 # interest_idx_file = [1, 2, 3, 4, 5] 
-interest_idx_file = [3 * args.path_d + i for i in range(3)] 
+interest_idx_file = [2 * args.path_d + i for i in range(2)] 
 d_files = ["c4_file{}.json".format(i) for i in interest_idx_file] 
 print(colored("path_d: {}, the processing files are {}".format(args.path_d, d_files), "yellow")) 
 print(colored("path_d: {}, Using model name {} for synthesized data".format(args.path_d, model_name), "yellow")) 
