@@ -92,7 +92,7 @@ print(colored("path_d: {}, the processing files are {}".format(args.path_d, d_fi
 print(colored("path_d: {}, Using model name {} for synthesized data".format(args.path_d, model_name), "yellow")) 
 print(colored("path_d: {}, Using topk {} and debug is {}".format(args.path_d, args.topk, args.debug), "yellow")) 
 if not args.debug: 
-    onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train") 
+    onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train[:3000]") 
 else: 
     onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train[:2000]") 
 
