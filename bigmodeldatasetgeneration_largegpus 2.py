@@ -47,7 +47,6 @@ parser.add_argument("--topk", type = int, default = None)
 parser.add_argument("--batch_size", type = int, default = 64) 
 parser.add_argument("--debug", action = "store_true") 
 parser.add_argument("--datasetsubname", type = str, default = None) 
-# parser.add_argument("--task_id", type = int, default = 0) 
 
 args = parser.parse_args() 
 if args.datasetsubname is None: 
@@ -89,34 +88,22 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
 # onedataset = load_dataset('json', data_files = ['/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', '/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json'], split = "train") 
 # onedataset = load_dataset("json", data_files = '/home/beidic/yangzho6/c4_parts/downloads/c4_file1.json', split = "train") 
+
+datasetfile = json.open(args.datasetsubname, "r") 
 # say I want to use 96 GPUs 
 
 #step1 I need to know how large the number of lines in the datasetfile is 
-d_files = [datasetparent + "c4_file{}.json".format(i) for i in range(0, 3)] # number of files is 3 
-line_count = 0 
-for file in d_files: 
-    result = subprocess.run(["wc", "-l", file], capture_output = True, text = True) 
-    if result.returncode == 0: 
-        line_count += int(result.stdout.split()[0]) 
-        print("path_d: {}, the line count is {}".format(args.path_d, line_count)) 
-    else: 
-        raise Exception(f"Error counting lines: {result.stderr}") 
+result = subprocess.run(["wc", "-l", args.datasetsubname], capture_output = True, text = True) 
+line_count = None 
+if result.returncode == 0: 
+    line_count = int(result.stdout.split()[0]) 
+else: 
+    raise Exception(f"Error counting lines: {result.stderr}") 
 
 print("path_d: {}, the line count is {}".format(args.path_d, line_count)) 
 exit(0) 
-# task_id is which task is in, while path_d is which GPU is on 
 
-#step2 I need to know how many lines each GPU should process 
-# we hardcode the following, the total number of tasks is 12, each task uses 1 node with 8 GPUs 
-global_proc_id = args.task_id * 8 + args.path_d 
-each_gpu_line_count_ref = (line_count + 95) // 96 
-if global_proc_id < 95: 
-    each_gpu_line_count = (line_count + 95) // 96 
-else: 
-    each_gpu_line_count = line_count - (95 * each_gpu_line_count_ref) 
-print(colored("the global proc id is {} start_idx {} end_idx {}".format(global_proc_id, global_proc_id * each_gpu_line_count_ref, global_proc_id * each_gpu_line_count_ref + each_gpu_line_count), "blue")) 
-
-# print(colored("path_d: {}, the processing files are {}".format(args.path_d, d_files), "yellow")) 
+print(colored("path_d: {}, the processing files are {}".format(args.path_d, d_files), "yellow")) 
 print(colored("path_d: {}, Using model name {} for synthesized data".format(args.path_d, model_name), "yellow")) 
 print(colored("path_d: {}, Using topk {} and debug is {}".format(args.path_d, args.topk, args.debug), "yellow")) 
 if not args.debug: 
