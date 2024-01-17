@@ -98,12 +98,11 @@ for file in d_files:
     result = subprocess.run(["wc", "-l", file], capture_output = True, text = True) 
     if result.returncode == 0: 
         line_count += int(result.stdout.split()[0]) 
-        print("path_d: {}, the line count is {}".format(args.path_d, line_count)) 
+        # print("path_d: {}, the line count is {}".format(args.path_d, line_count)) 
     else: 
         raise Exception(f"Error counting lines: {result.stderr}") 
 
 print("path_d: {}, the line count is {}".format(args.path_d, line_count)) 
-exit(0) 
 # task_id is which task is in, while path_d is which GPU is on 
 
 #step2 I need to know how many lines each GPU should process 
