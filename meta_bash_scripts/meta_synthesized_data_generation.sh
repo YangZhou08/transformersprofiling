@@ -35,10 +35,10 @@ pip install -e .
 which python 
 cd /data/home/beidic/yang/transformersprofiling 
 
-CUDA_VISIBLE_DEVICES=0 python bigmodeldatasetgeneration.py --kernel_size 7 --model_name tinyllama --path_d 0 & 
-CUDA_VISIBLE_DEVICES=1 python bigmodeldatasetgeneration.py --kernel_size 7 --model_name tinyllama --path_d 1 & 
-CUDA_VISIBLE_DEVICES=2 python bigmodeldatasetgeneration.py --kernel_size 7 --model_name tinyllama --path_d 2 & 
-CUDA_VISIBLE_DEVICES=3 python bigmodeldatasetgeneration.py --kernel_size 7 --model_name tinyllama --path_d 3 & 
+CUDA_VISIBLE_DEVICES=0 python bigmodeldatasetgeneration.py --kernel_size 7 --model_name tinyllama --path_d 0 --batch_size 128 & 
+CUDA_VISIBLE_DEVICES=1 python bigmodeldatasetgeneration.py --kernel_size 7 --model_name tinyllama --path_d 1 --batch_size 128 & 
+CUDA_VISIBLE_DEVICES=2 python bigmodeldatasetgeneration.py --kernel_size 7 --model_name tinyllama --path_d 2 --batch_size 128 & 
+CUDA_VISIBLE_DEVICES=3 python bigmodeldatasetgeneration.py --kernel_size 7 --model_name tinyllama --path_d 3 --batch_size 128 & 
 
 # CUDA_VISIBLE_DEVICES=0 python bigmodeldatasetgeneration.py --kernel_size 7 --model_name tinyllama --topk 20 --path_d 0 & 
 # CUDA_VISIBLE_DEVICES=1 python bigmodeldatasetgeneration.py --kernel_size 7 --model_name tinyllama --topk 20 --path_d 1 & 
