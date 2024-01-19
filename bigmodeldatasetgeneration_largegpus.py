@@ -92,7 +92,7 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # say I want to use 96 GPUs 
 
 #step1 I need to know how large the number of lines in the datasetfile is 
-d_files = [datasetparent + "c4_file{}.json".format(i) for i in range(1, 4)] # number of files is 3 
+d_files = [datasetparent + "c4_file{}.json".format(i) for i in range(1, 3)] # number of files is 3 
 line_count = 0 
 for file in d_files: 
     result = subprocess.run(["wc", "-l", file], capture_output = True, text = True) 
