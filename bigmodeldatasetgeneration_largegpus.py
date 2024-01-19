@@ -118,6 +118,7 @@ print(colored("the global proc id is {} start_idx {} end_idx {}".format(args.pat
 # print(colored("path_d: {}, the processing files are {}".format(args.path_d, d_files), "yellow")) 
 print(colored("path_d: {}, Using model name {} for synthesized data".format(args.path_d, model_name), "yellow")) 
 print(colored("path_d: {}, Using topk {} and debug is {}".format(args.path_d, args.topk, args.debug), "yellow")) 
+exit(0) 
 
 if not args.debug: 
     onedataset = load_dataset("json", data_files = d_files, split = "train[{}:{}]".format(args.path_d * each_gpu_line_count_ref, args.path_d * each_gpu_line_count_ref + each_gpu_line_count)) 
