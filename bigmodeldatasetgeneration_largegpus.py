@@ -92,7 +92,8 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # say I want to use 96 GPUs 
 
 #step1 I need to know how large the number of lines in the datasetfile is 
-d_files = [datasetparent + "c4_file{}.json".format(i) for i in range(1, 3)] # number of files is 3 
+d_files = [datasetparent + "c4_file{}.json".format(args.task_id)] # number of files is 3 
+print(colored("path_d: {}, the dataset file is {}".format(args.path_d, d_files), "yellow")) 
 line_count = 0 
 for file in d_files: 
     result = subprocess.run(["wc", "-l", file], capture_output = True, text = True) 
@@ -101,26 +102,26 @@ for file in d_files:
         # print("path_d: {}, the line count is {}".format(args.path_d, line_count)) 
     else: 
         raise Exception(f"Error counting lines: {result.stderr}") 
-
 print("path_d: {}, the line count is {}".format(args.path_d, line_count)) 
 # task_id is which task is in, while path_d is which GPU is on 
 
 #step2 I need to know how many lines each GPU should process 
-# we hardcode the following, the total number of tasks is 12, each task uses 1 node with 8 GPUs 
-global_proc_id = args.task_id * 8 + args.path_d 
-each_gpu_line_count_ref = (line_count + 95) // 96 
-if global_proc_id < 95: 
-    each_gpu_line_count = (line_count + 95) // 96 
-else: 
-    each_gpu_line_count = line_count - (95 * each_gpu_line_count_ref) 
-print(colored("the global proc id is {} start_idx {} end_idx {}".format(global_proc_id, global_proc_id * each_gpu_line_count_ref, global_proc_id * each_gpu_line_count_ref + each_gpu_line_count), "blue")) 
+# we hardcode the following, the total number of tasks is 12, each task uses 1 node with 8 GPUs (no longer used) 
+# args.path_d = args.task_id * 8 + args.path_d 
+each_gpu_line_count_ref = (line_count + 6) // 7 
+if args.path_d < 6: 
+    each_gpu_line_count = each_gpu_line_count_ref 
+else: # 6 
+    each_gpu_line_count = line_count - (6 * each_gpu_line_count_ref) 
+print(colored("the global proc id is {} start_idx {} end_idx {}".format(args.path_d, args.path_d * each_gpu_line_count_ref, args.path_d * each_gpu_line_count_ref + each_gpu_line_count), "blue")) 
 
 # print(colored("path_d: {}, the processing files are {}".format(args.path_d, d_files), "yellow")) 
 print(colored("path_d: {}, Using model name {} for synthesized data".format(args.path_d, model_name), "yellow")) 
 print(colored("path_d: {}, Using topk {} and debug is {}".format(args.path_d, args.topk, args.debug), "yellow")) 
 
 if not args.debug: 
-    onedataset = load_dataset("json", data_files = d_files, split = "train[{}:{}]".format(global_proc_id * each_gpu_line_count_ref, global_proc_id * each_gpu_line_count_ref + each_gpu_line_count)) 
+    onedataset = load_dataset("json", data_files = d_files, split = "train[{}:{}]".format(args.path_d * each_gpu_line_count_ref, args.path_d * each_gpu_line_count_ref + each_gpu_line_count)) 
+    # onedataset = load_dataset("json", data_files = d_files, split = "train") 
 else: 
     onedataset = load_dataset("json", data_files = d_files, split = "train[:2000]") 
 
@@ -210,8 +211,6 @@ small_model.eval()
 # print(d["train"], d["test"]) 
 # print(d["train"]) 
 
-print() 
-
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
 if model_name == "shearedllama2_7b": 
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
@@ -257,8 +256,6 @@ train_dataset = onedataset.map(encode_with_truncation, batched = True, num_proc 
 # train_dataset = d['train'].map(encode_with_truncation, batched = True, num_proc = 4) 
 # test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
 
-print("path_d: {}, The model max length is {}".format(args.path_d, small_model.config.max_position_embeddings)) 
-
 train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 # test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 
@@ -290,8 +287,8 @@ trainer = CustomTrainer(
     data_collator = data_collator, 
 ) 
 
-synthesized_data_path = synthesized_data_path[: -1] + "_kernel_{}_{}/".format(args.kernel_size, global_proc_id) 
-json_file_name = "c4synthesized_file1_kernel{}_{}.json".format(args.kernel_size, global_proc_id) 
+synthesized_data_path = synthesized_data_path[: -1] + "_kernel_{}_{}_{}/".format(args.kernel_size, args.task_id, args.path_d) 
+json_file_name = "c4synthesized_file1_kernel{}_{}_{}.json".format(args.kernel_size, args.task_id, args.path_d) 
 
 os.makedirs(synthesized_data_path, exist_ok = True) 
 # json_file_name = "c4synthesized_file1.json" 
