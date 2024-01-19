@@ -1,3 +1,4 @@
+#!/bin/bash
 ## job name
 #SBATCH --job-name=yangzho6 
 ## filename for job standard output (stdout)
@@ -10,7 +11,7 @@
 #SBATCH --time=4:00:00
 
 ## partition name
-#SBATCH --partition=learnfair
+#SBATCH --partition=learnfair,learnlab,storygen
 ## number of nodes
 #SBATCH --nodes=1
 
