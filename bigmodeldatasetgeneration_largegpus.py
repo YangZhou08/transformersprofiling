@@ -219,7 +219,7 @@ elif model_name == "openllama3b":
     tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
 elif model_name == "tinyllama": 
     tokenizer = LlamaTokenizer.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models) 
-    tokenizer2 = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+    # tokenizer2 = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 elif model_name == "phi-2": 
     tokenizer = AutoTokenizer.from_pretrained("microsoft/phi-2", cache_dir = dir_models) 
 else: 
@@ -229,8 +229,8 @@ else:
 # tokenizer.pad_token = "[PAD]" 
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "left" 
-tokenizer2.pad_token = tokenizer2.eos_token 
-tokenizer2.padding_side = "left" 
+# tokenizer2.pad_token = tokenizer2.eos_token 
+# tokenizer2.padding_side = "left" 
 
 if model_name == "openllama3b": 
     # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) # pad_id = 2 
@@ -245,21 +245,13 @@ else:
     raise ValueError("model name should be one of shearedllama2_7b, openllama3b") 
 large_model.eval() 
 
-# max_length = small_model.config.max_position_embeddings 
 max_length = 64 
-# def encode_with_truncation(examples): 
-    # return tokenizer(examples["text"], truncation=True, padding="max_length",
-                #    max_length=max_length, return_special_tokens_mask=True) 
+
 def encode_with_truncation(examples): 
     return tokenizer(examples["text"], truncation = True, padding = "max_length", 
                      max_length = max_length, return_special_tokens_mask = True) 
 
 # train_dataset = onedataset["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
-for i in range(10): 
-    example = onedataset[i] 
-    print("the output of inputids using tokenizer is {}".format(tokenizer(example["text"], truncation = True, padding = "max_length", max_length = 20, return_special_tokens_mask = True)["input_ids"])) 
-    print("the output of inputids using tokenizer2 is {}".format(tokenizer2(example["text"], truncation = True, padding = "max_length", max_length = 20, return_special_tokens_mask = True)["input_ids"])) 
-exit(0) 
 
 train_dataset = onedataset.map(encode_with_truncation, batched = True, num_proc = 16) 
 # train_dataset = d['train'].map(encode_with_truncation, batched = True, num_proc = 4) 
