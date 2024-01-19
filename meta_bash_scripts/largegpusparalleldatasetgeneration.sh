@@ -36,7 +36,7 @@ start_time=$(date +%s)  # Record start time in seconds since the Unix epoch
 # do 
 #     CUDA_VISIBLE_DEVICES=$i python bigmodeldatasetgeneration_largegpus.py --kernel_size 7 --model_name tinyllama --path_d $i --batch_size 128 --task_id $SLURM_ARRAY_TASK_ID & 
 # done 
-CUDA_VISIBLE_DEVICES=1 python bigmodeldatasetgeneration_largegpus.py --kernel_size 7 --model_name tinyllama --path_d 1 --batch_size 128 --task_id $SLURM_ARRAY_TASK_ID & 
+CUDA_VISIBLE_DEVICES=1 python bigmodeldatasetgeneration_largegpus.py --kernel_size 7 --model_name tinyllama --path_d 1 --batch_size 128 --task_id 0 & 
 end_time=$(date +%s)    # Record end time in seconds since the Unix epoch 
 
 wait 
