@@ -4,9 +4,9 @@
 ## filename for job standard output (stdout)
 ## %j is the job id, %u is the user id
 
-#SBATCH --output=/data/home/beidic/yang/log-%j.out
+#SBATCH --output=/data/home/beidic/yang/log/log-%j.out
 ## filename for job standard error output (stderr)
-#SBATCH --error=/data/home/beidic/yang/log-%j.err
+#SBATCH --error=/data/home/beidic/yang/log/log-%j.err
 
 #SBATCH --time=4:00:00
 
