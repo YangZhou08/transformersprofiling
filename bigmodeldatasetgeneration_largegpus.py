@@ -257,8 +257,8 @@ def encode_with_truncation(examples):
 # train_dataset = onedataset["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
 for i in range(10): 
     example = onedataset[i] 
-    print("the output of inputids using tokenizer is {}".format(tokenizer.encode(example["text"]))) 
-    print("the output of inputids using tokenizer2 is {}".format(tokenizer2.encode(example["text"]))) 
+    print("the output of inputids using tokenizer is {}".format(tokenizer(example["text"], truncation = True, padding = "max_length", max_length = 20, return_special_tokens_mask = True)["input_ids"])) 
+    print("the output of inputids using tokenizer2 is {}".format(tokenizer2(example["text"], truncation = True, padding = "max_length", max_length = 20, return_special_tokens_mask = True)["input_ids"])) 
 exit(0) 
 
 train_dataset = onedataset.map(encode_with_truncation, batched = True, num_proc = 16) 
