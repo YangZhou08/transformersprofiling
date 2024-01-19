@@ -35,7 +35,7 @@ which python
 start_time=$(date +%s)  # Record start time in seconds since the Unix epoch 
 for i in 1 2 3 4 5 6 7
 do 
-    CUDA_VISIBLE_DEVICES=$i python bigmodeldatasetgeneration_largegpus.py --kernel_size 7 --model_name tinyllama --path_d $((i - 1)) --batch_size 128 --task_id 0 & 
+    CUDA_VISIBLE_DEVICES=$i python bigmodeldatasetgeneration_largegpus.py --kernel_size 7 --model_name tinyllama --path_d $((i - 1)) --batch_size 128 --task_id 1 & 
 done 
 # CUDA_VISIBLE_DEVICES=1 python bigmodeldatasetgeneration_largegpus.py --kernel_size 7 --model_name tinyllama --path_d 1 --batch_size 128 --task_id 0 & 
 end_time=$(date +%s)    # Record end time in seconds since the Unix epoch 
