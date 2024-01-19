@@ -1,4 +1,3 @@
-#!/bin/bash
 ## job name
 #SBATCH --job-name=yangzho6 
 ## filename for job standard output (stdout)
@@ -11,7 +10,7 @@
 #SBATCH --time=4:00:00
 
 ## partition name
-#SBATCH --partition=learnfair,learnlab,storygen
+#SBATCH --partition=learnfair
 ## number of nodes
 #SBATCH --nodes=1
 
@@ -30,14 +29,6 @@ conda activate zoo-torch20
 cd /data/home/beidic/yang/transformersprofiling 
 pip install -e . 
 which python 
+export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 
 
-start_time=$(date +%s)  # Record start time in seconds since the Unix epoch 
-for i in 0 1 2 3 4 5 6 7
-do 
-    CUDA_VISIBLE_DEVICES=$i python bigmodeldatasetgeneration_largegpus.py --kernel_size 7 --model_name tinyllama --path_d $i --batch_size 128 --task_id $SLURM_ARRAY_TASK_ID & 
-done 
-end_time=$(date +%s)    # Record end time in seconds since the Unix epoch 
 
-wait 
-duration=$((end_time - start_time))  # Calculate duration in seconds 
-echo "Time taken: $duration seconds" 
