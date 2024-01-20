@@ -75,11 +75,11 @@ elif "ada" in hostname:
     synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/{}_topk{}/tensor_dir2/".format(model_name, args.topk if args.topk is not None else "na") 
 else: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
-    datasetsrc = "/data/home/beidic/yang/c4/en/c4_file2.json" 
-    datasetparent = "/data/home/beidic/yang/c4_parts/downloads/" 
-    dir_models = "/data/home/beidic/yang/model_checkpoints" 
-    synthesized_dir_path = "/data/home/beidic/yang/c4llm_synthesized/{}_topk{}/".format(model_name, args.topk if args.topk is not None else "na") 
-    synthesized_data_path = "/data/home/beidic/yang/c4llm_synthesized/{}_topk{}/tensor_dir/".format(model_name, args.topk if args.topk is not None else "na") 
+    datasetsrc = "/fsx-storygen/beidic/yang/c4/en/c4_file2.json" 
+    datasetparent = "/fsx-storygen/beidic/yang/c4_parts/downloads/" 
+    dir_models = "/fsx-storygen/beidic/yang/model_checkpoints" 
+    synthesized_dir_path = "/fsx-storygen/beidic/yang/c4llm_synthesized/{}_topk{}/".format(model_name, args.topk if args.topk is not None else "na") 
+    synthesized_data_path = "/fsx-storygen/beidic/yang/c4llm_synthesized/{}_topk{}/tensor_dir/".format(model_name, args.topk if args.topk is not None else "na") 
 
 from termcolor import colored 
 
