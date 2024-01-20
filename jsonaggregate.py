@@ -7,6 +7,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--task_id", type = int, default = 0) 
 parser.add_argument("--kernel_size", type = int, default = 7) 
 parser.add_argument("--model_name", type = str, default = "openllama3b") 
+parser.add_argument("--topk", type = int, default = None) 
 args = parser.parse_args() 
 
 model_name = args.model_name 
