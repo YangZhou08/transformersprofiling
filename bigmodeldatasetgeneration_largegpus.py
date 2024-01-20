@@ -37,6 +37,7 @@ import socket
 
 hostname = socket.gethostname()
 print("Hostname:", hostname) 
+start_time = time.time() 
 
 parser = argparse.ArgumentParser() 
 parser.add_argument("--kernel_size", type = int, default = 4) 
@@ -402,3 +403,6 @@ for step, inputs in enumerate(train_dataloader):
         json_file1.write(json.dumps(example_data) + "\n") 
     
 json_file1.close() 
+torch.cuda.synchronize() 
+end_time = time.time() 
+print("path_d: {}, the time elasped is {}".format(args.path_d, end_time - start_time)) 
