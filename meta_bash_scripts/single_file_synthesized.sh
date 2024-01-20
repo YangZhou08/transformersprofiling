@@ -40,3 +40,4 @@ done
 # CUDA_VISIBLE_DEVICES=1 python bigmodeldatasetgeneration_largegpus.py --kernel_size 7 --model_name tinyllama --path_d 1 --batch_size 128 --task_id 0 & 
 
 wait 
+python jsonaggregate.py --task_id $1 --kernel_size 7 --model_name tinyllama 
