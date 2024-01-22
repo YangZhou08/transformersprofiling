@@ -3,9 +3,9 @@
 ## filename for job standard output (stdout)
 ## %j is the job id, %u is the user id
 
-#SBATCH --output=/data/home/beidic/yang/log-%j.out
+#SBATCH --output=/fsx-storygen/beidic/yang/log/log-%j.out
 ## filename for job standard error output (stderr)
-#SBATCH --error=/data/home/beidic/yang/log-%j.err
+#SBATCH --error=/fsx-storygen/beidic/yang/log/log-%j.err
 
 #SBATCH --time=4:00:00
 
@@ -20,15 +20,16 @@
 #SBATCH --cpus-per-task=20
 #SBATCH --gpus-per-node=8
 #SBATCH --no-requeue
-#SBATCH --array=0-11 # 12 jobs in total 
+## SBATCH --array=0-11 # 12 jobs in total 
 
-source /data/home/beidic/.bashrc
-source /data/home/beidic/miniconda/etc/profile.d/conda.sh
+source /fsx-storygen/beidic/.bashrc
+source /fsx-storygen/beidic/miniconda/etc/profile.d/conda.sh
 source activate base
 conda activate zoo-torch20
-cd /data/home/beidic/yang/transformersprofiling 
+cd /fsx-storygen/beidic/yang/transformersprofiling 
 pip install -e . 
 which python 
 export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 
 
-
+# python largemodelfinetuning_mseplusceloss.py 
+accelerate launch --main_process_port 29505 --num_processes 2 --num_machines 1 largemodelfinetuning_mseplusceloss.py --large_model tinyllama --kernel_size 7 --use_mse_loss 
