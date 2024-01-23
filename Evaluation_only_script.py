@@ -1102,7 +1102,8 @@ else:
     target_model_dim = 2048 
 small_model = SimpleSmallModel.from_pretrained(args.loading_from_checkpoint, sliding_window_length = args.kernel_size, hostname = hostname, target_model_dim = target_model_dim) 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
-small_model = small_model.to(torch_device).to(torch.bfloat16) 
+# small_model = small_model.to(torch_device).to(torch.bfloat16) 
+small_model = small_model.to(torch_device) 
 small_model.eval() 
 
 training_args = TrainingArguments(
