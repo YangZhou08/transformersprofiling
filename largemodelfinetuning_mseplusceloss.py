@@ -817,6 +817,7 @@ if args.large_model == "openllama3b":
 elif args.large_model == "tinyllama": 
     # large_model = LlamaWeirdLarge2.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = args.use_mse_loss).to(torch.bfloat16).to(torch_device) 
     large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    large_model.set_msece_loss(args.use_mse_loss, args.ce_loss_only) 
     large_model.set_addonsmallmodel(small_model) 
 # large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = True).to(torch.bfloat16).to(torch_device) 
 # large_model.set_smallmodelfull() # this function has proven to be very important 

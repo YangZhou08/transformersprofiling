@@ -1325,12 +1325,17 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         self.sliding_window_length = 7 
         self.small_model_dtype = torch.bfloat16 
         self.use_mse_loss = False 
+        self.ce_loss_only = False 
         self.alpha = 0.5 
         
         self.post_init() 
 
     def get_input_embeddings(self):
-        return self.model.embed_tokens
+        return self.model.embed_tokens 
+    
+    def set_msece_loss(self, use_mse_loss, ce_loss_only): 
+        self.use_mse_loss = use_mse_loss 
+        self.ce_loss_only = ce_loss_only 
 
     def set_input_embeddings(self, value):
         self.model.embed_tokens = value
@@ -1399,7 +1404,9 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
     @replace_return_docstrings(output_type=CausalLMOutputWithPast, config_class=_CONFIG_FOR_DOC)
     def forward(
         self,
-        input_ids: torch.LongTensor = None,
+        # input_ids: torch.LongTensor = None, 
+        large_input_ids: torch.LongTensor = None, 
+        small_input_ids: torch.LongTensor = None, 
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
         past_key_values: Optional[List[torch.FloatTensor]] = None,
@@ -1445,7 +1452,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         # inside this function callm, input is through input_embeds 
-        extra_pass_in_embeds = self.naive_grouping(input_ids) 
+        extra_pass_in_embeds = self.naive_grouping(large_input_ids) 
         # the attention mask should be compatible to the new input_embeds 
         assert attention_mask.shape[1] == extra_pass_in_embeds.shape[1], "attention_mask shape is not compatible to the new input_embeds" 
         assert inputs_embeds is None, "inputs_embeds is not None" 
@@ -1485,6 +1492,11 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         mse_loss = mse_lossfunc(hidden_states, mselabels) 
         intermediate_l2_dist = mse_loss.clone().detach() 
         
+        mse_lossfunc2 = nn.MSELoss() 
+        inputs_embeds = inputs_embeds[:, 1:, :] 
+        mse_loss_input = mse_lossfunc2(hidden_states, inputs_embeds) 
+        l2_distance_input = mse_loss_input.clone().detach() 
+        
         if self.use_mse_loss: 
             print(colored("mse_loss {}".format(mse_loss), "red")) 
             return CausalLMOutputWithPastLargeDistance2(
@@ -1501,9 +1513,10 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         # hidden_states = hidden_states[:, :-1, :] 
         
         # interleave the hidden_states and the input_ids 
-        assert hidden_states.shape[1] == input_ids.shape[1] // 7 - 1 
+        assert hidden_states.shape[1] == small_input_ids.shape[1] // 7 - 1 
         addonmodeloutput = self.addonsmallmodel( 
-            input_ids = input_ids, 
+            # input_ids = input_ids, 
+            input_ids = small_input_ids, 
             attention_mask = original_attention_mask, 
             position_ids = None, 
             past_key_values = None, 
@@ -1532,17 +1545,22 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         logits = logits.float()
         ''' 
         
-        seq_length = input_ids.shape[1] + hidden_states.shape[1] 
+        # seq_length = input_ids.shape[1] + hidden_states.shape[1] 
+        seq_length = small_input_ids.shape[1] + hidden_states.shape[1] 
         assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
         # mask_list_pos = [i * (self.sliding_window_length + 1) for i in range(seq_length // (self.sliding_window_length + 1))] 
         mask_list_pos = [7 + i * (self.sliding_window_length + 1) for i in range((seq_length - 7) // (self.sliding_window_length + 1))] 
+        mask_list_pos22 = [x - 1 for x in mask_list_pos] 
         # print(colored("mask_list_pos {}".format(mask_list_pos), "red")) 
-        mask_list_pos_plus = [x - 1 for x in mask_list_pos] 
         loss = None 
         if labels is not None: 
+            # selected_indices = list(range(7)) 
             selected_indices = list(range(6)) 
+            # for i in range(7, seq_length): 
+                # if i not in mask_list_pos: 
+                    # selected_indices.append(i) 
             for i in range(6, seq_length): 
-                if i not in mask_list_pos_plus: 
+                if i not in mask_list_pos22: 
                     selected_indices.append(i) 
             # print(colored("selected_indices {}".format(selected_indices), "red")) 
             # select and shift the logits 
@@ -1560,8 +1578,11 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
             loss = ce_loss 
             # print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
         if loss is not None: 
-            # loss = self.alpha * loss + (1 - self.alpha) * mse_loss 
-            loss = self.alpha * ce_loss + (1 - self.alpha) * mse_loss 
+            if self.ce_loss_only: 
+                loss = ce_loss 
+            else: 
+                # loss = self.alpha * loss + (1 - self.alpha) * mse_loss 
+                loss = self.alpha * ce_loss + (1 - self.alpha) * mse_loss 
         else: 
             loss = mse_loss 
 
@@ -1578,6 +1599,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
             attentions = addonmodeloutput.attentions, # delibrately using the model's attention mask with modifications 
             l2_distance = intermediate_l2_dist, 
             ce_loss = ce_loss.detach().clone(), 
+            l2_distance_input = l2_distance_input, 
         ) 
 
     def prepare_inputs_for_generation(
