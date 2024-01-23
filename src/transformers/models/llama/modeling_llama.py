@@ -3175,6 +3175,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 self.criticalpath = "/home/yangzho6/" 
             elif "ada" in hostname: 
                 self.criticalpath = "/home/beidic/yangzho6/" 
+            else: 
+                self.criticalpath = "/fsx-storygen/beidic/yang/" 
 
         if self.criticalpath is None or hostname is None: 
             raise ValueError("critical path is not set") 
