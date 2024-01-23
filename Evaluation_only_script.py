@@ -1126,6 +1126,6 @@ trainer = CustomTrainer(
     tokenizer = tokenizer, 
 ) 
 
-# results = trainer.evaluate(eval_dataset = test_set) 
-# print(results) 
-small_model.save_pretrained("../model_checkpoints/llama-160m_deciphering_{}_{}_{}".format(args.model_name, args.experiment_setting, commit_hash)) 
+results = trainer.evaluate(eval_dataset = test_set) 
+print(results) 
+# small_model.save_pretrained("../model_checkpoints/llama-160m_deciphering_{}_{}_{}".format(args.model_name, args.experiment_setting, commit_hash)) 
