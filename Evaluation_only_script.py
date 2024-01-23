@@ -1085,7 +1085,15 @@ train_set, test_set = datasetnew.split(0.99)
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
 small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
-target_model_dim = 3200 if model_name == "openllama3b" else 2560 
+# target_model_dim = 3200 if model_name == "openllama3b" else 2560 
+if model_name == "openllama3b": 
+    target_model_dim = 3200 
+elif model_name == "shearedllama2_7b": 
+    target_model_dim = 2560 
+elif model_name == "tinyllama": 
+    target_model_dim = 2048 
+else: 
+    target_model_dim = 2048 
 small_model = SimpleSmallModel.from_pretrained(args.loading_from_checkpoint, sliding_window_length = args.kernel_size, hostname = hostname, target_model_dim = target_model_dim) 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
 small_model = small_model.to(torch_device).to(torch.bfloat16) 
