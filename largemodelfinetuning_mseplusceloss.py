@@ -648,11 +648,17 @@ class CustomDataset:
         # self.dataset = load_dataset('json', data_files = [self.synthesize_dir + 'c4synthesized_file1.json', self.synthesize_dir + 'c4synthesized_file2.json'], split="train") 
         dfiles = [] 
         if kernel_size != 4: 
-            if hostname == "ada": 
+            if hostname == "ada" or hostname == "lovelace": 
                 for i in range(0, 2): 
                     # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
                     filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
                     dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+            '''
+            elif hostname == "lovelace": 
+                for i in range(0, 2): 
+                    filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+                    dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+            ''' 
             else: 
                 for i in range(0, 8): 
                     filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
