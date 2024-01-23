@@ -1002,6 +1002,7 @@ class CustomDataset:
                 # dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
             filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
             dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+            print(colored("dfiles: {}".format(dfiles), "red")) 
         else: 
             filename = "c4synthesized_file1.json" 
         self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
