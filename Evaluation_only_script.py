@@ -1035,7 +1035,7 @@ class CustomDataset:
     
     def __getitem__(self, idx): 
         item = self.dataset[idx] 
-        if args.random_condensed_embeds: 
+        if args.condensed_token_random: 
             try: 
                 # tensor = torch.load(item["condensed_token_path"]) 
                 tensor = torch.randn((28, 2560 if model_name == "shearedllama2_7b" else 3200), dtype = torch.float32) 
