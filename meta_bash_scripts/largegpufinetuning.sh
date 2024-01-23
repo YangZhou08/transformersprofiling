@@ -44,4 +44,4 @@ fi
 echo "batch size is $batch_si" 
 
 # python largemodelfinetuning_mseplusceloss.py 
-accelerate launch --main_process_port 29505 --num_processes 2 --num_machines 1 largemodelfinetuning_mseplusceloss.py --large_model tinyllama --kernel_size 7 --use_mse_loss --batch_size $batch_si 
+accelerate launch --main_process_port 29505 --num_processes 8 --num_machines 1 largemodelfinetuning_mseplusceloss.py --large_model tinyllama --kernel_size 7 --use_mse_loss --batch_size $batch_si 
