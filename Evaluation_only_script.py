@@ -995,10 +995,12 @@ class CustomDataset:
         # self.dataset = load_dataset('json', data_files = [self.synthesize_dir + 'c4synthesized_file1.json', self.synthesize_dir + 'c4synthesized_file2.json'], split="train") 
         dfiles = [] 
         if kernel_size != 4: 
-            for i in range(0, 2): 
+            # for i in range(0, 2): 
                 # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
-                filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
-                dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+                # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+                # dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+            filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
+            dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
         else: 
             filename = "c4synthesized_file1.json" 
         self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
@@ -1078,7 +1080,7 @@ tokenizer.padding_side = "left"
 
 kernel_size = 7 # this is definitely subject to change 
 datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
-train_set, test_set = datasetnew.split(0.9) 
+train_set, test_set = datasetnew.split(0.99) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
