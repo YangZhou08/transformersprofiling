@@ -649,17 +649,14 @@ class CustomDataset:
         dfiles = [] 
         if kernel_size != 4: 
             print(colored("hostname is {}".format(hostname), "yellow")) 
-            if "ada" in hostname or "lovelace" in hostname: 
+            if "ada" in hostname: 
                 for i in range(0, 2): 
                     # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
                     filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
                     dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
-                '''
-                elif hostname == "lovelace": 
-                    for i in range(0, 2): 
-                        filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
-                        dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
-                ''' 
+            elif hostname == "lovelace": 
+                filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
+                dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
             else: 
                 for i in range(0, 8): 
                     filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
