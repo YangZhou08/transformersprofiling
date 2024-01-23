@@ -210,6 +210,7 @@ parser.add_argument("--model_name", type = str, default = "openllama3b")
 parser.add_argument("--loading_from_checkpoint", type = str, default = None) 
 parser.add_argument("--kernel_size", type = int, default = 7) 
 parser.add_argument("--experiment_setting", type = str, default = "setting0") 
+parser.add_argument("--condensed_token_random", action = "store_true") 
 
 args = parser.parse_args() 
 
@@ -1034,13 +1035,16 @@ class CustomDataset:
     
     def __getitem__(self, idx): 
         item = self.dataset[idx] 
-        try: 
-            # tensor = torch.load(item["condensed_token_path"]) 
-            tensor = torch.randn((28, 2560 if model_name == "shearedllama2_7b" else 3200), dtype = torch.float32) 
-            # print("tensor is {}".format(tensor)) 
-        except IOError as e: 
-            print(colored("///IOError occured replacing with an empty tensor///", "red")) 
-            tensor = torch.zeros((28, 2560 if model_name == "shearedllama2_7b" else 3200), dtype = torch.float32) 
+        if args.random_condensed_embeds: 
+            try: 
+                # tensor = torch.load(item["condensed_token_path"]) 
+                tensor = torch.randn((28, 2560 if model_name == "shearedllama2_7b" else 3200), dtype = torch.float32) 
+                # print("tensor is {}".format(tensor)) 
+            except IOError as e: 
+                print(colored("///IOError occured replacing with an empty tensor///", "red")) 
+                tensor = torch.zeros((28, 2560 if model_name == "shearedllama2_7b" else 3200), dtype = torch.float32) 
+        else: 
+            tensor = torch.load(item["condensed_token_path"]) 
         
         if self.tokenizer is not None: 
             encoded_text = self.tokenizer( 
