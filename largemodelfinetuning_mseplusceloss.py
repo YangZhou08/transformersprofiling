@@ -200,8 +200,9 @@ elif "ada" in hostname:
     dir_unprocessed_dataset = "/home/beidic/yangzho6/c4_parts/downloads/" 
 else: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
-    dir_models = "/home/yangzho6/model_checkpoints/" 
-    dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+    dir_models = "/fsx-storygen/beidic/yang/model_checkpoints/" 
+    # dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+    dir_sdata = "/fsx-storygen/beidic/yang/c4llm_synthesized/" 
 
 logger = logging.get_logger(__name__) 
 
@@ -215,6 +216,8 @@ parser.add_argument("--resume_from_checkpoint", type = str, default = None)
 parser.add_argument("--freeze_small_model", action = "store_true") 
 parser.add_argument("--freeze_large_model", action = "store_true") 
 parser.add_argument("--ce_loss_only", action = "store_true") 
+parser.add_argument("--topk", type = int, default = None) 
+parser.add_argument("--batch_size", type = int, default = 64) 
 
 args = parser.parse_args() 
 model_name = args.large_model 
@@ -638,7 +641,7 @@ class CustomTrainer(Trainer):
 
 class CustomDataset: 
     # def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7): 
-    def __init__(self, data_dir, large_tokenizer = None, small_tokenizer = None, max_length = 256, kernel_size = 7): 
+    def __init__(self, data_dir, large_tokenizer = None, small_tokenizer = None, max_length = 256, kernel_size = 7, topk = None): 
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
         self.synthesize_dir = data_dir 
         # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json", split = "train") 
@@ -651,8 +654,9 @@ class CustomDataset:
                     filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
                     dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
             else: 
-                filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
-                dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+                for i in range(0, 8): 
+                    filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
+                    dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
         else: 
             filename = "c4synthesized_file1.json" 
         self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
@@ -759,7 +763,7 @@ for tokenizer in tokenizers:
 
 kernel_size = args.kernel_size 
 # datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
-datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size) 
+datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
 train_set, test_set = datasetnew.split(0.98) 
 
 for i in range(0, 2): 
@@ -896,9 +900,9 @@ training_args = TrainingArguments(
     # evaluation_strategy="steps",    # evaluate each `logging_steps` steps 
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size = 18, # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size = args.batch_size, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
-    per_device_eval_batch_size= 18,  # evaluation batch size
+    per_device_eval_batch_size= args.batch_size,  # evaluation batch size
     # logging_steps=1, 
     logging_steps = 500,       # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 

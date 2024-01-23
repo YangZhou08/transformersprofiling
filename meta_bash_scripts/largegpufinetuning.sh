@@ -22,12 +22,16 @@
 #SBATCH --no-requeue
 ## SBATCH --array=0-11 # 12 jobs in total 
 
-source /fsx-storygen/beidic/.bashrc
-source /fsx-storygen/beidic/miniconda/etc/profile.d/conda.sh
+source /data/home/beidic/.bashrc
+source /data/home/beidic/miniconda/etc/profile.d/conda.sh 
 source activate base
 conda activate zoo-torch20
 cd /fsx-storygen/beidic/yang/transformersprofiling 
 pip install -e . 
+
+export WANDB_API_KEY=fbb26fc8718b8e58d743b5cdcabaa2396656f773 
+wandb login --relogin 
+
 which python 
 export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 
 
