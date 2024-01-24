@@ -1051,7 +1051,8 @@ class CustomDataset:
                 elif model_name == "openllama3b": 
                     tensor = torch.randn((28, 3200), dtype = torch.float32) 
                 else: 
-                    tensor = torch.randn((28, 2048), dtype = torch.float32) 
+                    # tensor = torch.randn((28, 2048), dtype = torch.float32) 
+                    tensor = torch.zeros((28, 2048), dtype = torch.float32) 
                 # print("tensor is {}".format(tensor)) 
             except IOError as e: 
                 print(colored("///IOError occured replacing with an empty tensor///", "red")) 
