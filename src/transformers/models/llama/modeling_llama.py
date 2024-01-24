@@ -1492,6 +1492,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         mse_loss = mse_lossfunc(hidden_states, mselabels) 
         intermediate_l2_dist = mse_loss.clone().detach() 
         
+        assert inputs_embeds.shape[1] - 1 == hidden_states.shape[1] 
         mse_lossfunc2 = nn.MSELoss() 
         inputs_embeds = inputs_embeds[:, 1:, :] 
         mse_loss_input = mse_lossfunc2(hidden_states, inputs_embeds) 
@@ -1499,6 +1500,9 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         
         if self.use_mse_loss: 
             print(colored("mse_loss {}".format(mse_loss), "red")) 
+            # still use the small model and get ce 
+            hidden_states = hidden_states.detach().clone() 
+            '''
             return CausalLMOutputWithPastLargeDistance2(
                 loss = mse_loss, 
                 logits = None, 
@@ -1508,7 +1512,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
                 l2_distance = intermediate_l2_dist, 
                 ce_loss = torch.tensor(0), 
             ) 
-            
+            ''' 
         # hidden_states has shape (batch_size, seq_length // 7, hidden states) 
         # hidden_states = hidden_states[:, :-1, :] 
         
