@@ -391,7 +391,7 @@ class CustomTrainer(Trainer):
         print("logits[1].shape {}".format(logits[1].shape)) 
         print("logits[2].shape {}".format(logits[2].shape)) 
         print("logits[3].shape {}".format(logits[3].shape)) 
-        assert len(logits) == 3 
+        assert len(logits) == 4 
         l2dist = logits[1].reshape(-1) 
         ce_loss = logits[2].reshape(-1) 
         l2dist_input = logits[3].reshape(-1) 
