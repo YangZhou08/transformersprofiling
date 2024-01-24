@@ -824,6 +824,7 @@ elif args.large_model == "tinyllama":
 large_model.train() 
 # large_model.set_addonsmallmodel(small_model) 
 if args.use_pretrained_small_model: 
+    print(colored("using pretrained small model: {}".format(args.finetuned_small_model_checkpoint), "green")) 
     small_model_state_dict = SimpleSmallModel.from_pretrained(args.finetuned_small_model_checkpoint, sliding_window_length = args.kernel_size, hostname = hostname, target_model_dim = large_dim).state_dict() 
     '''
     new_state_dict = {} 
