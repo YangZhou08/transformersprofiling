@@ -1,4 +1,4 @@
-#!/bin/sh 
+#!/bin/bash
 ## job name
 #SBATCH --job-name=yangzho6 
 ## filename for job standard output (stdout)
@@ -8,10 +8,10 @@
 ## filename for job standard error output (stderr)
 #SBATCH --error=/fsx-storygen/beidic/yang/log/log-%j.err
 
-#SBATCH --time=4:00:00
+#SBATCH --time=48:00:00 
 
 ## partition name
-#SBATCH --partition=storygen 
+#SBATCH --partition=storygen
 ## number of nodes
 #SBATCH --nodes=1
 
@@ -25,13 +25,15 @@
 
 source /data/home/beidic/.bashrc
 source /data/home/beidic/miniconda/etc/profile.d/conda.sh 
-source activate base
+# source activate base
 conda activate zoo-torch20
 cd /fsx-storygen/beidic/yang/transformersprofiling 
+pip install termcolor 
 pip install -e . 
+which python 
 
 export WANDB_API_KEY=fbb26fc8718b8e58d743b5cdcabaa2396656f773 
-wandb login --relogin 
+wandb login 
 
 which python 
 export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 
