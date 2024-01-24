@@ -1501,7 +1501,8 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         if self.use_mse_loss: 
             print(colored("mse_loss {}".format(mse_loss), "red")) 
             # still use the small model and get ce 
-            hidden_states = hidden_states.detach().clone() 
+            # hidden_states = hidden_states.detach().clone() 
+            hidden_states = torch.zeros_like(hidden_states).detach() 
             '''
             return CausalLMOutputWithPastLargeDistance2(
                 loss = mse_loss, 
