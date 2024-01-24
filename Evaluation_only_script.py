@@ -1009,7 +1009,7 @@ class CustomDataset:
                 dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
             else: 
                 filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, args.task_id) 
-                dfiles.append(self.synthesize_dir + "{}_{}/".format(model_name, "na") + filename) 
+                dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, "na") + filename) 
             print(colored("dfiles: {}".format(dfiles), "red")) 
         else: 
             filename = "c4synthesized_file1.json" 
