@@ -218,6 +218,7 @@ parser.add_argument("--freeze_large_model", action = "store_true")
 parser.add_argument("--ce_loss_only", action = "store_true") 
 parser.add_argument("--topk", type = int, default = None) 
 parser.add_argument("--batch_size", type = int, default = 64) 
+parser.add_argument("--debug", action = "store_true") 
 
 args = parser.parse_args() 
 model_name = args.large_model 
@@ -899,10 +900,10 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size= args.batch_size,  # evaluation batch size
     # logging_steps=1, 
-    logging_steps = 1,       # evaluate, log and save model checkpoints every 1000 step
+    logging_steps = 500 if not args.debug else 1,       # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 1, 
+    save_steps = 500 if not args.debug else 1,   
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     # learning_rate=2e-4, 
