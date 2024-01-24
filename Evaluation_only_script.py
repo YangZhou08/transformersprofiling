@@ -995,7 +995,7 @@ class CustomTrainer(Trainer):
 class CustomDataset: 
     def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7): 
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
-        self.synthesize_dir = data_dir 
+        self.synthesize_dir = data_dir
         # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json", split = "train") 
         # self.dataset = load_dataset('json', data_files = [self.synthesize_dir + 'c4synthesized_file1.json', self.synthesize_dir + 'c4synthesized_file2.json'], split="train") 
         dfiles = [] 
@@ -1045,7 +1045,13 @@ class CustomDataset:
         if args.condensed_token_random: 
             try: 
                 # tensor = torch.load(item["condensed_token_path"]) 
-                tensor = torch.randn((28, 2560 if model_name == "shearedllama2_7b" else 3200), dtype = torch.float32) 
+                # tensor = torch.randn((28, 2560 if model_name == "shearedllama2_7b" else 3200), dtype = torch.float32) 
+                if model_name == "shearedllama2_7b": 
+                    tensor = torch.randn((28, 2560), dtype = torch.float32) 
+                elif model_name == "openllama3b": 
+                    tensor = torch.randn((28, 3200), dtype = torch.float32) 
+                else: 
+                    tensor = torch.randn((28, 2048), dtype = torch.float32) 
                 # print("tensor is {}".format(tensor)) 
             except IOError as e: 
                 print(colored("///IOError occured replacing with an empty tensor///", "red")) 
