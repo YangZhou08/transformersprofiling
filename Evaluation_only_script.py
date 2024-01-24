@@ -620,6 +620,7 @@ class CustomTrainer(Trainer):
                 experiment_setting = self.experiment_setting, 
                 # eval_model = self.eval_mode, 
                 eval_mode = self.eval_mode, 
+                start_idx = 7, 
             ) 
             
             # visualize attention map 
@@ -1062,7 +1063,7 @@ class CustomDataset:
         
         if self.tokenizer is not None: 
             encoded_text = self.tokenizer( 
-                item["text"], 
+                item["text"][58 :], 
                 # add_special_tokens = False, 
                 add_special_tokens = True, 
                 padding = "max_length", 
