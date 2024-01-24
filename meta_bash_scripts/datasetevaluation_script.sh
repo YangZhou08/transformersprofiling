@@ -35,6 +35,9 @@ which python
 export WANDB_API_KEY=fbb26fc8718b8e58d743b5cdcabaa2396656f773 
 wandb login 
 
+export HUGGINGFACE_TOKEN=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
+huggingface-cli login 
+
 which python 
 
 CUDA_VISIBLE_DEVICES=0 python Evaluation_only_script.py --model_name tinyllama --kernel_size 7 --loading_from_checkpoint YangZhoumill/llama_160m_deciphering_tinyllama_setting0_01da4cb_hf --experiment_setting setting0 --task_id 0 > /fsx-storygen/beidic/yang/log/smallmodel_evaluation_s0_0.txt 
