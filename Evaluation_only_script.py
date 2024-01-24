@@ -228,8 +228,10 @@ elif "ada" in hostname:
     dir_sdata = "/home/beidic/yangzho6/c4llm_synthesized/" 
 else: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
-    dir_models = "/home/yangzho6/model_checkpoints/" 
-    dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+    # dir_models = "/home/yangzho6/model_checkpoints/" 
+    dir_models = "/fsx-storygen/beidic/yang/model_checkpoints/" 
+    # dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+    dir_sdata = "/fsx-storygen/beidic/yang/c4llm_synthesized/" 
 
 class CustomTrainer(Trainer): 
     def __init__(
