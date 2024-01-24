@@ -770,7 +770,6 @@ for i in range(0, 2):
 # TODO change the following code to use the checkpoint of the best trained window 7 model 
 small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
 
-small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
 if args.large_model == "openllama3b": 
     large_dim = 3200 
 elif args.large_model == "shearedllama2_7b": 
@@ -779,7 +778,9 @@ elif args.large_model == "tinyllama":
     large_dim = 2048 
 else: 
     large_dim = 4096 
+
 if not args.use_pretrained_small_model: 
+    small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
     print(colored("not using pretrained small model", "green")) 
     small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 7, target_model_dim = large_dim) 
 
