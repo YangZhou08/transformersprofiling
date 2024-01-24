@@ -882,6 +882,7 @@ for name, param in small_model.named_parameters():
     # if args.use_pretrained_small_model: 
     if args.freeze_small_model or args.use_mse_loss: 
         param.requires_grad = False 
+        print(colored("freezing small model parameters {}".format(name), "cyan")) 
     else: 
         param.requires_grad = True 
         param_group.append(param) 
