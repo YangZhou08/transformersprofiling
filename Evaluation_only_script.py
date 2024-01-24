@@ -211,6 +211,7 @@ parser.add_argument("--loading_from_checkpoint", type = str, default = None)
 parser.add_argument("--kernel_size", type = int, default = 7) 
 parser.add_argument("--experiment_setting", type = str, default = "setting0") 
 parser.add_argument("--condensed_token_random", action = "store_true") 
+parser.add_argument("--task_id", type = int, default = 0) 
 
 args = parser.parse_args() 
 
@@ -1001,8 +1002,12 @@ class CustomDataset:
                 # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
                 # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
                 # dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
-            filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
-            dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+            if "ada" in hostname or "lovelace" in hostname: 
+                filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
+                dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+            else: 
+                filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, args.task_id) 
+                dfiles.append(self.synthesize_dir + "{}_{}/".format(model_name, "na") + filename) 
             print(colored("dfiles: {}".format(dfiles), "red")) 
         else: 
             filename = "c4synthesized_file1.json" 
@@ -1086,7 +1091,7 @@ tokenizer.padding_side = "left"
 
 kernel_size = 7 # this is definitely subject to change 
 datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
-train_set, test_set = datasetnew.split(0.99) 
+train_set, test_set = datasetnew.split(0.95) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
