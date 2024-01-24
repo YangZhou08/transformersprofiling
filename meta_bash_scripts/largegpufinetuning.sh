@@ -11,7 +11,7 @@
 #SBATCH --time=4:00:00
 
 ## partition name
-#SBATCH --partition=learnfair
+#SBATCH --partition=storygen 
 ## number of nodes
 #SBATCH --nodes=1
 
