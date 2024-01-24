@@ -1,3 +1,4 @@
+#!/bin/sh 
 ## job name
 #SBATCH --job-name=yangzho6 
 ## filename for job standard output (stdout)
