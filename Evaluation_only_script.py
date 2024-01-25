@@ -1076,10 +1076,17 @@ class CustomDataset:
             
             # item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
             input_idsfull = encoded_text['input_ids'].squeeze(0) # remove the batch dimension 
-            item['input_ids'] = torch.cat((torch.ones((1, ), dtype = torch.long), input_idsfull[57 :]), dim = 0) 
+            if input_idsfull[57] == 0 or input_idsfull[57] == 1: 
+                head_token = torch.tensor([2], dtype = torch.long) # pad with </s> eos token 
+                head_mask = torch.zeros((1, ), dtype = torch.long) # attention mask starts with 0 
+            else: 
+                head_token = torch.ones((1, ), dtype = torch.long) # pad with <s> bos token 
+                head_mask = torch.ones((1, ), dtype = torch.long) # attention mask starts with 1 
+            item['input_ids'] = torch.cat((head_token, input_idsfull[57 :]), dim = 0) 
             print("the shape of input_ids is {}".format(item['input_ids'].shape)) 
             print("input ids is {}".format(item['input_ids'])) 
-            item['attention_mask'] = encoded_text['attention_mask'].squeeze(0) # remove the batch dimension 
+            # item['attention_mask'] = encoded_text['attention_mask'].squeeze(0) # remove the batch dimension 
+            item['attention_mask'] = torch.cat((head_mask, encoded_text['attention_mask'].squeeze(0)[57 :]), dim = 0) 
         
         item["condensed_embeds"] = tensor 
         # print(colored("the shape of condensed_embeds is {}".format(tensor.shape), "yellow")) 
@@ -1090,6 +1097,7 @@ class CustomDataset:
         print("encoded text: {}".format(item["input_ids"])) 
         print("shape is {}".format(item["input_ids"].shape)) 
         print("attention mask: {}".format(item["attention_mask"])) 
+        print("shape attention mask is {}".format(item["attention_mask"].shape)) 
         exit(0) 
 
         return item 
