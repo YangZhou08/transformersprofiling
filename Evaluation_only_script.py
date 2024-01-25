@@ -1083,11 +1083,11 @@ class CustomDataset:
         # item["input_ids"] = torch.tensor(item["input_ids"]) 
         # item["attention_mask"] = torch.tensor(item["attention_mask"]) 
         
-        print("dataset text: {}".format(item["text"][58: ])) 
-        print("encoded text: {}".format(item["input_ids"])) 
-        print("shape is {}".format(item["input_ids"].shape)) 
-        print("attention mask: {}".format(item["attention_mask"])) 
-        exit(0) 
+        # print("dataset text: {}".format(item["text"][58: ])) 
+        # print("encoded text: {}".format(item["input_ids"])) 
+        # print("shape is {}".format(item["input_ids"].shape)) 
+        # print("attention mask: {}".format(item["attention_mask"])) 
+        # exit(0) 
 
         return item 
 
