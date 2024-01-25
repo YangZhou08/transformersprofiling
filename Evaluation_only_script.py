@@ -1088,7 +1088,7 @@ class CustomDataset:
                 item['attention_mask'] = torch.cat((head_mask, encoded_text['attention_mask'].squeeze(0)[57 :]), dim = 0) 
             else: 
                 item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
-                print("input ids is {}".format(item['input_ids'])) 
+                # print("input ids is {}".format(item['input_ids'])) 
                 item['attention_mask'] = encoded_text['attention_mask'].squeeze(0) # remove the batch dimension 
         
         item["condensed_embeds"] = tensor 
