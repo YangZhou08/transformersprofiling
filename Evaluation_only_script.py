@@ -1074,7 +1074,7 @@ class CustomDataset:
                 truncation = True, 
             ) 
             
-            if self.max_length == 203: 
+            if self.max_length == 204: 
                 # item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
                 input_idsfull = encoded_text['input_ids'].squeeze(0) # remove the batch dimension 
                 if input_idsfull[57] == 2 or input_idsfull[57] == 1: # if the first token is </s> or <s> 
