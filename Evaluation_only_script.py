@@ -620,7 +620,7 @@ class CustomTrainer(Trainer):
                 experiment_setting = self.experiment_setting, 
                 # eval_model = self.eval_mode, 
                 eval_mode = self.eval_mode, 
-                start_idx = 64, 
+                start_idx = 8, 
             ) 
             
             # visualize attention map 
