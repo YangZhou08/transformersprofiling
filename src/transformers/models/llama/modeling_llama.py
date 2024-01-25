@@ -1459,6 +1459,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         extra_pass_in_embeds = torch.cat((start_token, extra_pass_in_embeds), dim = 1) 
         # the attention mask should be compatible to the new input_embeds 
         print("attention_mask shape {} and extra_pass_in_embeds shape {}".format(attention_mask.shape, extra_pass_in_embeds.shape)) 
+        print("condensed_embeds_labels shape {}".format(condensed_embed_labels.shape)) 
         assert attention_mask.shape[1] == extra_pass_in_embeds.shape[1], "attention_mask shape is not compatible to the new input_embeds" 
         assert inputs_embeds is None, "inputs_embeds is not None" 
         inputs_embeds = extra_pass_in_embeds 
