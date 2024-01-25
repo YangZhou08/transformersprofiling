@@ -1063,7 +1063,7 @@ class CustomDataset:
         
         if self.tokenizer is not None: 
             encoded_text = self.tokenizer( 
-                item["text"][58 :], 
+                item["text"], 
                 # add_special_tokens = False, 
                 add_special_tokens = True, 
                 padding = "max_length", 
@@ -1108,7 +1108,7 @@ tokenizer.padding_side = "left"
 
 kernel_size = 7 # this is definitely subject to change 
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
-datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
+datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
 train_set, test_set = datasetnew.split(0.95) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
