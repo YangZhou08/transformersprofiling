@@ -3773,6 +3773,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                     else: 
                         pos_count += 1 
                         position_list.append(pos_count) 
+            pos_count += 57 
             position_ids = torch.tensor(position_list, dtype = torch.long, device = device) 
             position_ids = position_ids.unsqueeze(0) 
         # print("mask list pos : {}".format(self.mask_list_pos)) 

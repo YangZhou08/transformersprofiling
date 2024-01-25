@@ -620,7 +620,7 @@ class CustomTrainer(Trainer):
                 experiment_setting = self.experiment_setting, 
                 # eval_model = self.eval_mode, 
                 eval_mode = self.eval_mode, 
-                start_idx = 64, 
+                start_idx = 7, 
             ) 
             
             # visualize attention map 
@@ -1068,8 +1068,8 @@ class CustomDataset:
                 add_special_tokens = True, 
                 padding = "max_length", 
                 # max_length = 64 + self.dict_kernel_maxlength[self.kernel_size], 
-                # max_length = self.max_length, 
-                max_length = 260, 
+                max_length = self.max_length, 
+                # max_length = 260, 
                 return_attention_mask = True, 
                 return_tensors = "pt", 
                 truncation = True, 
