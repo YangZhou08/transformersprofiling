@@ -776,7 +776,7 @@ for tokenizer in tokenizers:
 
 kernel_size = args.kernel_size 
 # datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
-datasetnew = CustomDataset(max_length = 204, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
+datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
 train_set, test_set = datasetnew.split(0.98) 
 
 for i in range(0, 2): 
