@@ -3764,7 +3764,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 # if i in self.mask_list_pos: 
                 if i in mask_list_pos: 
                     pos_count += 1 
-                    position_list.append(pos_count) 
+                    position_list.append(pos_count + 58) 
                     following_flag = True 
                 else: 
                     if following_flag: 
