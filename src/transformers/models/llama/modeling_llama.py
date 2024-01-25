@@ -1327,6 +1327,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         self.use_mse_loss = False 
         self.ce_loss_only = False 
         self.alpha = 0.5 
+        self.addonmodel_start = 8 
         
         self.post_init() 
 
@@ -1452,7 +1453,10 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         # inside this function callm, input is through input_embeds 
-        extra_pass_in_embeds = self.naive_grouping(large_input_ids) 
+        # now, we have a start of sequence token 
+        start_token = self.model.embed_tokens(large_input_ids[:, 0].unsqueeze(1)) 
+        extra_pass_in_embeds = self.naive_grouping(large_input_ids[:, 1: ]) 
+        extra_pass_in_embeds = torch.cat((start_token, extra_pass_in_embeds), dim = 1) 
         # the attention mask should be compatible to the new input_embeds 
         assert attention_mask.shape[1] == extra_pass_in_embeds.shape[1], "attention_mask shape is not compatible to the new input_embeds" 
         assert inputs_embeds is None, "inputs_embeds is not None" 
@@ -1485,16 +1489,19 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         practical_mask = attention_mask.unsqueeze(-1).expand_as(inputs_embeds) 
         mselabels = condensed_embed_labels 
         hidden_states[practical_mask == 0] = 0 
-        hidden_states = hidden_states[:, :-1, :] # NOTE this is very important 
+        # hidden_states = hidden_states[:, :-1, :] # NOTE this is very important 
+        hidden_states = hidden_states[:, 1:-1, :] # NOTE this is very important 
+        # output 30 condensed tokens, the last one and the first one doesn't have the condensed token label, so 28 left 
         # assert labels.shape == hidden_states.shape 
         assert mselabels.shape == hidden_states.shape 
         mse_lossfunc = nn.MSELoss() 
         mse_loss = mse_lossfunc(hidden_states, mselabels) 
         intermediate_l2_dist = mse_loss.clone().detach() 
         
-        assert inputs_embeds.shape[1] - 1 == hidden_states.shape[1] 
+        assert inputs_embeds.shape[1] - 2 == hidden_states.shape[1] 
         mse_lossfunc2 = nn.MSELoss() 
-        inputs_embeds = inputs_embeds[:, 1:, :] 
+        # inputs_embeds = inputs_embeds[:, 1:, :] 
+        inputs_embeds = inputs_embeds[:, 2:, :] # NOTE first condensed token is the start of sequence, while the second one is the first token 
         mse_loss_input = mse_lossfunc2(hidden_states, inputs_embeds) 
         l2_distance_input = mse_loss_input.clone().detach() 
         
@@ -1518,7 +1525,8 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         # hidden_states = hidden_states[:, :-1, :] 
         
         # interleave the hidden_states and the input_ids 
-        assert hidden_states.shape[1] == small_input_ids.shape[1] // 7 - 1 
+        # assert hidden_states.shape[1] == small_input_ids.shape[1] // 7 - 1 
+        assert hidden_states.shape[1] == (small_input_ids.shape[1] - self.addonmodel_start) // self.sliding_window_length 
         addonmodeloutput = self.addonsmallmodel( 
             # input_ids = input_ids, 
             input_ids = small_input_ids, 
@@ -1531,13 +1539,12 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
             output_attentions = True, 
             output_hidden_states = None, 
             return_dict = True, 
-            start_idx = 7, # NOTE this is very important 
+            start_idx = self.addonmodel_start, # NOTE this is very important 
             eval_mode = False, 
             iteration_count = 1, 
             condensed_fashion = "projection_mode", 
             experiment_setting = "setting0", 
         ) 
-        
         
         logits = addonmodeloutput.logits 
         
@@ -1555,17 +1562,18 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         seq_length = small_input_ids.shape[1] + hidden_states.shape[1] 
         assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
         # mask_list_pos = [i * (self.sliding_window_length + 1) for i in range(seq_length // (self.sliding_window_length + 1))] 
-        mask_list_pos = [7 + i * (self.sliding_window_length + 1) for i in range((seq_length - 7) // (self.sliding_window_length + 1))] 
+        # mask_list_pos = [7 + i * (self.sliding_window_length + 1) for i in range((seq_length - 7) // (self.sliding_window_length + 1))] 
+        mask_list_pos = [self.addonmodel_start + i * (self.sliding_window_length + 1) for i in range((seq_length - self.addonmodel_start) // (self.sliding_window_length + 1))] 
         mask_list_pos22 = [x - 1 for x in mask_list_pos] 
         # print(colored("mask_list_pos {}".format(mask_list_pos), "red")) 
         loss = None 
         if labels is not None: 
             # selected_indices = list(range(7)) 
-            selected_indices = list(range(6)) 
+            selected_indices = list(range(self.addonmodel_start - 1)) 
             # for i in range(7, seq_length): 
                 # if i not in mask_list_pos: 
                     # selected_indices.append(i) 
-            for i in range(6, seq_length): 
+            for i in range(self.addonmodel_start - 1, seq_length): 
                 if i not in mask_list_pos22: 
                     selected_indices.append(i) 
             # print(colored("selected_indices {}".format(selected_indices), "red")) 

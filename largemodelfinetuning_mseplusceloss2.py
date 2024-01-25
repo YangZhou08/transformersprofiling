@@ -285,10 +285,11 @@ class CustomTrainer(Trainer):
         condensed_embeds_labels = condensed_embeds_labels.to(self.model.small_model_dtype) 
         original_attention_mask = inputs["attention_mask"] # (batch_size, 203) 
         label2 = inputs["labels"] # (batch_size, 203) 
-        attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 1), dtype = torch.long).to(large_input_ids.device) 
+        # attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 1), dtype = torch.long).to(large_input_ids.device) 
+        attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 2), dtype = torch.long).to(large_input_ids.device) # sequence length is 204, one bos, 29 more tokens, so 30 in total, we have 28 condensed tokens 
         
         batch_size, seq_len = original_attention_mask.shape 
-        addedon_length = (seq_len - 7) // self.n 
+        addedon_length = (seq_len - 8) // self.n 
         original_attention_mask = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
         
         outputs = model(
@@ -703,7 +704,7 @@ class CustomDataset:
         
         if self.large_tokenizer is not None and self.small_tokenizer is not None: 
             large_encoded_text = self.large_tokenizer( 
-                item["text"] # 6 word-level tokens + BOS to be the first chunk 
+                item["text"], # 6 word-level tokens + BOS to be the first chunk 
                 # add_special_tokens = False, 
                 add_special_tokens = True, 
                 padding = "max_length", 
@@ -714,10 +715,16 @@ class CustomDataset:
                 truncation = True, 
             ) 
             # item['large_input_ids'] = large_encoded_text['input_ids'][0].squeeze(0)  # remove the batch dimension 
-            item['large_input_ids'] = torch.cat((large_encoded_text['input_ids'][0].squeeze(0), large_encoded_text['input_ids'][57 :].squeeze(0)), dim = 0) # shape (204,) 
-            print("the shape of large_input_ids is {}".format(item["large_input_ids"].shape)) 
+            input_idsfull = large_encoded_text['input_ids'].squeeze(0) # remove the batch dimension 
+            if input_idsfull[57] == 2 or input_idsfull[57] == 1: # if the first token is </s> or <s> 
+                head_token = torch.tensor([2], dtype = torch.long) # pad with </s> eos token 
+                head_mask = torch.zeros((1, ), dtype = torch.long) # attention mask starts with 0 
+            else: 
+                head_token = torch.ones((1, ), dtype = torch.long) # pad with <s> bos token 
+                head_mask = torch.ones((1, ), dtype = torch.long) # attention mask starts with 1 
+            item['large_input_ids'] = torch.cat((head_token, input_idsfull[57 :]), dim = 0) 
             small_encoded_text = self.small_tokenizer(
-                item["text"][58 :], # 6 word-level tokens + BOS to be the first chunk 
+                item["text"], # 6 word-level tokens + BOS to be the first chunk 
                 # add_special_tokens = False, 
                 add_special_tokens = True, 
                 padding = "max_length", 
@@ -727,10 +734,17 @@ class CustomDataset:
                 return_tensors = "pt", 
                 truncation = True, 
             ) 
+            input_idsfull2 = small_encoded_text['input_ids'].squeeze(0) # remove the batch dimension 
+            if input_idsfull2[57] == 2 or input_idsfull2[57] == 1: # if the first token is </s> or <s> 
+                head_token2 = torch.tensor([2], dtype = torch.long) # pad with </s> eos token 
+                head_mask2 = torch.zeros((1, ), dtype = torch.long) # attention mask starts with 0 
+            else: 
+                head_token2 = torch.ones((1, ), dtype = torch.long) # pad with <s> bos token 
+                head_mask2 = torch.ones((1, ), dtype = torch.long) # attention mask starts with 1 
+            item['input_ids'] = torch.cat((head_token2, input_idsfull2[57 :]), dim = 0) 
+            item['attention_mask'] = torch.cat((head_mask2, small_encoded_text['attention_mask'].squeeze(0)[57 :]), dim = 0) 
             
             # print("input_ids is {}, the length is {}".format(item["input_ids"], item["input_ids"].shape[0])) 
-            item['input_ids'] = small_encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
-            item['attention_mask'] = small_encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
         
         item["condensed_embeds"] = tensor 
         # print(colored("the shape of condensed_embeds is {}".format(tensor.shape), "yellow")) 
@@ -761,7 +775,7 @@ for tokenizer in tokenizers:
 
 kernel_size = args.kernel_size 
 # datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
-datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
+datasetnew = CustomDataset(max_length = 204, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
 train_set, test_set = datasetnew.split(0.98) 
 
 for i in range(0, 2): 
