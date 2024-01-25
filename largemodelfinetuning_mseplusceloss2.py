@@ -278,12 +278,12 @@ class CustomTrainer(Trainer):
         print(colored("iteration_count {}".format(self.iteration_count), "yellow")) 
         
         # input_ids = inputs["input_ids"] # (batch_size, 203) 
-        large_input_ids = inputs["large_input_ids"] # (batch_size, 260) 
-        small_input_ids = inputs["input_ids"] # (batch_size, 260) 
+        large_input_ids = inputs["large_input_ids"] # (batch_size, 203) 
+        small_input_ids = inputs["input_ids"] # (batch_size, 203) 
         # attention_mask = inputs["attention_mask_chunk"] 
         condensed_embeds_labels = inputs["condensed_embeds"] # (batch_size, 28, 3200) 
         condensed_embeds_labels = condensed_embeds_labels.to(self.model.small_model_dtype) 
-        original_attention_mask = inputs["attention_mask"] # (batch_size, 260） 
+        original_attention_mask = inputs["attention_mask"] # (batch_size, 203) 
         label2 = inputs["labels"] # (batch_size, 203) 
         attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 1), dtype = torch.long).to(large_input_ids.device) 
         
@@ -703,8 +703,7 @@ class CustomDataset:
         
         if self.large_tokenizer is not None and self.small_tokenizer is not None: 
             large_encoded_text = self.large_tokenizer( 
-                # item["text"][58 :], # 6 word-level tokens + BOS to be the first chunk 
-                item["text"], 
+                item["text"] # 6 word-level tokens + BOS to be the first chunk 
                 # add_special_tokens = False, 
                 add_special_tokens = True, 
                 padding = "max_length", 
@@ -714,9 +713,11 @@ class CustomDataset:
                 return_tensors = "pt", 
                 truncation = True, 
             ) 
+            # item['large_input_ids'] = large_encoded_text['input_ids'][0].squeeze(0)  # remove the batch dimension 
+            item['large_input_ids'] = torch.cat((large_encoded_text['input_ids'][0].squeeze(0), large_encoded_text['input_ids'][57 :].squeeze(0)), dim = 0) # shape (204,) 
+            print("the shape of large_input_ids is {}".format(item["large_input_ids"].shape)) 
             small_encoded_text = self.small_tokenizer(
-                # item["text"][58 :], # 6 word-level tokens + BOS to be the first chunk 
-                item["text"], 
+                item["text"][58 :], # 6 word-level tokens + BOS to be the first chunk 
                 # add_special_tokens = False, 
                 add_special_tokens = True, 
                 padding = "max_length", 
@@ -727,8 +728,6 @@ class CustomDataset:
                 truncation = True, 
             ) 
             
-            # print("text is {}".format(item["text"][58 :])) 
-            item['large_input_ids'] = large_encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
             # print("input_ids is {}, the length is {}".format(item["input_ids"], item["input_ids"].shape[0])) 
             item['input_ids'] = small_encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
             item['attention_mask'] = small_encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
@@ -762,8 +761,7 @@ for tokenizer in tokenizers:
 
 kernel_size = args.kernel_size 
 # datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
-# datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
-datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
+datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
 train_set, test_set = datasetnew.split(0.98) 
 
 for i in range(0, 2): 

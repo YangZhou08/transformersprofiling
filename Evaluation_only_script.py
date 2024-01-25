@@ -1069,14 +1069,17 @@ class CustomDataset:
                 padding = "max_length", 
                 # max_length = 64 + self.dict_kernel_maxlength[self.kernel_size], 
                 max_length = self.max_length, 
-                # max_length = 260, 
                 return_attention_mask = True, 
                 return_tensors = "pt", 
                 truncation = True, 
             ) 
             
-            item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension
-            item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
+            # item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
+            input_idsfull = encoded_text['input_ids'].squeeze(0) # remove the batch dimension 
+            item['input_ids'] = torch.cat((torch.ones((1, ), dtype = torch.long), input_idsfull[57 :]), dim = 0) 
+            print("the shape of input_ids is {}".format(item['input_ids'].shape)) 
+            print("input ids is {}".format(item['input_ids'])) 
+            item['attention_mask'] = encoded_text['attention_mask'].squeeze(0) # remove the batch dimension 
         
         item["condensed_embeds"] = tensor 
         # print(colored("the shape of condensed_embeds is {}".format(tensor.shape), "yellow")) 
@@ -1084,10 +1087,10 @@ class CustomDataset:
         # item["attention_mask"] = torch.tensor(item["attention_mask"]) 
         
         # print("dataset text: {}".format(item["text"][58: ])) 
-        # print("encoded text: {}".format(item["input_ids"])) 
-        # print("shape is {}".format(item["input_ids"].shape)) 
-        # print("attention mask: {}".format(item["attention_mask"])) 
-        # exit(0) 
+        print("encoded text: {}".format(item["input_ids"])) 
+        print("shape is {}".format(item["input_ids"].shape)) 
+        print("attention mask: {}".format(item["attention_mask"])) 
+        exit(0) 
 
         return item 
 
