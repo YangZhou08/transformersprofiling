@@ -620,7 +620,7 @@ class CustomTrainer(Trainer):
                 experiment_setting = self.experiment_setting, 
                 # eval_model = self.eval_mode, 
                 eval_mode = self.eval_mode, 
-                start_idx = 8, 
+                start_idx = 64, 
             ) 
             
             # visualize attention map 
@@ -1017,6 +1017,7 @@ class CustomDataset:
         self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
         self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
         self.kernel_size = kernel_size 
+        self.use_constraint = False 
         # self.dataset = self.dataset["train"][0: 5120] 
 
         self.tokenizer = tokenizer 
@@ -1074,7 +1075,7 @@ class CustomDataset:
                 truncation = True, 
             ) 
             
-            if self.max_length == 204: 
+            if self.use_constraint: 
                 # item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
                 input_idsfull = encoded_text['input_ids'].squeeze(0) # remove the batch dimension 
                 if input_idsfull[57] == 2 or input_idsfull[57] == 1: # if the first token is </s> or <s> 
@@ -1121,7 +1122,7 @@ tokenizer.padding_side = "left"
 
 kernel_size = 7 # this is definitely subject to change 
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
-datasetnew = CustomDataset(max_length = 204, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
+datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
 train_set, test_set = datasetnew.split(0.99) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
