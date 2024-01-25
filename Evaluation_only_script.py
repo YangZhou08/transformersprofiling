@@ -1076,7 +1076,7 @@ class CustomDataset:
             
             # item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
             input_idsfull = encoded_text['input_ids'].squeeze(0) # remove the batch dimension 
-            if input_idsfull[57] == 0 or input_idsfull[57] == 1: 
+            if input_idsfull[57] == 2 or input_idsfull[57] == 1: # if the first token is </s> or <s> 
                 head_token = torch.tensor([2], dtype = torch.long) # pad with </s> eos token 
                 head_mask = torch.zeros((1, ), dtype = torch.long) # attention mask starts with 0 
             else: 
@@ -1094,11 +1094,11 @@ class CustomDataset:
         # item["attention_mask"] = torch.tensor(item["attention_mask"]) 
         
         # print("dataset text: {}".format(item["text"][58: ])) 
-        print("encoded text: {}".format(item["input_ids"])) 
-        print("shape is {}".format(item["input_ids"].shape)) 
-        print("attention mask: {}".format(item["attention_mask"])) 
-        print("shape attention mask is {}".format(item["attention_mask"].shape)) 
-        exit(0) 
+        # print("encoded text: {}".format(item["input_ids"])) 
+        # print("shape is {}".format(item["input_ids"].shape)) 
+        # print("attention mask: {}".format(item["attention_mask"])) 
+        # print("shape attention mask is {}".format(item["attention_mask"].shape)) 
+        # exit(0) 
 
         return item 
 
