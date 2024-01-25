@@ -723,7 +723,7 @@ class CustomDataset:
                 return_attention_mask = True, 
                 return_tensors = "pt", 
                 truncation = True, 
-            )
+            ) 
             
             # print("text is {}".format(item["text"][58 :])) 
             item['large_input_ids'] = large_encoded_text['input_ids'].squeeze(0)  # remove the batch dimension 
