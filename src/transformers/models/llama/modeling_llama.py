@@ -1326,7 +1326,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         self.small_model_dtype = torch.bfloat16 
         self.use_mse_loss = False 
         self.ce_loss_only = False 
-        self.alpha = 0.5 
+        self.alpha = 0.9 
         self.addonmodel_start = 8 
         
         self.post_init() 
@@ -1547,7 +1547,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
             eval_mode = False, 
             iteration_count = 1, 
             condensed_fashion = "projection_mode", 
-            experiment_setting = "setting0", 
+            experiment_setting = "setting3", 
         ) 
         
         logits = addonmodeloutput.logits 
