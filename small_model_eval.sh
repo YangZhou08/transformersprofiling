@@ -1,2 +1,2 @@
 # python Evaluation_only_script2.py --model_name tinyllama --kernel_size 7 --loading_from_checkpoint YangZhoumill/llama_160m_deciphering_tinyllama_setting0_01da4cb_hf --experiment_setting setting0 
-python Evaluation_only_script.py --model_name tinyllama --kernel_size 7 --loading_from_checkpoint YangZhoumill/llama_160m_deciphering_tinyllama_setting0_01da4cb_hf --experiment_setting setting0 
+python Evaluation_only_script.py --model_name tinyllama --kernel_size 7 --loading_from_checkpoint YangZhoumill/llama_160m_deciphering_tinyllama_setting0_01da4cb_hf --experiment_setting setting0 --condensed_token_random 
