@@ -1457,7 +1457,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         print("large_input_ids sequence first element: {}".format(large_input_ids[:, 0])) 
         start_token = self.model.embed_tokens(large_input_ids[:, 0].unsqueeze(1)) 
         extra_pass_in_embeds = self.naive_grouping(large_input_ids[:, 1: ]) 
-        extra_pass_in_embeds = torch.cat((start_token, extra_pass_in_embeds), dim = 1) 
+        extra_pass_in_embeds = torch.cat((start_token, extra_pass_in_embeds), dim = 1) # concatenate at the sequence length dimension 
         # the attention mask should be compatible to the new input_embeds 
         print("attention_mask shape {} and extra_pass_in_embeds shape {}".format(attention_mask.shape, extra_pass_in_embeds.shape)) 
         print("condensed_embeds_labels shape {}".format(condensed_embed_labels.shape)) 
@@ -1511,9 +1511,9 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         if self.use_mse_loss: 
             print(colored("mse_loss {}".format(mse_loss), "red")) 
             # still use the small model and get ce 
-            # hidden_states = hidden_states.detach().clone() 
+            hidden_states = hidden_states.detach().clone() 
             # hidden_states = torch.zeros_like(hidden_states).detach() 
-            hidden_states = condensed_embed_labels 
+            # hidden_states = condensed_embed_labels 
             '''
             return CausalLMOutputWithPastLargeDistance2(
                 loss = mse_loss, 
