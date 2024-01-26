@@ -905,8 +905,8 @@ for name, param in small_model.named_parameters():
         param_group.append(param) 
 print("length of param_group {}".format(len(param_group))) 
 
-# custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-5) 
-custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-4) 
+custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-5) 
+# custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-4) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
