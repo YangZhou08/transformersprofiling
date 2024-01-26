@@ -886,11 +886,11 @@ def naive_grouping(examples):
 
 param_group = [] 
 for name, param in large_model.named_parameters(): 
-    print(colored(name, "blue")) 
     if "addonsmallmodel." in name: 
         param.requires_grad = False 
     else: 
         if not args.freeze_large_model: 
+            print(colored("large model parameters {}".format(name), "blue")) 
             param.requires_grad = True 
             param_group.append(param) 
 for name, param in small_model.named_parameters(): 
@@ -900,11 +900,12 @@ for name, param in small_model.named_parameters():
         param.requires_grad = False 
         print(colored("freezing small model parameters {}".format(name), "cyan")) 
     else: 
+        print(colored("small model parameters {}".format(name), "blue")) 
         param.requires_grad = True 
         param_group.append(param) 
 print("length of param_group {}".format(len(param_group))) 
 
-custom_optimizer = torch.optim.AdamW(param_group, lr = 5e-5) 
+custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-5) 
 # custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-4) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
