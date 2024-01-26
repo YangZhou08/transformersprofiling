@@ -1017,7 +1017,7 @@ class CustomDataset:
         self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
         self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
         self.kernel_size = kernel_size 
-        self.use_constraint = False 
+        self.use_constraint = True 
         # self.dataset = self.dataset["train"][0: 5120] 
 
         self.tokenizer = tokenizer 

@@ -1454,6 +1454,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
 
         # inside this function callm, input is through input_embeds 
         # now, we have a start of sequence token 
+        print("large_input_ids sequence first element: {}".format(large_input_ids[:, 0])) 
         start_token = self.model.embed_tokens(large_input_ids[:, 0].unsqueeze(1)) 
         extra_pass_in_embeds = self.naive_grouping(large_input_ids[:, 1: ]) 
         extra_pass_in_embeds = torch.cat((start_token, extra_pass_in_embeds), dim = 1) 
@@ -1490,7 +1491,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         
         practical_mask = attention_mask.unsqueeze(-1).expand_as(inputs_embeds) 
         mselabels = condensed_embed_labels 
-        hidden_states[practical_mask == 0] = 0 
+        # hidden_states[practical_mask == 0] = 0 
         # hidden_states = hidden_states[:, :-1, :] # NOTE this is very important 
         hidden_states = hidden_states[:, 1:-1, :] # NOTE this is very important 
         # output 30 condensed tokens, the last one and the first one doesn't have the condensed token label, so 28 left 
