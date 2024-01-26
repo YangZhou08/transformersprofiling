@@ -620,7 +620,7 @@ class CustomTrainer(Trainer):
                 experiment_setting = self.experiment_setting, 
                 # eval_model = self.eval_mode, 
                 eval_mode = self.eval_mode, 
-                start_idx = 8, 
+                start_idx = 64, 
             ) 
             
             # visualize attention map 
@@ -1017,7 +1017,7 @@ class CustomDataset:
         self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
         self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
         self.kernel_size = kernel_size 
-        self.use_constraint = True 
+        self.use_constraint = False 
         # self.dataset = self.dataset["train"][0: 5120] 
 
         self.tokenizer = tokenizer 
