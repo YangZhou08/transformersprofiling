@@ -1328,6 +1328,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         self.ce_loss_only = False 
         self.alpha = 0.9 
         self.addonmodel_start = 8 
+        self.inference_setting = "setting0" 
         
         self.post_init() 
 
@@ -1339,7 +1340,10 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         self.ce_loss_only = ce_loss_only 
 
     def set_input_embeddings(self, value):
-        self.model.embed_tokens = value
+        self.model.embed_tokens = value 
+    
+    def set_inference_setting(self, setting = "setting0"): 
+        self.inference_setting = setting 
 
     def get_output_embeddings(self):
         return self.lm_head
@@ -1547,7 +1551,8 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
             eval_mode = False, 
             iteration_count = 1, 
             condensed_fashion = "projection_mode", 
-            experiment_setting = "setting3", 
+            # experiment_setting = "setting3", 
+            experiment_setting = self.inference_setting, 
         ) 
         
         logits = addonmodeloutput.logits 
