@@ -836,14 +836,15 @@ elif args.large_model == "tinyllama":
     large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     large_model.set_msece_loss(args.use_mse_loss, args.ce_loss_only) 
     large_model.set_addonsmallmodel(small_model) 
-    if "setting0" in args.finetuned_small_model_checkpoint: 
-        large_model.set_inference_setting("setting0") 
-    elif "setting3" in args.finetuned_small_model_checkpoint: 
-        large_model.set_inference_setting("setting3") 
+    if args.finetuned_small_model_checkpoint is not None: 
+        if "setting0" in args.finetuned_small_model_checkpoint: 
+            large_model.set_inference_setting("setting0") 
+        elif "setting3" in args.finetuned_small_model_checkpoint: 
+            large_model.set_inference_setting("setting3") 
+        else: 
+            raise ValueError("settingnumber has be in the finetuned_large_model_checkpoint") 
     elif args.experiment_setting is not None: 
         large_model.set_inference_setting(args.experiment_setting) 
-    else: 
-        raise ValueError("settingnumber has be in the finetuned_large_model_checkpoint") 
     large_model.set_walpha(args.alpha) 
 # large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = True).to(torch.bfloat16).to(torch_device) 
 # large_model.set_smallmodelfull() # this function has proven to be very important 
