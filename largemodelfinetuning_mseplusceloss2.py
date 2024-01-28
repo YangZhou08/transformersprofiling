@@ -221,6 +221,7 @@ parser.add_argument("--batch_size", type = int, default = 64)
 parser.add_argument("--debug", action = "store_true") 
 parser.add_argument("--experiment_setting", type = str, default = "setting0") 
 parser.add_argument("--alpha", type = float, default = 0.5) 
+parser.add_argument("--lr", type = float, default = 5e-5) 
 
 args = parser.parse_args() 
 model_name = args.large_model 
@@ -916,7 +917,8 @@ for name, param in small_model.named_parameters():
         param_group.append(param) 
 print("length of param_group {}".format(len(param_group))) 
 
-custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-5) 
+custom_optimizer = torch.optim.AdamW(param_group, lr = args.lr) 
+# custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-5) 
 # custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-4) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
