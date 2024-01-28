@@ -1326,7 +1326,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         self.small_model_dtype = torch.bfloat16 
         self.use_mse_loss = False 
         self.ce_loss_only = False 
-        self.alpha = 0.9 
+        self.alpha = 0.5 
         self.addonmodel_start = 8 
         self.inference_setting = "setting0" 
         
