@@ -1,4 +1,4 @@
-accelerate launch --main_process_port 29501 --num_processes 2 --num_machines 1 largemodelfinetuning_mseplusceloss2.py --large_model tinyllama --kernel_size 7 --batch_size 64 --use_pretrained_small_model --finetuned_small_model_checkpoint YangZhoumill/llama_160m_deciphering_tinyllama_setting0_01da4cb_hf --freeze_small_model --ce_loss_only 
+accelerate launch --main_process_port 29501 --num_processes 2 --num_machines 1 largemodelfinetuning_mseplusceloss2.py --large_model tinyllama --kernel_size 7 --batch_size 64 --use_pretrained_small_model --finetuned_small_model_checkpoint YangZhoumill/llama_160m_deciphering_tinyllama_setting0_01da4cb_hf --ce_loss_only 
 # accelerate launch --main_process_port 29505 --num_processes 2 --num_machines 1 largemodelfinetuning_mseplusceloss2.py --large_model tinyllama --kernel_size 7 --batch_size 64 --alpha 0.5 --ce_loss_only 
 # accelerate launch --main_process_port 29505 --num_processes 2 --num_machines 1 largemodelfinetuning_mseplusceloss.py --large_model tinyllama --kernel_size 7 --batch_size 64 --debug 
 
