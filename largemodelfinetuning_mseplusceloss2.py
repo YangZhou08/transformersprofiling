@@ -219,6 +219,7 @@ parser.add_argument("--ce_loss_only", action = "store_true")
 parser.add_argument("--topk", type = int, default = None) 
 parser.add_argument("--batch_size", type = int, default = 64) 
 parser.add_argument("--debug", action = "store_true") 
+parser.add_argument("--experiment_setting", type = str, default = "setting0") 
 
 args = parser.parse_args() 
 model_name = args.large_model 
@@ -837,6 +838,8 @@ elif args.large_model == "tinyllama":
         large_model.set_inference_setting("setting0") 
     elif "setting3" in args.finetuned_large_model_checkpoint: 
         large_model.set_inference_setting("setting3") 
+    elif args.experiment_setting is not None: 
+        large_model.set_inference_setting(args.experiment_setting) 
     else: 
         raise ValueError("settingnumber has be in the finetuned_large_model_checkpoint") 
 # large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = True).to(torch.bfloat16).to(torch_device) 
