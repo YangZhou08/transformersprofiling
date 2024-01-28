@@ -1344,6 +1344,9 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
     
     def set_inference_setting(self, setting = "setting0"): 
         self.inference_setting = setting 
+    
+    def set_walpha(self, alpha) : 
+        self.alpha = alpha 
 
     def get_output_embeddings(self):
         return self.lm_head

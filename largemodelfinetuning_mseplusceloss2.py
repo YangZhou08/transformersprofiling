@@ -220,6 +220,7 @@ parser.add_argument("--topk", type = int, default = None)
 parser.add_argument("--batch_size", type = int, default = 64) 
 parser.add_argument("--debug", action = "store_true") 
 parser.add_argument("--experiment_setting", type = str, default = "setting0") 
+parser.add_argument("--alpha", type = float, default = 0.5) 
 
 args = parser.parse_args() 
 model_name = args.large_model 
@@ -842,6 +843,7 @@ elif args.large_model == "tinyllama":
         large_model.set_inference_setting(args.experiment_setting) 
     else: 
         raise ValueError("settingnumber has be in the finetuned_large_model_checkpoint") 
+    large_model.set_walpha(args.alpha) 
 # large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = True).to(torch.bfloat16).to(torch_device) 
 # large_model.set_smallmodelfull() # this function has proven to be very important 
 # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
