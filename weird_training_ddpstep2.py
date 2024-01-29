@@ -1071,7 +1071,7 @@ class CustomDataset:
                 sum /= 7. 
             sum = sum.squeeze(0) 
             added_tensor[i, :] = sum 
-        print("added_tensor shape {}".format(added_tensor.shape)) 
+        # print("added_tensor shape {}".format(added_tensor.shape)) 
         
         # return {"input_ids_chunk": added_tensor, "attention_mask_chunk": practice_attention_mask} 
         return added_tensor 
