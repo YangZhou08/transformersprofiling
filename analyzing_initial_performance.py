@@ -72,7 +72,8 @@ if "lovelace" in hostname:
     datasetparent = "/home/yangzho6/c4_parts/downloads/" 
     dir_models = "/home/yangzho6/model_checkpoints" 
     synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/" 
-    synthesized_data_path = "/home/yangzho6/c4llm_synthesized/tensor_dir/" 
+    # synthesized_data_path = "/home/yangzho6/c4llm_synthesized/tensor_dir/" 
+    synthesized_data_path = "/home/yangzho6/c4llm_synthesized/" 
 elif "ada" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     datasetsrc = "/home/beidic/yangzho6/c4_parts/downloads/c4_file2.json" 
@@ -80,7 +81,8 @@ elif "ada" in hostname:
     dir_models = "/home/beidic/yangzho6/model_checkpoints" 
     synthesized_dir_path = "/home/beidic/yangzho6/c4llm_synthesized/" 
     # synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/tensor_dir/" 
-    synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/tensor_dir2/" 
+    # synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/tensor_dir2/" 
+    synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/" 
 else: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_models = "/home/yangzho6/model_checkpoints" 
@@ -88,13 +90,24 @@ else:
     synthesized_data_path = "/home/yangzho6/c4llm_synthesized/tensor_dir/" 
 
 torch_device = "cuda:0" 
+model_name = "tinyllama" 
 
 class CustomDataset: 
-    def __init__(self, data_dir, tokenizer = None, max_length = 128): 
+    def __init__(self, data_dir, need_condense = False, tokenizer = None, max_length = 256, kernel_size = 7): 
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
         self.synthesize_dir = data_dir 
-        self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json") 
-        self.dataset = self.dataset["train"] 
+        self.kernel_size = kernel_size 
+        self.need_condense = need_condense 
+        dfiles = [] 
+        if "ada" in hostname or "lovelace" in hostname: 
+            filename = "c4synthesized_file1_kernel{}_{}.json".format(self.kernel_size, 1) 
+            dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+        else: 
+            filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(self.kernel_size, 1) 
+            dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name) + filename) 
+        print(colored("dfiles: {}".format(dfiles), "red")) 
+        # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json") 
+        # self.dataset = self.dataset["train"] 
 
         self.tokenizer = tokenizer 
         self.max_length = max_length 
@@ -104,7 +117,10 @@ class CustomDataset:
     
     def __getitem__(self, idx): 
         item = self.dataset[idx] 
-        tensor = torch.load(item["condensed_token_path"]) 
+        if self.need_condense: 
+            tensor = torch.load(item["condensed_token_path"]) 
+        else: 
+            tensor = None 
 
         if self.tokenizer is not None: 
             # the following line is under investigation 
@@ -158,7 +174,8 @@ def compute_perplexity(model, tokenizer, text):
 # tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 # tokenizer = AutoTokenizer.from_pretrained("facebook/opt-125m", cache_dir = dir_models) 
 # tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
-tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
+# tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
+tokenizer = LlamaTokenizer.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models) 
 
 if tokenizer.pad_token is not None: 
     print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
@@ -168,14 +185,15 @@ else:
 tokenizer.padding_side = "left" 
 
 # datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer) 
-d_files = ["c4_file{}.json".format(i) for i in range(1, 3)] 
-datasetnew = load_dataset('json', data_files = [datasetparent + name for name in d_files], split = "train") 
-max_length = 256 
-def encode_with_truncation(examples): 
-    return tokenizer(examples["text"], truncation = True, padding = "max_length", 
-                     max_length = max_length, return_special_tokens_mask = True) 
-datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
-datasetnew.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+datasetnew = CustomDataset(data_dir = synthesized_data_path, tokenizer = tokenizer, need_condense = False, max_length = 260) 
+# d_files = ["c4_file{}.json".format(i) for i in range(1, 3)] 
+# datasetnew = load_dataset('json', data_files = [datasetparent + name for name in d_files], split = "train") 
+# max_length = 256 
+# def encode_with_truncation(examples): 
+#     return tokenizer(examples["text"], truncation = True, padding = "max_length", 
+#                      max_length = max_length, return_special_tokens_mask = True) 
+# datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
+# datasetnew.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 '''
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
 small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
@@ -207,8 +225,9 @@ small_model.eval_mode = True
 
 # small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
 # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
-large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
-large_model = LlamaForCausalLM.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+# large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+# large_model = LlamaForCausalLM.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+large_model = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 large_model.eval() 
 
 small_model = large_model 
