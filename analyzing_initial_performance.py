@@ -120,8 +120,6 @@ class CustomDataset:
         item = self.dataset[idx] 
         if self.need_condense: 
             tensor = torch.load(item["condensed_token_path"]) 
-        else: 
-            tensor = None 
 
         if self.tokenizer is not None: 
             # the following line is under investigation 
@@ -142,7 +140,8 @@ class CustomDataset:
                 print("the tokenizer after output is {}".format(item["input_ids"])) 
             item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
         
-        item["condensed_embeds"] = tensor 
+        if self.need_condense: 
+            item["condensed_embeds"] = tensor 
 
         return item 
 
