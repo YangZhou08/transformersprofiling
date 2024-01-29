@@ -25,6 +25,7 @@ from src.transformers import DataCollatorForLanguageModeling
 from src.transformers.generation.utils import GenerationConfig 
 from src.transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSmallModel 
 from src.transformers.models.llama.modeling_llama import LlamaCausalLMWeirdTwo 
+from src.transformers.models.llama.modeling_llama import LlamaWeirdLarge3 
 from src.transformers.modeling_utils import PreTrainedModel, load_sharded_checkpoint, unwrap_model 
 import time 
 from torch.utils.data import random_split 
@@ -221,6 +222,7 @@ parser.add_argument("--group2lr", type = float, default = 2e-3)
 parser.add_argument("--experiment_setting", type = str, default = "setting0") 
 parser.add_argument("--eval_mode", action="store_true", default = False) 
 parser.add_argument("--embedding_pretrained", action = "store_true", default = False) 
+parser.add_argument("--input_condensed", action = "store_true", default = False) 
 parser.add_argument("--kernel_size", type = int, default = 4) 
 parser.add_argument("--use_plain_model", action = "store_true", default = False) 
 parser.add_argument("--model_name", type = str, default = "openllama3b") 
@@ -1030,6 +1032,8 @@ class CustomDataset:
         self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
         self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
         self.kernel_size = kernel_size 
+        self.input_condensed = True 
+        self.large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
         # self.dataset = self.dataset["train"][0: 5120] 
 
         self.tokenizer = tokenizer 
@@ -1054,10 +1058,30 @@ class CustomDataset:
         # self.dataset = self.dataset.map(loading_condensed_embeds, batched = True, num_proc = 4) 
         # self.dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
     
+    def naive_grouping(self, input_ids): 
+        input_ids = input_ids.unsqueeze(0) 
+        embedding_searched = self.large_model.get_input_embeddings()(input_ids) 
+        assert input_ids.shape[0] == 1 
+        seq_length = embedding_searched.shape[1] 
+        added_tensor = torch.zeros((seq_length // 7, embedding_searched.shape[2])) 
+        for i in range(seq_length // 7): 
+            sum = torch.zeros((1, embedding_searched.shape[2])) 
+            for j in range(7): 
+                sum += embedding_searched[:, i * 7 + j, :] 
+                sum /= 7. 
+            sum = sum.squeeze(0) 
+            added_tensor[i, :] = sum 
+        print("added_tensor shape {}".format(added_tensor.shape)) 
+        
+        # return {"input_ids_chunk": added_tensor, "attention_mask_chunk": practice_attention_mask} 
+        return added_tensor 
+        
+    
     def __getitem__(self, idx): 
         item = self.dataset[idx] 
         try: 
-            tensor = torch.load(item["condensed_token_path"]) 
+            if not self.input_condensed: 
+                tensor = torch.load(item["condensed_token_path"]) 
         except IOError as e: 
             print(colored("///IOError occured replacing with an empty tensor///", "red")) 
             tensor = torch.zeros((28, 2560 if model_name == "shearedllama2_7b" else 3200), dtype = torch.float32) 
@@ -1078,7 +1102,10 @@ class CustomDataset:
             item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension
             item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
         
-        item["condensed_embeds"] = tensor 
+        if not self.input_condensed: 
+            item["condensed_embeds"] = tensor 
+        else: 
+            item["condensed_embeds"] = self.naive_grouping(item["input_ids"][64 :]) 
         # print(colored("the shape of condensed_embeds is {}".format(tensor.shape), "yellow")) 
         # item["input_ids"] = torch.tensor(item["input_ids"]) 
         # item["attention_mask"] = torch.tensor(item["attention_mask"]) 
