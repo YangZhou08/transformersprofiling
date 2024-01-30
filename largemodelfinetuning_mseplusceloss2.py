@@ -249,6 +249,14 @@ class CustomTrainer(Trainer):
         self.time_hash = time_hash 
         self.model_name = model_name 
         self.text_eval = text_eval 
+        
+        if self.args.resume_from_checkpoint is not None: 
+            self.time_checkpoint = int(self.args.resume_from_checkpoint.split("-")[-1]) 
+            print(colored("resuming from checkpoint {}".format(self.time_checkpoint), "yellow")) 
+            print(colored("the learning rate is {}".format(self.optimizer.param_groups[0]["lr"]), "yellow")) 
+            print(colored("the step count is {}".format(self.state.global_step), "yellow")) 
+            if self.iteration_count == 0: 
+                self.iteration_count = 4 * self.state.global_step 
     
     def _set_signature_columns_if_needed(self): 
         if self._signature_columns is None:
@@ -956,7 +964,7 @@ training_args = TrainingArguments(
     save_strategy = "steps", 
     evaluation_strategy = "steps", 
 ) 
-    
+print(colored("resume_from_checkpoint is {}".format(args.resume_from_checkpoint), "red")) 
 
 trainer = CustomTrainer(
     model = large_model, 
