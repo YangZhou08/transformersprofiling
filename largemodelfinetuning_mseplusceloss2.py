@@ -213,6 +213,7 @@ parser.add_argument("--finetuned_small_model_checkpoint", type = str, default = 
 parser.add_argument("--large_model", type = str, default = "openllama3b") 
 parser.add_argument("--use_mse_loss", action = "store_true") 
 parser.add_argument("--resume_from_checkpoint", type = str, default = None) 
+parser.add_argument("--num_epochs", type = int, default = 5) 
 parser.add_argument("--freeze_small_model", action = "store_true") 
 parser.add_argument("--freeze_large_model", action = "store_true") 
 parser.add_argument("--ce_loss_only", action = "store_true") 
@@ -939,7 +940,7 @@ training_args = TrainingArguments(
     output_dir=model_path,          # output directory to where save model checkpoint
     # evaluation_strategy="steps",    # evaluate each `logging_steps` steps 
     overwrite_output_dir=True,      
-    num_train_epochs=5,            # number of training epochs, feel free to tweak
+    num_train_epochs=args.num_epochs,            # number of training epochs, feel free to tweak
     per_device_train_batch_size = args.batch_size, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size= args.batch_size,  # evaluation batch size
