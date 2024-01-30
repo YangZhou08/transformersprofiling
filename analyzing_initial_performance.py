@@ -171,11 +171,11 @@ def compute_perplexity(model, tokenizer, text):
 
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4_parts/downloads/c4_file1.json', split = "train[:1000]") 
 
-# tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 # tokenizer = AutoTokenizer.from_pretrained("facebook/opt-125m", cache_dir = dir_models) 
 # tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 # tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
-tokenizer = LlamaTokenizer.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models) 
+# tokenizer = LlamaTokenizer.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models) 
 
 if tokenizer.pad_token is not None: 
     print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
@@ -194,12 +194,14 @@ datasetnew = CustomDataset(data_dir = synthesized_data_path, tokenizer = tokeniz
 #                      max_length = max_length, return_special_tokens_mask = True) 
 # datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
 # datasetnew.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
-'''
-# small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
-small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 
-small_state_dict_for_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).state_dict() 
-small_model = SimpleSmallModel(small_config) 
+# small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
+# small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+
+# small_state_dict_for_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).state_dict() 
+small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
+small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
+small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 7, target_model_dim = large_dim) 
 
 new_state_dict = {} 
 
@@ -217,9 +219,9 @@ try:
 except RuntimeError as r: 
     print(colored(r, "yellow")) 
 small_model = small_model.to(torch_device) 
-small_model.eval_mode = True 
+small_model.eval() 
+# small_model.eval_mode = True 
 # small_model.train() 
-''' 
 
 # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
 
@@ -227,10 +229,10 @@ small_model.eval_mode = True
 # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 # large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 # large_model = LlamaForCausalLM.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
-large_model = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
-large_model.eval() 
+# large_model = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+# large_model.eval() 
 
-small_model = large_model 
+# small_model = large_model 
 # small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
 
 batch_size = 100 
