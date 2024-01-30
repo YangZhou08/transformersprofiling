@@ -199,6 +199,9 @@ datasetnew = CustomDataset(data_dir = synthesized_data_path, tokenizer = tokeniz
 # small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 
 # small_state_dict_for_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).state_dict() 
+small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
+small_model.eval() 
+''' 
 small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
 small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
 small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 7, target_model_dim = large_dim) 
@@ -220,6 +223,7 @@ except RuntimeError as r:
     print(colored(r, "yellow")) 
 small_model = small_model.to(torch_device) 
 small_model.eval() 
+'''
 # small_model.eval_mode = True 
 # small_model.train() 
 
