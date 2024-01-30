@@ -1034,6 +1034,7 @@ class CustomDataset:
         self.kernel_size = kernel_size 
         self.input_condensed = True 
         self.large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models) 
+        self.large_model_embeds = self.large_model.get_input_embeddings() 
         # self.dataset = self.dataset["train"][0: 5120] 
 
         self.tokenizer = tokenizer 
@@ -1059,11 +1060,12 @@ class CustomDataset:
         # self.dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
     
     def naive_grouping(self, input_ids): 
-        input_ids = input_ids.unsqueeze(0) 
-        embedding_searched = self.large_model.get_input_embeddings()(input_ids) 
+        input_ids = input_ids.unsqueeze(0) # input_ids shape is (1, 196) 
+        # embedding_searched = self.large_model.get_input_embeddings()(input_ids) 
+        embedding_searched = self.large_model_embeds(input_ids) # embedding_searched shape is (1, 196, 2048) 
         assert input_ids.shape[0] == 1 
-        seq_length = embedding_searched.shape[1] 
-        added_tensor = torch.zeros((seq_length // 7, embedding_searched.shape[2])) 
+        seq_length = embedding_searched.shape[1] # seq_length is 196 
+        added_tensor = torch.zeros((seq_length // 7, embedding_searched.shape[2])) # added_tensor shape is (28, 2048) 
         for i in range(seq_length // 7): 
             sum = torch.zeros((1, embedding_searched.shape[2])) 
             for j in range(7): 
