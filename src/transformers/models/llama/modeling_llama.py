@@ -1347,6 +1347,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
     
     def set_slidingwindowlength(self, sliding_window_length): 
         self.sliding_window_length = sliding_window_length 
+        self.addonmodel_start = self.sliding_window_length + 1 
     
     def set_walpha(self, alpha) : 
         self.alpha = alpha 

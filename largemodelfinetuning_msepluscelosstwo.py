@@ -717,7 +717,6 @@ class CustomDataset:
                 dmodel = 2048 
             # tensor = torch.zeros((28, dmodel), dtype = torch.float32) 
             expected_condensed_token_length = (self.max_length - self.prompt_length) // self.kernel_size 
-            tensor = torch.zeros((expected_condensed_token_length, dmodel), dtype = torch.float32) 
         
         if self.large_tokenizer is not None and self.small_tokenizer is not None: 
             large_encoded_text = self.large_tokenizer( 
@@ -741,7 +740,7 @@ class CustomDataset:
                 head_token = torch.ones((1, ), dtype = torch.long) # pad with <s> bos token 
                 head_mask = torch.ones((1, ), dtype = torch.long) # attention mask starts with 1 
             # item['large_input_ids'] = torch.cat((head_token, input_idsfull[57 :]), dim = 0) 
-            item['large_input_ids'] = torch.cat((head_token, input_idsfull[(self.prompt_length - self.kernel_size) :]), dim = 0) 
+            item['large_input_ids'] = torch.cat((head_token, input_idsfull[self.prompt_length - self.kernel_size :]), dim = 0) 
             small_encoded_text = self.small_tokenizer(
                 item["text"], # 6 word-level tokens + BOS to be the first chunk 
                 # add_special_tokens = False, 
@@ -762,9 +761,9 @@ class CustomDataset:
                 head_token2 = torch.ones((1, ), dtype = torch.long) # pad with <s> bos token 
                 head_mask2 = torch.ones((1, ), dtype = torch.long) # attention mask starts with 1 
             # item['input_ids'] = torch.cat((head_token2, input_idsfull2[57 :]), dim = 0) 
-            item['input_ids'] = torch.cat((head_token2, input_idsfull2[(self.prompt_length - self.kernel_size) :]), dim = 0) 
+            item['input_ids'] = torch.cat((head_token2, input_idsfull2[self.prompt_length - self.kernel_size :]), dim = 0) 
             # item['attention_mask'] = torch.cat((head_mask2, small_encoded_text['attention_mask'].squeeze(0)[57 :]), dim = 0) 
-            item['attention_mask'] = torch.cat((head_mask2, small_encoded_text['attention_mask'].squeeze(0)[(self.prompt_length - self.kernel_size) :]), dim = 0) 
+            item['attention_mask'] = torch.cat((head_mask2, small_encoded_text['attention_mask'].squeeze(0)[self.prompt_length - self.kernel_size :]), dim = 0) 
             
             # print("input_ids is {}, the length is {}".format(item["input_ids"], item["input_ids"].shape[0])) 
         
