@@ -646,28 +646,29 @@ class CustomTrainer(Trainer):
 
 class CustomDataset: 
     # def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7): 
-    def __init__(self, data_dir, large_tokenizer = None, small_tokenizer = None, max_length = 256, kernel_size = 7, topk = None): 
+    def __init__(self, data_dir, large_tokenizer = None, small_tokenizer = None, max_length = 256, kernel_size = 7, topk = None, prompt_length = 64): 
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
         self.synthesize_dir = data_dir 
         # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json", split = "train") 
         # self.dataset = load_dataset('json', data_files = [self.synthesize_dir + 'c4synthesized_file1.json', self.synthesize_dir + 'c4synthesized_file2.json'], split="train") 
         dfiles = [] 
-        if kernel_size != 4: 
-            print(colored("hostname is {}".format(hostname), "yellow")) 
-            if "ada" in hostname: 
-                for i in range(0, 2): 
-                    # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
-                    filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
-                    dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
-            elif "lovelace" in hostname: 
-                filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
+        print(colored("hostname is {}".format(hostname), "yellow")) 
+        if "ada" in hostname: 
+            for i in range(0, 2): 
+                # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+                # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+                filename = "c4synthesized_file1_kernel7_{}.json".format(i) 
                 dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
-            else: 
-                for i in range(0, 8): 
-                    filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
-                    dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
+        elif "lovelace" in hostname: 
+            # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
+            filename = "c4synthesized_file1_kernel7_0.json" 
+            dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
         else: 
-            filename = "c4synthesized_file1.json" 
+            for i in range(0, 8): 
+                # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
+                filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
+                dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
+        
         if not args.debug: 
             self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
         else: 
@@ -681,6 +682,7 @@ class CustomDataset:
         self.large_tokenizer = large_tokenizer 
         self.small_tokenizer = small_tokenizer 
         self.max_length = max_length 
+        self.prompt_length = prompt_length 
     
     def __len__(self): 
         return len(self.dataset) 
@@ -713,7 +715,8 @@ class CustomDataset:
                 dmodel = 3200 
             elif model_name == "tinyllama": 
                 dmodel = 2048 
-            tensor = torch.zeros((28, dmodel), dtype = torch.float32) 
+            # tensor = torch.zeros((28, dmodel), dtype = torch.float32) 
+            expected_condensed_token_length = (self.max_length - self.prompt_length) // self.kernel_size 
         
         if self.large_tokenizer is not None and self.small_tokenizer is not None: 
             large_encoded_text = self.large_tokenizer( 
@@ -729,33 +732,38 @@ class CustomDataset:
             ) 
             # item['large_input_ids'] = large_encoded_text['input_ids'][0].squeeze(0)  # remove the batch dimension 
             input_idsfull = large_encoded_text['input_ids'].squeeze(0) # remove the batch dimension 
-            if input_idsfull[57] == 2 or input_idsfull[57] == 1: # if the first token is </s> or <s> 
+            # if input_idsfull[57] == 2 or input_idsfull[57] == 1: # if the first token is </s> or <s> 
+            if input_idsfull[self.prompt_length - self.kernel_size] == 2 or input_idsfull[self.prompt_length - self.kernel_size] == 1: # if the first token is </s> or <s> 
                 head_token = torch.tensor([2], dtype = torch.long) # pad with </s> eos token 
                 head_mask = torch.zeros((1, ), dtype = torch.long) # attention mask starts with 0 
             else: 
                 head_token = torch.ones((1, ), dtype = torch.long) # pad with <s> bos token 
                 head_mask = torch.ones((1, ), dtype = torch.long) # attention mask starts with 1 
-            item['large_input_ids'] = torch.cat((head_token, input_idsfull[57 :]), dim = 0) 
+            # item['large_input_ids'] = torch.cat((head_token, input_idsfull[57 :]), dim = 0) 
+            item['large_input_ids'] = torch.cat((head_token, input_idsfull[self.prompt_length - self.kernel_size :]), dim = 0) 
             small_encoded_text = self.small_tokenizer(
                 item["text"], # 6 word-level tokens + BOS to be the first chunk 
                 # add_special_tokens = False, 
                 add_special_tokens = True, 
                 padding = "max_length", 
-                # max_length = 64 + self.dict_kernel_maxlength[self.kernel_size], 
+                # max_length = 64 + self.dict_kernel_maxlength[self.kernel_size],
                 max_length = self.max_length, 
                 return_attention_mask = True, 
                 return_tensors = "pt", 
                 truncation = True, 
             ) 
             input_idsfull2 = small_encoded_text['input_ids'].squeeze(0) # remove the batch dimension 
-            if input_idsfull2[57] == 2 or input_idsfull2[57] == 1: # if the first token is </s> or <s> 
+            # if input_idsfull2[57] == 2 or input_idsfull2[57] == 1: # if the first token is </s> or <s> 
+            if input_idsfull2[self.prompt_length - self.kernel_size] == 2 or input_idsfull2[self.prompt_length - self.kernel_size] == 1: # if the first token is </s> or <s> 
                 head_token2 = torch.tensor([2], dtype = torch.long) # pad with </s> eos token 
                 head_mask2 = torch.zeros((1, ), dtype = torch.long) # attention mask starts with 0 
             else: 
                 head_token2 = torch.ones((1, ), dtype = torch.long) # pad with <s> bos token 
                 head_mask2 = torch.ones((1, ), dtype = torch.long) # attention mask starts with 1 
-            item['input_ids'] = torch.cat((head_token2, input_idsfull2[57 :]), dim = 0) 
-            item['attention_mask'] = torch.cat((head_mask2, small_encoded_text['attention_mask'].squeeze(0)[57 :]), dim = 0) 
+            # item['input_ids'] = torch.cat((head_token2, input_idsfull2[57 :]), dim = 0) 
+            item['input_ids'] = torch.cat((head_token2, input_idsfull2[self.prompt_length - self.kernel_size :]), dim = 0) 
+            # item['attention_mask'] = torch.cat((head_mask2, small_encoded_text['attention_mask'].squeeze(0)[57 :]), dim = 0) 
+            item['attention_mask'] = torch.cat((head_mask2, small_encoded_text['attention_mask'].squeeze(0)[self.prompt_length - self.kernel_size :]), dim = 0) 
             
             # print("input_ids is {}, the length is {}".format(item["input_ids"], item["input_ids"].shape[0])) 
         
@@ -788,7 +796,10 @@ for tokenizer in tokenizers:
 
 kernel_size = args.kernel_size 
 # datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
-datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
+# datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
+# the max_length assignment is subject to change 
+max_length_lookup = {2 : 260, 3 : 259, 4 : 260, 5 : 259, 6 : 262, 7 : 260, 8 : 264} 
+datasetnew = CustomDataset(max_length = max_length_lookup[kernel_size], data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64) 
 train_set, test_set = datasetnew.split(0.98) 
 
 for i in range(0, 2): 
@@ -810,7 +821,8 @@ else:
 if not args.use_pretrained_small_model: 
     small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
     print(colored("not using pretrained small model", "green")) 
-    small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 7, target_model_dim = large_dim) 
+    # small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 7, target_model_dim = large_dim) 
+    small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = args.kernel_size, target_model_dim = large_dim) 
 
     new_state_dict = {} 
 
