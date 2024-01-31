@@ -717,6 +717,7 @@ class CustomDataset:
                 dmodel = 2048 
             # tensor = torch.zeros((28, dmodel), dtype = torch.float32) 
             expected_condensed_token_length = (self.max_length - self.prompt_length) // self.kernel_size 
+            tensor = torch.zeros((28, dmodel), dtype = torch.float32) 
         
         if self.large_tokenizer is not None and self.small_tokenizer is not None: 
             large_encoded_text = self.large_tokenizer( 
