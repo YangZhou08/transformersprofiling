@@ -306,7 +306,8 @@ class CustomTrainer(Trainer):
         attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 2), dtype = torch.long).to(large_input_ids.device) # sequence length is 204, one bos, 29 more tokens, so 30 in total, we have 28 condensed tokens 
         
         batch_size, seq_len = original_attention_mask.shape 
-        addedon_length = (seq_len - 8) // self.n 
+        # addedon_length = (seq_len - 8) // self.n 
+        addedon_length = (seq_len - self.n - 1) // self.n 
         original_attention_mask = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
         
         outputs = model(
@@ -1000,7 +1001,7 @@ trainer = CustomTrainer(
     time_hash = hash_of_time, 
     commit_hash = commit_hash, 
     text_eval = model_path + text_eval, 
-    n = 7, 
+    n = args.kernel_size, 
 ) 
 
 if trainer.accelerator.is_main_process and has_wandb: 
