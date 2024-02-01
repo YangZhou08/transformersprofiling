@@ -349,11 +349,13 @@ class CustomTrainer(Trainer):
             ce_loss = outputs["ce_loss"] if isinstance(outputs, dict) else outputs[-2] 
             l2_distance = outputs["l2_distance"] if isinstance(outputs, dict) else outputs[-3] 
             l2_distance_input = outputs["l2_distance_input"] if isinstance(outputs, dict) else outputs[-1] 
+            cossim_input = outputs["cossim_input"] if isinstance(outputs, dict) else outputs[-1] 
         
         print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
         print(colored("rank {} ce_loss {}".format(self.accelerator.state.process_index, ce_loss), "yellow")) 
         print(colored("rank {} l2_distance {}".format(self.accelerator.state.process_index, l2_distance), "yellow")) 
         print(colored("rank {} l2_distance_input {}".format(self.accelerator.state.process_index, l2_distance_input), "yellow")) 
+        print(colored("rank {} cossim_input {}".format(self.accelerator.state.process_index, cossim_input), "yellow")) 
         if self.accelerator.is_main_process and has_wandb and self.iteration_count % 20 == 0: 
             if len(self.optimizer.param_groups) > 1: 
                 wandb.log({"loss": loss, 
