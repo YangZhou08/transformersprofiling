@@ -366,7 +366,9 @@ class CustomTrainer(Trainer):
                         "ce_loss": ce_loss, 
                         "l2_distance": l2_distance, 
                         "l2_distance_input": l2_distance_input, 
+                        "cosin_similarity_input": cossim_input, 
                 }) 
+                
             else: 
                 wandb.log({"loss": loss, 
                         "group1.lr": self.optimizer.param_groups[0]["lr"], 
@@ -374,6 +376,7 @@ class CustomTrainer(Trainer):
                         "ce_loss": ce_loss, 
                         "l2_distance": l2_distance, 
                         "l2_distance_input": l2_distance_input, 
+                        "cosin_similarity_input": cossim_input, 
                 }) 
                 
         if self.accelerator.is_main_process and self.iteration_count % 1000 == 0 and has_wandb: 
