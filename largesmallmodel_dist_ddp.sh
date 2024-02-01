@@ -1,5 +1,5 @@
 # accelerate launch --main_process_port 29501 --num_processes 2 --num_machines 1 largemodelfinetuning_mseplusceloss2.py --large_model tinyllama --kernel_size 7 --batch_size 64 --use_pretrained_small_model --finetuned_small_model_checkpoint YangZhoumill/llama_160m_deciphering_tinyllama_setting0_01da4cb_hf --ce_loss_only 
-accelerate launch --main_process_port 29506 --num_processes 2 --num_machines 1 largemodelfinetuning_mseplusceloss2.py --large_model tinyllama --kernel_size 3 --batch_size 64 --alpha 0.5 --ce_loss_only --experiment_setting setting0 --batch_size 32 
+accelerate launch --main_process_port 29506 --num_processes 2 --num_machines 1 largemodelfinetuning_mseplusceloss2.py --large_model tinyllama --kernel_size 2 --batch_size 64 --alpha 0.5 --ce_loss_only --experiment_setting setting0 --batch_size 32 
 # accelerate launch --main_process_port 29505 --num_processes 2 --num_machines 1 largemodelfinetuning_mseplusceloss.py --large_model tinyllama --kernel_size 7 --batch_size 64 --debug 
 
 # accelerate launch --main_process_port 29503 --num_processes 1 --num_machines 1 largemodelfinetuning_mseplusceloss.py --use_pretrained_small_model --finetuned_small_model_checkpoint /home/beidic/yangzho6/model_checkpoints/llama-160m_deciphering_openallama3b_setting0_070600 --large_model openllama3b --kernel_size 7 
