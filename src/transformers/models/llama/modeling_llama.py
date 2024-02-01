@@ -1509,6 +1509,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         
         practical_mask = attention_mask.unsqueeze(-1).expand_as(inputs_embeds) 
         mselabels = condensed_embed_labels 
+        print("first 100 eleents of hidden_states: {}".format(hidden_states[0][0][: 100])) 
         print("first 100 elements of mselabels: {}".format(mselabels[0][0][: 100])) 
         # hidden_states[practical_mask == 0] = 0 
         # hidden_states = hidden_states[:, :-1, :] # NOTE this is very important 
