@@ -303,7 +303,8 @@ class CustomTrainer(Trainer):
         label2 = inputs["labels"] # (batch_size, 203) 
         print("shape of large_input_ids {} shape of small_input_ids {}".format(large_input_ids.shape, small_input_ids.shape)) 
         # attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 1), dtype = torch.long).to(large_input_ids.device) 
-        attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 2), dtype = torch.long).to(large_input_ids.device) # sequence length is 204, one bos, 29 more tokens, so 30 in total, we have 28 condensed tokens 
+        # attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 2), dtype = torch.long).to(large_input_ids.device) # sequence length is 204, one bos, 29 more tokens, so 30 in total, we have 28 condensed tokens 
+        attention_mask = torch.ones((large_input_ids.shape[0], (large_input_ids.shape[1] - 1) // self.n + 1), dtype = torch.long).to(large_input_ids.device) 
         
         batch_size, seq_len = original_attention_mask.shape 
         # addedon_length = (seq_len - 8) // self.n 
@@ -710,19 +711,21 @@ class CustomDataset:
     
     def __getitem__(self, idx): 
         item = self.dataset[idx] 
+        '''
         try: 
             tensor = torch.load(item["condensed_token_path"]) 
         except IOError as e: 
             print(colored("///IOError occured replacing with an empty tensor///", "red")) 
-            if model_name == "shearedllama2_7b": 
-                dmodel = 2560 
-            elif model_name == "openllama3b": 
-                dmodel = 3200 
-            elif model_name == "tinyllama": 
-                dmodel = 2048 
             # tensor = torch.zeros((28, dmodel), dtype = torch.float32) 
-            expected_condensed_token_length = (self.max_length - self.prompt_length) // self.kernel_size 
-            tensor = torch.zeros((expected_condensed_token_length, dmodel), dtype = torch.float32) 
+        ''' 
+        if model_name == "shearedllama2_7b": 
+            dmodel = 2560 
+        elif model_name == "openllama3b": 
+            dmodel = 3200 
+        elif model_name == "tinyllama": 
+            dmodel = 2048 
+        expected_condensed_token_length = (self.max_length - self.prompt_length) // self.kernel_size 
+        tensor = torch.zeros((expected_condensed_token_length, dmodel), dtype = torch.float32) 
         
         if self.large_tokenizer is not None and self.small_tokenizer is not None: 
             large_encoded_text = self.large_tokenizer( 
