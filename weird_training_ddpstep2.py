@@ -263,6 +263,7 @@ class CustomTrainer(Trainer):
             dtype = None, 
             model_name = None, 
             text_eval = None, 
+            input_condensed = False, 
             *args, 
             **kwargs, 
     ): 
@@ -288,6 +289,33 @@ class CustomTrainer(Trainer):
             print(colored("the step count is {}".format(self.state.global_step), "yellow")) 
             if self.iteration_count == 0: 
                 self.iteration_count = 4 * self.state.global_step 
+        if input_condensed: 
+            self.large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models) 
+            self.large_model_embeds = self.large_model.get_input_embeddings() 
+    
+    def naive_grouping(self, input_ids): 
+        embedding_searched = self.model.embed_tokens(input_ids) 
+        # print("embedding_searched shape {} {}".format(embedding_searched.shape, embedding_searched.dtype)) 
+        seq_length = embedding_searched.shape[1] 
+        
+        # assert seq_length % 7 == 0, "seq_length is not divisible by 7" 
+        assert seq_length % self.sliding_window_length == 0, "seq_length is not divisible by sliding_window_length" 
+        # added_tensor = torch.zeros((embedding_searched.shape[0], seq_length // 7, embedding_searched.shape[2])).to(input_ids.device).to(embedding_searched.dtype) 
+        added_tensor = torch.zeros((embedding_searched.shape[0], seq_length // self.sliding_window_length, embedding_searched.shape[2])).to(input_ids.device).to(embedding_searched.dtype) 
+        # for i in range(seq_length // 7): 
+        for i in range(seq_length // self.sliding_window_length): 
+            sum = torch.zeros((embedding_searched.shape[0], embedding_searched.shape[2])).to(input_ids.device).to(embedding_searched.dtype) 
+            # for j in range(7): 
+            for j in range(self.sliding_window_length): 
+                # sum += embedding_searched[:, i * 7 + j, :] 
+                sum += embedding_searched[:, i * self.sliding_window_length + j, :] 
+                # sum /= 7. 
+                sum /= float(self.sliding_window_length) 
+                # print("sum dtype {}".format(sum.dtype)) 
+            added_tensor[:, i, :] = sum 
+        # print("added_tensor shape {}".format(added_tensor.shape)) 
+        
+        return added_tensor 
     
     def train(
         self,
@@ -612,7 +640,10 @@ class CustomTrainer(Trainer):
         # print("labels are {}".format(labels[0])) 
         print("type of the model is {}".format(type(model))) 
         if isinstance(getattr(model, "module", model), SimpleSmallModel) or isinstance(model, SimpleSmallModel) == True: 
-            condensed_embeds = inputs["condensed_embeds"].to(self.dtype) 
+            if self.input_condensed: 
+                condensed_embeds = self.naive_grouping(input_ids[:, 64:]).to(self.dtype) # condensed_embeds shape is (28, d_model) 
+            else: 
+                condensed_embeds = inputs["condensed_embeds"].to(self.dtype) 
             print(colored("the shape of condensed_embeds is {}".format(condensed_embeds.shape), "yellow")) 
             batch_size, seq_len = attention_mask.shape 
             addedon_length = condensed_embeds.shape[1] 
@@ -1033,8 +1064,6 @@ class CustomDataset:
         self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
         self.kernel_size = kernel_size 
         self.input_condensed = True 
-        self.large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models) 
-        self.large_model_embeds = self.large_model.get_input_embeddings() 
         # self.dataset = self.dataset["train"][0: 5120] 
 
         self.tokenizer = tokenizer 
@@ -1058,25 +1087,6 @@ class CustomDataset:
         self.dataset = self.dataset.map(encode_with_truncation, batched = True, num_proc = 4) 
         # self.dataset = self.dataset.map(loading_condensed_embeds, batched = True, num_proc = 4) 
         # self.dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
-    
-    def naive_grouping(self, input_ids): 
-        input_ids = input_ids.unsqueeze(0) # input_ids shape is (1, 196) 
-        # embedding_searched = self.large_model.get_input_embeddings()(input_ids) 
-        embedding_searched = self.large_model_embeds(input_ids) # embedding_searched shape is (1, 196, 2048) 
-        assert input_ids.shape[0] == 1 
-        seq_length = embedding_searched.shape[1] # seq_length is 196 
-        added_tensor = torch.zeros((seq_length // 7, embedding_searched.shape[2])) # added_tensor shape is (28, 2048) 
-        for i in range(seq_length // 7): 
-            sum = torch.zeros((1, embedding_searched.shape[2])) 
-            for j in range(7): 
-                sum += embedding_searched[:, i * 7 + j, :] 
-                sum /= 7. 
-            sum = sum.squeeze(0) 
-            added_tensor[i, :] = sum 
-        # print("added_tensor shape {}".format(added_tensor.shape)) 
-        
-        # return {"input_ids_chunk": added_tensor, "attention_mask_chunk": practice_attention_mask} 
-        return added_tensor 
         
     
     def __getitem__(self, idx): 
@@ -1107,7 +1117,8 @@ class CustomDataset:
         if not self.input_condensed: 
             item["condensed_embeds"] = tensor 
         else: 
-            item["condensed_embeds"] = self.naive_grouping(item["input_ids"][64 :]) 
+            # turn this field into a placeholder 
+            item["condensed_embeds"] = torch.zeros((28, ))
         # print(colored("the shape of condensed_embeds is {}".format(tensor.shape), "yellow")) 
         # item["input_ids"] = torch.tensor(item["input_ids"]) 
         # item["attention_mask"] = torch.tensor(item["attention_mask"]) 
@@ -1353,6 +1364,7 @@ trainer = CustomTrainer(
     dtype = weightmodelfirst.dtype, 
     model_name = model_name, 
     text_eval = model_path + text_eval, 
+    input_condensed = True, 
 ) 
 
 max_length = 128 
@@ -1368,6 +1380,7 @@ if trainer.accelerator.is_main_process and has_wandb:
     wandb.init(project = "llm160m", config = wandblogconfigs, name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain")) 
 
 print("experiment-setting is {}".format(trainer.experiment_setting)) 
+print("***** Using input condensed tokens {} *****".format("yes" if trainer.input_condensed else "no")) 
 
 # print(trainer.lr_scheduler.state_dict()) 
 # exit(0) 

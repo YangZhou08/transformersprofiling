@@ -210,6 +210,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--kernel_size", type = int, default = 7) 
 parser.add_argument("--use_pretrained_small_model", action = "store_true") 
 parser.add_argument("--finetuned_small_model_checkpoint", type = str, default = None) 
+parser.add_argument("--finetuned_large_model_checkpoint", type = str, default = None) 
 parser.add_argument("--large_model", type = str, default = "openllama3b") 
 parser.add_argument("--use_mse_loss", action = "store_true") 
 parser.add_argument("--resume_from_checkpoint", type = str, default = None) 
@@ -229,6 +230,9 @@ model_name = args.large_model
 if args.use_pretrained_small_model: 
     assert args.finetuned_small_model_checkpoint is not None 
 text_eval = "evaluating_printout_{}_{}_{}.txt".format(commit_hash, hash_of_time, model_name) 
+
+assert not (args.freeze_small_model and args.freeze_large_model) 
+assert not (args.use_mse_loss and args.freeze_large_model) 
 
 class CustomTrainer(Trainer): 
     def __init__(self, 
@@ -855,7 +859,10 @@ if args.large_model == "openllama3b":
     large_model = LlamaWeirdLarge2.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = args.use_mse_loss, ce_loss_only = args.ce_loss_only).to(torch.bfloat16).to(torch_device) 
 elif args.large_model == "tinyllama": 
     # large_model = LlamaWeirdLarge2.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = args.use_mse_loss).to(torch.bfloat16).to(torch_device) 
-    large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    if args.finetuned_large_model_checkpoint is not None: 
+        large_model = LlamaWeirdLarge3.from_pretrained(args.finetuned_large_model_checkpoint).to(torch.bfloat16).to(torch_device) 
+    else: 
+        large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     large_model.set_msece_loss(args.use_mse_loss, args.ce_loss_only) 
     large_model.set_addonsmallmodel(small_model) 
     if args.finetuned_small_model_checkpoint is not None: 
