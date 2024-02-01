@@ -1382,8 +1382,8 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
                 # sum += embedding_searched[:, i * 7 + j, :] 
                 sum += embedding_searched[:, i * self.sliding_window_length + j, :] 
                 # sum /= 7. 
-                sum /= float(self.sliding_window_length) 
                 # print("sum dtype {}".format(sum.dtype)) 
+            sum /= float(self.sliding_window_length) 
             added_tensor[:, i, :] = sum 
         # print("added_tensor shape {}".format(added_tensor.shape)) 
         
