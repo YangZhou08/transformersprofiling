@@ -1368,6 +1368,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         embedding_searched = self.model.embed_tokens(input_ids) 
         # print("embedding_searched shape {} {}".format(embedding_searched.shape, embedding_searched.dtype)) 
         seq_length = embedding_searched.shape[1] 
+        print("seq_length {}".format(seq_length)) 
         
         # assert seq_length % 7 == 0, "seq_length is not divisible by 7" 
         assert seq_length % self.sliding_window_length == 0, "seq_length is not divisible by sliding_window_length" 
