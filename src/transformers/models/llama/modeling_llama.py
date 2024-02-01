@@ -1530,8 +1530,10 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         mse_loss_input = mse_lossfunc2(hidden_states, inputs_embeds) 
         l2_distance_input = mse_loss_input.clone().detach() 
         # print(colored("mse_loss_input {}".format(mse_loss_input), "red")) 
-        cossim_input = F.cosine_similarity(hidden_states, inputs_embeds, dim = -1) 
+        cossim_input = F.cosine_similarity(hidden_states.reshape(-1, hidden_states.shape[-1]), inputs_embeds.reshape(-1, inputs_embeds.shape[-1]), dim = 1) 
         print("cossim_input shape {}".format(cossim_input.shape)) 
+        cossim_input = cossim_input.mean(dim = 0) 
+        print("cossim_input {}".format(cossim_input)) 
         
         exit(0) 
         
