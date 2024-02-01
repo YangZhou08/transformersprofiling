@@ -412,10 +412,12 @@ class CustomTrainer(Trainer):
         print("logits[1].shape {}".format(logits[1].shape)) 
         print("logits[2].shape {}".format(logits[2].shape)) 
         print("logits[3].shape {}".format(logits[3].shape)) 
-        assert len(logits) == 4 
+        print("logits[4].shape {}".format(logits[4].shape)) 
+        # assert len(logits) == 4 
         l2dist = logits[1].reshape(-1) 
         ce_loss = logits[2].reshape(-1) 
         l2dist_input = logits[3].reshape(-1) 
+        cos_sim_input = logits[4].reshape(-1) 
         logits = logits[0] 
         # print(l2dist) 
         logits = logits[:, :-1, :] 
@@ -464,7 +466,7 @@ class CustomTrainer(Trainer):
         total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
         correct_words = torch.sum((preds[indices_to_keep] == labels[indices_to_keep]).view(-1), dim = 0).item() 
         print("correct words: {} and total words: {}".format(correct_words, total_valid_tokens)) 
-        return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "l2_distance": l2dist.item(), "ce_loss": ce_loss.item() if isinstance(ce_loss, torch.Tensor) else ce_loss, "l2_distance_input": l2dist_input.item()} 
+        return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "l2_distance": l2dist.item(), "ce_loss": ce_loss.item() if isinstance(ce_loss, torch.Tensor) else ce_loss, "l2_distance_input": l2dist_input.item(), "cosin_similarity": cos_sim_input.item()} 
                 
     def evaluation_loop(
         self,
@@ -536,6 +538,7 @@ class CustomTrainer(Trainer):
         total_loss = 0 # used to compute the correct perplexity 
         l2_distance = 0 
         l2_distance_input = 0 
+        cosine_similarity_input = 0 
         ce_loss = 0 
         
         observed_num_examples = 0 
@@ -570,6 +573,7 @@ class CustomTrainer(Trainer):
             sum_of_perplexity += local_metrics["perplexity"] 
             l2_distance += local_metrics["l2_distance"] 
             l2_distance_input += local_metrics["l2_distance_input"] 
+            cosine_similarity_input += local_metrics["cosin_similarity"] 
             ce_loss += local_metrics["ce_loss"] 
 
             if is_torch_tpu_available(): 
@@ -586,6 +590,7 @@ class CustomTrainer(Trainer):
         sum_of_perplexity = self.gather_function(torch.tensor(sum_of_perplexity).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
         l2_distance = self.gather_function(torch.tensor(l2_distance).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).div(self.accelerator.state.num_processes).item() 
         l2_distance_input = self.gather_function(torch.tensor(l2_distance_input).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).div(self.accelerator.state.num_processes).item() 
+        cosine_similarity_input = self.gather_function(torch.tensor(cosine_similarity_input).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).div(self.accelerator.state.num_processes).item() 
         ce_loss = self.gather_function(torch.tensor(ce_loss).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).div(self.accelerator.state.num_processes).item() 
         
         # After all calls to `.gather_function`, reset to `gather_for_metrics`:
@@ -614,12 +619,13 @@ class CustomTrainer(Trainer):
         all_losses = total_loss / total_num_steps 
         l2_distance = l2_distance / total_num_steps 
         l2_distance_input = l2_distance_input / total_num_steps 
+        cosine_similarity_input = cosine_similarity_input / total_num_steps 
         ce_loss = ce_loss / total_num_steps 
 
-        metrics = {"perplexity": global_perplexity, "accuracy": global_accuracy, "l2_distance": l2_distance, "ce_loss": ce_loss, "l2_distance_input": l2_distance_input} 
+        metrics = {"perplexity": global_perplexity, "accuracy": global_accuracy, "l2_distance": l2_distance, "ce_loss": ce_loss, "l2_distance_input": l2_distance_input, "cosine_similarity_input": cosine_similarity_input} 
         if self.accelerator.is_main_process: 
             print(colored(metrics, "magenta")) 
-            wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy, "l2_distance": l2_distance, "ce_loss": ce_loss, "eval_loss_upd": all_losses, "l2_distance_input": l2_distance_input}) 
+            wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy, "l2_distance": l2_distance, "ce_loss": ce_loss, "eval_loss_upd": all_losses, "l2_distance_input": l2_distance_input, "cosine_similarity_input": cosine_similarity_input}) 
         
         # # Metrics!
         # if self.compute_metrics is not None and all_preds is not None and all_labels is not None:

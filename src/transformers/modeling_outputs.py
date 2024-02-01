@@ -691,6 +691,7 @@ class CausalLMOutputWithPastLargeDistance2(ModelOutput):
     l2_distance: Optional[torch.Tensor] = None 
     ce_loss: Optional[torch.Tensor] = None 
     l2_distance_input: Optional[torch.Tensor] = None 
+    cossim_input: Optional[torch.Tensor] = None 
 
 @dataclass 
 class CausalLMOutputWithPastWithOriginalOutput(ModelOutput): 
