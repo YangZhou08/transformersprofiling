@@ -264,6 +264,7 @@ class CustomTrainer(Trainer):
             model_name = None, 
             text_eval = None, 
             input_condensed = False, 
+            sliding_window_length = 7, 
             *args, 
             **kwargs, 
     ): 
@@ -282,6 +283,7 @@ class CustomTrainer(Trainer):
         self.model_name = model_name 
         self.input_condensed = input_condensed 
         self.text_eval = text_eval 
+        self.sliding_window_length = sliding_window_length 
         
         if self.args.resume_from_checkpoint is not None: 
             self.time_checkpoint = int(self.args.resume_from_checkpoint.split("-")[-1]) 
@@ -1366,6 +1368,7 @@ trainer = CustomTrainer(
     model_name = model_name, 
     text_eval = model_path + text_eval, 
     input_condensed = args.input_condensed, 
+    sliding_window_length = args.kernel_size, 
 ) 
 
 max_length = 128 
