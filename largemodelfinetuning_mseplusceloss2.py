@@ -722,21 +722,23 @@ class CustomDataset:
     
     def __getitem__(self, idx): 
         item = self.dataset[idx] 
-        '''
+        
         try: 
             tensor = torch.load(item["condensed_token_path"]) 
         except IOError as e: 
+            if model_name == "shearedllama2_7b": 
+                dmodel = 2560 
+            elif model_name == "openllama3b": 
+                dmodel = 3200 
+            elif model_name == "tinyllama": 
+                dmodel = 2048 
+            # tensor = torch.zeros((expected_condensed_token_length, dmodel), dtype = torch.float32) 
+            tensor = torch.zeros((28, dmodel), dtype = torch.float32) 
             print(colored("///IOError occured replacing with an empty tensor///", "red")) 
             # tensor = torch.zeros((28, dmodel), dtype = torch.float32) 
-        ''' 
-        if model_name == "shearedllama2_7b": 
-            dmodel = 2560 
-        elif model_name == "openllama3b": 
-            dmodel = 3200 
-        elif model_name == "tinyllama": 
-            dmodel = 2048 
-        expected_condensed_token_length = (self.max_length - self.prompt_length) // self.kernel_size 
-        tensor = torch.zeros((expected_condensed_token_length, dmodel), dtype = torch.float32) 
+        
+        # expected_condensed_token_length = (self.max_length - self.prompt_length) // self.kernel_size 
+        # tensor = torch.zeros((expected_condensed_token_length, dmodel), dtype = torch.float32) 
         
         if self.large_tokenizer is not None and self.small_tokenizer is not None: 
             large_encoded_text = self.large_tokenizer( 
