@@ -1517,8 +1517,10 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         # output 30 condensed tokens, the last one and the first one doesn't have the condensed token label, so 28 left 
         # assert labels.shape == hidden_states.shape 
         assert mselabels.shape == hidden_states.shape 
-        mse_lossfunc = nn.MSELoss() 
-        mse_loss = mse_lossfunc(hidden_states, mselabels) 
+        # mse_lossfunc = nn.MSELoss() 
+        # mse_loss = mse_lossfunc(hidden_states, mselabels) 
+        cosinesimlossfunc = nn.CosineEmbeddingLoss() 
+        mse_loss = cosinesimlossfunc(hidden_states.reshape(-1, hidden_states.shape[-1]), mselabels.shape(-1, mselabels.shape[-1]), torch.ones(hidden_states.shape[0] * hidden_states.shape[1]).to(hidden_states.device)) 
         intermediate_l2_dist = mse_loss.clone().detach() 
         # print(colored("mse_loss {}".format(mse_loss), "red")) 
         
