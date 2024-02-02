@@ -4179,3 +4179,383 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 tuple(past_state.index_select(0, beam_idx.to(past_state.device)) for past_state in layer_past),
             )
         return reordered_past 
+
+class SimpleSmallModel(LlamaPreTrainedModel): 
+    _tied_weights_keys = ["lm_head.weight"] 
+    
+    def __init__(self, *args, sliding_window_length = 4, hostname = None, target_model_dim = 4096, **kwargs): 
+        super().__init__(*args, **kwargs) 
+        # copied from LlamaModel 
+        config = self.config 
+        self.padding_idx = config.pad_token_id 
+        self.vocab_size = config.vocab_size 
+        
+        # cross model projection of the hidden states dimension 
+        self.target_model_dim = target_model_dim 
+        self.embed_projection = nn.Linear(self.target_model_dim, config.hidden_size, bias = False) 
+        self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx) 
+        self.layers = nn.ModuleList([LlamaDecoderLayer(config) for _ in range(config.num_hidden_layers)])
+        self.norm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps) 
+        
+        self.gradient_checkpointing = False 
+        
+        # copied from LlamaForCausalLM 
+        self.vocab_size = config.vocab_size 
+        self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False) 
+
+        # needed to be used for the interleaving embeddings 
+        self.sliding_window_length = sliding_window_length 
+        
+        # Initialize weights and apply final processing
+        self.post_init() 
+
+        # add an evaluation mode 
+        self.eval_mode = False 
+        self.condensed_fashion = "projection_mode" 
+        self.all_list_condensed = ["projection_mode", "ground_truth"] 
+
+        self.criticalpath = None 
+        # determine something 
+        if hostname is not None: 
+            if "lovelace" in hostname: 
+                self.criticalpath = "/home/yangzho6/" 
+            elif "ada" in hostname: 
+                self.criticalpath = "/home/beidic/yangzho6/" 
+            else: 
+                self.criticalpath = "/fsx-storygen/beidic/yang/" 
+
+        if self.criticalpath is None or hostname is None: 
+            raise ValueError("critical path is not set") 
+    
+    # input embeddings 
+    def get_input_embeddings(self):
+        # return self.model.embed_tokens 
+        return self.embed_tokens 
+
+    def set_input_embeddings(self, value):
+        # self.model.embed_tokens = value 
+        self.embed_tokens = value 
+
+    # output embeddings 
+    def get_output_embeddings(self):
+        return self.lm_head
+
+    def set_output_embeddings(self, new_embeddings):
+        self.lm_head = new_embeddings
+
+    # def set_decoder(self, decoder):
+    #     self.model = decoder
+
+    # def get_decoder(self):
+    #     return self.model 
+
+    # this function happens after inputs_embeds has been made, so there shouldn't be problem related to condensed tokens 
+    def _prepare_decoder_attention_mask(self, attention_mask, input_shape, inputs_embeds, past_key_values_length): 
+        combined_attention_mask = None 
+        if input_shape[-1] > 1: 
+            combined_attention_mask = _make_causal_mask(
+                input_shape, 
+                inputs_embeds.dtype, 
+                device = inputs_embeds.device, 
+                past_key_values_length = past_key_values_length, 
+            ) 
+            # print("combined attention mask shape {}".format(combined_attention_mask.shape)) 
+        
+        if attention_mask is not None: 
+
+            expanded_attn_mask = _expand_mask(attention_mask, inputs_embeds.dtype, tgt_len = input_shape[-1]).to( #008000 
+                inputs_embeds.device 
+            ) 
+            # print("expanded_attn_mask has shape {}".format(expanded_attn_mask.shape)) 
+            # print("combined_attention_mask has shape {}".format(combined_attention_mask.shape)) 
+            # print("expanded attention mask shape {}".format(expanded_attn_mask.shape)) 
+            combined_attention_mask = (
+                expanded_attn_mask if combined_attention_mask is None else expanded_attn_mask + combined_attention_mask 
+            ) 
+        
+        return combined_attention_mask 
+
+    def _convert_to_normal_attention_mask(self, combined_attention_mask, dtype, mask_list_pos, start_idx = None, kernel_size = None): 
+        mask_shape = combined_attention_mask.shape # (batch_size, 1, tgt_seq_len, src_seq_len) 
+        seq_len = mask_shape[-1] 
+        start_idx = start_idx if start_idx is not None else self.start_idx 
+        kernel_size = kernel_size if kernel_size is not None else self.sliding_window_length 
+        
+        # row dimensional masking 
+        # row_idx_masked_out = [start_idx + i * (kernel_size + 1) for i in range((seq_len - start_idx) / (kernel_size + 1))] 
+        row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) # NOTE currently, this line only works for training 
+        # row_mask[row_idx_masked_out] = 1 
+        row_mask[mask_list_pos] = 1 
+
+        condensed_token_idx_list = mask_list_pos 
+        for i in range(len(condensed_token_idx_list)): 
+            row_mask[condensed_token_idx_list[i]: , condensed_token_idx_list[i]] = 1 
+        row_mask = row_mask[None, None, :, :].expand(mask_shape).to(torch.bool) 
+        row_mask = row_mask.to(device = combined_attention_mask.device) 
+
+        combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
+    
+    def visualize_position_ids(self, position_ids, mask_idx): 
+        # for debugging purposes 
+        position_ids = position_ids.squeeze(0) 
+        outputline = "" 
+        for i in range(position_ids.shape[0]): 
+            if i in mask_idx: 
+                outputline += colored(str(position_ids[i].item()), "red") + " "
+            else: 
+                outputline += str(position_ids[i].item()) + " " 
+        return outputline 
+
+    def visualize_attention_mask(self, sequence_length, tensor, filename): 
+        # code generated by GPT-4 
+        '''
+        # Create a tensor for demonstration purposes
+        # In your case, replace this with the actual tensor
+        tensor = torch.full((sequence_length, sequence_length), float('-inf'))
+        mask = torch.rand(sequence_length, sequence_length) > 0.5  # Random mask for demo
+        tensor[mask] = 0.0
+        ''' 
+        # Convert to numpy for visualization 
+        tensordtype = tensor.dtype 
+        if tensordtype == torch.bfloat16: 
+            tensor_np = tensor.cpu().clone().to(torch.float32).numpy() 
+        else: 
+            tensor_np = tensor.cpu().clone().numpy() 
+
+        # Replace -inf with 1 and 0 with 0 for visualization purposes
+        # visual_tensor = np.where(tensor_np == float('-inf'), 1, 0) 
+        visual_tensor = np.where(tensor_np < 0, 1, 0) 
+        # print(visual_tensor) 
+
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(30, 30)) 
+        cmap = plt.cm.colors.ListedColormap(['black', 'lightblue'])
+        bounds = [-0.5, 0.5, 1.5]
+        norm = plt.cm.colors.BoundaryNorm(bounds, cmap.N)
+
+        # Display the data
+        cbar = ax.imshow(visual_tensor, cmap=cmap, norm=norm)
+
+        # Set the background color to white
+        fig.patch.set_facecolor('white')
+        ax.set_facecolor('white')
+
+        # Add gridlines
+        ax.grid(which='major', axis='both', linestyle='-', color='k', linewidth=2)
+        # ax.set_xticks(np.arange(-0.5, sequence_length, 1)) 
+        # ax.set_yticks(np.arange(-0.5, sequence_length, 1)) 
+        tick_positions = np.arange(0, sequence_length, 1)
+        ax.set_xticks(tick_positions - 0.5)  # Shift the tick positions to be centered between the gridlines
+        ax.set_yticks(tick_positions - 0.5)  # Same shift for y-ticks
+
+        # Label the axes
+        ax.set_xticklabels(np.arange(0, sequence_length))
+        ax.set_yticklabels(np.arange(0, sequence_length))
+
+        # Set the tick labels for both axes
+        plt.xticks(rotation=90)
+        ax.tick_params(axis=u'both', which=u'both',length=0)
+
+        # Set axis limits to make the grid fit the image correctly
+        ax.set_xlim(-0.5, sequence_length-0.5)
+        ax.set_ylim(sequence_length-0.5, -0.5)
+
+        # Show the color bar
+        plt.colorbar(cbar, ticks=[0, 1], orientation='vertical', shrink=0.8, aspect=20)
+
+        # Save the plot
+        plt.savefig(filename, format='jpg', bbox_inches='tight') 
+        # print("we got here") 
+        plt.close() 
+    
+    def downsample_vectors(self, listoflasthiddenstates, kernel_size = 4): 
+        downsampled_vectors = [] 
+        shape = listoflasthiddenstates[0].shape 
+        device = listoflasthiddenstates[0].device 
+        for i in range(len(listoflasthiddenstates)): 
+            sum = torch.zeros(shape, device = device) 
+            if i % kernel_size == kernel_size - 1: 
+                sum += listoflasthiddenstates[i] 
+                downsampled_vectors.append(sum/kernel_size) 
+                sum.mul_(0.) 
+            else: 
+                sum += listoflasthiddenstates[i] 
+        return downsampled_vectors 
+
+    def downsample_vectors2(self, cat_tokens, kernel_size = 4): 
+        # downsampled_vectors = [] 
+        device = cat_tokens.device 
+        assert cat_tokens.shape[1] == kernel_size 
+        sum = torch.zeros((cat_tokens.shape[0], cat_tokens.shape[-1]), device = device) 
+        for i in range(cat_tokens.shape[1]): 
+            sum += cat_tokens[:, i, :] 
+        sum /= kernel_size 
+        return sum 
+
+    @staticmethod 
+    def plot_attention_map(attention_maps, layer_num, head_num, seq_length, filename):
+        """
+        Plots the attention map for a specific layer and head and saves it to a file.
+
+        :param attention_maps: A nested list or array of attention maps from the transformer model.
+        :param layer_num: The layer number to visualize.
+        :param head_num: The head number to visualize.
+        :param seq_length: The sequence length of the model.
+        :param filename: The filename to save the plot.
+        """
+
+        import matplotlib.colors as mcolors
+
+        # Extract the specific attention map
+        # attention_map = attention_maps[layer_num][head_num] 
+        attention_map = attention_maps[layer_num][0][head_num].to(torch.float32).cpu().detach().numpy() 
+        
+        # Create a mask for exact zeros
+        zero_mask = attention_map == 0
+        '''
+        # Create a custom colormap
+        colors = [(plt.cm.bwr(i)) for i in range(256)]
+        # midpoint = np.where(np.linspace(-1, 1, 256) == 0)[0][0] 
+        midpoint = np.abs(np.linspace(-1, 1, 256)).argmin() 
+        colors[midpoint] = (0, 0, 0, 1)
+        new_colormap = mcolors.LinearSegmentedColormap.from_list('custom_colormap', colors, N=256)
+        ''' 
+        # Define a new color dictionary
+        cdict = {
+            'red':   ((0.0, 0.0, 0.0),   # Black
+                    (0.25, 1.0, 1.0),  # Red
+                    (0.5, 1.0, 1.0),   # Yellow (1.0, 1.0, 0.0) -> Red + Green
+                    (0.75, 0.0, 0.0),  # Green
+                    (1.0, 0.0, 0.0)),  # Blue
+
+            'green': ((0.0, 0.0, 0.0),
+                    (0.25, 0.0, 0.0),
+                    (0.5, 1.0, 1.0),   # Yellow
+                    (0.75, 1.0, 1.0),  # Green
+                    (1.0, 0.0, 0.0)),
+
+            'blue':  ((0.0, 0.0, 0.0),
+                    (0.25, 0.0, 0.0),
+                    (0.5, 0.0, 0.0),   # Yellow has no blue component
+                    (0.75, 0.0, 0.0),  # Green
+                    (1.0, 1.0, 1.0))   # Blue
+        }
+
+        custom_cmap = mcolors.LinearSegmentedColormap('custom_colormap', cdict)
+        new_colormap = custom_cmap 
+
+        # Normalization
+        max_val = np.max(attention_map)
+        norm = mcolors.Normalize(vmin=0, vmax=max_val)
+        '''
+        # Normalization
+        max_val = np.max(np.abs(attention_map))
+        norm = mcolors.TwoSlopeNorm(vmin=-max_val, vcenter=0, vmax=max_val)
+        ''' 
+        # Create a custom colormap
+        fig, ax = plt.subplots(figsize=(100, 60)) 
+        '''
+        colors = [(0, 0, 0)] + [(plt.cm.bwr(i)) for i in range(256)]
+        new_colormap = mcolors.LinearSegmentedColormap.from_list('custom_colormap', colors, N=257)
+        new_colormap.set_under('black')  # for values under the min value
+        
+        # Replace -inf with a value smaller than the minimum of the colormap
+        attention_map = np.where(attention_map == -np.inf, -np.finfo(np.float32).max, attention_map)
+        ''' 
+        # Plotting
+        # cbar = ax.imshow(attention_map, norm = norm, cmap=new_colormap, aspect='auto', interpolation='nearest', vmin=-1, vmax=1) 
+        cbar = ax.imshow(attention_map, cmap=new_colormap, norm=norm, aspect='auto', interpolation='nearest') 
+        ax.imshow(zero_mask, cmap=mcolors.ListedColormap(['none', 'gold']), aspect='auto', interpolation='nearest', alpha=0.5) 
+        ax.set_title(f'Attention Map: Layer {layer_num}, Head {head_num}')
+        ax.set_xlabel('Sequence Position')
+        ax.set_ylabel('Sequence Position')
+        ax.set_xticks(range(seq_length))
+        ax.set_yticks(range(seq_length)) 
+        ax.set_xticklabels(ax.get_xticklabels(), rotation = 90, ha = "right") 
+
+        plt.colorbar(cbar, orientation = "vertical") 
+
+        # Save to file
+        plt.savefig(filename, bbox_inches='tight')
+        plt.close() 
+    
+    def forward(
+        self,
+        input_ids: torch.LongTensor = None, 
+        attention_mask: Optional[torch.Tensor] = None,
+        position_ids: Optional[torch.LongTensor] = None,
+        past_key_values: Optional[List[torch.FloatTensor]] = None,
+        # inputs_embeds: Optional[torch.FloatTensor] = None, 
+        condensed_embeds: Optional[torch.FloatTensor] = None, 
+        # later_input_ids: torch.LongTensor = None, 
+        labels: Optional[torch.LongTensor] = None,
+        use_cache: Optional[bool] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        return_dict: Optional[bool] = None, 
+        start_idx = 64, 
+        eval_mode = False, 
+        iteration_count = None, 
+        condensed_fashion = "projection_mode", 
+        experiment_setting = "setting0", 
+    ) -> Union[Tuple, CausalLMOutputWithPast]: 
+        
+        assert condensed_fashion in self.all_list_condensed 
+        self.condensed_fashion = condensed_fashion 
+        
+        self.experiment_setting = experiment_setting 
+        
+        self.eval_mode = eval_mode 
+        output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
+        output_hidden_states = (
+            output_hidden_states if output_hiden_states is not None else self.config.output_hidden_states
+        )
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict 
+        
+        batch_size = input_ids.shape[0] 
+        seq_length = input_ids.shape[1] 
+        if not self.eval_mode: 
+            # dimension matching 
+            print("input_ids shape {}".format(input_ids.shape)) 
+            print("condensed_embeds shape {}".format(condensed_embeds.shape)) 
+            assert input_ids.shape[0] == condensed_embeds.shape[0] # batch size has to match 
+            print("input_ids shape {} condensed_embeds shape {}".format(input_ids.shape, condensed_embeds.shape)) 
+            print("sliding window length {}".format(self.sliding_window_length)) 
+            assert (input_ids.shape[1] - start_idx - self.sliding_window_length)/self.sliding_window_length == condensed_embeds.shape[1] # number of condensed tokens should have desired mapping with sequence length 
+            
+        else: 
+            # for the eval mode we simply ignore the condensed_embeds 
+            condensed_length = int((input_ids.shape[1] - start_idx)/self.sliding_window_length) 
+            condensed_embeds = torch.zeros((batch_size, condensed_length, self.target_model_dim)).to(input_ids.device) 
+        seq_length += condensed_embeds.shape[1] # we make sure the before entering the forward function, the condensed token has dropped the last one 
+        seq_length_with_past = seq_length 
+        past_key_values_length = 0 
+        
+        if past_key_values is not None: 
+            past_key_values_length = past_key_values[0][0].shape[2] 
+            seq_length_with_past = seq_length_with_past + past_key_values_length 
+            
+        mask_list_pos = [start_idx + self.sliding_window_length + i * (self.sliding_window_length + 1) for i in range((seq_length - start_idx - self.sliding_window_length) // (self.sliding_window_length + 1))] 
+        if position_ids is None: # this should work for this case
+            device = input_ids.device 
+            position_list = [] 
+            pos_count = past_key_values_length 
+            # following_flag = False 
+            for i in range(seq_length): 
+                if i in mask_list_pos: 
+                    position_list.append(pos_count) 
+                else: 
+                    pos_count += 1 
+                    position_list.append(pos_count) 
+            position_ids = torch.tensor(position_list, dtype = torch.long, device = device) 
+            position_ids = position_ids.unsqueeze(0) 
+        
+        torch.set_printoptions(threshold = 500) 
+        input_embeds = None 
+        if condensed_embeds is not None: 
+            print(colored("condensed_embeds dtype: {}".format(condensed_embeds.dtype), "red")) 
+            print("embed_projection dtype: {}".format(self.embed_projection.weight.dtype)) 
+            if self.condensed_fashion == "projection_mode": 
+                print(colored("condensed_embeds dtype: {}".format(condensed_embeds.dtype), "red")) 
+                condensed_embeds = self.embed_projection(condensed_embeds) 
+            input_embeds = self.embed_tokens(input_ids) 
