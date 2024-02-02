@@ -280,6 +280,7 @@ class CustomTrainer(Trainer):
         self.time_hash = time_hash 
         self.dtype = dtype 
         self.model_name = model_name 
+        self.input_condensed = input_condensed 
         self.text_eval = text_eval 
         
         if self.args.resume_from_checkpoint is not None: 
