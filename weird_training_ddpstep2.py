@@ -297,7 +297,8 @@ class CustomTrainer(Trainer):
             self.large_model_embeds = self.large_model.get_input_embeddings() 
     
     def naive_grouping(self, input_ids): 
-        embedding_searched = self.model.embed_tokens(input_ids) 
+        # embedding_searched = self.model.embed_tokens(input_ids) 
+        embedding_searched = self.large_model_embeds(input_ids) 
         # print("embedding_searched shape {} {}".format(embedding_searched.shape, embedding_searched.dtype)) 
         seq_length = embedding_searched.shape[1] 
         
