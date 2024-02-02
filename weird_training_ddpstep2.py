@@ -293,7 +293,7 @@ class CustomTrainer(Trainer):
             if self.iteration_count == 0: 
                 self.iteration_count = 4 * self.state.global_step 
         if input_condensed: 
-            self.large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models) 
+            self.large_model = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models) 
             self.large_model_embeds = self.large_model.get_input_embeddings() 
     
     def naive_grouping(self, input_ids): 
