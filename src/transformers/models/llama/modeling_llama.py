@@ -1517,11 +1517,13 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         # output 30 condensed tokens, the last one and the first one doesn't have the condensed token label, so 28 left 
         # assert labels.shape == hidden_states.shape 
         assert mselabels.shape == hidden_states.shape 
-        # mse_lossfunc = nn.MSELoss() 
-        # mse_loss = mse_lossfunc(hidden_states, mselabels) 
+        mse_lossfunc = nn.MSELoss() 
+        mse_loss = mse_lossfunc(hidden_states, mselabels) 
         cosinesimlossfunc = nn.CosineEmbeddingLoss() 
-        mse_loss = cosinesimlossfunc(hidden_states.reshape(-1, hidden_states.shape[-1]), mselabels.reshape(-1, mselabels.shape[-1]), torch.ones(hidden_states.shape[0] * hidden_states.shape[1]).to(hidden_states.device)) 
+        cossim_loss = cosinesimlossfunc(hidden_states.reshape(-1, hidden_states.shape[-1]), mselabels.reshape(-1, mselabels.shape[-1]), torch.ones(hidden_states.shape[0] * hidden_states.shape[1]).to(hidden_states.device)) 
+        mse_loss = 0.5 * mse_loss + 0.5 * cossim_loss 
         intermediate_l2_dist = mse_loss.clone().detach() 
+        cossim_input = cossim_loss.clone().detach() 
         # print(colored("mse_loss {}".format(mse_loss), "red")) 
         
         assert inputs_embeds.shape[1] - 2 == hidden_states.shape[1] 
@@ -1532,9 +1534,9 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         mse_loss_input = mse_lossfunc2(hidden_states, inputs_embeds) 
         l2_distance_input = mse_loss_input.clone().detach() 
         # print(colored("mse_loss_input {}".format(mse_loss_input), "red")) 
-        cossim_input = F.cosine_similarity(hidden_states.reshape(-1, hidden_states.shape[-1]), inputs_embeds.reshape(-1, inputs_embeds.shape[-1]), dim = 1) 
+        # cossim_input = F.cosine_similarity(hidden_states.reshape(-1, hidden_states.shape[-1]), inputs_embeds.reshape(-1, inputs_embeds.shape[-1]), dim = 1) 
         # print("cossim_input shape {}".format(cossim_input.shape)) 
-        cossim_input = cossim_input.mean(dim = 0) 
+        # cossim_input = cossim_input.mean(dim = 0) 
         # print("cossim_input {}".format(cossim_input)) 
         
         if self.use_mse_loss: 
