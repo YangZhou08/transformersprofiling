@@ -1364,7 +1364,7 @@ trainer = CustomTrainer(
     dtype = weightmodelfirst.dtype, 
     model_name = model_name, 
     text_eval = model_path + text_eval, 
-    input_condensed = True, 
+    input_condensed = args.input_condensed, 
 ) 
 
 max_length = 128 
@@ -1380,7 +1380,8 @@ if trainer.accelerator.is_main_process and has_wandb:
     wandb.init(project = "llm160m", config = wandblogconfigs, name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain")) 
 
 print("experiment-setting is {}".format(trainer.experiment_setting)) 
-print("***** Using input condensed tokens {} *****".format("yes" if trainer.input_condensed else "no")) 
+# print("***** Using input condensed tokens {} *****".format("yes" if trainer.input_condensed else "no")) 
+print("***** Using input condensed tokens {} *****".format("yes" if args.input_condensed else "no")) 
 
 # print(trainer.lr_scheduler.state_dict()) 
 # exit(0) 
