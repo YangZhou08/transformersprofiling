@@ -4180,7 +4180,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             )
         return reordered_past 
 
-class SimpleSmallModel(LlamaPreTrainedModel): 
+class SimpleSmallModel2(LlamaPreTrainedModel): 
     _tied_weights_keys = ["lm_head.weight"] 
     
     def __init__(self, *args, sliding_window_length = 4, hostname = None, target_model_dim = 4096, **kwargs): 
@@ -4294,6 +4294,16 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         row_mask = row_mask.to(device = combined_attention_mask.device) 
 
         combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
+    
+    def interleaving_embeddings_inputs(self, input_embeds, condensed_embeds, kernel_size = 4, start_idx = 64): 
+        assert (input_embeds.shape[1] - start_idx - kernel_size)/kernel_size == condensed_embeds.shape[1] 
+        combined_embeds = input_embeds[:, : start_idx + kernel_size, :] 
+        input_embeds_count = start_idx + kernel_size 
+        for i in range(condensed_embeds.shape[1]): 
+            combined_embeds = torch.cat([combined_embeds, condensed_embeds[:, i, :].unsqueeze(1)], dim = 1) 
+            combined_embeds = torch.cat([combined_embeds, input_embeds[:, input_embeds_count : input_embeds_count + kernel_size, :]], dim = 1) 
+            input_embeds_count += kernel_size 
+        return combined_embeds 
     
     def visualize_position_ids(self, position_ids, mask_idx): 
         # for debugging purposes 
@@ -4508,8 +4518,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         self.eval_mode = eval_mode 
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
-            output_hidden_states if output_hiden_states is not None else self.config.output_hidden_states
-        )
+            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states 
+        ) 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict 
         
         batch_size = input_ids.shape[0] 
@@ -4559,3 +4569,250 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 print(colored("condensed_embeds dtype: {}".format(condensed_embeds.dtype), "red")) 
                 condensed_embeds = self.embed_projection(condensed_embeds) 
             input_embeds = self.embed_tokens(input_ids) 
+            input_embeds = self.interleaving_embeddings_inputs(input_embeds, condensed_embeds, kernel_size = self.sliding_window_length, start_idx = start_idx) 
+        else: 
+            raise ValueError("We cannot have an inference or any forward propagation without the inputs_embeds") 
+
+        if attention_mask is None:
+            attention_mask = torch.ones(
+                (batch_size, seq_length_with_past), dtype=torch.bool, device = input_embeds.device 
+            ) 
+            padding_mask = None
+        else:
+            if 0 in attention_mask:
+                padding_mask = attention_mask
+            else:
+                padding_mask = None 
+        # print("attention mask shape {}".format(attention_mask.shape)) 
+        
+        attention_mask = self._prepare_decoder_attention_mask(
+            # attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length 
+            attention_mask, (batch_size, seq_length), input_embeds, past_key_values_length 
+        ) 
+        
+        if iteration_count is not None and iteration_count == 1: 
+            working_dir = self.criticalpath 
+            self.visualize_attention_mask(seq_length, attention_mask[0][0], working_dir + "attention_mask_after_modification.jpg") 
+        
+        hidden_states = input_embeds 
+        
+        if self.gradient_checkpointing and self.training:
+            if use_cache:
+                logger.warning_once(
+                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
+                )
+                use_cache = False 
+        
+        all_hidden_states = () if output_hidden_states else None 
+        all_self_attns = () if output_attentions else None
+        next_decoder_cache = () if use_cache else None 
+        
+        for idx, decoder_layer in enumerate(self.layers): 
+            if output_hidden_states: 
+                all_hidden_states += (hidden_states,) 
+            
+            past_key_value = past_key_values[idx] if past_key_values is not None else None 
+            
+            if self.gradient_checkpointing and self.training: 
+                
+                def create_custom_forward(module):
+                    def custom_forward(*inputs):
+                        # None for past_key_value
+                        return module(*inputs, past_key_value, output_attentions, padding_mask=padding_mask)
+
+                    return custom_forward
+
+                layer_outputs = torch.utils.checkpoint.checkpoint(
+                    create_custom_forward(decoder_layer), hidden_states, attention_mask, position_ids
+                )
+            else: 
+                horizontal_bar_enabled = False 
+                layer_outputs = decoder_layer(
+                    hidden_states,
+                    attention_mask=attention_mask,
+                    position_ids=position_ids,
+                    past_key_value=past_key_value,
+                    output_attentions=output_attentions,
+                    use_cache=use_cache,
+                    padding_mask=padding_mask, 
+                    mask_list_pos = mask_list_pos, 
+                    horizontal_bar_enabled = horizontal_bar_enabled, 
+                ) 
+                
+            hidden_states = layer_outputs[0] 
+            
+            if use_cache:
+                next_decoder_cache += (layer_outputs[2 if output_attentions else 1],)
+
+            if output_attentions:
+                all_self_attns += (layer_outputs[1],) 
+        
+        hidden_states = self.norm(hidden_states) 
+            
+        # add hidden states from the last decoder layer 
+        if output_hidden_states: 
+            all_hidden_states += (hidden_states,) 
+        
+        next_cache = next_decoder_cache if use_cache else None
+            
+        # if not return_dict:
+        #     return tuple(v for v in [hidden_states, next_cache, all_hidden_states, all_self_attns] if v is not None)
+        # return BaseModelOutputWithPast(
+        #     last_hidden_state=hidden_states,
+        #     past_key_values=next_cache,
+        #     hidden_states=all_hidden_states,
+        #     attentions=all_self_attns,
+        # ) 
+        
+        if self.config.pretraining_tp > 1: 
+            lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
+            logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]
+            logits = torch.cat(logits, dim=-1) 
+        else: 
+            logits = self.lm_head(hidden_states) 
+        logits = logits.float() 
+        
+        mask_list_pos22 = [x - 1 for x in mask_list_pos] 
+        loss = None 
+        if labels is not None: 
+            selected_indices = list(range(start_idx + self.sliding_window_length - 1)) 
+            for i in range(start_idx + self.sliding_window_length - 1, seq_length): 
+                if i not in mask_list_pos22: 
+                    selected_indices.append(i) 
+            logits = logits[:, selected_indices, :] 
+            shift_logits = logits[..., :-1, :].contiguous() 
+            shift_labels = labels[..., 1:].contiguous() 
+            loss_fct = CrossEntropyLoss() 
+            shift_logits = shift_logits.view(-1, self.config.vocab_size) 
+            shift_labels = shift_labels.view(-1) 
+            shift_labels = shift_labels.to(shift_logits.device) 
+            loss = loss_fct(shift_logits, shift_labels) 
+        
+        # self.iter_count += 1 
+        
+        if not return_dict: 
+            # output = (logits,) + outputs[1:] 
+            output = (logits,) + tuple(v for v in [next_cache, all_hidden_states, all_self_attns] if v is not None) 
+            return (loss,) + output if loss is not None else output 
+
+        return CausalLMOutputWithPast( 
+            loss = loss, 
+            logits = logits, 
+            past_key_values = next_cache, 
+            hidden_states = all_hidden_states, 
+            attentions = all_self_attns 
+        ) 
+    
+    @staticmethod 
+    def norm_logits(logits : torch.Tensor, temperature : float, top_k : float, top_p : float) -> torch.Tensor:
+        """
+        Args:
+            logits (torch.Tensor): shape (1, vocab)
+            temperature (float): temperature
+            top_k (float): top_k
+            top_p (float): top_p
+
+        Returns:
+            torch.Tensor: next token with shape as (batch,  1)
+        """
+        assert logits.dim() == 2
+        logits = logits / temperature
+        # logits = self.top_k_top_p_filter(logits, top_k=top_k, top_p=top_p) 
+        logits = SimpleSmallModel.top_k_top_p_filter(logits, top_k=top_k, top_p=top_p) 
+        probs = F.softmax(logits, dim=1)
+        return probs 
+
+    @staticmethod 
+    def sample(probs : torch.Tensor, num_samples: int = 1, random_seed = None):
+        if random_seed:
+            torch.manual_seed(random_seed)
+        idx_next = torch.multinomial(probs, num_samples=num_samples)
+        if (idx_next.item() == 0):
+            raise RuntimeError
+        return idx_next 
+
+    @staticmethod 
+    def logitsToText(logits, topk, topp, temperature, tokenizer, use_sample = True): 
+        # this function goes from logits to the actual decoded text 
+        seq_len = logits.shape[-2] 
+        print("sequence length is {}".format(seq_len)) 
+        decoded_index = [] 
+        for n in range(seq_len): 
+            if use_sample: 
+                probs = SimpleSmallModel.norm_logits(logits[:, n, :], temperature, topk, topp) 
+                idx_next = SimpleSmallModel.sample(probs) 
+            else: 
+                idx_next = torch.argmax(logits[:, n, :], dim = -1) 
+                # dimension of idx_next is (batch_size, 1) 
+        decoded_index.append(idx_next) 
+        output = torch.cat(decoded_index, dim = -1) 
+        text = tokenizer.batch_decode(output) 
+        return text 
+    
+    def prepare_inputs_for_generation(
+        self, input_ids, past_key_values=None, attention_mask=None, inputs_embeds=None, **kwargs
+    ):
+        if past_key_values is not None: 
+            # NOTE this problem is not a concern during training (kvcache isn't used) 
+            # inference would be fine because condensed token k v are also in the past_key_values 
+            past_length = past_key_values[0][0].shape[2]
+
+            # Some generation methods already pass only the last input ID
+            if input_ids.shape[1] > past_length:
+                remove_prefix_length = past_length
+            else:
+                # Default to old behavior: keep only final ID
+                remove_prefix_length = input_ids.shape[1] - 1
+
+            input_ids = input_ids[:, remove_prefix_length:]
+
+        position_ids = kwargs.get("position_ids", None)
+        if attention_mask is not None and position_ids is None:
+            # create position_ids on the fly for batch generation
+            position_ids = attention_mask.long().cumsum(-1) - 1
+            position_ids.masked_fill_(attention_mask == 0, 1)
+            if past_key_values:
+                position_ids = position_ids[:, -input_ids.shape[1] :]
+
+        # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
+        '''
+        if inputs_embeds is not None and past_key_values is None:
+            model_inputs = {"inputs_embeds": inputs_embeds}
+        else:
+            model_inputs = {"input_ids": input_ids}
+        ''' 
+        model_inputs = {"input_embeds": inputs_embeds} 
+        model_inputs.update({"input_ids": input_ids}) 
+        model_inputs.update(
+            {
+                "position_ids": position_ids,
+                "past_key_values": past_key_values,
+                "use_cache": kwargs.get("use_cache"),
+                "attention_mask": attention_mask,
+            }
+        )
+        return model_inputs 
+    
+    def update_cache_for_new(self, past_key_values): 
+        if self.iter_count < self.decipher_threshold: 
+            raise ValueError("Note expected to roll back just yet") 
+        elif self.iter_count == self.decipher_threshold: 
+            new_past_key_values = [] 
+            for i in range(len(past_key_values)): 
+                new_layer_past = [] 
+                for j in range(len(past_key_values[i])): 
+                    new_layer_past.append(past_key_values[i][j][:, :, : -(self.decipher_threshold + 1), :]) # remove the generated one 
+                new_past_key_values.append(tuple(new_layer_past)) 
+            return new_past_key_values 
+        else: 
+            raise ValueError("We detected an error") 
+
+    @staticmethod
+    def _reorder_cache(past_key_values, beam_idx):
+        reordered_past = ()
+        for layer_past in past_key_values:
+            reordered_past += (
+                tuple(past_state.index_select(0, beam_idx.to(past_state.device)) for past_state in layer_past),
+            )
+        return reordered_past 
+        
