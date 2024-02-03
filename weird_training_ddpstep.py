@@ -1210,20 +1210,26 @@ for k, v in small_model.named_parameters():
         pretraining_weights_group.append(v) 
 print(len(pretraining_weights_group), len(newly_initialized_group)) 
 
-if not args.embedding_pretrained: 
-    print("*** we are not using pretrained embeddings ***") 
-    custom_optimizer = torch.optim.AdamW([
-        # {"params": pretraining_weights_group, "lr": 2e-4}, 
-        # {"params": newly_initialized_group, "lr": 2e-3}, 
-        {"params": pretraining_weights_group, "lr": float(args.group1lr)}, 
-        {"params": newly_initialized_group, "lr": float(args.group2lr)}, 
-    ]) 
+if not args.use_plain_model: 
+    if not args.embedding_pretrained: 
+        print("*** we are not using pretrained embeddings ***") 
+        custom_optimizer = torch.optim.AdamW([
+            # {"params": pretraining_weights_group, "lr": 2e-4}, 
+            # {"params": newly_initialized_group, "lr": 2e-3}, 
+            {"params": pretraining_weights_group, "lr": float(args.group1lr)}, 
+            {"params": newly_initialized_group, "lr": float(args.group2lr)}, 
+        ]) 
+    else: 
+        print("*** we are using pretrained embeddings ***") 
+        if not os.path.exists("linearprojectionweighttesting.pt"): 
+            raise ValueError("please run analyzing_initial_perfromance.py before runnint this setting") 
+        for param in newly_initialized_group: 
+            pretraining_weights_group.append(param) 
+        custom_optimizer = torch.optim.AdamW([
+            # {"params": pretraining_weights_group, "lr": 2e-4}, 
+            {"params": pretraining_weights_group, "lr": float(args.group1lr)}, 
+        ]) 
 else: 
-    print("*** we are using pretrained embeddings ***") 
-    if not os.path.exists("linearprojectionweighttesting.pt"): 
-        raise ValueError("please run analyzing_initial_perfromance.py before runnint this setting") 
-    for param in newly_initialized_group: 
-        pretraining_weights_group.append(param) 
     custom_optimizer = torch.optim.AdamW([
         # {"params": pretraining_weights_group, "lr": 2e-4}, 
         {"params": pretraining_weights_group, "lr": float(args.group1lr)}, 
@@ -1246,7 +1252,7 @@ training_args = TrainingArguments(
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size = 1,  # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size = 50,  # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=1,  # evaluation batch size
     # logging_steps=1, 
