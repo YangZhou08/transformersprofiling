@@ -26,6 +26,7 @@ from src.transformers.generation.utils import GenerationConfig
 from src.transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSmallModel 
 from src.transformers.models.llama.modeling_llama import LlamaCausalLMWeirdTwo 
 from src.transformers.models.llama.modeling_llama import LlamaWeirdLarge3 
+from src.transformers.models.llama.modeling_llama import SimpleSmallModel2 
 from src.transformers.modeling_utils import PreTrainedModel, load_sharded_checkpoint, unwrap_model 
 import time 
 from torch.utils.data import random_split 
@@ -227,6 +228,7 @@ parser.add_argument("--kernel_size", type = int, default = 4)
 parser.add_argument("--use_plain_model", action = "store_true", default = False) 
 parser.add_argument("--model_name", type = str, default = "openllama3b") 
 parser.add_argument("--resume_from_checkpoint", type = str, default = None) 
+parser.add_argument("--use_past", action = "store_true") 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
@@ -265,6 +267,7 @@ class CustomTrainer(Trainer):
             text_eval = None, 
             input_condensed = False, 
             sliding_window_length = 7, 
+            use_past = False, 
             *args, 
             **kwargs, 
     ): 
@@ -284,6 +287,7 @@ class CustomTrainer(Trainer):
         self.input_condensed = input_condensed 
         self.text_eval = text_eval 
         self.sliding_window_length = sliding_window_length 
+        self.use_past = use_past 
         
         if self.args.resume_from_checkpoint is not None: 
             self.time_checkpoint = int(self.args.resume_from_checkpoint.split("-")[-1]) 
@@ -643,7 +647,7 @@ class CustomTrainer(Trainer):
         # print("the input ids are {}".format(input_ids[0])) 
         # print("labels are {}".format(labels[0])) 
         print("type of the model is {}".format(type(model))) 
-        if isinstance(getattr(model, "module", model), SimpleSmallModel) or isinstance(model, SimpleSmallModel) == True: 
+        if isinstance(getattr(model, "module", model), SimpleSmallModel) or isinstance(model, SimpleSmallModel) == True and not self.use_past: 
             if self.input_condensed: 
                 condensed_embeds = self.naive_grouping(input_ids[:, 64:]).to(self.dtype) # condensed_embeds shape is (28, d_model) 
             else: 
@@ -694,7 +698,40 @@ class CustomTrainer(Trainer):
                 print(outputs.hidden_states[i][0][64][: 10]) 
             exit(0) 
             ''' 
+        elif isinstance(getattr(model, "module", model), SimpleSmallModel2) or isinstance(model, SimpleSmallModel2) and self.use_past: 
+            if self.input_condensed: 
+                condensed_embeds = self.naive_grouping(input_ids[:, 64:]).to(self.dtype) # condensed_embeds shape is (28, d_model) 
+            else: 
+                condensed_embeds = inputs["condensed_embeds"].to(self.dtype) 
+            print(colored("the shape of condensed_embeds is {}".format(condensed_embeds.shape), "yellow")) 
+            condensed_embeds = condensed_embeds[:, : -1, :] # condensed_embeds has shape (batch_size, number of condensed tokens, d_model) 
+            assert condensed_embeds.shape[1] == (input_ids.shape[1] - 64 - self.sliding_window_length) // self.sliding_window_length 
+            batch_size, seq_len = attention_mask.shape 
+            addedon_length = condensed_embeds.shape[1] 
+            # print("get the input sentence: {}".format(tokenizer.decode(input_ids[0]))) 
+            attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
             
+            # print("condensed_embeds dtype is {}".format(condensed_embeds.dtype)) 
+            # print("condensed_embeds is {}".format(condensed_embeds)) 
+            # print("input_ids are {}".format(input_ids)) 
+            # outputs = model(input_ids = large_outputs.sequences, attention_mask = attention_mask, labels = large_outputs.sequences, condensed_embeds = downsampled_vectors) 
+            if self.accelerator.is_main_process: 
+                print("printing out the experiment_setting: {} eval_mode: {}".format(self.experiment_setting, self.eval_mode)) 
+            outputs = model(
+                input_ids = input_ids, 
+                attention_mask = attention_mask, 
+                labels = label2, 
+                condensed_embeds = condensed_embeds, 
+                output_hidden_states = True, 
+                output_attentions = True, 
+                return_dict = True, 
+                # condensed_fashion = "ground_truth", 
+                iteration_count = self.iteration_count, 
+                # eval_mode = True, 
+                experiment_setting = self.experiment_setting, 
+                # eval_model = self.eval_mode, 
+                eval_mode = self.eval_mode, 
+            ) 
         else: 
             outputs = model(
                 input_ids = input_ids, 
@@ -1224,7 +1261,7 @@ if not args.use_plain_model or args.resume_from_checkpoint is not None:
     small_model.train() 
 
     # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
-else: 
+elif args.use_plain_model: 
     print(colored("we use plain model", "cyan")) 
     # alternative pretrained model 
     # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m").to(torch_device) 
@@ -1235,7 +1272,33 @@ else:
     small_model = LlamaCausalLMWeirdTwo.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
     # small_model = LlamaCausalLMWeirdTwo.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
     small_model.train() 
+elif args.use_past: 
+    print(colored("SimpleSmallModel with past", "cyan")) 
+    small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
 
+    small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
+    small_model = SimpleSmallModel2(small_config, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 2048) 
+    new_state_dict = {} 
+
+    for key in small_state_dict_for_model.keys(): 
+        new_key = key 
+        if 'lm_head' in key: 
+            print("got here found the following key {}".format(key)) 
+        if 'model.' in key: 
+            new_key = key[6 :] 
+        print(new_key) 
+        new_state_dict[new_key] = small_state_dict_for_model[key] 
+    if args.embedding_pretrained: 
+        new_state_dict["embed_projection.weight"] = torch.load("linearprojectionweighttesting.pt") 
+
+    try: 
+        small_model.load_state_dict(new_state_dict) 
+    except RuntimeError as r: 
+        print(colored(r, "yellow")) 
+
+    small_model = small_model.to(torch_device) 
+    # small_model = small_model.to(torch.bfloat16).to(torch_device) 
+    small_model.train() 
 
 # for llama model we need to add the padding token 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
@@ -1370,6 +1433,7 @@ trainer = CustomTrainer(
     text_eval = model_path + text_eval, 
     input_condensed = args.input_condensed, 
     sliding_window_length = args.kernel_size, 
+    use_past = args.use_past, 
 ) 
 
 max_length = 128 
