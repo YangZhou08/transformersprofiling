@@ -225,6 +225,7 @@ parser.add_argument("--kernel_size", type = int, default = 4)
 parser.add_argument("--use_plain_model", action = "store_true", default = False) 
 parser.add_argument("--model_name", type = str, default = "openllama3b") 
 parser.add_argument("--resume_from_checkpoint", type = str, default = None) 
+parser.add_argument("--past_token_centric", action = "store_true") 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
@@ -1056,11 +1057,12 @@ class CustomDataset:
     
     def __getitem__(self, idx): 
         item = self.dataset[idx] 
-        try: 
-            tensor = torch.load(item["condensed_token_path"]) 
-        except IOError as e: 
-            print(colored("///IOError occured replacing with an empty tensor///", "red")) 
-            tensor = torch.zeros((28, 2560 if model_name == "shearedllama2_7b" else 3200), dtype = torch.float32) 
+        if not args.use_plain_model: 
+            try: 
+                tensor = torch.load(item["condensed_token_path"]) 
+            except IOError as e: 
+                print(colored("///IOError occured replacing with an empty tensor///", "red")) 
+                tensor = torch.zeros((28, 2560 if model_name == "shearedllama2_7b" else 3200), dtype = torch.float32) 
         
         if self.tokenizer is not None: 
             encoded_text = self.tokenizer( 
@@ -1078,7 +1080,8 @@ class CustomDataset:
             item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension
             item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
         
-        item["condensed_embeds"] = tensor 
+        if not args.use_plain_model: 
+            item["condensed_embeds"] = tensor 
         # print(colored("the shape of condensed_embeds is {}".format(tensor.shape), "yellow")) 
         # item["input_ids"] = torch.tensor(item["input_ids"]) 
         # item["attention_mask"] = torch.tensor(item["attention_mask"]) 
