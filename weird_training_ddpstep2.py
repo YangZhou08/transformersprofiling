@@ -1223,7 +1223,7 @@ train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.0
                                                  # 356k * 0.99 = 352k 356k * 0.01 = 3.6k 
                                                  # 5 * 356k = 1780000, 1780000 * 0.98 = 1744400, 1780000 * 0.02 = 35600 
 
-if not args.use_plain_model or args.resume_from_checkpoint is not None: 
+if not args.use_plain_model or args.resume_from_checkpoint is not None and not args.use_past: 
     print(colored("we use custom small", "cyan")) 
     # handling simplesmallmodel 
     # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
@@ -1261,7 +1261,7 @@ if not args.use_plain_model or args.resume_from_checkpoint is not None:
     small_model.train() 
 
     # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
-elif args.use_plain_model: 
+elif args.use_plain_model and not args.use_past: 
     print(colored("we use plain model", "cyan")) 
     # alternative pretrained model 
     # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m").to(torch_device) 
@@ -1299,6 +1299,8 @@ elif args.use_past:
     small_model = small_model.to(torch_device) 
     # small_model = small_model.to(torch.bfloat16).to(torch_device) 
     small_model.train() 
+else: 
+    raise ValueError("please specify whether you want to use plain model or custom model") 
 
 # for llama model we need to add the padding token 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
