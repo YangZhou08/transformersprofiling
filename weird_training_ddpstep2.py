@@ -1225,6 +1225,7 @@ train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.0
 
 if not args.use_plain_model or args.resume_from_checkpoint is not None and not args.use_past: 
     print(colored("we use custom small", "cyan")) 
+    print("use_past is {}".format(args.use_past)) 
     # handling simplesmallmodel 
     # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
     # small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
