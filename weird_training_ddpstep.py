@@ -226,6 +226,7 @@ parser.add_argument("--use_plain_model", action = "store_true", default = False)
 parser.add_argument("--model_name", type = str, default = "openllama3b") 
 parser.add_argument("--resume_from_checkpoint", type = str, default = None) 
 parser.add_argument("--past_token_centric", action = "store_true") 
+parser.add_argument("--debug", action = "store_true") 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
@@ -1258,10 +1259,10 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=100,  # evaluation batch size
     # logging_steps=1, 
-    logging_steps = 500,            # evaluate, log and save model checkpoints every 1000 step
+    logging_steps = 500 if not args.debug else 1,            # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 500, 
+    save_steps = 500 if not args.debug else 1000, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     learning_rate=2e-4, 
