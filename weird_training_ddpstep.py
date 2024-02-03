@@ -660,6 +660,7 @@ class CustomTrainer(Trainer):
             ''' 
             
         else: 
+            addedon_length = 0 
             outputs = model(
                 input_ids = input_ids, 
                 attention_mask = attention_mask, 
