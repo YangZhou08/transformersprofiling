@@ -243,8 +243,10 @@ elif "ada" in hostname:
     dir_sdata = "/home/beidic/yangzho6/c4llm_synthesized/" 
 else: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
-    dir_models = "/home/yangzho6/model_checkpoints/" 
-    dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+    # dir_models = "/home/yangzho6/model_checkpoints/" 
+    # dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+    dir_models = "/fsx-storygen/beidic/yang/model_checkpoints/" 
+    dir_sdata = "/fsx-storygen/beidic/yang/c4llm_synthesized/" 
 
 # has_wandb = False # disable for debugging 
 # model_name = "openllama3b" 
@@ -1013,7 +1015,7 @@ class CustomTrainer(Trainer):
         return EvalLoopOutput(predictions=all_preds, label_ids=all_labels, metrics=metrics, num_samples=num_samples) 
         
 class CustomDataset: 
-    def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7): 
+    def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7, topk = None, prompt_length = 64): 
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
         self.synthesize_dir = data_dir 
         # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json", split = "train") 
@@ -1025,9 +1027,14 @@ class CustomDataset:
                     # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
                     filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
                     dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
-            else: 
+            elif "lovelace" in hostname: 
                 filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
                 dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+            else: 
+                for i in range(0, 8): 
+                    # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
+                    filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
+                    dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
         else: 
             filename = "c4synthesized_file1.json" 
         self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
@@ -1259,10 +1266,10 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=100,  # evaluation batch size
     # logging_steps=1, 
-    logging_steps = 500 if not args.debug else 1,            # evaluate, log and save model checkpoints every 1000 step
+    logging_steps = 100 if not args.debug else 1,            # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 500 if not args.debug else 1000, 
+    save_steps = 100 if not args.debug else 1000, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     learning_rate=2e-4, 
