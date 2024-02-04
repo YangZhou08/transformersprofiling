@@ -1521,8 +1521,10 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         mse_loss = mse_lossfunc(hidden_states, mselabels) 
         cosinesimlossfunc = nn.CosineEmbeddingLoss() 
         cossim_loss = cosinesimlossfunc(hidden_states.reshape(-1, hidden_states.shape[-1]), mselabels.reshape(-1, mselabels.shape[-1]), torch.ones(hidden_states.shape[0] * hidden_states.shape[1]).to(hidden_states.device)) 
-        mse_loss = 0.5 * mse_loss + 0.5 * cossim_loss 
+        # mse_loss = 0.5 * mse_loss + 0.5 * cossim_loss 
+        # intermediate_l2_dist = mse_loss.clone().detach() 
         intermediate_l2_dist = mse_loss.clone().detach() 
+        mse_loss = cossim_loss 
         cossim_input = cossim_loss.clone().detach() 
         # print(colored("mse_loss {}".format(mse_loss), "red")) 
         
