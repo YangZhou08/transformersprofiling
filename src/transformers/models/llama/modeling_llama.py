@@ -1329,6 +1329,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         self.alpha = 0.5 
         self.addonmodel_start = self.sliding_window_length + 1 
         self.inference_setting = "setting0" 
+        self.use_cosinesimilarity = False 
         
         self.post_init() 
 
@@ -1338,6 +1339,10 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
     def set_msece_loss(self, use_mse_loss, ce_loss_only): 
         self.use_mse_loss = use_mse_loss 
         self.ce_loss_only = ce_loss_only 
+    
+    def set_cosinesimilarity(self, use_cosinesimilarity): 
+        if use_cosinesimilarity: 
+            self.use_cosinesimilarity = True 
 
     def set_input_embeddings(self, value):
         self.model.embed_tokens = value 
@@ -1524,7 +1529,8 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         # mse_loss = 0.5 * mse_loss + 0.5 * cossim_loss 
         # intermediate_l2_dist = mse_loss.clone().detach() 
         intermediate_l2_dist = mse_loss.clone().detach() 
-        # mse_loss = cossim_loss 
+        if self.use_cosinesimilarity: 
+            mse_loss = cossim_loss 
         cossim_input = cossim_loss.clone().detach() 
         # print(colored("mse_loss {}".format(mse_loss), "red")) 
         
