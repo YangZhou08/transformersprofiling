@@ -1524,7 +1524,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         # mse_loss = 0.5 * mse_loss + 0.5 * cossim_loss 
         # intermediate_l2_dist = mse_loss.clone().detach() 
         intermediate_l2_dist = mse_loss.clone().detach() 
-        mse_loss = cossim_loss 
+        # mse_loss = cossim_loss 
         cossim_input = cossim_loss.clone().detach() 
         # print(colored("mse_loss {}".format(mse_loss), "red")) 
         
