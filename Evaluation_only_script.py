@@ -845,9 +845,17 @@ tokenizer.padding_side = "left"
 kernel_size = 7 # this is definitely subject to change 
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
-dfiles = ["example_holdout_{}.jsonl".format(i) for i in range(6282)] 
+# dfiles = ["example_holdout_{}.jsonl".format(i) for i in range(6282)] 
+dfiles = ["example_holdout_{}combined.jsonl".format(0)] 
 datasetnew = load_dataset('json', data_files = dfiles, split = "train") 
-train_set, test_set = datasetnew.split(0.99) 
+# train_set, test_set = datasetnew.split(0.99) 
+
+def encode_with_truncation(examples): 
+    return tokenizer(examples["text"], padding = "max_length", max_length = 256, 
+                     return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                     add_special_tokens = True) 
+datasetnew = datasetnew.map(encode_with_truncation, batches = True, num_proc = 8) 
+datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
@@ -897,6 +905,6 @@ trainer = CustomTrainer(
     tokenizer = tokenizer, 
 ) 
 
-results = trainer.evaluate(eval_dataset = test_set) 
+results = trainer.evaluate(eval_dataset = datasetnew) 
 print(results) 
 # model.save_pretrained("../model_checkpoints/llama-160m_deciphering_{}_{}_{}".format(args.model_name, args.experiment_setting, commit_hash)) 
