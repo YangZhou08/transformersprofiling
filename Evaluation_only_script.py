@@ -855,7 +855,7 @@ def encode_with_truncation(examples):
     return tokenizer(examples["text"], padding = "max_length", max_length = 256, 
                      return_attention_mask = True, return_tensors = "pt", truncation = True, 
                      add_special_tokens = True) 
-datasetnew = datasetnew.map(encode_with_truncation, batches = True, num_proc = 8) 
+datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
 datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
