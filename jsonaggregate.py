@@ -10,7 +10,7 @@ parser.add_argument("--model_name", type = str, default = "openllama3b")
 parser.add_argument("--topk", type = int, default = None) 
 args = parser.parse_args() 
 
-model_name = args.model_name 
+# model_name = args.model_name 
 # synthesized_dir_path = "/fsx-storygen/beidic/yang/c4llm_synthesized/{}_topk{}/".format(model_name, args.topk if args.topk is not None else "na") 
 synthesized_dir_path = "/home/yangzho6/slimpajama/SlimPajama-627B/test/chunk1/" 
 
