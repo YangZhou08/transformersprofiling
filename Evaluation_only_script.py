@@ -829,7 +829,7 @@ class CustomDataset:
         eval_size = len(self) - train_size 
         return random_split(self, [train_size, eval_size]) 
 
-model_type = "use_small_model" 
+model_type = "use_large_model" 
 if not model_type == "use_small_model" and model_name == "openllama3b": 
     tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
 else: 
