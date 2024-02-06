@@ -221,7 +221,8 @@ model_name = args.model_name
 if "lovelace" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_models = "/home/yangzho6/model_checkpoints/" 
-    dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+    # dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+    dir_sdata = "/home/yangzho6/slimpajama/SlimPajama-627B/test/chunk1" 
 elif "ada" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_models = "/home/beidic/yangzho6/model_checkpoints/" 
@@ -270,244 +271,6 @@ class CustomTrainer(Trainer):
             if self.iteration_count == 0: 
                 self.iteration_count = 4 * self.state.global_step 
     
-    def train(
-        self,
-        resume_from_checkpoint: Optional[Union[str, bool]] = None,
-        trial: Union["optuna.Trial", Dict[str, Any]] = None,
-        ignore_keys_for_eval: Optional[List[str]] = None,
-        **kwargs,
-    ):
-        """
-        Main training entry point.
-
-        Args:
-            resume_from_checkpoint (`str` or `bool`, *optional*):
-                If a `str`, local path to a saved checkpoint as saved by a previous instance of [`Trainer`]. If a
-                `bool` and equals `True`, load the last checkpoint in *args.output_dir* as saved by a previous instance
-                of [`Trainer`]. If present, training will resume from the model/optimizer/scheduler states loaded here.
-            trial (`optuna.Trial` or `Dict[str, Any]`, *optional*):
-                The trial run or the hyperparameter dictionary for hyperparameter search.
-            ignore_keys_for_eval (`List[str]`, *optional*)
-                A list of keys in the output of your model (if it is a dictionary) that should be ignored when
-                gathering predictions for evaluation during the training.
-            kwargs (`Dict[str, Any]`, *optional*):
-                Additional keyword arguments used to hide deprecated arguments
-        """ 
-        print(colored("resume from checkpoint: {}".format(resume_from_checkpoint), "yellow")) 
-        if resume_from_checkpoint is False:
-            resume_from_checkpoint = None
-
-        # memory metrics - must set up as early as possible
-        self._memory_tracker.start()
-
-        args = self.args
-
-        self.is_in_train = True
-
-        # Attach NEFTune hooks if necessary
-        if self.neftune_noise_alpha is not None:
-            self.model = self._activate_neftune(self.model)
-
-        # do_train is not a reliable argument, as it might not be set and .train() still called, so
-        # the following is a workaround:
-        if (args.fp16_full_eval or args.bf16_full_eval) and not args.do_train:
-            self._move_model_to_device(self.model, args.device)
-
-        if "model_path" in kwargs:
-            resume_from_checkpoint = kwargs.pop("model_path")
-            warnings.warn(
-                "`model_path` is deprecated and will be removed in a future version. Use `resume_from_checkpoint` "
-                "instead.",
-                FutureWarning,
-            )
-        if len(kwargs) > 0:
-            raise TypeError(f"train() received got unexpected keyword arguments: {', '.join(list(kwargs.keys()))}.")
-        # This might change the seed so needs to run first.
-        self._hp_search_setup(trial)
-        self._train_batch_size = self.args.train_batch_size
-
-        # Model re-init
-        model_reloaded = False
-        if self.model_init is not None:
-            # Seed must be set before instantiating the model when using model_init.
-            enable_full_determinism(self.args.seed) if self.args.full_determinism else set_seed(self.args.seed)
-            self.model = self.call_model_init(trial)
-            model_reloaded = True
-            # Reinitializes optimizer and scheduler
-            self.optimizer, self.lr_scheduler = None, None
-        '''
-        # Load potential model checkpoint
-        if isinstance(resume_from_checkpoint, bool) and resume_from_checkpoint:
-            resume_from_checkpoint = get_last_checkpoint(args.output_dir)
-            if resume_from_checkpoint is None:
-                raise ValueError(f"No valid checkpoint found in output directory ({args.output_dir})")
-        ''' 
-        if (
-            resume_from_checkpoint is not None
-            and not is_sagemaker_mp_enabled()
-            and not self.is_deepspeed_enabled
-            and not self.is_fsdp_enabled
-        ):
-            self._load_from_checkpoint(resume_from_checkpoint)
-
-        # If model was re-initialized, put it on the right device and update self.model_wrapped
-        if model_reloaded:
-            if self.place_model_on_device:
-                self._move_model_to_device(self.model, args.device)
-            self.model_wrapped = self.model
-
-        inner_training_loop = find_executable_batch_size(
-            self._inner_training_loop, self._train_batch_size, args.auto_find_batch_size
-        ) 
-        print("resume_from_checkpoint is {}".format(resume_from_checkpoint)) 
-        
-        if args.push_to_hub:
-            try:
-                # Disable progress bars when uploading models during checkpoints to avoid polluting stdout
-                hf_hub_utils.disable_progress_bars()
-                return inner_training_loop(
-                    args=args,
-                    resume_from_checkpoint=resume_from_checkpoint,
-                    trial=trial,
-                    ignore_keys_for_eval=ignore_keys_for_eval,
-                )
-            finally:
-                hf_hub_utils.enable_progress_bars()
-        else:
-            return inner_training_loop(
-                args=args,
-                resume_from_checkpoint=resume_from_checkpoint,
-                trial=trial,
-                ignore_keys_for_eval=ignore_keys_for_eval,
-            )
-    
-    '''
-    def _save_checkpoint(self, model, trial, metrics = None): 
-        # In all cases, including ddp/dp/deepspeed, self.model is always a reference to the model we
-        # want to save except FullyShardedDDP.
-        # assert unwrap_model(model) is self.model, "internal model should be a reference to self.model"
-        
-        print(colored("running updated save checkpoint, now with more identifiable names", "cyan")) 
-        # Save model checkpoint
-        changed_checkpoint_prefix = "{}largemodel{}kernelsize{}date{}".format("SimpleSmallModel" if isinstance(self.model, SimpleSmallModel) else "LlamaModel", model_name, self.model.sliding_window_length, hash_of_time) 
-        # checkpoint_folder = f"{PREFIX_CHECKPOINT_DIR}-{self.state.global_step}" 
-        checkpoint_folder = changed_checkpoint_prefix + "-{}".format(self.state.global_step) 
-
-        if self.hp_search_backend is None and trial is None:
-            self.store_flos()
-
-        run_dir = self._get_output_dir(trial=trial)
-        output_dir = os.path.join(run_dir, checkpoint_folder)
-        self.save_model(output_dir, _internal_call=True)
-        if self.is_deepspeed_enabled:
-            # under zero3 model file itself doesn't get saved since it's bogus! Unless deepspeed
-            # config `stage3_gather_16bit_weights_on_model_save` is True
-            self.model_wrapped.save_checkpoint(output_dir)
-
-        # Save optimizer and scheduler
-        if self.fsdp or self.is_fsdp_enabled:
-            if self.is_fsdp_enabled:
-                save_fsdp_optimizer(
-                    self.accelerator.state.fsdp_plugin, self.accelerator, self.optimizer, self.model, output_dir
-                )
-            else:
-                # FSDP has a different interface for saving optimizer states.
-                # Needs to be called on all ranks to gather all states.
-                # full_optim_state_dict will be deprecated after Pytorch 2.2!
-                full_osd = self.model.__class__.full_optim_state_dict(self.model, self.optimizer)
-                torch.save(full_osd, os.path.join(output_dir, OPTIMIZER_NAME))
-
-        if is_torch_tpu_available():
-            xm.rendezvous("saving_optimizer_states")
-            xm.save(self.optimizer.state_dict(), os.path.join(output_dir, OPTIMIZER_NAME))
-            with warnings.catch_warnings(record=True) as caught_warnings:
-                xm.save(self.lr_scheduler.state_dict(), os.path.join(output_dir, SCHEDULER_NAME))
-                reissue_pt_warnings(caught_warnings)
-        elif is_sagemaker_mp_enabled():
-            opt_state_dict = self.optimizer.local_state_dict(gather_if_shard=False)
-            smp.barrier()
-            if smp.rdp_rank() == 0 or smp.state.cfg.shard_optimizer_state:
-                smp.save(
-                    opt_state_dict,
-                    os.path.join(output_dir, OPTIMIZER_NAME),
-                    partial=True,
-                    v3=smp.state.cfg.shard_optimizer_state,
-                )
-        elif self.args.should_save and not self.is_deepspeed_enabled and not (self.fsdp or self.is_fsdp_enabled):
-            # deepspeed.save_checkpoint above saves model/optim/sched
-            torch.save(self.optimizer.state_dict(), os.path.join(output_dir, OPTIMIZER_NAME))
-
-        # Save SCHEDULER & SCALER
-        is_deepspeed_custom_scheduler = self.is_deepspeed_enabled and not isinstance(
-            self.lr_scheduler, DeepSpeedSchedulerWrapper
-        )
-        if (
-            self.args.should_save
-            and (not self.is_deepspeed_enabled or is_deepspeed_custom_scheduler)
-            and not is_torch_tpu_available()
-        ):
-            with warnings.catch_warnings(record=True) as caught_warnings:
-                torch.save(self.lr_scheduler.state_dict(), os.path.join(output_dir, SCHEDULER_NAME))
-            reissue_pt_warnings(caught_warnings)
-
-        # Determine the new best metric / best model checkpoint
-        if metrics is not None and self.args.metric_for_best_model is not None:
-            metric_to_check = self.args.metric_for_best_model
-            if not metric_to_check.startswith("eval_"):
-                metric_to_check = f"eval_{metric_to_check}"
-            metric_value = metrics[metric_to_check]
-
-            operator = np.greater if self.args.greater_is_better else np.less
-            if (
-                self.state.best_metric is None
-                or self.state.best_model_checkpoint is None
-                or operator(metric_value, self.state.best_metric)
-            ):
-                self.state.best_metric = metric_value
-                self.state.best_model_checkpoint = output_dir
-
-        # Save the Trainer state
-        if self.args.should_save:
-            self.state.save_to_json(os.path.join(output_dir, TRAINER_STATE_NAME))
-
-        # Save RNG state in non-distributed training
-        rng_states = {
-            "python": random.getstate(),
-            "numpy": np.random.get_state(),
-            "cpu": torch.random.get_rng_state(),
-        }
-        if torch.cuda.is_available():
-            if self.args.parallel_mode == ParallelMode.DISTRIBUTED:
-                # In non distributed, we save the global CUDA RNG state (will take care of DataParallel)
-                rng_states["cuda"] = torch.cuda.random.get_rng_state_all()
-            else:
-                rng_states["cuda"] = torch.cuda.random.get_rng_state()
-
-        if is_torch_tpu_available():
-            rng_states["xla"] = xm.get_rng_state()
-
-        if is_torch_npu_available():
-            if self.args.parallel_mode == ParallelMode.DISTRIBUTED:
-                rng_states["npu"] = torch.npu.random.get_rng_state_all()
-            else:
-                rng_states["npu"] = torch.npu.random.get_rng_state()
-
-        # A process can arrive here before the process 0 has a chance to save the model, in which case output_dir may
-        # not yet exist.
-        os.makedirs(output_dir, exist_ok=True)
-
-        if self.args.world_size <= 1:
-            torch.save(rng_states, os.path.join(output_dir, "rng_state.pth"))
-        else:
-            torch.save(rng_states, os.path.join(output_dir, f"rng_state_{self.args.process_index}.pth"))
-
-        if self.args.push_to_hub:
-            self._push_from_checkpoint(output_dir)
-
-        # Maybe delete some older checkpoints.
-        if self.args.should_save:
-            self._rotate_checkpoints(use_mtime=True, output_dir=run_dir)
-    ''' 
     def training_step(self, model, inputs): 
         model.train() 
         inputs = self._prepare_inputs(inputs) 
@@ -540,17 +303,7 @@ class CustomTrainer(Trainer):
                 scaled_loss.backward()
         else:
             self.accelerator.backward(loss) 
-        '''
-        for name, parameters in model.named_parameters(): 
-            if name == "embed_tokens.weight": 
-                # print(colored("{} has gradient {}".format(name, parameters.grad.data[1][: 100]), "light_magenta")) 
-                for i in range(parameters.grad.data.shape[0]): 
-                    if (parameters.grad.data[i] != 0).any(): 
-                        print(colored("row {} has gradient that is numerically not zero {}".format(i, parameters.grad.data[i][: 20]), "light_magenta")) 
-            else: 
-                print(colored("{} has gradient {}".format(name, parameters.grad.data.view(-1)[: 10]), "light_magenta")) 
-            print("the gradient of {} contains nan or not Ture or False: {}".format(name, torch.isnan(parameters.grad.data.view(-1).any()))) 
-        ''' 
+        
         self.iteration_count += 1 
         print(colored("the training iteration count is {}".format(self.iteration_count), "red")) 
         return loss.detach() / self.args.gradient_accumulation_steps 
@@ -571,18 +324,6 @@ class CustomTrainer(Trainer):
 
     def compute_loss(self, model, inputs, return_outputs = False, evaluation_mode = True): 
         labels = None 
-        '''
-        for k, v in inputs.items(): 
-            if isinstance(v, tuple): 
-                print(k, len(v)) 
-            elif isinstance(v, torch.Tensor): 
-                if k == "condensed_embeds": 
-                    print(k, v.shape) 
-                else: 
-                    print(k, v) 
-            else: 
-                print(k, v) 
-        ''' 
         # print("attention_mask: {}".format(inputs["attention_mask"])) 
         input_ids = inputs["input_ids"] 
         attention_mask = inputs["attention_mask"] 
@@ -625,22 +366,6 @@ class CustomTrainer(Trainer):
             
             # visualize attention map 
             # print("the input ids are {}".format(input_ids))
-            '''
-            if isinstance(outputs.attentions, tuple): 
-                print("the attention mask have shape {}".format(len(outputs.attentions))) 
-                print("the attention mask first element has shape {}".format(outputs.attentions[0].shape)) 
-            else: 
-                print("the attention mask has shape {}".format(outputs.attentions.shape)) 
-            SimpleSmallModel.plot_attention_map(outputs.attentions, 0, 0, 144, "testing_attention_map.jpg") 
-            print(outputs.attentions[0][0][0][64]) 
-            
-            if isinstance(outputs.hidden_states, tuple): 
-                print("the hidden states have shape {}".format(len(outputs.hidden_states))) 
-                print("the hidden states first element has shape {}".format(outputs.hidden_states[0].shape)) 
-            for i in range(len(outputs.hidden_states)): 
-                print(outputs.hidden_states[i][0][64][: 10]) 
-            exit(0) 
-            ''' 
             
         else: 
             outputs = model(
@@ -695,13 +420,6 @@ class CustomTrainer(Trainer):
             print(colored("generating images ... at iteration {}".format(self.iteration_count), "yellow")) 
             for layer in [0, 6, 11]: 
                 for head in [0, 6, 11]: 
-                    '''
-                    if isinstance(outputs.attentions, tuple): 
-                        print("the attention mask have shape {}".format(len(outputs.attentions))) 
-                        print("the attention mask first element has shape {}".format(outputs.attentions[0].shape)) 
-                    else: 
-                        print("the attention mask has shape {}".format(outputs.attentions.shape)) 
-                    ''' 
                     # SimpleSmallModel.plot_attention_map(outputs.attentions, 0, 0, 144, "testing_attention_map.jpg") 
                     plot_name = "testing_attention_map_{}_{}_{}.jpg".format(self.commit_hash, self.time_hash, self.experiment_setting) 
                     SimpleSmallModel.plot_attention_map(outputs.attentions, layer, head, input_ids.shape[1] + addedon_length, plot_name) 
@@ -1111,7 +829,11 @@ class CustomDataset:
         eval_size = len(self) - train_size 
         return random_split(self, [train_size, eval_size]) 
 
-tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+model_type = "use_small_model" 
+if not model_type == "use_small_model" and model_name == "openllama3b": 
+    tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
+else: 
+    tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 # tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
 if tokenizer.pad_token is not None: 
     print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
@@ -1122,26 +844,38 @@ tokenizer.padding_side = "left"
 
 kernel_size = 7 # this is definitely subject to change 
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
-datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
+# datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
+dfiles = ["example_holdout_{}.jsonl".format(i) for i in range(6282)] 
+datasetnew = load_dataset('json', data_files = dfiles, split = "train") 
 train_set, test_set = datasetnew.split(0.99) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
-small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
-# target_model_dim = 3200 if model_name == "openllama3b" else 2560 
-if model_name == "openllama3b": 
-    target_model_dim = 3200 
-elif model_name == "shearedllama2_7b": 
-    target_model_dim = 2560 
-elif model_name == "tinyllama": 
-    target_model_dim = 2048 
+if model_type == "use_small_model": 
+    small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
+    # target_model_dim = 3200 if model_name == "openllama3b" else 2560 
+    if model_name == "openllama3b": 
+        target_model_dim = 3200 
+    elif model_name == "shearedllama2_7b": 
+        target_model_dim = 2560 
+    elif model_name == "tinyllama": 
+        target_model_dim = 2048 
+    else: 
+        target_model_dim = 2048 
+    model = SimpleSmallModel.from_pretrained(args.loading_from_checkpoint, sliding_window_length = args.kernel_size, hostname = hostname, target_model_dim = target_model_dim) 
+    model.config.pad_token_id = tokenizer.pad_token_id 
+    # model = model.to(torch_device).to(torch.bfloat16) 
+    model = model.to(torch_device) 
+    model.eval() 
 else: 
-    target_model_dim = 2048 
-small_model = SimpleSmallModel.from_pretrained(args.loading_from_checkpoint, sliding_window_length = args.kernel_size, hostname = hostname, target_model_dim = target_model_dim) 
-small_model.config.pad_token_id = tokenizer.pad_token_id 
-# small_model = small_model.to(torch_device).to(torch.bfloat16) 
-small_model = small_model.to(torch_device) 
-small_model.eval() 
+    if model_name == "openllama3b": 
+        model = LlamaForCausalLM.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    elif model_name == "shearedllama2_7b": 
+        model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    elif model_name == "tinyllama": 
+        model = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    else: 
+        raise ValueError("model_name is not recognized") 
 
 training_args = TrainingArguments(
     output_dir = dir_models, 
@@ -1152,12 +886,12 @@ training_args = TrainingArguments(
 
 trainer = CustomTrainer( 
     args = training_args, 
-    model = small_model, 
+    model = model, 
     data_collator = data_collator, 
     experiment_setting = args.experiment_setting, 
     eval_mode = False, 
     time_hash = hash_of_time, 
-    dtype = small_model.dtype, 
+    dtype = model.dtype, 
     model_name = model_name, 
     text_eval = "just_evaluation_{}.txt".format(hash_of_time), 
     tokenizer = tokenizer, 
@@ -1165,4 +899,4 @@ trainer = CustomTrainer(
 
 results = trainer.evaluate(eval_dataset = test_set) 
 print(results) 
-# small_model.save_pretrained("../model_checkpoints/llama-160m_deciphering_{}_{}_{}".format(args.model_name, args.experiment_setting, commit_hash)) 
+# model.save_pretrained("../model_checkpoints/llama-160m_deciphering_{}_{}_{}".format(args.model_name, args.experiment_setting, commit_hash)) 
