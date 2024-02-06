@@ -847,7 +847,7 @@ kernel_size = 7 # this is definitely subject to change
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
 # dfiles = ["example_holdout_{}.jsonl".format(i) for i in range(6282)] 
-dfiles = ["example_holdout_{}combined.jsonl".format(0)] 
+dfiles = [dir_sdata + "example_holdout_{}combined.jsonl".format(0)] 
 datasetnew = load_dataset('json', data_files = dfiles, split = "train") 
 # train_set, test_set = datasetnew.split(0.99) 
 
