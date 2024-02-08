@@ -887,6 +887,7 @@ elif args.large_model == "tinyllama":
     else: 
         if args.use_old_checkpoint: 
             # print(colored("Using an earlier checkpoint", "yellow")) 
+            print(colored("Using the very beginning checkpoint", "yellow")) 
             large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-step-50K-105b", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
         else: 
             large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
@@ -905,6 +906,7 @@ elif args.large_model == "tinyllama":
     large_model.set_slidingwindowlength(args.kernel_size) 
     large_model.set_cosinesimilarity(args.cosine_similarity) 
     if args.embedding_reinitialization_type is not None: 
+        print(colored(args.embedding_reinitialization_type, "red")) 
         large_model.reinitialize_embeddings(type = args.embedding_reinitialization_type) 
 # large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = True).to(torch.bfloat16).to(torch_device) 
 # large_model.set_smallmodelfull() # this function has proven to be very important 
