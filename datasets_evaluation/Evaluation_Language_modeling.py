@@ -56,7 +56,7 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Set a global seed for reproducibility
 seed_value = 42
-from src.transformers import set_seed 
+from transformers import set_seed 
 set_seed(seed_value) 
 
 try:
