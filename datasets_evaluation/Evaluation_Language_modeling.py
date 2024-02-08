@@ -738,12 +738,12 @@ class CustomDataset:
             print(colored("dfiles: {}".format(dfiles), "red")) 
         else: 
             filename = "c4synthesized_file1.json" 
-        # self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
-        self.dataset = load_dataset('pg19', split = 'train') 
-        for i in range(0, 10): 
-            print(self.dataset[i]['text'][ : 3000]) 
-            print() 
-        exit() 
+        self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
+        # self.dataset = load_dataset('pg19', split = 'train') 
+        # for i in range(0, 10): 
+            # print(self.dataset[i]['text'][ : 3000]) 
+            # print() 
+        # exit() 
         self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
         self.kernel_size = kernel_size 
         self.use_constraint = False 
@@ -863,7 +863,14 @@ kernel_size = 7 # this is definitely subject to change
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
 # dfiles = ["example_holdout_{}.jsonl".format(i) for i in range(6282)] 
 dfiles = [dir_sdata + "example_holdout_{}combined.jsonl".format(0)] 
-datasetnew = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
+# datasetnew = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
+datasetnew = load_dataset('pg19', split = 'train') 
+
+for i in range(0, 10): 
+    print(datasetnew[i]['text'][ : 3000]) 
+    print() 
+exit() 
+
 # train_set, test_set = datasetnew.split(0.99) 
 
 def encode_with_truncation(examples): 
