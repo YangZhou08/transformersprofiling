@@ -5,8 +5,14 @@ import argparse
 
 import datasets 
 from datasets import load_dataset 
+import sys 
+import os 
+current_dir = os.path.dirname(__file__) 
+parent_dir = os.path.dirname(current_dir) 
+src_folder = os.path.join(parent_dir, "src") 
+sys.path.append(src_folder) 
 
-from src.transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM 
+from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM 
 from src.transformers import GPTNeoXForCausalLM 
 from src.transformers import LlamaConfig, LlamaPreTrainedModel 
 from src.transformers import LlamaTokenizer 
@@ -35,7 +41,7 @@ from packaging import version
 # import torch.nn.parallel.distributed.DistributedDataParallel as DDP 
 
 import datetime 
-import os 
+
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union 
 
 if TYPE_CHECKING: 
