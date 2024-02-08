@@ -1377,9 +1377,6 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
             init.kaiming_normal_(embedding.weight) 
         else: 
             raise ValueError("type not recognized") 
-        
-        if embedding.bias is not None: 
-            embedding.bias.data.zero_() 
 
     def get_decoder(self):
         return self.model 
