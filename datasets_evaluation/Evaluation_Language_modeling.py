@@ -839,10 +839,13 @@ class CustomDataset:
 model_type = "use_small_model" 
 if not model_type == "use_small_model" and model_name == "openllama3b": 
     tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
-else: 
-    # tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+elif not model_type == "use_small_model": 
     tokenizer = AutoTokenizer.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models) 
     # tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
+elif model_type == "use_small_model": 
+    tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+else: 
+    raise ValueError("model_type is not recognized")
 if tokenizer.pad_token is not None: 
     print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
 else: 
@@ -868,21 +871,26 @@ datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask"])
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
 if model_type == "use_small_model": 
-    small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
-    # target_model_dim = 3200 if model_name == "openllama3b" else 2560 
-    if model_name == "openllama3b": 
-        target_model_dim = 3200 
-    elif model_name == "shearedllama2_7b": 
-        target_model_dim = 2560 
-    elif model_name == "tinyllama": 
-        target_model_dim = 2048 
+    if args.loading_from_checkpoint is not None: 
+        small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
+        # target_model_dim = 3200 if model_name == "openllama3b" else 2560 
+        if model_name == "openllama3b": 
+            target_model_dim = 3200 
+        elif model_name == "shearedllama2_7b": 
+            target_model_dim = 2560 
+        elif model_name == "tinyllama": 
+            target_model_dim = 2048 
+        else: 
+            target_model_dim = 2048 
+        model = SimpleSmallModel.from_pretrained(args.loading_from_checkpoint, sliding_window_length = args.kernel_size, hostname = hostname, target_model_dim = target_model_dim) 
+        model.config.pad_token_id = tokenizer.pad_token_id 
+        # model = model.to(torch_device).to(torch.bfloat16) 
+        model = model.to(torch_device) 
+        model.eval() 
     else: 
-        target_model_dim = 2048 
-    model = SimpleSmallModel.from_pretrained(args.loading_from_checkpoint, sliding_window_length = args.kernel_size, hostname = hostname, target_model_dim = target_model_dim) 
-    model.config.pad_token_id = tokenizer.pad_token_id 
-    # model = model.to(torch_device).to(torch.bfloat16) 
-    model = model.to(torch_device) 
-    model.eval() 
+        model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
+        model = model.to(torch_device) 
+        model.eval() 
 else: 
     if model_name == "openllama3b": 
         model = LlamaForCausalLM.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
