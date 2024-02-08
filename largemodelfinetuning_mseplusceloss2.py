@@ -953,14 +953,22 @@ def naive_grouping(examples):
     return {"input_ids_chunk": added_tensor, "attention_mask_chunk": practice_attention_mask} 
 
 param_group = [] 
+param_group2 = [] 
 for name, param in large_model.named_parameters(): 
     if "addonsmallmodel." in name: 
         param.requires_grad = False 
     else: 
         if not args.freeze_large_model: 
             print(colored("large model parameters {}".format(name), "blue")) 
-            param.requires_grad = True 
-            param_group.append(param) 
+            if args.embedding_reinitialization_type is None: 
+                param.requires_grad = True 
+                param_group.append(param) 
+            else: 
+                param.requires_grad = True 
+                if "embed_tokens" in name: 
+                    param_group2.append(param) 
+                else: 
+                    param_group.append(param) 
 for name, param in small_model.named_parameters(): 
     # print(colored("small model parameters {}".format(name), "yellow")) 
     # if args.use_pretrained_small_model: 
@@ -972,10 +980,18 @@ for name, param in small_model.named_parameters():
         param.requires_grad = True 
         param_group.append(param) 
 print("length of param_group {}".format(len(param_group))) 
+if args.embedding_reinitialization_type is not None: 
+    print("length of param_group2 {}".format(len(param_group2))) 
 
-custom_optimizer = torch.optim.AdamW(param_group, lr = args.lr) 
-# custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-5) 
-# custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-4) 
+if args.embedding_reinitialization_type is None: 
+    custom_optimizer = torch.optim.AdamW(param_group, lr = args.lr) 
+    # custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-5) 
+    # custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-4) 
+else: 
+    custom_optimizer = torch.optim.AdamW([
+        {"params": param_group, "lr": args.lr}, 
+        {"params": param_group2, "lr": args.lr * 10}
+    ]) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
