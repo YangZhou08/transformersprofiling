@@ -845,7 +845,7 @@ elif not model_type == "use_small_model":
 elif model_type == "use_small_model": 
     tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 else: 
-    raise ValueError("model_type is not recognized")
+    raise ValueError("model_type is not recognized") 
 if tokenizer.pad_token is not None: 
     print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
 else: 
