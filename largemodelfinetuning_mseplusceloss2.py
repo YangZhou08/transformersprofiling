@@ -226,6 +226,7 @@ parser.add_argument("--alpha", type = float, default = 0.5)
 parser.add_argument("--lr", type = float, default = 5e-5) 
 parser.add_argument("--embedding_reinitialization_type", type = str, default = None) 
 parser.add_argument("--cosine_similarity", action = "store_true") 
+parser.add_argument("--use_old_checkpoint", action = "store_true") 
 
 args = parser.parse_args() 
 model_name = args.large_model 
@@ -884,7 +885,11 @@ elif args.large_model == "tinyllama":
         print(colored("Using the found checkpoint {}".format(args.finetuned_large_model_checkpoint), "yellow")) 
         large_model = LlamaWeirdLarge3.from_pretrained(args.finetuned_large_model_checkpoint).to(torch.bfloat16).to(torch_device) 
     else: 
-        large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+        if args.use_old_checkpoint: 
+            # print(colored("Using an earlier checkpoint", "yellow")) 
+            large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-step-50K-105b", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+        else: 
+            large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     large_model.set_msece_loss(args.use_mse_loss, args.ce_loss_only) 
     large_model.set_addonsmallmodel(small_model) 
     if args.finetuned_small_model_checkpoint is not None: 
