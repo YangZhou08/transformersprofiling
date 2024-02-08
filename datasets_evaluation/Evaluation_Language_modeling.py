@@ -13,30 +13,30 @@ src_folder = os.path.join(parent_dir, "src")
 sys.path.append(src_folder) 
 
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM 
-from src.transformers import GPTNeoXForCausalLM 
-from src.transformers import LlamaConfig, LlamaPreTrainedModel 
-from src.transformers import LlamaTokenizer 
+from transformers import GPTNeoXForCausalLM 
+from transformers import LlamaConfig, LlamaPreTrainedModel 
+from transformers import LlamaTokenizer 
 
 from tqdm import tqdm
 # from sampling.utils import norm_logits, sample 
 
 import torch.nn.functional as F 
 
-from src.transformers.generation.logits_process import LogitsProcessorList 
+from transformers.generation.logits_process import LogitsProcessorList 
 import time 
 import numpy as np 
 
 from termcolor import colored 
-from src.transformers import Trainer, TrainingArguments 
+from transformers import Trainer, TrainingArguments 
 from torch import nn 
-from src.transformers import DataCollatorForLanguageModeling 
-from src.transformers.generation.utils import GenerationConfig 
-from src.transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSmallModel 
-from src.transformers.models.llama.modeling_llama import LlamaCausalLMWeirdTwo 
-from src.transformers.modeling_utils import PreTrainedModel, load_sharded_checkpoint, unwrap_model 
+from transformers import DataCollatorForLanguageModeling 
+from transformers.generation.utils import GenerationConfig 
+from transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSmallModel 
+from transformers.models.llama.modeling_llama import LlamaCausalLMWeirdTwo 
+from transformers.modeling_utils import PreTrainedModel, load_sharded_checkpoint, unwrap_model 
 import time 
 from torch.utils.data import random_split 
-from src.transformers import BitsAndBytesConfig 
+from transformers import BitsAndBytesConfig 
 from packaging import version 
 # import torch.nn.parallel.distributed.DistributedDataParallel as DDP 
 
@@ -65,7 +65,7 @@ try:
 except ImportError:
     has_wandb = False 
 
-from src.transformers.utils import ( 
+from transformers.utils import ( 
     ADAPTER_CONFIG_NAME,
     ADAPTER_SAFE_WEIGHTS_NAME,
     ADAPTER_WEIGHTS_NAME,
@@ -95,7 +95,7 @@ from src.transformers.utils import (
     is_torch_npu_available, 
 ) 
 
-from src.transformers.trainer_pt_utils import (
+from transformers.trainer_pt_utils import (
     DistributedTensorGatherer,
     IterableDatasetShard,
     LabelSmoother,
@@ -115,7 +115,7 @@ from src.transformers.trainer_pt_utils import (
     reissue_pt_warnings,
     remove_dummy_checkpoint,
 ) 
-from src.transformers.trainer_utils import (
+from transformers.trainer_utils import (
     PREFIX_CHECKPOINT_DIR,
     BestRun,
     EvalLoopOutput,
@@ -142,7 +142,7 @@ from src.transformers.trainer_utils import (
 )
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union 
 from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampler 
-from src.transformers.integrations.deepspeed import deepspeed_init, deepspeed_load_checkpoint, is_deepspeed_available 
+from transformers.integrations.deepspeed import deepspeed_init, deepspeed_load_checkpoint, is_deepspeed_available 
 
 if is_apex_available():
     from apex import amp 
