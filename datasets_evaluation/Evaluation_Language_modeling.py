@@ -868,6 +868,9 @@ dfiles = [dir_sdata + "example_holdout_{}combined.jsonl".format(0)]
 datasetnew = load_dataset('emozilla/pg19', split = "train") 
 
 # train_set, test_set = datasetnew.split(0.99) 
+print(tokenizer(datasetnew[0]['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 256, 
+                return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                add_special_tokens = True)) 
 
 def encode_with_truncation(examples): 
     return tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 256, 
