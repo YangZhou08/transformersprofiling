@@ -874,7 +874,6 @@ def encode_with_truncation(examples):
                      add_special_tokens = True) 
 # datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
 datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
-datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
 
 for i in range(0, 10): 
     print(datasetnew[i]['text'][100000 : 100000 + 3000]) 
@@ -882,6 +881,8 @@ for i in range(0, 10):
     print("length of every example: {}".format(datasetnew[i]['input_ids'].shape)) 
     print() 
 exit() 
+
+datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
