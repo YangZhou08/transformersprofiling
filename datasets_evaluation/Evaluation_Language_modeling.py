@@ -864,7 +864,7 @@ kernel_size = 7 # this is definitely subject to change
 # dfiles = ["example_holdout_{}.jsonl".format(i) for i in range(6282)] 
 dfiles = [dir_sdata + "example_holdout_{}combined.jsonl".format(0)] 
 # datasetnew = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
-datasetnew = load_dataset('pg19', split = 'train') 
+datasetnew = load_dataset('emozilla/pg19', split = "train") 
 
 for i in range(0, 10): 
     print(datasetnew[i]['text'][ : 3000]) 
