@@ -867,7 +867,7 @@ dfiles = [dir_sdata + "example_holdout_{}combined.jsonl".format(0)]
 datasetnew = load_dataset('emozilla/pg19', split = "train") 
 
 for i in range(0, 10): 
-    print(datasetnew[i]['text'][ : 3000]) 
+    print(datasetnew[i]['text'][100000 : 100000 + 3000]) 
     print() 
 exit() 
 
