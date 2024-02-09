@@ -875,14 +875,15 @@ def encode_with_truncation(examples):
                      add_special_tokens = True) 
 
 def unflatten_list_func(examples): 
-    examples['input_ids'] = list(chain(*examples['input_ids'])) 
-    examples['attention_mask'] = list(chain(*examples['attention_mask'])) 
+    examples['input_ids'] = examples['input_ids'].squeeze(0) 
+    examples['attention_mask'] = examples['attention_mask'].squeeze(0) 
 
 # datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
 datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
 # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
 
 datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
+datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
 
 for i in range(0, 10): 
     print(datasetnew[i]['text'][100000 : 100000 + 3000]) 
