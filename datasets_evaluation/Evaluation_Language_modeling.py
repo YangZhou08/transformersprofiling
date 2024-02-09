@@ -878,7 +878,7 @@ datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8)
 for i in range(0, 10): 
     print(datasetnew[i]['text'][100000 : 100000 + 3000]) 
     print(datasetnew[i]['input_ids']) 
-    print("length of every example: {}".format(datasetnew[i]['input_ids'].shape)) 
+    print("length of every example: {}".format(len(datasetnew[i]['input_ids']))) 
     print() 
 exit() 
 
