@@ -874,10 +874,11 @@ datasetnew = load_dataset('emozilla/pg19', split = "train")
 # train_set, test_set = datasetnew.split(0.99) 
 
 def encode_with_truncation(examples): 
-    return tokenizer(examples['text'][:, 100000 : 100000 + 3000], padding = "max_length", max_length = 256, 
+    return tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 256, 
                      return_attention_mask = True, return_tensors = "pt", truncation = True, 
                      add_special_tokens = True) 
-datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
+# datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
+datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
 datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
