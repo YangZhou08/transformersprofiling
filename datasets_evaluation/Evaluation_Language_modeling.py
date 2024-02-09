@@ -887,7 +887,6 @@ for i in range(0, 10):
     print(datasetnew[i]['input_ids']) 
     print("length of every example: {}".format(len(datasetnew[i]['input_ids']))) 
     print() 
-exit() 
 
 datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
 
