@@ -880,15 +880,15 @@ def unflatten_list_func(examples):
 
 # datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
 datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
-datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
+# datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
+
+datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
 
 for i in range(0, 10): 
     print(datasetnew[i]['text'][100000 : 100000 + 3000]) 
     print(datasetnew[i]['input_ids']) 
     print("length of every example: {}".format(len(datasetnew[i]['input_ids']))) 
     print() 
-
-datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
