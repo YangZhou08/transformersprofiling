@@ -43,6 +43,7 @@ from packaging import version
 import datetime 
 
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union 
+from itertools import chain 
 
 if TYPE_CHECKING: 
     import optuna 
@@ -872,8 +873,14 @@ def encode_with_truncation(examples):
     return tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 256, 
                      return_attention_mask = True, return_tensors = "pt", truncation = True, 
                      add_special_tokens = True) 
+
+def unflatten_list_func(examples): 
+    examples['input_ids'] = list(chain(*examples['input_ids'])) 
+    examples['attention_mask'] = list(chain(*examples['attention_mask'])) 
+
 # datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
 datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
+datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
 
 for i in range(0, 10): 
     print(datasetnew[i]['text'][100000 : 100000 + 3000]) 
