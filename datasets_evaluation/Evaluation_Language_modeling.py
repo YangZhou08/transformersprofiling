@@ -866,11 +866,6 @@ dfiles = [dir_sdata + "example_holdout_{}combined.jsonl".format(0)]
 # datasetnew = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
 datasetnew = load_dataset('emozilla/pg19', split = "train") 
 
-# for i in range(0, 10): 
-#     print(datasetnew[i]['text'][100000 : 100000 + 3000]) 
-#     print() 
-# exit() 
-
 # train_set, test_set = datasetnew.split(0.99) 
 
 def encode_with_truncation(examples): 
@@ -880,6 +875,13 @@ def encode_with_truncation(examples):
 # datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
 datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
 datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
+
+for i in range(0, 10): 
+    print(datasetnew[i]['text'][100000 : 100000 + 3000]) 
+    print(datasetnew[i]['input_ids']) 
+    print("length of every example: {}".format(datasetnew[i]['input_ids'].shape)) 
+    print() 
+exit() 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
