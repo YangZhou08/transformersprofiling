@@ -873,9 +873,13 @@ print(tokenizer(datasetnew[0]['text'][100000 : 100000 + 3000], padding = "max_le
                 add_special_tokens = True)) 
 
 def encode_with_truncation(examples): 
-    return tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 256, 
+    tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 256, 
                      return_attention_mask = True, return_tensors = "pt", truncation = True, 
                      add_special_tokens = True) 
+    newdictionary = {} 
+    newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
+    newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
+    return newdictionary 
 
 def unflatten_list_func(examples): 
     examples['input_ids'] = examples['input_ids'].squeeze(0) 
@@ -886,7 +890,7 @@ datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8)
 # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
 
 datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
-datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
+# datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
 
 for i in range(0, 10): 
     print(datasetnew[i]['text'][100000 : 100000 + 3000]) 
