@@ -809,7 +809,24 @@ class CustomDataset:
         if isinstance(train_size, float): 
             train_size = int(train_size * len(self)) 
         eval_size = len(self) - train_size 
-        return self[: train_size], self[train_size :] 
+        train_indices = list(range(0, train_size)) 
+        eval_indices = list(range(train_size, len(self))) 
+        
+        train_set = CustomDatasetSubset(self, train_indices) 
+        eval_set = CustomDatasetSubset(self, eval_indices) 
+        return train_set, eval_set 
+
+class CustomDatasetSubset: 
+    def __init__(self, dataset, indices): # indices here is a list of ints 
+        self.dataset = dataset 
+        self.indices = indices 
+    
+    def __len__(self): 
+        return len(self.indices) 
+    
+    def __getitem__(self, idx): 
+        actual_idx = self.indices[idx] 
+        return self.dataset.__getitem__(actual_idx) 
 
 # tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 # large_tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
