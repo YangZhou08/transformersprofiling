@@ -809,7 +809,7 @@ class CustomDataset:
         if isinstance(train_size, float): 
             train_size = int(train_size * len(self)) 
         eval_size = len(self) - train_size 
-        return self[: train_size], self[eval_size :] 
+        return self[: train_size], self[train_size :] 
 
 # tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 # large_tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
