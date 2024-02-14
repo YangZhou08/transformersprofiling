@@ -261,7 +261,7 @@ def tokenize_function(examples):
     model_inputs["labels"] = labels["input_ids"] 
     return model_inputs 
 
-datasetnew = datasetnew.map(tokenize_function, batched = True) 
+datasetnew = datasetnew.map(tokenize_function, batched = True, num_proc = 8) 
 
 def filter_function(examples): 
     # filter based on the length of the article 
@@ -272,6 +272,6 @@ datasetnew = datasetnew.filter(filter_function, load_from_cache_dile = False)
 def pad_examples(examples): 
     return tokenizer.pad(examples, padding = "max_length", max_length = 512) 
 
-datasetnew = datasetnew.map(pad_examples, batched = True) 
+datasetnew = datasetnew.map(pad_examples, batched = True, num_proc = 8) 
 
 print("the length of the dataset is {}".format(len(datasetnew))) 
