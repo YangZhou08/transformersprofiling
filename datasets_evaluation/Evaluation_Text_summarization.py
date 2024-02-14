@@ -251,7 +251,8 @@ tokenizer.padding_side = "left"
 
 kernel_size = 7 
 
-datasetnew = load_dataset("cnn_dailymail", "3.0.0", cache_dir = dir_sdata) 
+# datasetnew = load_dataset("cnn_dailymail", "3.0.0", cache_dir = dir_sdata) 
+datasetnew = load_dataset("EdinburghNLP/xsum", cache_dir = dir_sdata) 
 datasetnew = datasetnew["train"] 
 
 def tokenize_function(examples): 
