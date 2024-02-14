@@ -265,7 +265,7 @@ datasetnew = datasetnew.map(tokenize_function, batched = True, num_proc = 8)
 
 def filter_function(examples): 
     # filter based on the length of the article 
-    return len(examples["article"]) <= 1024 
+    return len(examples["article"]) <= 2000 
 
 datasetnew = datasetnew.filter(filter_function, load_from_cache_file = False, num_proc = 8) 
 
