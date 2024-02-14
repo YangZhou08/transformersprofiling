@@ -267,7 +267,7 @@ def filter_function(examples):
     # filter based on the length of the article 
     return len(examples["article"]) <= 512 
 
-datasetnew = datasetnew.filter(filter_function, load_from_cache_dile = False) 
+datasetnew = datasetnew.filter(filter_function, load_from_cache_file = False) 
 
 def pad_examples(examples): 
     return tokenizer.pad(examples, padding = "max_length", max_length = 512) 
