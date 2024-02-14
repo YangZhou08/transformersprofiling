@@ -239,6 +239,39 @@ else:
     # dir_models = "/home/yangzho6/model_checkpoints/" 
     dir_models = "/fsx-storygen/beidic/yang/model_checkpoints/" 
     # dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
-    dir_sdata = "/fsx-storygen/beidic/yang/c4llm_synthesized/" 
+    dir_sdata = "/fsx-storygen/beidic/yang/cnn_dailymail/" 
 
+tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b", cache_dir = dir_models) # unified tokenizer 
+if tokenizer.pad_token is not None: 
+    print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
+else: 
+    tokenizer.pad_token = tokenizer.eos_token 
+    print("We now use eos_token as pad token") 
+tokenizer.padding_side = "left" 
 
+kernel_size = 7 
+
+datasetnew = load_dataset("cnn_dailymail", "3.0.0", cache_dir = dir_sdata) 
+datasetnew = datasetnew["train"] 
+
+def tokenize_function(examples): 
+    model_inputs = tokenizer(examples["article"], max_length = 1024, padding = False, truncation = True) 
+    with tokenizer.as_target_tokenizer(): 
+        labels = tokenizer(examples["highlights"], max_length = 1024, padding = False, truncation = True) 
+    model_inputs["labels"] = labels["input_ids"] 
+    return model_inputs 
+
+datasetnew = datasetnew.map(tokenize_function, batched = True) 
+
+def filter_function(examples): 
+    # filter based on the length of the article 
+    return len(examples["article"]) <= 512 
+
+datasetnew = datasetnew.filter(filter_function, load_from_cache_dile = False) 
+
+def pad_examples(examples): 
+    return tokenizer.pad(examples, padding = "max_length", max_length = 512) 
+
+datasetnew = datasetnew.map(pad_examples, batched = True) 
+
+print("the length of the dataset is {}".format(len(datasetnew))) 
