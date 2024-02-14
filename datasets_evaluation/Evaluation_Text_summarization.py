@@ -255,9 +255,9 @@ datasetnew = load_dataset("cnn_dailymail", "3.0.0", cache_dir = dir_sdata)
 datasetnew = datasetnew["train"] 
 
 def tokenize_function(examples): 
-    model_inputs = tokenizer(examples["article"], max_length = 1024, padding = False, truncation = True) 
+    model_inputs = tokenizer(examples["article"], max_length = 2048, padding = False, truncation = True) 
     with tokenizer.as_target_tokenizer(): 
-        labels = tokenizer(examples["highlights"], max_length = 1024, padding = False, truncation = True) 
+        labels = tokenizer(examples["highlights"], max_length = 2048, padding = False, truncation = True) 
     model_inputs["labels"] = labels["input_ids"] 
     return model_inputs 
 
@@ -265,9 +265,9 @@ datasetnew = datasetnew.map(tokenize_function, batched = True, num_proc = 8)
 
 def filter_function(examples): 
     # filter based on the length of the article 
-    return len(examples["article"]) <= 512 
+    return len(examples["article"]) <= 1024 
 
-datasetnew = datasetnew.filter(filter_function, load_from_cache_file = False) 
+datasetnew = datasetnew.filter(filter_function, load_from_cache_file = False, num_proc = 8) 
 
 def pad_examples(examples): 
     return tokenizer.pad(examples, padding = "max_length", max_length = 512) 
