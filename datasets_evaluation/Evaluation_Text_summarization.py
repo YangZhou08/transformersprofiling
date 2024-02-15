@@ -299,7 +299,7 @@ else:
     
     datasetnew = datasetnew.map(padding_examples, batched = True, num_proc = 8) 
 
-print("length of the dataset: {}".format(len(datasetnew)) 
+print("length of the dataset: {}".format(len(datasetnew))) 
 for i in range(10): 
      print("document: ") 
      print(datasetnew[i]["document"]) 
