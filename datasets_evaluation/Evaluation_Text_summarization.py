@@ -304,6 +304,7 @@ else:
     print("maximum length of the summary: {}".format(np.max(lengthsummary))) 
     print("minimum length of the summary: {}".format(np.min(lengthsummary))) 
     print("average length of the summary: {}".format(np.mean(lengthsummary))) 
+    exit() 
     
     def padding_examples(examples): 
         return tokenizer.pad(examples, padding = "max_length", max_length = 256) 
