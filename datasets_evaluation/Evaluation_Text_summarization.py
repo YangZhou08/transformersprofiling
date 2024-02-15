@@ -211,6 +211,8 @@ import socket
 hostname = socket.gethostname()
 print("Hostname:", hostname) 
 
+from rouge_score import rouge_scorer 
+
 parser = argparse.ArgumentParser(
                     prog='ProgramName',
                     description='What the program does',
@@ -304,7 +306,6 @@ else:
     print("maximum length of the summary: {}".format(np.max(lengthsummary))) 
     print("minimum length of the summary: {}".format(np.min(lengthsummary))) 
     print("average length of the summary: {}".format(np.mean(lengthsummary))) 
-    exit() 
     
     def padding_examples(examples): 
         return tokenizer.pad(examples, padding = "max_length", max_length = 256) 
@@ -337,4 +338,7 @@ else:
     
     for i in range(0, len(articles), batch_size): 
         batch_articles = articles[i: i + batch_size] 
-        # summaries = summarizer(batch_articles) 
+        summaries = summarizer(batch_articles, max_length = 128, min_length = 32, do_sample = False) 
+        generated_summaries += [summary['summary_text'] for summary in summaries] 
+        
+    
