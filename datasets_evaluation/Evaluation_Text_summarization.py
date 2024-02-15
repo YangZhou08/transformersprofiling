@@ -255,7 +255,7 @@ ts_datasetname = "xsum"
 
 if ts_datasetname == "cnn_dailymail": 
     datasetnew = load_dataset("cnn_dailymail", "3.0.0", cache_dir = dir_sdata) 
-    datasetnew = datasetnew["train"] 
+    datasetnew = datasetnew["train"]
 
     def tokenize_function(examples): 
         model_inputs = tokenizer(examples["article"], max_length = 2048, padding = False, truncation = True) 
@@ -299,4 +299,15 @@ else:
     
     datasetnew = datasetnew.map(padding_examples, batched = True, num_proc = 8) 
 
-print("the length of the dataset is {}".format(len(datasetnew))) 
+for i in range(10): 
+     print("document: ") 
+     print(datasetnew[i]["document"]) 
+     print("summary: ") 
+     print(datasetnew[i]["summary"]) 
+     print("input_ids: ") 
+     print(datasetnew[i]["input_ids"]) 
+     print("length of input_ids: {}".format(len(datasetnew[i]["input_ids"]))) 
+     print("labels: ") 
+     print(datasetnew[i]["labels"]) 
+     print("length of labels: {}".format(len(datasetnew[i]["labels"]))) 
+     print() 
