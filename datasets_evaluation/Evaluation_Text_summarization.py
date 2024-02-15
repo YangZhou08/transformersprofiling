@@ -290,7 +290,7 @@ else:
     datasetnew = datasetnew.map(tokenize_function, batched = True, num_proc = 8) 
     
     def filter_function(examples): 
-        return len(examples["document"]) <= 512 
+        return len(examples["document"]) <= 256 
     
     datasetnew = datasetnew.filter(filter_function, load_from_cache_file = False, num_proc = 8) 
     
@@ -299,6 +299,7 @@ else:
     
     datasetnew = datasetnew.map(padding_examples, batched = True, num_proc = 8) 
 
+print("length of the dataset: {}".format(len(datasetnew)) 
 for i in range(10): 
      print("document: ") 
      print(datasetnew[i]["document"]) 
