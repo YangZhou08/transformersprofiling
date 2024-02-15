@@ -47,6 +47,9 @@ from itertools import chain
 
 if TYPE_CHECKING: 
     import optuna 
+    
+from transformers import pipeline 
+from datasets import load_metric 
 
 # # cache_dir = "/home/bc20/yang/" 
 # dir_dataset = "/home/yangzho6/c4_parts" 
@@ -294,21 +297,43 @@ else:
     
     datasetnew = datasetnew.filter(filter_function, load_from_cache_file = False, num_proc = 8) 
     
+    lengthsummary = [] 
+    for i in range(0, len(datasetnew)): 
+        summary_length = len(datasetnew[i]["labels"]) 
+        lengthsummary.append(summary_length) 
+    print("maximum length of the summary: {}".format(np.max(lengthsummary))) 
+    print("minimum length of the summary: {}".format(np.min(lengthsummary))) 
+    print("average length of the summary: {}".format(np.mean(lengthsummary))) 
+    
     def padding_examples(examples): 
         return tokenizer.pad(examples, padding = "max_length", max_length = 256) 
     
     datasetnew = datasetnew.map(padding_examples, batched = True, num_proc = 8) 
 
-print("length of the dataset: {}".format(len(datasetnew))) 
-for i in range(10): 
-     print("document: ") 
-     print(datasetnew[i]["document"]) 
-     print("summary: ") 
-     print(datasetnew[i]["summary"]) 
-     print("input_ids: ") 
-     print(datasetnew[i]["input_ids"]) 
-     print("length of input_ids: {}".format(len(datasetnew[i]["input_ids"]))) 
-     print("labels: ") 
-     print(datasetnew[i]["labels"]) 
-     print("length of labels: {}".format(len(datasetnew[i]["labels"]))) 
-     print() 
+    def visualize_dataset_text(dataset, num_examples = 10): 
+        print("length of the dataset: {}".format(len(dataset))) 
+        for i in range(num_examples): 
+            print("document: ") 
+            print(dataset[i]["document"]) 
+            print("summary: ") 
+            print(dataset[i]["summary"]) 
+            print("input_ids: ") 
+            print(dataset[i]["input_ids"]) 
+            print("length of input_ids: {}".format(len(dataset[i]["input_ids"]))) 
+            print("labels: ") 
+            print(dataset[i]["labels"]) 
+            print("length of labels: {}".format(len(dataset[i]["labels"]))) 
+            print() 
+    
+    visualize_dataset_text(datasetnew, num_examples = 10) 
+    summarizer = pipeline("summarization", model = "TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T") 
+    
+    articles = [example['document'] for example in datasetnew] 
+    reference_summaries = [example['summary'] for example in datasetnew] 
+    generated_summaries = [] 
+    
+    batch_size = 64 
+    
+    for i in range(0, len(articles), batch_size): 
+        batch_articles = articles[i: i + batch_size] 
+        summaries = summarizer(batch_articles
