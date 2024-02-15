@@ -250,29 +250,53 @@ else:
 tokenizer.padding_side = "left" 
 
 kernel_size = 7 
+ts_datasetname = "xsum" 
+# ts_datasetname = "cnn_dailymail" 
 
-# datasetnew = load_dataset("cnn_dailymail", "3.0.0", cache_dir = dir_sdata) 
-datasetnew = load_dataset("EdinburghNLP/xsum", cache_dir = dir_sdata) 
-datasetnew = datasetnew["train"] 
+if ts_datasetname == "cnn_dailymail": 
+    datasetnew = load_dataset("cnn_dailymail", "3.0.0", cache_dir = dir_sdata) 
+    datasetnew = datasetnew["train"] 
 
-def tokenize_function(examples): 
-    model_inputs = tokenizer(examples["article"], max_length = 2048, padding = False, truncation = True) 
-    with tokenizer.as_target_tokenizer(): 
-        labels = tokenizer(examples["highlights"], max_length = 2048, padding = False, truncation = True) 
-    model_inputs["labels"] = labels["input_ids"] 
-    return model_inputs 
+    def tokenize_function(examples): 
+        model_inputs = tokenizer(examples["article"], max_length = 2048, padding = False, truncation = True) 
+        with tokenizer.as_target_tokenizer(): 
+            labels = tokenizer(examples["highlights"], max_length = 2048, padding = False, truncation = True) 
+        model_inputs["labels"] = labels["input_ids"] 
+        return model_inputs 
 
-datasetnew = datasetnew.map(tokenize_function, batched = True, num_proc = 8) 
+    datasetnew = datasetnew.map(tokenize_function, batched = True, num_proc = 8) 
 
-def filter_function(examples): 
-    # filter based on the length of the article 
-    return len(examples["article"]) <= 2000 
+    def filter_function(examples): 
+        # filter based on the length of the article 
+        return len(examples["article"]) <= 2000 
 
-datasetnew = datasetnew.filter(filter_function, load_from_cache_file = False, num_proc = 8) 
+    datasetnew = datasetnew.filter(filter_function, load_from_cache_file = False, num_proc = 8) 
 
-def pad_examples(examples): 
-    return tokenizer.pad(examples, padding = "max_length", max_length = 512) 
+    def pad_examples(examples): 
+        return tokenizer.pad(examples, padding = "max_length", max_length = 512) 
 
-datasetnew = datasetnew.map(pad_examples, batched = True, num_proc = 8) 
+    datasetnew = datasetnew.map(pad_examples, batched = True, num_proc = 8) 
+else: 
+    datasetnew = load_dataset("EdinburghNLP/xsum", cache_dir = dir_sdata) 
+    datasetnew = datasetnew["train"] 
+    
+    def tokenize_function(examples): 
+        model_inputs = tokenizer(examples["document"], max_length = 2048, padding = False, truncation = True) 
+        with tokenizer.as_target_tokenizer(): 
+            labels = tokenizer(examples["summary"], max_length = 2048, padding = False, truncation = True) 
+        model_inputs["labels"] = labels["input_ids"] 
+        return model_inputs 
+    
+    datasetnew = datasetnew.map(tokenize_function, batched = True, num_proc = 8) 
+    
+    def filter_function(examples): 
+        return len(examples["document"]) <= 2000 
+    
+    datasetnew = datasetnew.filter(filter_function, load_from_cache_file = False, num_proc = 8) 
+    
+    def padding_examples(examples): 
+        return tokenizer.pad(examples, padding = "max_length", max_length = 512) 
+    
+    datasetnew = datasetnew.map(padding_examples, batched = True, num_proc = 8) 
 
 print("the length of the dataset is {}".format(len(datasetnew))) 
