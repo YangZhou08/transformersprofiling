@@ -224,6 +224,7 @@ parser.add_argument("--debug", action = "store_true")
 parser.add_argument("--experiment_setting", type = str, default = "setting0") 
 parser.add_argument("--alpha", type = float, default = 0.5) 
 parser.add_argument("--lr", type = float, default = 5e-5) 
+parser.add_argument("--gradient_accumulation_steps", type = int, default = 512) 
 parser.add_argument("--embedding_reinitialization_type", type = str, default = None) 
 parser.add_argument("--cosine_similarity", action = "store_true") 
 parser.add_argument("--use_old_checkpoint", action = "store_true") 
@@ -1035,7 +1036,7 @@ training_args = TrainingArguments(
     overwrite_output_dir=True,      
     num_train_epochs=args.num_epochs,            # number of training epochs, feel free to tweak
     per_device_train_batch_size = args.batch_size if not args.debug else 10, # the training batch size, put it as high as your GPU memory fits
-    gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
+    gradient_accumulation_steps=args.gradient_accumulation_steps,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size= args.batch_size if not args.debug else 10,  # evaluation batch size
     # logging_steps=1, 
     logging_steps = 500 if not args.debug else 1,       # evaluate, log and save model checkpoints every 1000 step
