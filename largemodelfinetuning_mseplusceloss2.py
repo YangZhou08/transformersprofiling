@@ -383,7 +383,8 @@ class CustomTrainer(Trainer):
                         "cosin_similarity_input": cossim_input, 
                 }) 
                 
-        if self.accelerator.is_main_process and self.iteration_count % 1000 == 0 and has_wandb: 
+        # if self.accelerator.is_main_process and self.iteration_count % 1000 == 0 and has_wandb: 
+        if self.accelerator.is_main_process and has_wandb and self.iteration_count % 500 == 0: 
             print(colored("generating images ... at iteration {}".format(self.iteration_count), "yellow")) 
             for layer in [0, 6, 11]: 
                 for head in [0, 6, 11]: 
@@ -851,8 +852,10 @@ kernel_size = args.kernel_size
 # the max_length assignment is subject to change 
 max_length_lookup = {2 : 260, 3 : 259, 4 : 260, 5 : 259, 6 : 262, 7 : 260, 8 : 264} 
 datasetnew = CustomDataset(max_length = max_length_lookup[kernel_size], data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64) 
-# train_set, test_set = datasetnew.split(0.98) 
-train_set, test_set = datasetnew.static_split(0.98) 
+if not args.use_pretrained_small_model: 
+    train_set, test_set = datasetnew.split(0.98) 
+else: 
+    train_set, test_set = datasetnew.static_split(0.98) 
 
 for i in range(0, 2): 
     item = train_set[i] 
@@ -1039,10 +1042,10 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=args.gradient_accumulation_steps,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size= args.batch_size if not args.debug else 10,  # evaluation batch size
     # logging_steps=1, 
-    logging_steps = 500 if not args.debug else 1,       # evaluate, log and save model checkpoints every 1000 step
+    logging_steps = 250 if not args.debug else 1,       # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 500 if not args.debug else 1,   
+    save_steps = 250 if not args.debug else 1,   
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     # learning_rate=2e-4, 

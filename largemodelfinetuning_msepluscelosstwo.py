@@ -210,6 +210,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--kernel_size", type = int, default = 7) 
 parser.add_argument("--use_pretrained_small_model", action = "store_true") 
 parser.add_argument("--finetuned_small_model_checkpoint", type = str, default = None) 
+parser.add_argument("--finetuned_large_model_checkpoint", type = str, default = None) 
 parser.add_argument("--large_model", type = str, default = "openllama3b") 
 parser.add_argument("--use_mse_loss", action = "store_true") 
 parser.add_argument("--resume_from_checkpoint", type = str, default = None) 
@@ -223,12 +224,17 @@ parser.add_argument("--debug", action = "store_true")
 parser.add_argument("--experiment_setting", type = str, default = "setting0") 
 parser.add_argument("--alpha", type = float, default = 0.5) 
 parser.add_argument("--lr", type = float, default = 5e-5) 
+parser.add_argument("--embedding_reinitialization_type", type = str, default = None) 
+parser.add_argument("--cosine_similarity", action = "store_true") 
 
 args = parser.parse_args() 
 model_name = args.large_model 
 if args.use_pretrained_small_model: 
     assert args.finetuned_small_model_checkpoint is not None 
 text_eval = "evaluating_printout_{}_{}_{}.txt".format(commit_hash, hash_of_time, model_name) 
+
+assert not (args.freeze_small_model and args.freeze_large_model) 
+assert not (args.use_mse_loss and args.freeze_large_model) 
 
 class CustomTrainer(Trainer): 
     def __init__(self, 
@@ -299,10 +305,12 @@ class CustomTrainer(Trainer):
         label2 = inputs["labels"] # (batch_size, 203) 
         print("shape of large_input_ids {} shape of small_input_ids {}".format(large_input_ids.shape, small_input_ids.shape)) 
         # attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 1), dtype = torch.long).to(large_input_ids.device) 
-        attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 2), dtype = torch.long).to(large_input_ids.device) # sequence length is 204, one bos, 29 more tokens, so 30 in total, we have 28 condensed tokens 
+        # attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 2), dtype = torch.long).to(large_input_ids.device) # sequence length is 204, one bos, 29 more tokens, so 30 in total, we have 28 condensed tokens 
+        attention_mask = torch.ones((large_input_ids.shape[0], (large_input_ids.shape[1] - 1) // self.n + 1), dtype = torch.long).to(large_input_ids.device) 
         
         batch_size, seq_len = original_attention_mask.shape 
-        addedon_length = (seq_len - 8) // self.n 
+        # addedon_length = (seq_len - 8) // self.n 
+        addedon_length = (seq_len - self.n - 1) // self.n 
         original_attention_mask = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
         
         outputs = model(
@@ -343,11 +351,13 @@ class CustomTrainer(Trainer):
             ce_loss = outputs["ce_loss"] if isinstance(outputs, dict) else outputs[-2] 
             l2_distance = outputs["l2_distance"] if isinstance(outputs, dict) else outputs[-3] 
             l2_distance_input = outputs["l2_distance_input"] if isinstance(outputs, dict) else outputs[-1] 
+            cossim_input = outputs["cossim_input"] if isinstance(outputs, dict) else outputs[-1] 
         
         print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
         print(colored("rank {} ce_loss {}".format(self.accelerator.state.process_index, ce_loss), "yellow")) 
         print(colored("rank {} l2_distance {}".format(self.accelerator.state.process_index, l2_distance), "yellow")) 
         print(colored("rank {} l2_distance_input {}".format(self.accelerator.state.process_index, l2_distance_input), "yellow")) 
+        print(colored("rank {} cossim_input {}".format(self.accelerator.state.process_index, cossim_input), "yellow")) 
         if self.accelerator.is_main_process and has_wandb and self.iteration_count % 20 == 0: 
             if len(self.optimizer.param_groups) > 1: 
                 wandb.log({"loss": loss, 
@@ -358,7 +368,9 @@ class CustomTrainer(Trainer):
                         "ce_loss": ce_loss, 
                         "l2_distance": l2_distance, 
                         "l2_distance_input": l2_distance_input, 
+                        "cosin_similarity_input": cossim_input, 
                 }) 
+                
             else: 
                 wandb.log({"loss": loss, 
                         "group1.lr": self.optimizer.param_groups[0]["lr"], 
@@ -366,6 +378,7 @@ class CustomTrainer(Trainer):
                         "ce_loss": ce_loss, 
                         "l2_distance": l2_distance, 
                         "l2_distance_input": l2_distance_input, 
+                        "cosin_similarity_input": cossim_input, 
                 }) 
                 
         if self.accelerator.is_main_process and self.iteration_count % 1000 == 0 and has_wandb: 
@@ -406,10 +419,12 @@ class CustomTrainer(Trainer):
         print("logits[1].shape {}".format(logits[1].shape)) 
         print("logits[2].shape {}".format(logits[2].shape)) 
         print("logits[3].shape {}".format(logits[3].shape)) 
-        assert len(logits) == 4 
+        print("logits[4].shape {}".format(logits[4].shape)) 
+        # assert len(logits) == 4 
         l2dist = logits[1].reshape(-1) 
         ce_loss = logits[2].reshape(-1) 
         l2dist_input = logits[3].reshape(-1) 
+        cos_sim_input = logits[4].reshape(-1) 
         logits = logits[0] 
         # print(l2dist) 
         logits = logits[:, :-1, :] 
@@ -458,7 +473,7 @@ class CustomTrainer(Trainer):
         total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
         correct_words = torch.sum((preds[indices_to_keep] == labels[indices_to_keep]).view(-1), dim = 0).item() 
         print("correct words: {} and total words: {}".format(correct_words, total_valid_tokens)) 
-        return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "l2_distance": l2dist.item(), "ce_loss": ce_loss.item() if isinstance(ce_loss, torch.Tensor) else ce_loss, "l2_distance_input": l2dist_input.item()} 
+        return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "l2_distance": l2dist.item(), "ce_loss": ce_loss.item() if isinstance(ce_loss, torch.Tensor) else ce_loss, "l2_distance_input": l2dist_input.item(), "cosin_similarity": cos_sim_input.item()} 
                 
     def evaluation_loop(
         self,
@@ -530,6 +545,7 @@ class CustomTrainer(Trainer):
         total_loss = 0 # used to compute the correct perplexity 
         l2_distance = 0 
         l2_distance_input = 0 
+        cosine_similarity_input = 0 
         ce_loss = 0 
         
         observed_num_examples = 0 
@@ -564,6 +580,7 @@ class CustomTrainer(Trainer):
             sum_of_perplexity += local_metrics["perplexity"] 
             l2_distance += local_metrics["l2_distance"] 
             l2_distance_input += local_metrics["l2_distance_input"] 
+            cosine_similarity_input += local_metrics["cosin_similarity"] 
             ce_loss += local_metrics["ce_loss"] 
 
             if is_torch_tpu_available(): 
@@ -580,6 +597,7 @@ class CustomTrainer(Trainer):
         sum_of_perplexity = self.gather_function(torch.tensor(sum_of_perplexity).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
         l2_distance = self.gather_function(torch.tensor(l2_distance).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).div(self.accelerator.state.num_processes).item() 
         l2_distance_input = self.gather_function(torch.tensor(l2_distance_input).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).div(self.accelerator.state.num_processes).item() 
+        cosine_similarity_input = self.gather_function(torch.tensor(cosine_similarity_input).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).div(self.accelerator.state.num_processes).item() 
         ce_loss = self.gather_function(torch.tensor(ce_loss).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).div(self.accelerator.state.num_processes).item() 
         
         # After all calls to `.gather_function`, reset to `gather_for_metrics`:
@@ -608,12 +626,13 @@ class CustomTrainer(Trainer):
         all_losses = total_loss / total_num_steps 
         l2_distance = l2_distance / total_num_steps 
         l2_distance_input = l2_distance_input / total_num_steps 
+        cosine_similarity_input = cosine_similarity_input / total_num_steps 
         ce_loss = ce_loss / total_num_steps 
 
-        metrics = {"perplexity": global_perplexity, "accuracy": global_accuracy, "l2_distance": l2_distance, "ce_loss": ce_loss, "l2_distance_input": l2_distance_input} 
+        metrics = {"perplexity": global_perplexity, "accuracy": global_accuracy, "l2_distance": l2_distance, "ce_loss": ce_loss, "l2_distance_input": l2_distance_input, "cosine_similarity_input": cosine_similarity_input} 
         if self.accelerator.is_main_process: 
             print(colored(metrics, "magenta")) 
-            wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy, "l2_distance": l2_distance, "ce_loss": ce_loss, "eval_loss_upd": all_losses, "l2_distance_input": l2_distance_input}) 
+            wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy, "l2_distance": l2_distance, "ce_loss": ce_loss, "eval_loss_upd": all_losses, "l2_distance_input": l2_distance_input, "cosine_similarity_input": cosine_similarity_input}) 
         
         # # Metrics!
         # if self.compute_metrics is not None and all_preds is not None and all_labels is not None:
@@ -646,28 +665,29 @@ class CustomTrainer(Trainer):
 
 class CustomDataset: 
     # def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7): 
-    def __init__(self, data_dir, large_tokenizer = None, small_tokenizer = None, max_length = 256, kernel_size = 7, topk = None): 
+    def __init__(self, data_dir, large_tokenizer = None, small_tokenizer = None, max_length = 256, kernel_size = 7, topk = None, prompt_length = 64): 
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
         self.synthesize_dir = data_dir 
         # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json", split = "train") 
         # self.dataset = load_dataset('json', data_files = [self.synthesize_dir + 'c4synthesized_file1.json', self.synthesize_dir + 'c4synthesized_file2.json'], split="train") 
         dfiles = [] 
-        if kernel_size != 4: 
-            print(colored("hostname is {}".format(hostname), "yellow")) 
-            if "ada" in hostname: 
-                for i in range(0, 2): 
-                    # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
-                    filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
-                    dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
-            elif "lovelace" in hostname: 
-                filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
+        print(colored("hostname is {}".format(hostname), "yellow")) 
+        if "ada" in hostname: 
+            for i in range(0, 2): 
+                # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+                # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+                filename = "c4synthesized_file1_kernel7_{}.json".format(i) 
                 dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
-            else: 
-                for i in range(0, 8): 
-                    filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
-                    dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
+        elif "lovelace" in hostname: 
+            # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
+            filename = "c4synthesized_file1_kernel7_0.json" 
+            dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
         else: 
-            filename = "c4synthesized_file1.json" 
+            for i in range(0, 8): 
+                # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
+                filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
+                dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
+        
         if not args.debug: 
             self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
         else: 
@@ -681,6 +701,7 @@ class CustomDataset:
         self.large_tokenizer = large_tokenizer 
         self.small_tokenizer = small_tokenizer 
         self.max_length = max_length 
+        self.prompt_length = prompt_length 
     
     def __len__(self): 
         return len(self.dataset) 
@@ -703,17 +724,23 @@ class CustomDataset:
     
     def __getitem__(self, idx): 
         item = self.dataset[idx] 
+        
         try: 
             tensor = torch.load(item["condensed_token_path"]) 
         except IOError as e: 
-            print(colored("///IOError occured replacing with an empty tensor///", "red")) 
             if model_name == "shearedllama2_7b": 
                 dmodel = 2560 
             elif model_name == "openllama3b": 
                 dmodel = 3200 
             elif model_name == "tinyllama": 
                 dmodel = 2048 
+            # tensor = torch.zeros((expected_condensed_token_length, dmodel), dtype = torch.float32) 
             tensor = torch.zeros((28, dmodel), dtype = torch.float32) 
+            print(colored("///IOError occured replacing with an empty tensor///", "red")) 
+            # tensor = torch.zeros((28, dmodel), dtype = torch.float32) 
+        
+        # expected_condensed_token_length = (self.max_length - self.prompt_length) // self.kernel_size 
+        # tensor = torch.zeros((expected_condensed_token_length, dmodel), dtype = torch.float32) 
         
         if self.large_tokenizer is not None and self.small_tokenizer is not None: 
             large_encoded_text = self.large_tokenizer( 
@@ -729,33 +756,38 @@ class CustomDataset:
             ) 
             # item['large_input_ids'] = large_encoded_text['input_ids'][0].squeeze(0)  # remove the batch dimension 
             input_idsfull = large_encoded_text['input_ids'].squeeze(0) # remove the batch dimension 
-            if input_idsfull[57] == 2 or input_idsfull[57] == 1: # if the first token is </s> or <s> 
+            # if input_idsfull[57] == 2 or input_idsfull[57] == 1: # if the first token is </s> or <s> 
+            if input_idsfull[self.prompt_length - self.kernel_size] == 2 or input_idsfull[self.prompt_length - self.kernel_size] == 1: # if the first token is </s> or <s> 
                 head_token = torch.tensor([2], dtype = torch.long) # pad with </s> eos token 
                 head_mask = torch.zeros((1, ), dtype = torch.long) # attention mask starts with 0 
             else: 
                 head_token = torch.ones((1, ), dtype = torch.long) # pad with <s> bos token 
                 head_mask = torch.ones((1, ), dtype = torch.long) # attention mask starts with 1 
-            item['large_input_ids'] = torch.cat((head_token, input_idsfull[57 :]), dim = 0) 
+            # item['large_input_ids'] = torch.cat((head_token, input_idsfull[57 :]), dim = 0) 
+            item['large_input_ids'] = torch.cat((head_token, input_idsfull[(self.prompt_length - self.kernel_size) :]), dim = 0) 
             small_encoded_text = self.small_tokenizer(
                 item["text"], # 6 word-level tokens + BOS to be the first chunk 
                 # add_special_tokens = False, 
                 add_special_tokens = True, 
                 padding = "max_length", 
-                # max_length = 64 + self.dict_kernel_maxlength[self.kernel_size], 
+                # max_length = 64 + self.dict_kernel_maxlength[self.kernel_size],
                 max_length = self.max_length, 
                 return_attention_mask = True, 
                 return_tensors = "pt", 
                 truncation = True, 
             ) 
             input_idsfull2 = small_encoded_text['input_ids'].squeeze(0) # remove the batch dimension 
-            if input_idsfull2[57] == 2 or input_idsfull2[57] == 1: # if the first token is </s> or <s> 
+            # if input_idsfull2[57] == 2 or input_idsfull2[57] == 1: # if the first token is </s> or <s> 
+            if input_idsfull2[self.prompt_length - self.kernel_size] == 2 or input_idsfull2[self.prompt_length - self.kernel_size] == 1: # if the first token is </s> or <s> 
                 head_token2 = torch.tensor([2], dtype = torch.long) # pad with </s> eos token 
                 head_mask2 = torch.zeros((1, ), dtype = torch.long) # attention mask starts with 0 
             else: 
                 head_token2 = torch.ones((1, ), dtype = torch.long) # pad with <s> bos token 
                 head_mask2 = torch.ones((1, ), dtype = torch.long) # attention mask starts with 1 
-            item['input_ids'] = torch.cat((head_token2, input_idsfull2[57 :]), dim = 0) 
-            item['attention_mask'] = torch.cat((head_mask2, small_encoded_text['attention_mask'].squeeze(0)[57 :]), dim = 0) 
+            # item['input_ids'] = torch.cat((head_token2, input_idsfull2[57 :]), dim = 0) 
+            item['input_ids'] = torch.cat((head_token2, input_idsfull2[(self.prompt_length - self.kernel_size) :]), dim = 0) 
+            # item['attention_mask'] = torch.cat((head_mask2, small_encoded_text['attention_mask'].squeeze(0)[57 :]), dim = 0) 
+            item['attention_mask'] = torch.cat((head_mask2, small_encoded_text['attention_mask'].squeeze(0)[(self.prompt_length - self.kernel_size) :]), dim = 0) 
             
             # print("input_ids is {}, the length is {}".format(item["input_ids"], item["input_ids"].shape[0])) 
         
@@ -773,8 +805,10 @@ class CustomDataset:
         return random_split(self, [train_size, eval_size]) 
 
 # tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
-large_tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
-small_tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+# large_tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
+# large_tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+large_tokenizer = LlamaTokenizer.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models) 
+small_tokenizer = LlamaTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 # tokenizer = AutoTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
 # tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 tokenizers = [large_tokenizer, small_tokenizer] 
@@ -788,7 +822,10 @@ for tokenizer in tokenizers:
 
 kernel_size = args.kernel_size 
 # datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
-datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
+# datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
+# the max_length assignment is subject to change 
+max_length_lookup = {2 : 260, 3 : 259, 4 : 260, 5 : 259, 6 : 262, 7 : 260, 8 : 264} 
+datasetnew = CustomDataset(max_length = max_length_lookup[kernel_size], data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64) 
 train_set, test_set = datasetnew.split(0.98) 
 
 for i in range(0, 2): 
@@ -810,7 +847,8 @@ else:
 if not args.use_pretrained_small_model: 
     small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
     print(colored("not using pretrained small model", "green")) 
-    small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 7, target_model_dim = large_dim) 
+    # small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 7, target_model_dim = large_dim) 
+    small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = args.kernel_size, target_model_dim = large_dim) 
 
     new_state_dict = {} 
 
@@ -842,7 +880,11 @@ if args.large_model == "openllama3b":
     large_model = LlamaWeirdLarge2.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = args.use_mse_loss, ce_loss_only = args.ce_loss_only).to(torch.bfloat16).to(torch_device) 
 elif args.large_model == "tinyllama": 
     # large_model = LlamaWeirdLarge2.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = args.use_mse_loss).to(torch.bfloat16).to(torch_device) 
-    large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    if args.finetuned_large_model_checkpoint is not None: 
+        print(colored("Using the found checkpoint {}".format(args.finetuned_large_model_checkpoint), "yellow")) 
+        large_model = LlamaWeirdLarge3.from_pretrained(args.finetuned_large_model_checkpoint).to(torch.bfloat16).to(torch_device) 
+    else: 
+        large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     large_model.set_msece_loss(args.use_mse_loss, args.ce_loss_only) 
     large_model.set_addonsmallmodel(small_model) 
     if args.finetuned_small_model_checkpoint is not None: 
@@ -855,6 +897,10 @@ elif args.large_model == "tinyllama":
     elif args.experiment_setting is not None: 
         large_model.set_inference_setting(args.experiment_setting) 
     large_model.set_walpha(args.alpha) 
+    large_model.set_slidingwindowlength(args.kernel_size) 
+    large_model.set_cosinesimilarity(args.cosine_similarity) 
+    if args.embedding_reinitialization_type is not None: 
+        large_model.reinitialize_embeddings(type = args.embedding_reinitialization_type) 
 # large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = True).to(torch.bfloat16).to(torch_device) 
 # large_model.set_smallmodelfull() # this function has proven to be very important 
 # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
@@ -980,7 +1026,7 @@ trainer = CustomTrainer(
     time_hash = hash_of_time, 
     commit_hash = commit_hash, 
     text_eval = model_path + text_eval, 
-    n = 7, 
+    n = args.kernel_size, 
 ) 
 
 if trainer.accelerator.is_main_process and has_wandb: 
