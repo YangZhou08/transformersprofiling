@@ -337,4 +337,4 @@ else:
     
     for i in range(0, len(articles), batch_size): 
         batch_articles = articles[i: i + batch_size] 
-        summaries = summarizer(batch_articles
+        # summaries = summarizer(batch_articles) 
