@@ -295,7 +295,7 @@ else:
     datasetnew = datasetnew.filter(filter_function, load_from_cache_file = False, num_proc = 8) 
     
     def padding_examples(examples): 
-        return tokenizer.pad(examples, padding = "max_length", max_length = 512) 
+        return tokenizer.pad(examples, padding = "max_length", max_length = 256) 
     
     datasetnew = datasetnew.map(padding_examples, batched = True, num_proc = 8) 
 
