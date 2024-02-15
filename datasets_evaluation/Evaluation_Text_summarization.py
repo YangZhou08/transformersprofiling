@@ -336,9 +336,14 @@ else:
     
     batch_size = 64 
     
-    for i in range(0, len(articles), batch_size): 
+    for i in tqdm(range(0, len(articles), batch_size)): 
         batch_articles = articles[i: i + batch_size] 
         summaries = summarizer(batch_articles, max_length = 128, min_length = 32, do_sample = False) 
-        generated_summaries += [summary['summary_text'] for summary in summaries] 
-        
+        generated_summaries.extend([summary['summary_text'] for summary in summaries]) 
+    
+    rouge = load_metric("rouge") 
+    
+    results = rouge.compute(predictions = generated_summaries, references = reference_summaries) 
+    
+    print(results) 
     
