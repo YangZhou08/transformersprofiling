@@ -56,7 +56,7 @@ from ...utils.import_utils import is_torch_fx_available
 from .configuration_llama import LlamaConfig 
 import torch.distributed as dist 
 
-from src.transformers.generation.logits_process import (
+from ...generation.logits_process import (
     EncoderNoRepeatNGramLogitsProcessor,
     EncoderRepetitionPenaltyLogitsProcessor,
     EpsilonLogitsWarper,
@@ -84,18 +84,18 @@ from src.transformers.generation.logits_process import (
     TypicalLogitsWarper,
     UnbatchedClassifierFreeGuidanceLogitsProcessor,
 )
-from src.transformers.generation.stopping_criteria import (
+from ...generation.stopping_criteria import (
     MaxLengthCriteria,
     MaxTimeCriteria,
     StoppingCriteria,
     StoppingCriteriaList,
     validate_stopping_criteria,
 ) 
-from src.transformers.generation.utils import SampleEncoderDecoderOutput, SampleDecoderOnlyOutput 
+from ...generation.utils import SampleEncoderDecoderOutput, SampleDecoderOnlyOutput 
 SampleOutput = Union[SampleEncoderDecoderOutput, SampleDecoderOnlyOutput] 
 
 if TYPE_CHECKING: 
-    from src.transformers.generation.streamers import BaseStreamer 
+    from ...generation.streamers import BaseStreamer 
 
 
 if is_flash_attn_2_available():
