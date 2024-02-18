@@ -21,6 +21,7 @@
 import math
 import warnings
 from typing import List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict 
 
 import torch
 import torch.nn.functional as F
@@ -53,6 +54,48 @@ import numpy as np
 
 from ...utils.import_utils import is_torch_fx_available
 from .configuration_llama import LlamaConfig 
+import torch.distributed as dist 
+
+from src.transformers.generation.logits_process import (
+    EncoderNoRepeatNGramLogitsProcessor,
+    EncoderRepetitionPenaltyLogitsProcessor,
+    EpsilonLogitsWarper,
+    EtaLogitsWarper,
+    ExponentialDecayLengthPenalty,
+    ForcedBOSTokenLogitsProcessor,
+    ForcedEOSTokenLogitsProcessor,
+    ForceTokensLogitsProcessor,
+    HammingDiversityLogitsProcessor,
+    InfNanRemoveLogitsProcessor,
+    LogitNormalization,
+    LogitsProcessorList,
+    MinLengthLogitsProcessor,
+    MinNewTokensLengthLogitsProcessor,
+    NoBadWordsLogitsProcessor,
+    NoRepeatNGramLogitsProcessor,
+    PrefixConstrainedLogitsProcessor,
+    RepetitionPenaltyLogitsProcessor,
+    SequenceBiasLogitsProcessor,
+    SuppressTokensAtBeginLogitsProcessor,
+    SuppressTokensLogitsProcessor,
+    TemperatureLogitsWarper,
+    TopKLogitsWarper,
+    TopPLogitsWarper,
+    TypicalLogitsWarper,
+    UnbatchedClassifierFreeGuidanceLogitsProcessor,
+)
+from src.transformers.generation.stopping_criteria import (
+    MaxLengthCriteria,
+    MaxTimeCriteria,
+    StoppingCriteria,
+    StoppingCriteriaList,
+    validate_stopping_criteria,
+) 
+from src.transformers.generation.utils import SampleEncoderDecoderOutput, SampleDecoderOnlyOutput 
+SampleOutput = Union[SampleEncoderDecoderOutput, SampleDecoderOnlyOutput] 
+
+if TYPE_CHECKING: 
+    from src.transformers.generation.streamers import BaseStreamer 
 
 
 if is_flash_attn_2_available():
@@ -1675,8 +1718,365 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
             l2_distance_input = l2_distance_input, 
             cossim_input = cossim_input, 
         ) 
+    
+    
+    def forward_generate( 
+        self, 
+        large_input_ids: torch.LongTensor = None, 
+        small_input_ids: torch.LongTensor = None, 
+        attention_mask: Optional[torch.Tensor] = None, 
+        position_ids: Optional[torch.LongTensor] = None, 
+        past_key_values: Optional[List[torch.FloatTensor]] = None, 
+        input_embeds: Optional[torch.FloatTensor] = None, 
+        use_cache: Optional[bool] = None, 
+        output_attentions: Optional[bool] = None, 
+        output_hidden_states: Optional[bool] = None, 
+        return_dict: Optional[bool] = None, 
+        original_attention_mask = None, 
+        condensed_embed_labels = None, 
+    ) -> Union[Tuple, CausalLMOutputWithPastLargeDistance2]: 
+        output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
+        output_hidden_states = (
+            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
+        )
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
-    def prepare_inputs_for_generation(
+        # inside this function callm, input is through input_embeds 
+        # now, we have a start of sequence token 
+        print("large_input_ids sequence first element: {}".format(large_input_ids[:, 0])) 
+        start_token = self.model.embed_tokens(large_input_ids[:, 0].unsqueeze(1)) 
+        extra_pass_in_embeds = self.naive_grouping(large_input_ids[:, 1: ]) 
+        extra_pass_in_embeds = torch.cat((start_token, extra_pass_in_embeds), dim = 1) # concatenate at the sequence length dimension 
+        # the attention mask should be compatible to the new input_embeds 
+        print("attention_mask shape {} and extra_pass_in_embeds shape {}".format(attention_mask.shape, extra_pass_in_embeds.shape)) 
+        print("condensed_embeds_labels shape {}".format(condensed_embed_labels.shape)) 
+        assert attention_mask.shape[1] == extra_pass_in_embeds.shape[1], "attention_mask shape is not compatible to the new input_embeds" 
+        assert inputs_embeds is None, "inputs_embeds is not None" 
+        inputs_embeds = extra_pass_in_embeds 
+        print(colored("inputs_embeds shape {} dtype {}".format(inputs_embeds.shape, inputs_embeds.dtype), "yellow")) 
+        # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn) 
+        # TODO delete the following line 
+        
+        outputs = self.model(
+            input_ids=None, 
+            attention_mask=attention_mask,
+            position_ids=position_ids,
+            past_key_values=past_key_values,
+            inputs_embeds=inputs_embeds,
+            use_cache=use_cache,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+            return_dict=return_dict,
+        ) 
+
+        hidden_states = outputs[0] # we don't need the lm_head 
+        print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
+        if self.small_model_dtype == torch.float32: 
+            hidden_states = hidden_states.to(torch.float32) 
+        elif self.small_model_dtype == torch.bfloat16: 
+            hidden_states = hidden_states.to(torch.bfloat16) 
+        # print(colored("small_model_type: {}".format(self.small_model_dtype), "red")) 
+        # intermediate_l2_dist = self.l2distancecompute(inputs_embeds, hidden_states) 
+        
+        practical_mask = attention_mask.unsqueeze(-1).expand_as(inputs_embeds) 
+        mselabels = condensed_embed_labels 
+        # print("first 100 eleents of hidden_states: {}".format(hidden_states[0][0][: 100])) 
+        # print("first 100 elements of mselabels: {}".format(mselabels[0][0][: 100])) 
+        # hidden_states[practical_mask == 0] = 0 
+        # hidden_states = hidden_states[:, :-1, :] # NOTE this is very important 
+        hidden_states = hidden_states[:, 1:-1, :] # NOTE this is very important 
+        # output 30 condensed tokens, the last one and the first one doesn't have the condensed token label, so 28 left 
+        # assert labels.shape == hidden_states.shape 
+        assert mselabels.shape == hidden_states.shape 
+        mse_lossfunc = nn.MSELoss() 
+        mse_loss = mse_lossfunc(hidden_states, mselabels) 
+        cosinesimlossfunc = nn.CosineEmbeddingLoss() 
+        cossim_loss = cosinesimlossfunc(hidden_states.reshape(-1, hidden_states.shape[-1]), mselabels.reshape(-1, mselabels.shape[-1]), torch.ones(hidden_states.shape[0] * hidden_states.shape[1]).to(hidden_states.device)) 
+        # mse_loss = 0.5 * mse_loss + 0.5 * cossim_loss 
+        # intermediate_l2_dist = mse_loss.clone().detach() 
+        intermediate_l2_dist = mse_loss.clone().detach() 
+        if self.use_cosinesimilarity: 
+            mse_loss = cossim_loss 
+        cossim_input = cossim_loss.clone().detach() 
+        # print(colored("mse_loss {}".format(mse_loss), "red")) 
+        
+        assert inputs_embeds.shape[1] - 2 == hidden_states.shape[1] 
+        mse_lossfunc2 = nn.MSELoss() 
+        # print("first 100 elements of input_embeds: {}".format(inputs_embeds[0][0][: 100])) 
+        # inputs_embeds = inputs_embeds[:, 1:, :] 
+        inputs_embeds = inputs_embeds[:, 2:, :] # NOTE first condensed token is the start of sequence, while the second one is the first token 
+        mse_loss_input = mse_lossfunc2(hidden_states, inputs_embeds) 
+        l2_distance_input = mse_loss_input.clone().detach() 
+        # print(colored("mse_loss_input {}".format(mse_loss_input), "red")) 
+        # cossim_input = F.cosine_similarity(hidden_states.reshape(-1, hidden_states.shape[-1]), inputs_embeds.reshape(-1, inputs_embeds.shape[-1]), dim = 1) 
+        # print("cossim_input shape {}".format(cossim_input.shape)) 
+        # cossim_input = cossim_input.mean(dim = 0) 
+        # print("cossim_input {}".format(cossim_input)) 
+        
+        if self.use_mse_loss: 
+            print(colored("mse_loss {}".format(mse_loss), "red")) 
+            # still use the small model and get ce 
+            hidden_states = hidden_states.detach().clone() 
+            # hidden_states = torch.zeros_like(hidden_states).detach() 
+            # hidden_states = condensed_embed_labels 
+            '''
+            return CausalLMOutputWithPastLargeDistance2(
+                loss = mse_loss, 
+                logits = None, 
+                past_key_values = outputs.past_key_values, 
+                hidden_states=outputs.hidden_states,
+                attentions = outputs.attentions, 
+                l2_distance = intermediate_l2_dist, 
+                ce_loss = torch.tensor(0), 
+            ) 
+            ''' 
+        # hidden_states has shape (batch_size, seq_length // 7, hidden states) 
+        # hidden_states = hidden_states[:, :-1, :] 
+        
+        # interleave the hidden_states and the input_ids 
+        # assert hidden_states.shape[1] == small_input_ids.shape[1] // 7 - 1 
+        assert hidden_states.shape[1] == (small_input_ids.shape[1] - self.addonmodel_start) // self.sliding_window_length 
+        addonmodeloutput = self.addonsmallmodel( 
+            # input_ids = input_ids, 
+            input_ids = small_input_ids, 
+            attention_mask = original_attention_mask, 
+            position_ids = None, 
+            past_key_values = None, 
+            condensed_embeds = hidden_states, 
+            labels = None, 
+            use_cache = None, 
+            output_attentions = True, 
+            output_hidden_states = None, 
+            return_dict = True, 
+            start_idx = self.addonmodel_start, # NOTE this is very important 
+            eval_mode = False, 
+            iteration_count = 1, 
+            condensed_fashion = "projection_mode", 
+            # experiment_setting = "setting3", 
+            experiment_setting = self.inference_setting, 
+        ) 
+        
+        logits = addonmodeloutput.logits 
+        
+        '''
+        if self.config.pretraining_tp > 1:
+            lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
+            logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]
+            logits = torch.cat(logits, dim=-1)
+        else:
+            logits = self.lm_head(hidden_states)
+        logits = logits.float()
+        ''' 
+        
+        # seq_length = input_ids.shape[1] + hidden_states.shape[1] 
+        ce_loss = None 
+        seq_length = small_input_ids.shape[1] + hidden_states.shape[1] 
+        assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
+        # mask_list_pos = [i * (self.sliding_window_length + 1) for i in range(seq_length // (self.sliding_window_length + 1))] 
+        # mask_list_pos = [7 + i * (self.sliding_window_length + 1) for i in range((seq_length - 7) // (self.sliding_window_length + 1))] 
+        mask_list_pos = [self.addonmodel_start + i * (self.sliding_window_length + 1) for i in range((seq_length - self.addonmodel_start) // (self.sliding_window_length + 1))] 
+        mask_list_pos22 = [x - 1 for x in mask_list_pos] 
+        # print(colored("mask_list_pos {}".format(mask_list_pos), "red")) 
+        loss = None 
+
+        if not return_dict:
+            output = (logits,) + outputs[1:]
+            return (loss,) + output if loss is not None else output 
+
+        return CausalLMOutputWithPastLargeDistance2(
+            loss=loss,
+            logits = logits, 
+            past_key_values=outputs.past_key_values,
+            hidden_states=outputs.hidden_states,
+            # attentions=outputs.attentions, 
+            attentions = addonmodeloutput.attentions, # delibrately using the model's attention mask with modifications 
+            l2_distance = None, 
+            ce_loss = None, 
+            l2_distance_input = None, 
+            cossim_input = None, 
+        ) 
+    
+    def sample( 
+        self, 
+        input_ids: torch.LongTensor, 
+        logits_processor: Optional[LogitsProcessorList] = None, 
+        stopping_criteria: Optional[StoppingCriteriaList] = None, 
+        logits_warper: Optional[LogitsProcessorList] = None, 
+        max_length: Optional[int] = None, 
+        pad_token_id: Optional[int] = None, 
+        eos_token_id: Optional[int] = None, 
+        output_attentions: Optional[bool] = None, 
+        output_hidden_states: Optional[bool] = None, 
+        output_scores: Optional[bool] = None, 
+        return_dict_in_generate: Optional[bool] = None, 
+        synced_gpus: bool = False, 
+        streamer: Optional["BaseStreamer"] = None, 
+        **model_kwargs, 
+    ) -> Union[SampleOutput, torch.LongTensor]: 
+        
+        print("inside generate function, output_hidden_states is {}".format(output_hidden_states)) 
+        print(colored("inside the function that is overloaded for the model", "yellow")) 
+        
+        logits_processor = logits_processor if logits_processor is not None else LogitsProcessorList() 
+        stopping_criteria = stopping_criteria if stopping_criteria is not None else StoppingCriteriaList() 
+        if max_length is not None: 
+            warnings.warn(
+                "`max_length` is deprecated in this function, use"
+                " `stopping_criteria=StoppingCriteriaList(MaxLengthCriteria(max_length=max_length))` instead.",
+                UserWarning,
+            ) 
+            stopping_criteria = StoppingCriteriaList(stopping_criteria, max_length) 
+        logits_warper = logits_warper if logits_warper is not None else LogitsProcessorList() 
+        pad_token_id = pad_token_id if pad_token_id is not None else self.generation_config.pad_token_id
+        eos_token_id = eos_token_id if eos_token_id is not None else self.generation_config.eos_token_id
+        if isinstance(eos_token_id, int):
+            eos_token_id = [eos_token_id]
+        eos_token_id_tensor = torch.tensor(eos_token_id).to(input_ids.device) if eos_token_id is not None else None
+        output_scores = output_scores if output_scores is not None else self.generation_config.output_scores
+        output_attentions = (
+            output_attentions if output_attentions is not None else self.generation_config.output_attentions
+        )
+        output_hidden_states = (
+            output_hidden_states if output_hidden_states is not None else self.generation_config.output_hidden_states
+        )
+        return_dict_in_generate = (
+            return_dict_in_generate
+            if return_dict_in_generate is not None
+            else self.generation_config.return_dict_in_generate
+        )
+        
+        # init attention / hidden states / scores tuples
+        scores = () if (return_dict_in_generate and output_scores) else None
+        decoder_attentions = () if (return_dict_in_generate and output_attentions) else None
+        cross_attentions = () if (return_dict_in_generate and output_attentions) else None
+        decoder_hidden_states = () if (return_dict_in_generate and output_hidden_states) else None
+        
+        # if model is an encoder-decoder, retrieve encoder attention weights and hidden states
+        if return_dict_in_generate and self.config.is_encoder_decoder:
+            encoder_attentions = model_kwargs["encoder_outputs"].get("attentions") if output_attentions else None
+            encoder_hidden_states = (
+                model_kwargs["encoder_outputs"].get("hidden_states") if output_hidden_states else None
+            )
+        
+        this_peer_finished = False # used by synced_gpus only 
+        # auto-regressive generation 
+        while True: 
+            if synced_gpus:
+                # Under synced_gpus the `forward` call must continue until all gpus complete their sequence.
+                # The following logic allows an early break if all peers finished generating their sequence
+                this_peer_finished_flag = torch.tensor(0.0 if this_peer_finished else 1.0).to(input_ids.device)
+                # send 0.0 if we finished, 1.0 otherwise
+                dist.all_reduce(this_peer_finished_flag, op=dist.ReduceOp.SUM)
+                # did all peers finish? the reduced sum will be 0.0 then
+                if this_peer_finished_flag.item() == 0.0:
+                    break
+
+            # prepare model inputs
+            model_inputs = self.prepare_inputs_for_generation(input_ids, **model_kwargs)
+
+            # forward pass to get next token
+            # outputs = self(
+                # **model_inputs,
+                # return_dict=True,
+                # output_attentions=output_attentions,
+                # output_hidden_states=output_hidden_states,
+            # ) 
+            outputs = self.forward_generate(
+                **model_inputs, 
+                return_dict = True, 
+                output_attentions = output_attentions, 
+                output_hidden_states = output_hidden_states, 
+            ) 
+
+            if synced_gpus and this_peer_finished:
+                continue  # don't waste resources running the code we don't need
+
+            next_token_logits = outputs.logits[:, -1, :]
+
+            # pre-process distribution
+            next_token_scores = logits_processor(input_ids, next_token_logits)
+            next_token_scores = logits_warper(input_ids, next_token_scores)
+
+            # Store scores, attentions and hidden_states when required
+            if return_dict_in_generate:
+                if output_scores:
+                    scores += (next_token_scores,)
+                if output_attentions:
+                    decoder_attentions += (
+                        (outputs.decoder_attentions,) if self.config.is_encoder_decoder else (outputs.attentions,)
+                    )
+                    if self.config.is_encoder_decoder:
+                        cross_attentions += (outputs.cross_attentions,)
+
+                if output_hidden_states:
+                    decoder_hidden_states += (
+                        (outputs.decoder_hidden_states,)
+                        if self.config.is_encoder_decoder
+                        else (outputs.hidden_states,)
+                    )
+
+            # sample
+            probs = nn.functional.softmax(next_token_scores, dim=-1)
+            next_tokens = torch.multinomial(probs, num_samples=1).squeeze(1)
+
+            # finished sentences should have their next token be a padding token
+            if eos_token_id is not None:
+                if pad_token_id is None:
+                    raise ValueError("If `eos_token_id` is defined, make sure that `pad_token_id` is defined.")
+                next_tokens = next_tokens * unfinished_sequences + pad_token_id * (1 - unfinished_sequences)
+
+            # update generated ids, model inputs, and length for next step
+            input_ids = torch.cat([input_ids, next_tokens[:, None]], dim=-1)
+            if streamer is not None:
+                streamer.put(next_tokens.cpu())
+            model_kwargs = self._update_model_kwargs_for_generation(
+                outputs, model_kwargs, is_encoder_decoder=self.config.is_encoder_decoder
+            )
+
+            # if eos_token was found in one sentence, set sentence to finished
+            if eos_token_id_tensor is not None:
+                unfinished_sequences = unfinished_sequences.mul(
+                    next_tokens.tile(eos_token_id_tensor.shape[0], 1).ne(eos_token_id_tensor.unsqueeze(1)).prod(dim=0)
+                )
+
+                # stop when each sentence is finished
+                if unfinished_sequences.max() == 0:
+                    this_peer_finished = True
+
+            # stop if we exceed the maximum length
+            if stopping_criteria(input_ids, scores):
+                this_peer_finished = True
+
+            if this_peer_finished and not synced_gpus:
+                break
+
+        if streamer is not None:
+            streamer.end()
+
+        if return_dict_in_generate:
+            if self.config.is_encoder_decoder:
+                return SampleEncoderDecoderOutput(
+                    sequences=input_ids,
+                    scores=scores,
+                    encoder_attentions=encoder_attentions,
+                    encoder_hidden_states=encoder_hidden_states,
+                    decoder_attentions=decoder_attentions,
+                    cross_attentions=cross_attentions,
+                    decoder_hidden_states=decoder_hidden_states,
+                    past_key_values=model_kwargs.get("past_key_values"),
+                )
+            else:
+                return SampleDecoderOnlyOutput(
+                    sequences=input_ids,
+                    scores=scores,
+                    attentions=decoder_attentions,
+                    hidden_states=decoder_hidden_states,
+                    past_key_values=model_kwargs.get("past_key_values"),
+                )
+        else:
+            return input_ids
+
+    def prepare_inputs_for_generation2(
         self, input_ids, past_key_values=None, attention_mask=None, inputs_embeds=None, **kwargs
     ):
         if past_key_values is not None:
@@ -1713,7 +2113,47 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
                 "attention_mask": attention_mask,
             }
         )
-        return model_inputs
+        return model_inputs 
+
+    def prepare_inputs_for_generation(
+        self, input_ids, past_key_values = None, attention_mask = None, inputs_embeds = None, **kwargs 
+    ): 
+        # mainly used to debug preparing inputs for generation and not using past_key_values 
+        assert past_key_values is None, "past_key_values is not None" 
+        
+        # past_key_values is not used and input_ids is not changed 
+        position_ids = kwargs.get("position_ids", None) 
+        if attention_mask is not None and position_ids is None:
+            # create position_ids on the fly for batch generation
+            position_ids = attention_mask.long().cumsum(-1) - 1
+            position_ids.masked_fill_(attention_mask == 0, 1)
+            if past_key_values:
+                position_ids = position_ids[:, -input_ids.shape[1] :] 
+        
+        # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
+        if inputs_embeds is not None and past_key_values is None:
+            model_inputs = {"inputs_embeds": inputs_embeds}
+        else:
+            model_inputs = {"large_input_ids": input_ids, 
+                            "small_input_ids": input_ids,} 
+
+        model_inputs.update(
+            {
+                "position_ids": position_ids,
+                "past_key_values": past_key_values,
+                "use_cache": kwargs.get("use_cache"),
+                "attention_mask": attention_mask,
+            }
+        )
+        return model_inputs 
+    
+    def train(self): 
+        self.model.train() 
+        self.addonsmallmodel.train() 
+    
+    def eval(self): 
+        self.model.eval() 
+        self.addonsmallmodel.eval() 
 
     @staticmethod
     def _reorder_cache(past_key_values, beam_idx):
