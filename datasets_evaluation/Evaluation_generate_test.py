@@ -4,32 +4,37 @@ import argparse
 
 import datasets 
 from datasets import load_dataset 
+import sys 
+import os 
 
-from src.transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM 
-from src.transformers.models.llama.modeling_llama import LlamaForCausalLM 
-from src.transformers.models.llama.modeling_llama import LlamaWeirdLarge3 
-from src.transformers.models.llama.modeling_llama import SimpleSmallModel 
-from src.transformers.models.llama.configuration_llama import LlamaConfig 
-from src.transformers import LlamaTokenizer 
-from src.transformers import GPTNeoXForCausalLM 
+current_dir = os.path.dirname(__file__) 
+parent_dir = os.path.dirname(current_dir) 
+src_folder = os.path.join(parent_dir, "src") 
+sys.path.append(src_folder) 
+from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM 
+from transformers.models.llama.modeling_llama import LlamaForCausalLM 
+from transformers.models.llama.modeling_llama import LlamaWeirdLarge3 
+from transformers.models.llama.modeling_llama import SimpleSmallModel 
+from transformers.models.llama.configuration_llama import LlamaConfig 
+from transformers import LlamaTokenizer 
+from transformers import GPTNeoXForCausalLM 
 
 from tqdm import tqdm
 # from sampling.utils import norm_logits, sample 
 
 import torch.nn.functional as F 
 
-from src.transformers.generation.logits_process import LogitsProcessorList 
+from transformers.generation.logits_process import LogitsProcessorList 
 import time 
 import numpy as np 
 
 from termcolor import colored 
 
-from src.transformers import BitsAndBytesConfig 
-from src.transformers import Trainer, TrainingArguments 
-from src.transformers import DataCollatorForLanguageModeling 
-from src.transformers.generation.utils import GenerationConfig 
+from transformers import BitsAndBytesConfig 
+from transformers import Trainer, TrainingArguments 
+from transformers import DataCollatorForLanguageModeling 
+from transformers.generation.utils import GenerationConfig 
 
-import os 
 import json 
 '''
 # cache_dir = "/home/bc20/yang/transformersprofiling" 
