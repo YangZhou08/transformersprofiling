@@ -1835,7 +1835,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
             output_attentions = True, 
             output_hidden_states = None, 
             return_dict = True, 
-            start_idx = self.addonmodel_start, # NOTE this is very important 
+            start_idx = 1, # NOTE this is very important 
             eval_mode = False, 
             iteration_count = 1, 
             condensed_fashion = "projection_mode", 
@@ -1861,7 +1861,8 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
         # mask_list_pos = [i * (self.sliding_window_length + 1) for i in range(seq_length // (self.sliding_window_length + 1))] 
         # mask_list_pos = [7 + i * (self.sliding_window_length + 1) for i in range((seq_length - 7) // (self.sliding_window_length + 1))] 
-        mask_list_pos = [self.addonmodel_start + i * (self.sliding_window_length + 1) for i in range((seq_length - self.addonmodel_start) // (self.sliding_window_length + 1))] 
+        # addonmodel_start = 1 
+        mask_list_pos = [1 + i * (self.sliding_window_length + 1) for i in range((seq_length - 1) // (self.sliding_window_length + 1))] 
         mask_list_pos22 = [x - 1 for x in mask_list_pos] 
         # print(colored("mask_list_pos {}".format(mask_list_pos), "red")) 
         loss = None 
