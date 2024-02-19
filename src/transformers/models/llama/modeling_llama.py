@@ -2108,9 +2108,8 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         modified_input_bos_sequence_indices = torch.cat(modified_input_bos_sequence_indices, dim = 0).to(input_ids.device) 
         print("shape of modified_input_bos_sequence_indices {}".format(modified_input_bos_sequence_indices.shape)) 
         print(modified_input_bos_sequence_indices) 
-        input_ids[modified_input_bos_sequence_indices] = self.tokenizer_bos_id 
-        exit(0) 
-        input_ids[input_sequence_indices] = self.tokenizer_pad_id 
+        input_ids[modified_input_bos_sequence_indices] = torch.tensor(self.tokenizer_bos_id, device = input_ids.device) 
+        input_ids[input_sequence_indices] = torch.tensor(self.tokenizer_pad_id, device = input_ids.device) 
         
         # modified_input_bos_sequence_indices = modified_input_bos_sequence_indices[:, 1].unsqueeze(1).expand(-1, seq_length) 
         # col_indices = torch.arange(seq_length).expand(batch_size, -1).to(input_ids.device) 
