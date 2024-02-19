@@ -1783,7 +1783,6 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn) 
         # TODO delete the following line 
         
-        self.generate_iteration_count += 1 
         print(colored("running the large model side", "yellow")) 
         if self.generate_iteration_count % self.sliding_window_length == 0: 
             outputs = self.model(
@@ -1807,6 +1806,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
             # print(colored("small_model_type: {}".format(self.small_model_dtype), "red")) 
             # intermediate_l2_dist = self.l2distancecompute(inputs_embeds, hidden_states) 
             self.generate_model_hidden_states = hidden_states.clone().detach() 
+        self.generate_iteration_count += 1 
         
         practical_mask = attention_mask.unsqueeze(-1).expand_as(inputs_embeds) 
         # NOTE here we don't clip the hidden_states sequence length anymore 
