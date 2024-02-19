@@ -1817,7 +1817,8 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         # NOTE here we don't clip the hidden_states sequence length anymore 
         # we try using all the hidden_states including the padding tokens 
         
-        assert input_embeds.shape[1] == hidden_states.shape[1] 
+        # assert input_embeds.shape[1] == hidden_states.shape[1] 
+        assert input_embeds.shape[1] == self.generate_model_hidden_states.shape[1] 
         
         # interleave the hidden_states and the input_ids 
         # assert hidden_states.shape[1] == small_input_ids.shape[1] // 7 - 1 
