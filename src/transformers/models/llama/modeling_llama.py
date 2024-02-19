@@ -2084,6 +2084,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         # mainly used to debug preparing inputs for generation and not using past_key_values 
         assert past_key_values is None, "past_key_values is not None" 
         batch_size, seq_length = input_ids.shape 
+        print("batch_size {}; seq_length {}".format(batch_size, seq_length)) 
         
         # adjusting the inputs and mask 
         print("input_ids {}".format(input_ids[2])) 
@@ -2104,7 +2105,10 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
                 else: 
                     raise ValueError("adjustment_scheme is not recognized") 
         modified_input_bos_sequence_indices = torch.cat(modified_input_bos_sequence_indices, dim = 0).to(input_ids.device) 
+        print("shape of modified_input_bos_sequence_indices {}".format(modified_input_bos_sequence_indices.shape)) 
+        print(modified_input_bos_sequence_indices) 
         input_ids[input_sequence_indices] = self.tokenizer_pad_id 
+        exit(0) 
         input_ids[modified_input_bos_sequence_indices] = self.tokenizer_bos_id 
         
         # modified_input_bos_sequence_indices = modified_input_bos_sequence_indices[:, 1].unsqueeze(1).expand(-1, seq_length) 
