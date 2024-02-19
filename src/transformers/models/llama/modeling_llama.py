@@ -2093,24 +2093,27 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         input_sequence_indices = torch.nonzero(condition_mask).to(input_ids.device).to(torch.long) 
         print("input_sequence_indices shape {}".format(input_sequence_indices.shape)) 
         print("input_sequence_indices: {}".format(input_sequence_indices[2])) 
+        input_sequence_indices2 = [] 
         modified_input_bos_sequence_indices = [] 
         print("input_sequence_indices shape {}".format(input_sequence_indices.shape)) 
         assert input_sequence_indices.shape[0] == input_ids.shape[0], "every row of sequences need to have an bos" 
         for i in range(input_ids.shape[0]): # iterate through the batch_size 
             # if input_sequence_indices[i] % self.sliding_window_length != 0: # we found a sequence that needs to be adjusted 
             if input_sequence_indices[i][1].data % self.sliding_window_length != 0: # we found a sequence that needs to be adjusted 
+                input_sequence_indices2.append(torch.tensor([i, (input_sequence_indices[i][1])]).to(input_ids.device).view(1, -1)) 
                 if adjustment_scheme == "case1": 
                     modified_input_bos_sequence_indices.append(torch.tensor([i, (input_sequence_indices[i][1] // self.sliding_window_length) * self.sliding_window_length]).to(input_ids.device).view(1, -1)) 
                 elif adjustment_scheme == "case2": 
                     modified_input_bos_sequence_indices.append(torch.tensor([i, (input_sequence_indices[i][1] // self.sliding_window_length + 1) * self.sliding_window_length]).to(input_ids.device).view(1, -1)) 
                 else: 
                     raise ValueError("adjustment_scheme is not recognized") 
+        input_sequence_indices2 = torch.cat(input_sequence_indices2, dim = 0).to(input_ids.device).to(torch.long) 
         modified_input_bos_sequence_indices = torch.cat(modified_input_bos_sequence_indices, dim = 0).to(input_ids.device).to(torch.long) 
         print("shape of modified_input_bos_sequence_indices {}".format(modified_input_bos_sequence_indices.shape)) 
         print(modified_input_bos_sequence_indices) 
         
-        row_indices = input_sequence_indices[:, 0] 
-        col_indices = input_sequence_indices[:, 1] 
+        row_indices = input_sequence_indices2[:, 0] 
+        col_indices = input_sequence_indices2[:, 1] 
         input_ids.index_put_((row_indices, col_indices), torch.full_like(row_indices, fill_value = self.tokenizer_pad_id, device = input_ids.device, dtype = input_ids.dtype), accumulate = False) 
         
         row_indices = modified_input_bos_sequence_indices[:, 0] 
