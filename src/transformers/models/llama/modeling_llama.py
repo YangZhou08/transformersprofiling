@@ -2108,11 +2108,16 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         modified_input_bos_sequence_indices = torch.cat(modified_input_bos_sequence_indices, dim = 0).to(input_ids.device).to(torch.long) 
         print("shape of modified_input_bos_sequence_indices {}".format(modified_input_bos_sequence_indices.shape)) 
         print(modified_input_bos_sequence_indices) 
-        input_ids[modified_input_bos_sequence_indices] = torch.tensor(self.tokenizer_pad_id, device = input_ids.device, dtype = input_ids.dtype) 
-        print("input_ids after modification {}".format(input_ids.shape)) 
-        print("input_ids after modification {}".format(input_ids[2])) 
-        exit(0) 
-        input_ids[input_sequence_indices] = torch.tensor(self.tokenizer_pad_id, device = input_ids.device) 
+        
+        row_indices = input_sequence_indices[:, 0] 
+        col_indices = input_sequence_indices[:, 1] 
+        input_ids.index_put_((row_indices, col_indices), torch.full_like(row_indices, fill_value = self.tokenizer_pad_id, device = input_ids.device, dtype = input_ids.dtype), accumulate = False) 
+        
+        row_indices = modified_input_bos_sequence_indices[:, 0] 
+        col_indices = modified_input_bos_sequence_indices[:, 1] 
+        input_ids.index_put_((row_indices, col_indices), torch.full_like(row_indices, fill_value = self.tokenizer_bos_id, device = input_ids.device, dtype = input_ids.dtype), accumulate = False) 
+        
+        print("input_ids {}".format(input_ids[2])) 
         
         # modified_input_bos_sequence_indices = modified_input_bos_sequence_indices[:, 1].unsqueeze(1).expand(-1, seq_length) 
         # col_indices = torch.arange(seq_length).expand(batch_size, -1).to(input_ids.device) 
