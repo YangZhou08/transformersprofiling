@@ -1784,7 +1784,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         position_ids = attention_mask.long().cumsum(-1) - 1
         position_ids.masked_fill_(attention_mask == 0, 1)
         if past_key_values:
-            position_ids = position_ids[:, -input_embeds.shape[1] :] 
+            position_ids = position_ids[:, -inputs_embeds.shape[1] :] 
         # TODO delete the following line 
         
         print(colored("running the large model side", "yellow")) 
@@ -1818,7 +1818,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         # we try using all the hidden_states including the padding tokens 
         
         # assert input_embeds.shape[1] == hidden_states.shape[1] 
-        assert input_embeds.shape[1] == self.generate_model_hidden_states.shape[1] 
+        assert inputs_embeds.shape[1] == self.generate_model_hidden_states.shape[1] 
         
         # interleave the hidden_states and the input_ids 
         # assert hidden_states.shape[1] == small_input_ids.shape[1] // 7 - 1 
