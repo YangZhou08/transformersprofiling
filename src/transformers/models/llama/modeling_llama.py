@@ -2105,12 +2105,12 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
                     raise ValueError("adjustment_scheme is not recognized") 
         modified_input_bos_sequence_indices = torch.cat(modified_input_bos_sequence_indices, dim = 0).to(input_ids.device) 
         input_ids[input_sequence_indices] = self.tokenizer_pad_id 
-        exit(0) 
         input_ids[modified_input_bos_sequence_indices] = self.tokenizer_bos_id 
         
-        modified_input_bos_sequence_indices = modified_input_bos_sequence_indices[:, 1].unsqueeze(1).expand(-1, seq_length) 
-        col_indices = torch.arange(seq_length).expand(batch_size, -1).to(input_ids.device) 
-        attention_mask = col_indices >= modified_input_bos_sequence_indices 
+        # modified_input_bos_sequence_indices = modified_input_bos_sequence_indices[:, 1].unsqueeze(1).expand(-1, seq_length) 
+        # col_indices = torch.arange(seq_length).expand(batch_size, -1).to(input_ids.device) 
+        # attention_mask = col_indices >= modified_input_bos_sequence_indices 
+        attention_mask = input_ids != self.tokenizer_pad_id 
         exit(0) 
                 
         # past_key_values is not used and input_ids is not changed 
