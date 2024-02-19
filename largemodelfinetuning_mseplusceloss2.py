@@ -959,6 +959,9 @@ if args.use_pretrained_small_model:
 large_model.config.pad_token_id = tokenizer.pad_token_id 
 small_model.config.pad_token_id = tokenizer.pad_token_id 
 
+large_model.model.train() 
+large_model.addonsmallmodel.train() 
+
 def naive_grouping(examples): 
     # I found that using the multiprocessing in the dataset cannot process neural networks 
     # this function is not used switching everything inside the neural network forward function 
