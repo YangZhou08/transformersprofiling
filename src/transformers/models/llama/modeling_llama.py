@@ -1841,6 +1841,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
             condensed_fashion = "projection_mode", 
             # experiment_setting = "setting3", 
             experiment_setting = self.inference_setting, 
+            generate_flag = True, 
         ) 
         
         logits = addonmodeloutput.logits 
