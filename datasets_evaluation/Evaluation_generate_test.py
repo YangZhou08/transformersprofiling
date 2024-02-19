@@ -348,5 +348,7 @@ for step, inputs in enumerate(train_dataloader):
         large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = True, top_k = top_k, output_hidden_states = True, return_dict_in_generate = True) 
     else: 
         print("input in words is {}".format(tokenizer.decode(input_ids[0]))) 
+        print("input ids is {}".format(input_ids[0])) 
+        exit(0) 
         large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = True, output_hidden_states = True, return_dict_in_generate = True) 
     exit(0) 
