@@ -2089,7 +2089,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         print("input_ids {}".format(input_ids[0])) 
         print("attention_mask {}".format(attention_mask[0])) 
         condition_mask = input_ids == self.tokenizer_bos_id 
-        input_sequence_indices = torch.nonzero(condition_mask) 
+        input_sequence_indices = torch.nonzero(condition_mask).to(input_ids.device) 
         modified_input_bos_sequence_indices = [] 
         print("input_sequence_indices shape {}".format(input_sequence_indices.shape)) 
         assert input_sequence_indices.shape[0] == input_ids.shape[0], "every row of sequences need to have an bos" 
@@ -2102,7 +2102,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
                     modified_input_bos_sequence_indices.append(torch.tensor([i, (input_sequence_indices[i][1] // self.sliding_window_length + 1) * self.sliding_window_length]).to(input_ids.device).view(1, -1)) 
                 else: 
                     raise ValueError("adjustment_scheme is not recognized") 
-        modified_input_bos_sequence_indices = torch.cat(modified_input_bos_sequence_indices, dim = 0) 
+        modified_input_bos_sequence_indices = torch.cat(modified_input_bos_sequence_indices, dim = 0).to(input_ids.device) 
         input_ids[input_sequence_indices] = self.tokenizer_pad_id 
         input_ids[modified_input_bos_sequence_indices] = self.tokenizer_bos_id 
         
