@@ -1774,10 +1774,6 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
 
         # NOTE we don't use the pass-in attention mask 
         attention_mask = self.attention_mask_upper(large_input_ids) 
-        position_ids = attention_mask.long().cumsum(-1) - 1
-        position_ids.masked_fill_(attention_mask == 0, 1)
-        if past_key_values:
-            position_ids = position_ids[:, -input_ids.shape[1] :] 
         # the attention mask should be compatible to the new input_embeds 
         print("attention_mask shape {} and extra_pass_in_embeds shape {}".format(attention_mask.shape, extra_pass_in_embeds.shape)) 
         assert attention_mask.shape[1] == extra_pass_in_embeds.shape[1], "attention_mask shape is not compatible to the new input_embeds" 
@@ -1785,6 +1781,10 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         inputs_embeds = extra_pass_in_embeds 
         print(colored("inputs_embeds shape {} dtype {}".format(inputs_embeds.shape, inputs_embeds.dtype), "yellow")) 
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn) 
+        position_ids = attention_mask.long().cumsum(-1) - 1
+        position_ids.masked_fill_(attention_mask == 0, 1)
+        if past_key_values:
+            position_ids = position_ids[:, -input_embeds.shape[1] :] 
         # TODO delete the following line 
         
         print(colored("running the large model side", "yellow")) 
