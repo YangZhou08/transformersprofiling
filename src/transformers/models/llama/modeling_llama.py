@@ -2093,7 +2093,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         assert input_sequence_indices.shape[0] == input_ids.shape[0], "every row of sequences need to have an bos" 
         for i in range(input_ids.shape[0]): # iterate through the batch_size 
             # if input_sequence_indices[i] % self.sliding_window_length != 0: # we found a sequence that needs to be adjusted 
-            if input_sequence_indices[i].data % self.sliding_window_length != 0: # we found a sequence that needs to be adjusted 
+            if input_sequence_indices[i][1].data % self.sliding_window_length != 0: # we found a sequence that needs to be adjusted 
                 if adjustment_scheme == "case1": 
                     modified_input_bos_sequence_indices.append(torch.tensor([i, (input_sequence_indices[i] // self.sliding_window_length) * self.sliding_window_length]).to(input_ids.device).view(1, -1)) 
                 elif adjustment_scheme == "case2": 
