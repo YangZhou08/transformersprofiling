@@ -1442,7 +1442,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         print("seq_length {}".format(seq_length)) 
         
         # assert seq_length % 7 == 0, "seq_length is not divisible by 7" 
-        assert seq_length % self.sliding_window_length == 0, "seq_length is not divisible by sliding_window_length" 
+        # assert seq_length % self.sliding_window_length == 0, "seq_length is not divisible by sliding_window_length" 
         # added_tensor = torch.zeros((embedding_searched.shape[0], seq_length // 7, embedding_searched.shape[2])).to(input_ids.device).to(embedding_searched.dtype) 
         added_tensor = torch.zeros((embedding_searched.shape[0], seq_length // self.sliding_window_length, embedding_searched.shape[2])).to(input_ids.device).to(embedding_searched.dtype) 
         # for i in range(seq_length // 7): 
@@ -1460,6 +1460,20 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         
         return added_tensor 
     
+    def attention_mask_upper(self, input_ids): 
+        sequence_length = (input_ids.shape[1] // self.sliding_window_length) + 1 
+        batch_size = input_ids.shape[0] 
+        condition_mask = input_ids == self.tokenizer_bos_id # finds the index of the start of sequence token 
+        start_of_sequenceidx = torch.nonzero(condition_mask)[:, 1] 
+        start_of_sequenceidx /= self.sliding_window_length 
+        start_of_sequenceidx = start_of_sequenceidx.to(torch.long) 
+        # modified_input_bos_sequence_indices = modified_input_bos_sequence_indices[:, 1].unsqueeze(1).expand(-1, seq_length) 
+        start_of_sequenceidx = start_of_sequenceidx.unsqueeze(1).expand(-1, sequence_length) 
+        print("start_of_sequenceidx shape {}".format(start_of_sequenceidx.shape)) 
+        col_indices = torch.arange(sequence_length).expand(batch_size, -1).to(input_ids.device) 
+        attention_mask = col_indices >= start_of_sequenceidx 
+        return attention_mask 
+        
     def set_addonsmallmodel(self, addonsmallmodel): 
         self.addonsmallmodel = addonsmallmodel 
     
@@ -1734,7 +1748,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         self, 
         large_input_ids: torch.LongTensor = None, 
         small_input_ids: torch.LongTensor = None, 
-        attention_mask: Optional[torch.Tensor] = None, 
+        attention_mask: Optional[torch.Tensor] = None, # for generation, we choose to make the attention_mask inside the forward_generation 
         position_ids: Optional[torch.LongTensor] = None, 
         past_key_values: Optional[List[torch.FloatTensor]] = None, 
         input_embeds: Optional[torch.FloatTensor] = None, 
@@ -1757,6 +1771,9 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         start_token = self.model.embed_tokens(large_input_ids[:, 0].unsqueeze(1)) 
         extra_pass_in_embeds = self.naive_grouping(large_input_ids[:, 1: ]) 
         extra_pass_in_embeds = torch.cat((start_token, extra_pass_in_embeds), dim = 1) # concatenate at the sequence length dimension 
+
+        # NOTE we don't use the pass-in attention mask 
+        attention_mask = self.attention_mask_upper(large_input_ids) 
         # the attention mask should be compatible to the new input_embeds 
         print("attention_mask shape {} and extra_pass_in_embeds shape {}".format(attention_mask.shape, extra_pass_in_embeds.shape)) 
         assert attention_mask.shape[1] == extra_pass_in_embeds.shape[1], "attention_mask shape is not compatible to the new input_embeds" 
