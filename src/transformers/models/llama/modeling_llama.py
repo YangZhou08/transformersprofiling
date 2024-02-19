@@ -4257,7 +4257,10 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             assert input_ids.shape[0] == condensed_embeds.shape[0] # batch size has to match 
             print("input_ids shape {} condensed_embeds shape {}".format(input_ids.shape, condensed_embeds.shape)) 
             print("sliding window length {}".format(self.sliding_window_length)) 
-            assert (input_ids.shape[1] - start_idx)//self.sliding_window_length == condensed_embeds.shape[1] # number of condensed tokens should have desired mapping with sequence length 
+            if not self.generate_flag: 
+                assert (input_ids.shape[1] - start_idx)//self.sliding_window_length == condensed_embeds.shape[1] # number of condensed tokens should have desired mapping with sequence length 
+            else: 
+                assert (input_ids.shape[1] - start_idx)//self.sliding_window_length + 1 == condensed_embeds.shape[1] 
 
             if self.condensed_fashion == "ground_truth": 
                 with torch.no_grad(): 
