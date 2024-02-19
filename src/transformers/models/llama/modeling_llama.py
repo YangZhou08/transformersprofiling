@@ -2090,7 +2090,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         print("input_ids {}".format(input_ids[2])) 
         print("attention_mask {}".format(attention_mask[2])) 
         condition_mask = input_ids == self.tokenizer_bos_id 
-        input_sequence_indices = torch.nonzero(condition_mask).to(input_ids.device) 
+        input_sequence_indices = torch.nonzero(condition_mask).to(input_ids.device).to(torch.long) 
         print("input_sequence_indices shape {}".format(input_sequence_indices.shape)) 
         print("input_sequence_indices: {}".format(input_sequence_indices[2])) 
         modified_input_bos_sequence_indices = [] 
@@ -2105,12 +2105,12 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
                     modified_input_bos_sequence_indices.append(torch.tensor([i, (input_sequence_indices[i][1] // self.sliding_window_length + 1) * self.sliding_window_length]).to(input_ids.device).view(1, -1)) 
                 else: 
                     raise ValueError("adjustment_scheme is not recognized") 
-        modified_input_bos_sequence_indices = torch.cat(modified_input_bos_sequence_indices, dim = 0).to(input_ids.device) 
+        modified_input_bos_sequence_indices = torch.cat(modified_input_bos_sequence_indices, dim = 0).to(input_ids.device).to(torch.long) 
         print("shape of modified_input_bos_sequence_indices {}".format(modified_input_bos_sequence_indices.shape)) 
         print(modified_input_bos_sequence_indices) 
         input_ids[modified_input_bos_sequence_indices] = torch.tensor(self.tokenizer_bos_id, device = input_ids.device) 
         print("input_ids after modification {}".format(input_ids.shape)) 
-        exit(0) 
+        print("input_ids after modification {}".format(input_ids[2])) 
         input_ids[input_sequence_indices] = torch.tensor(self.tokenizer_pad_id, device = input_ids.device) 
         
         # modified_input_bos_sequence_indices = modified_input_bos_sequence_indices[:, 1].unsqueeze(1).expand(-1, seq_length) 
