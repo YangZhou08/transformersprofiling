@@ -211,7 +211,7 @@ else:
 # print("the tokenizer pad token id is {}".format(tokenizer.pad_token_id)) 
 # tokenizer.pad_token = "[PAD]" 
 tokenizer.pad_token = tokenizer.eos_token
-tokenizer.padding_side = "left" 
+tokenizer.padding_side = "right" 
 
 if model_name == "openllama3b": 
     # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) # pad_id = 2 
