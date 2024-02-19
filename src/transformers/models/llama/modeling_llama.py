@@ -1777,7 +1777,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         # the attention mask should be compatible to the new input_embeds 
         print("attention_mask shape {} and extra_pass_in_embeds shape {}".format(attention_mask.shape, extra_pass_in_embeds.shape)) 
         assert attention_mask.shape[1] == extra_pass_in_embeds.shape[1], "attention_mask shape is not compatible to the new input_embeds" 
-        assert inputs_embeds is None, "inputs_embeds is not None" 
+        # assert inputs_embeds is None, "inputs_embeds is not None" 
         inputs_embeds = extra_pass_in_embeds 
         print(colored("inputs_embeds shape {} dtype {}".format(inputs_embeds.shape, inputs_embeds.dtype), "yellow")) 
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn) 
