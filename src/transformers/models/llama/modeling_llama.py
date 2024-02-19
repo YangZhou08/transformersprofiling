@@ -4028,8 +4028,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         return combined_embeds 
     ''' 
     
-    def interleaving_embeddings_inputs(self, input_embeds, condensed_embeds, kernel_size = 4, start_idx = 64): 
-        if not self.generate_flag: 
+    def interleaving_embeddings_inputs(self, input_embeds, condensed_embeds, kernel_size = 4, start_idx = 64, generate_flag = False): 
+        if not generate_flag: 
             assert (input_embeds.shape[1] - start_idx - kernel_size)/kernel_size == condensed_embeds.shape[1] 
             combined_embeds = input_embeds[:, : start_idx + kernel_size, :] 
             input_embeds_count = start_idx + kernel_size 
@@ -4370,7 +4370,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             # for i in range(input_embeds.shape[1]): 
                 # print("input_id for it is {} does it has nan number {}".format(input_ids[0][i], torch.isnan(input_embeds[0][i]).any())) 
             # print() 
-            input_embeds = self.interleaving_embeddings_inputs(input_embeds, condensed_embeds, kernel_size = self.sliding_window_length, start_idx = start_idx) 
+            input_embeds = self.interleaving_embeddings_inputs(input_embeds, condensed_embeds, kernel_size = self.sliding_window_length, start_idx = start_idx, generate_flag = generate_flag) 
             # print("input_embeds first ten numbers: {}".format(input_embeds[0][0][: 200])) 
             # print("weights in embed_tokens first ten numbers: {}".format(self.embed_tokens.weight[0][: 10])) 
             # print("weights in embed_projection first ten numbers: {}".format(self.embed_projection.weight[0][: 10])) 
