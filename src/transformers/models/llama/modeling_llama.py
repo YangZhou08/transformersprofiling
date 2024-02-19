@@ -1936,7 +1936,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
                     break
 
             # prepare model inputs
-            model_inputs = self.prepare_inputs_for_generation(input_ids, **model_kwargs)
+            model_inputs = self.prepare_inputs_for_generation(input_ids, adjustment_scheme = "case1", **model_kwargs) 
 
             # forward pass to get next token
             # outputs = self(
@@ -2095,9 +2095,9 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
             # if input_sequence_indices[i] % self.sliding_window_length != 0: # we found a sequence that needs to be adjusted 
             if input_sequence_indices[i][1].data % self.sliding_window_length != 0: # we found a sequence that needs to be adjusted 
                 if adjustment_scheme == "case1": 
-                    modified_input_bos_sequence_indices.append(torch.tensor([i, (input_sequence_indices[i] // self.sliding_window_length) * self.sliding_window_length]).to(input_ids.device).view(1, -1)) 
+                    modified_input_bos_sequence_indices.append(torch.tensor([i, (input_sequence_indices[i][1] // self.sliding_window_length) * self.sliding_window_length]).to(input_ids.device).view(1, -1)) 
                 elif adjustment_scheme == "case2": 
-                    modified_input_bos_sequence_indices.append(torch.tensor([i, (input_sequence_indices[i] // self.sliding_window_length + 1) * self.sliding_window_length]).to(input_ids.device).view(1, -1)) 
+                    modified_input_bos_sequence_indices.append(torch.tensor([i, (input_sequence_indices[i][1] // self.sliding_window_length + 1) * self.sliding_window_length]).to(input_ids.device).view(1, -1)) 
                 else: 
                     raise ValueError("adjustment_scheme is not recognized") 
         modified_input_bos_sequence_indices = torch.cat(modified_input_bos_sequence_indices, dim = 0) 
