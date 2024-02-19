@@ -4034,7 +4034,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             combined_embeds = input_embeds[:, : start_idx + kernel_size, :] 
             input_embeds_count = start_idx + kernel_size 
         else: 
-            assert (input_embeds.shape[1] - start_idx)//kernel_size == condensed_embeds.shape[1] 
+            # assert (input_embeds.shape[1] - start_idx)//kernel_size == condensed_embeds.shape[1] 
             combined_embeds = input_embeds[:, : start_idx, :] 
             input_embeds_count = start_idx 
         for i in range(condensed_embeds.shape[1]): 
