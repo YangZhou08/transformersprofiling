@@ -47,7 +47,7 @@ hostname = socket.gethostname()
 print("Hostname:", hostname) 
 
 parser = argparse.ArgumentParser() 
-parser.add_argument("--kernel_size", type = int, default = 4) 
+parser.add_argument("--kernel_size", type = int, default = 7) 
 parser.add_argument("--advanced_data_layout", type = bool, default = False) 
 parser.add_argument("--path_d", type = int, default = 0) 
 parser.add_argument("--model_name", type = str, default = "debugging") 
