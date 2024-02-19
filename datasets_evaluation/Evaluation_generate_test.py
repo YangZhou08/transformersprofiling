@@ -267,7 +267,7 @@ else:
 large_model.eval() 
 
 # max_length = small_model.config.max_position_embeddings 
-max_length = 64 
+max_length = 249 
 # def encode_with_truncation(examples): 
     # return tokenizer(examples["text"], truncation=True, padding="max_length",
                 #    max_length=max_length, return_special_tokens_mask=True) 
