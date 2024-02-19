@@ -1465,7 +1465,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         batch_size = input_ids.shape[0] 
         condition_mask = input_ids == self.tokenizer_bos_id # finds the index of the start of sequence token 
         start_of_sequenceidx = torch.nonzero(condition_mask)[:, 1] 
-        start_of_sequenceidx /= self.sliding_window_length 
+        start_of_sequenceidx //= self.sliding_window_length 
         start_of_sequenceidx = start_of_sequenceidx.to(torch.long) 
         # modified_input_bos_sequence_indices = modified_input_bos_sequence_indices[:, 1].unsqueeze(1).expand(-1, seq_length) 
         start_of_sequenceidx = start_of_sequenceidx.unsqueeze(1).expand(-1, sequence_length) 
