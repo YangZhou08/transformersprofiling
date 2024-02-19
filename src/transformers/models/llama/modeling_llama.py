@@ -2086,6 +2086,8 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         batch_size, seq_length = input_ids.shape 
         
         # adjusting the inputs and mask 
+        print("input_ids {}".format(input_ids)) 
+        print("attention_mask {}".format(attention_mask)) 
         condition_mask = input_ids == self.tokenizer_bos_id 
         input_sequence_indices = torch.nonzero(condition_mask) 
         modified_input_bos_sequence_indices = [] 
