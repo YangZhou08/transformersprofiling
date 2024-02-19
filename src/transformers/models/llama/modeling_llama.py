@@ -4012,7 +4012,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         row_mask = row_mask.to(device = combined_attention_mask.device) 
 
         combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
-    
+    '''
     def interleaving_embeddings_inputs(self, input_embeds, condensed_embeds, kernel_size = 4, start_idx = 64): 
         assert (input_embeds.shape[1] - start_idx)/kernel_size == condensed_embeds.shape[1] 
         combined_embeds = input_embeds[:, : start_idx, :] 
@@ -4024,6 +4024,22 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             combined_embeds = torch.cat([combined_embeds, input_embeds[:, input_embeds_count : input_embeds_count + kernel_size, :]], dim = 1) 
             input_embeds_count += kernel_size 
             # print("combined embeds shape {}".format(combined_embeds.shape)) 
+        return combined_embeds 
+    ''' 
+    
+    def interleaving_embeddings_inputs(self, input_embeds, condensed_embeds, kernel_size = 4, start_idx = 64): 
+        if not self.generate_flag: 
+            assert (input_embeds.shape[1] - start_idx - kernel_size)/kernel_size == condensed_embeds.shape[1] 
+            combined_embeds = input_embeds[:, : start_idx + kernel_size, :] 
+            input_embeds_count = start_idx + kernel_size 
+        else: 
+            assert (input_embeds.shape[1] - start_idx)//kernel_size == condensed_embeds.shape[1] 
+            combined_embeds = input_embeds[:, : start_idx, :] 
+            input_embeds_count = start_idx 
+        for i in range(condensed_embeds.shape[1]): 
+            combined_embeds = torch.cat([combined_embeds, condensed_embeds[:, i, :].unsqueeze(1)], dim = 1) 
+            combined_embeds = torch.cat([combined_embeds, input_embeds[:, input_embeds_count : input_embeds_count + kernel_size, :]], dim = 1) 
+            input_embeds_count += kernel_size 
         return combined_embeds 
     
     def visualize_position_ids(self, position_ids, mask_idx): 
@@ -4232,6 +4248,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         iteration_count = None, 
         condensed_fashion = "projection_mode", 
         experiment_setting = "setting0", 
+        generate_flag = False, 
     ) -> Union[Tuple, CausalLMOutputWithPast]: 
         
         assert condensed_fashion in self.all_list_condensed 
@@ -4257,7 +4274,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             assert input_ids.shape[0] == condensed_embeds.shape[0] # batch size has to match 
             print("input_ids shape {} condensed_embeds shape {}".format(input_ids.shape, condensed_embeds.shape)) 
             print("sliding window length {}".format(self.sliding_window_length)) 
-            if not self.generate_flag: 
+            if not generate_flag: 
                 assert (input_ids.shape[1] - start_idx)//self.sliding_window_length == condensed_embeds.shape[1] # number of condensed tokens should have desired mapping with sequence length 
             else: 
                 assert (input_ids.shape[1] - start_idx)//self.sliding_window_length + 1 == condensed_embeds.shape[1] 
