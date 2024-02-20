@@ -733,7 +733,8 @@ class DataCollatorForLanguageModeling(DataCollatorMixin):
         if isinstance(examples[0], Mapping):
             print(type(examples)) 
             print(type(examples[0])) 
-            # for key, value in examples 
+            for key, value in examples[0].items(): 
+                print(key) 
             batch = self.tokenizer.pad(examples, return_tensors="pt", pad_to_multiple_of=self.pad_to_multiple_of)
         else:
             batch = {
