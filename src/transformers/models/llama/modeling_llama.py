@@ -1461,7 +1461,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         return added_tensor 
     
     def attention_mask_upper(self, input_ids): 
-        sequence_length = (input_ids.shape[1] // self.sliding_window_length) + 1 
+        sequence_length = ((input_ids.shape[1] - 1) // self.sliding_window_length) + 1 
         batch_size = input_ids.shape[0] 
         condition_mask = input_ids == self.tokenizer_bos_id # finds the index of the start of sequence token 
         start_of_sequenceidx = torch.nonzero(condition_mask)[:, 1] 
