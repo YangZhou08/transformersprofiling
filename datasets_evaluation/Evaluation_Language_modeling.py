@@ -493,6 +493,77 @@ class CustomTrainer(Trainer):
 
         return (loss, outputs) if return_outputs else loss 
 
+    def local_compute_metrics_weird(
+        self, 
+        logits, 
+        labels, 
+        loss, 
+        input_attention_mask, 
+        outside_step, 
+    ): 
+        
+        from sklearn.metrics import accuracy_score, precision_recall_fscore_support 
+        print("length of logits {}".format(len(logits))) 
+        print("logits[0].shape {}".format(logits[0].shape)) 
+        print("logits[1].shape {}".format(logits[1].shape)) 
+        print("logits[2].shape {}".format(logits[2].shape)) 
+        print("logits[3].shape {}".format(logits[3].shape)) 
+        print("logits[4].shape {}".format(logits[4].shape)) 
+        # assert len(logits) == 4 
+        l2dist = logits[1].reshape(-1) 
+        ce_loss = logits[2].reshape(-1) 
+        l2dist_input = logits[3].reshape(-1) 
+        cos_sim_input = logits[4].reshape(-1) 
+        logits = logits[0] 
+        # print(l2dist) 
+        logits = logits[:, :-1, :] 
+        # input_attention_mask = input_attention_mask[:, :-1] 
+        input_attention_mask = input_attention_mask[:, 1:] 
+        labels = labels[:, 1:] 
+        preds = torch.argmax(logits, dim = -1) 
+        write_out_text = [] 
+        if self.accelerator.is_main_process and outside_step == 0: 
+            # print("*** evaluating at step {} ***".format(self.iteration_count)) 
+            mask_correctness = (preds == labels).to(torch.bool) 
+            pred_outputs = preds[: 20] 
+            for i in range(len(pred_outputs)): 
+                prediction_text = "the prediction is: " 
+                for j in range(mask_correctness.shape[1]): 
+                    if mask_correctness[i][j]: 
+                        prediction_text += colored(self.tokenizer.decode(pred_outputs[i][j]), "green") + " " 
+                    else: 
+                        prediction_text += colored(self.tokenizer.decode(pred_outputs[i][j]), "red") + " " 
+                print(prediction_text) 
+                print() 
+                
+                mask_filtered = labels[i][input_attention_mask[i] == 1] 
+                mask_filtered[mask_filtered == -100] = 0 
+                labels_output = self.tokenizer.decode(mask_filtered) 
+                write_out_text.append(prediction_text + "\n" + labels_output + "\n") 
+                print(colored(labels_output, "cyan")) 
+                print() 
+                print() 
+            
+            # with open("{}evaluation_printout_{}_{}_{}_{}_{}.txt".format(dir_models, self.commit_hash, self.time_hash, self.state.global_step, self.n, self.model_name), "a") as f: 
+            with open(self.text_eval, "a") as f: 
+                f.write("*** at step {} {}".format(self.iteration_count, self.state.global_step)) 
+                f.write("\n") 
+                for i, text in enumerate(write_out_text): 
+                    f.write("example {}/{}\n".format(i, len(write_out_text))) 
+                    f.write(text) 
+                    f.write("\n") 
+                f.write("\n") 
+        
+        if self.accelerator.state.num_processes > 1: 
+            self.accelerator.wait_for_everyone() 
+            
+        perplexity = torch.exp(loss).mean().item() 
+        indices_to_keep = input_attention_mask == 1 # not sure whether we need this 
+        total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
+        correct_words = torch.sum((preds[indices_to_keep] == labels[indices_to_keep]).view(-1), dim = 0).item() 
+        print("correct words: {} and total words: {}".format(correct_words, total_valid_tokens)) 
+        return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "l2_distance": l2dist.item(), "ce_loss": ce_loss.item() if isinstance(ce_loss, torch.Tensor) else ce_loss, "l2_distance_input": l2dist_input.item(), "cosin_similarity": cos_sim_input.item()} 
+
     def local_compute_metrics(
             self, 
             logits, 
@@ -686,7 +757,10 @@ class CustomTrainer(Trainer):
             # print(colored("the shape of logits is {}".format(logits.shape), "yellow")) 
             # print(colored("the shape of labels is {}".format(labels.shape), "yellow")) 
             total_loss += loss.item() 
-            local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"], step) 
+            if isinstance(model, LlamaWeirdLarge3): 
+                local_metrics = self.local_compute_metrics_weird(logits, labels, loss, inputs["attention_mask"], step) 
+            else: 
+                local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"], step) 
             total_correct_words += local_metrics["correct_words"] 
             total_words += local_metrics["total_words"] 
             sum_of_perplexity += local_metrics["perplexity"] 
