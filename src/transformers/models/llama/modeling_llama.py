@@ -1785,7 +1785,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         print("shape of start_of_sequenceidx: {}".format(start_of_sequenceidx.shape)) 
         for i in range(extra_pass_in_embeds.shape[0]): 
             extra_pass_in_embeds[i, start_of_sequenceidx[i]] = bos_embed_token[i, 0] 
-            print("shape of bos_embed_token: {}".format(bos_embed_token[i].shape)) 
+            print("shape of bos_embed_token: {}".format(bos_embed_token[i, 0].shape)) 
             print("shape of extra_pass_in_embeds[i, start_of_sequenceidx[i]]: {}".format(extra_pass_in_embeds[i, start_of_sequenceidx[i]].shape)) 
         
         # the attention mask should be compatible to the new input_embeds 
