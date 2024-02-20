@@ -2167,6 +2167,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
             if checking_indices[i][1] != 0: 
                 assert torch.unique(attention_mask[i][: checking_indices[i][1]]) == 0, "attention_mask is not correct" 
             assert torch.unique(attention_mask[i][checking_indices[i][1] : ]) == 1, "attention_mask is not correct" 
+        print(colored("checking attention_mask passed", "green")) 
                 
         # past_key_values is not used and input_ids is not changed 
         position_ids = kwargs.get("position_ids", None) 
