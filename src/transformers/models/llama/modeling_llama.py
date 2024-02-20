@@ -1468,10 +1468,10 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         start_of_sequenceidx //= self.sliding_window_length 
         start_of_sequenceidx = start_of_sequenceidx.to(torch.long) 
         # modified_input_bos_sequence_indices = modified_input_bos_sequence_indices[:, 1].unsqueeze(1).expand(-1, seq_length) 
-        start_of_sequenceidx = start_of_sequenceidx.unsqueeze(1).expand(-1, sequence_length) 
-        print("start_of_sequenceidx shape {}".format(start_of_sequenceidx.shape)) 
+        start_of_sequenceidx2 = start_of_sequenceidx.unsqueeze(1).expand(-1, sequence_length) 
+        print("start_of_sequenceidx shape {}".format(start_of_sequenceidx2.shape)) 
         col_indices = torch.arange(sequence_length).expand(batch_size, -1).to(input_ids.device) 
-        attention_mask = col_indices >= start_of_sequenceidx 
+        attention_mask = col_indices >= start_of_sequenceidx2 
         attention_mask = attention_mask.to(torch.long) 
         return start_of_sequenceidx, attention_mask 
         
