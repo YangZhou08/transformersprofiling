@@ -1776,6 +1776,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         # NOTE we don't use the pass-in attention mask 
         start_of_sequenceidx, attention_mask = self.attention_mask_upper(large_input_ids) 
         for i in range(6): 
+            print("start_of_sequenceidx[i]: {}".format(start_of_sequenceidx[i])) 
             print("attention_mask of the {}th sequence: {}".format(i, attention_mask[i])) 
         
         # filled in start of sequence token to every line in the batch 
