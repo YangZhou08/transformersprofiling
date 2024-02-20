@@ -889,7 +889,7 @@ def unflatten_list_func(examples):
 
 # datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
 datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
-datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
+# datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
 
 datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
 # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
