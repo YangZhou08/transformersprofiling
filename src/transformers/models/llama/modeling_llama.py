@@ -2162,6 +2162,11 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         # attention_mask = input_ids != self.tokenizer_pad_id 
         attention_mask = attention_mask.to(torch.long) 
         print("attention_mask {}".format(attention_mask[2])) 
+        # just for checking 
+        for i in range(checking_indices.shape[0]): 
+            if checking_indices[i][1] != 0: 
+                assert torch.unique(attention_mask[i][: checking_indices[i][1]]) == 0, "attention_mask is not correct" 
+            assert torch.unique(attention_mask[i][checking_indices[i][1] : ]) == 1, "attention_mask is not correct" 
                 
         # past_key_values is not used and input_ids is not changed 
         position_ids = kwargs.get("position_ids", None) 
