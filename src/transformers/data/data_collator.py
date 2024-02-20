@@ -733,6 +733,7 @@ class DataCollatorForLanguageModeling(DataCollatorMixin):
         if isinstance(examples[0], Mapping):
             print(type(examples)) 
             print(type(examples[0])) 
+            print("inside the data collator") 
             for key, value in examples[0].items(): 
                 print(key) 
             batch = self.tokenizer.pad(examples, return_tensors="pt", pad_to_multiple_of=self.pad_to_multiple_of)
@@ -747,7 +748,8 @@ class DataCollatorForLanguageModeling(DataCollatorMixin):
             batch["input_ids"], batch["labels"] = self.torch_mask_tokens(
                 batch["input_ids"], special_tokens_mask=special_tokens_mask
             )
-        else:
+        else: 
+            print("inside the labels") 
             labels = batch["input_ids"].clone()
             if self.tokenizer.pad_token_id is not None:
                 labels[labels == self.tokenizer.pad_token_id] = -100
