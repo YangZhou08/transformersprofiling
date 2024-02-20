@@ -303,11 +303,12 @@ class CustomTrainer(Trainer):
         print(colored("iteration_count {}".format(self.iteration_count), "yellow")) 
         
         # input_ids = inputs["input_ids"] # (batch_size, 203) 
-        large_input_ids = inputs["large_input_ids"] # (batch_size, 203) 
+        large_input_ids = inputs["input_ids"] # (batch_size, 203) 
         small_input_ids = inputs["input_ids"] # (batch_size, 203) 
         # attention_mask = inputs["attention_mask_chunk"] 
-        condensed_embeds_labels = inputs["condensed_embeds"] # (batch_size, 28, 3200) 
-        condensed_embeds_labels = condensed_embeds_labels.to(self.model.small_model_dtype) 
+        # condensed_embeds_labels = inputs["condensed_embeds"] # (batch_size, 28, 3200) 
+        condensed_embeds_labels = None 
+        # condensed_embeds_labels = condensed_embeds_labels.to(self.model.small_model_dtype) 
         original_attention_mask = inputs["attention_mask"] # (batch_size, 203) 
         label2 = inputs["labels"] # (batch_size, 203) 
         print("shape of large_input_ids {} shape of small_input_ids {}".format(large_input_ids.shape, small_input_ids.shape)) 
