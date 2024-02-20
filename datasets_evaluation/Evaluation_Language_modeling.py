@@ -504,6 +504,7 @@ class CustomTrainer(Trainer):
 
         from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
+        print("shape of the logits is {}".format(logits.shape)) 
         logits = logits[:, :-1, :] 
         # input_attention_mask = input_attention_mask[:, :-1] 
         input_attention_mask = input_attention_mask[:, 1:] 
