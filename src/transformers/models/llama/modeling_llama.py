@@ -1784,7 +1784,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         bos_embed_token = self.model.embed_tokens(bos_token.unsqueeze(1)) # shape (batch_size, 1, hidden_size) 
         print("shape of start_of_sequenceidx: {}".format(start_of_sequenceidx.shape)) 
         for i in range(extra_pass_in_embeds.shape[0]): 
-            extra_pass_in_embeds[i, start_of_sequenceidx[i]] = bos_embed_token[i] 
+            extra_pass_in_embeds[i, start_of_sequenceidx[i]] = bos_embed_token[i, 0] 
             print("shape of bos_embed_token: {}".format(bos_embed_token[i].shape)) 
             print("shape of extra_pass_in_embeds[i, start_of_sequenceidx[i]]: {}".format(extra_pass_in_embeds[i, start_of_sequenceidx[i]].shape)) 
         
