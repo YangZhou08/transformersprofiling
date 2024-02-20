@@ -33,6 +33,7 @@ from transformers import DataCollatorForLanguageModeling
 from transformers.generation.utils import GenerationConfig 
 from transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSmallModel 
 from transformers.models.llama.modeling_llama import LlamaCausalLMWeirdTwo 
+from transformers.models.llama.modeling_llama import LlamaWeirdLarge3 
 from transformers.modeling_utils import PreTrainedModel, load_sharded_checkpoint, unwrap_model 
 import time 
 from torch.utils.data import random_split 
@@ -846,8 +847,9 @@ model_type = "use_large_model"
 if not model_type == "use_small_model" and model_name == "openllama3b": 
     tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
 elif not model_type == "use_small_model": 
-    tokenizer = AutoTokenizer.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models) 
+    # tokenizer = AutoTokenizer.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models) 
     # tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
+    tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 elif model_type == "use_small_model": 
     tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 else: 
@@ -928,6 +930,8 @@ else:
         model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     elif model_name == "tinyllama": 
         model = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    elif model_name == "debugging": 
+        
     else: 
         raise ValueError("model_name is not recognized") 
 
