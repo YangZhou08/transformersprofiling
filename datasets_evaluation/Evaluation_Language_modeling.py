@@ -333,9 +333,17 @@ class CustomTrainer(Trainer):
     def compute_loss(self, model, inputs, return_outputs = False, evaluation_mode = True): 
         labels = None 
         # print("attention_mask: {}".format(inputs["attention_mask"])) 
-        input_ids = inputs["input_ids"] 
-        attention_mask = inputs["attention_mask"] 
+        if isinstance(model, LlamaWeirdLarge3): 
+            large_input_ids = inputs["input_ids"] 
+            small_input_ids = inputs["input_ids"] 
+            condensed_embeds_labels = None 
+            attention_mask = inputs["attention_mask"] 
+        else: 
+            input_ids = inputs["input_ids"] 
+            original_attention_mask = inputs["attention_mask"] 
         label2 = inputs["labels"] 
+        if isinstance(model, LlamaWeirdLarge3): 
+            attention_mask = torch.ones((large_input_ids.shape[0], (large_input_ids.shape[1] - 1) // self.n + 1), dtype = torch.long).to(large_input_ids.device) 
         # print("the optimizer parameter group list 0 is {} learning rate is {}".format(len(self.optimizer.param_groups[0]['params']), self.optimizer.param_groups[0]['lr'])) 
         # print("the optimizer parameter group list 1 is {} learning rate is {}".format(len(self.optimizer.param_groups[1]['params']), self.optimizer.param_groups[1]['lr'])) 
         # print("the input ids are {}".format(input_ids[0])) 
@@ -355,23 +363,36 @@ class CustomTrainer(Trainer):
             # outputs = model(input_ids = large_outputs.sequences, attention_mask = attention_mask, labels = large_outputs.sequences, condensed_embeds = downsampled_vectors) 
             if self.accelerator.is_main_process: 
                 print("printing out the experiment_setting: {} eval_mode: {}".format(self.experiment_setting, self.eval_mode)) 
-            outputs = model(
-                input_ids = input_ids, 
-                attention_mask = attention_mask, 
-                labels = label2, 
-                condensed_embeds = condensed_embeds, 
-                output_hidden_states = True, 
-                output_attentions = True, 
-                return_dict = True, 
-                # condensed_fashion = "ground_truth", 
-                iteration_count = self.iteration_count, 
-                # eval_mode = True, 
-                experiment_setting = self.experiment_setting, 
-                # eval_model = self.eval_mode, 
-                eval_mode = self.eval_mode, 
-                start_idx = 64, 
-            ) 
-            
+            if not isinstance(model, LlamaWeirdLarge3): 
+                outputs = model(
+                    input_ids = input_ids, 
+                    attention_mask = attention_mask, 
+                    labels = label2, 
+                    condensed_embeds = condensed_embeds, 
+                    output_hidden_states = True, 
+                    output_attentions = True, 
+                    return_dict = True, 
+                    # condensed_fashion = "ground_truth", 
+                    iteration_count = self.iteration_count, 
+                    # eval_mode = True, 
+                    experiment_setting = self.experiment_setting, 
+                    # eval_model = self.eval_mode, 
+                    eval_mode = self.eval_mode, 
+                    start_idx = 64, 
+                ) 
+            else: 
+                outputs = model(
+                    # input_ids = input_ids, 
+                    large_input_ids = large_input_ids, 
+                    small_input_ids = small_input_ids, 
+                    attention_mask = attention_mask, 
+                    output_hidden_states = True, 
+                    output_attentions = True, 
+                    return_dict = True, 
+                    condensed_embed_labels = condensed_embeds_labels, 
+                    original_attention_mask = original_attention_mask, 
+                    labels = label2, 
+                ) 
             # visualize attention map 
             # print("the input ids are {}".format(input_ids))
             
