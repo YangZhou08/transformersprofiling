@@ -931,7 +931,45 @@ else:
     elif model_name == "tinyllama": 
         model = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     elif model_name == "debugging": 
+         # large_model = LlamaWeirdLarge3.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+        large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
         
+        small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
+        small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
+        small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = args.kernel_size, target_model_dim = 2048) 
+
+        new_state_dict = {} 
+
+        for key in small_state_dict_for_model.keys(): 
+            new_key = key 
+            if 'lm_head' in key: 
+                print("got here found the following key {}".format(key)) 
+            if 'model.' in key: 
+                new_key = key[6 :] 
+            print(new_key) 
+            new_state_dict[new_key] = small_state_dict_for_model[key] 
+        # if args.embedding_pretrained: 
+        #     new_state_dict["embed_projection.weight"] = torch.load("linearprojectionweighttesting.pt") 
+
+        try: 
+            small_model.load_state_dict(new_state_dict) 
+        except RuntimeError as r: 
+            print(colored(r, "yellow")) 
+
+        small_model = small_model.to(torch.bfloat16).to(torch_device) 
+        large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True) 
+        large_model.set_addonsmallmodel(small_model) 
+        large_model.set_inference_setting("setting3") 
+        large_model.set_walpha(0.5) 
+        large_model.set_slidingwindowlength(sliding_window_length = 7, addonmodel_start = 1) 
+        large_model.set_tokenizer_bos_id(bos_id = tokenizer.bos_token_id, pad_id = tokenizer.pad_token_id) 
+        large_model.set_cosinesimilarity(False) 
+        
+        large_model.config.pad_token_id = tokenizer.pad_token_id 
+        small_model.config.pad_token_id = tokenizer.pad_token_id 
+        
+        large_model.model.eval() 
+        large_model.addonsmallmodel.eval() 
     else: 
         raise ValueError("model_name is not recognized") 
 
@@ -944,7 +982,7 @@ training_args = TrainingArguments(
 
 trainer = CustomTrainer( 
     args = training_args, 
-    model = model, 
+    model = large_model, 
     data_collator = data_collator, 
     experiment_setting = args.experiment_setting, 
     eval_mode = False, 
