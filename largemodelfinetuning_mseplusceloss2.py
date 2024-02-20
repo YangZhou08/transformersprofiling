@@ -1079,8 +1079,7 @@ trainer = CustomTrainer(
     tokenizer = tokenizer, 
     time_hash = hash_of_time, 
     commit_hash = commit_hash, 
-    text_e
-    val = model_path + text_eval, 
+    text_eval = model_path + text_eval, 
     n = args.kernel_size, 
 ) 
 
