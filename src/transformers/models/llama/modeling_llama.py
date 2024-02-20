@@ -2173,6 +2173,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         else:
             model_inputs = {"large_input_ids": input_ids, 
                             "small_input_ids": input_ids,} 
+        exit(0) 
 
         model_inputs.update(
             {
