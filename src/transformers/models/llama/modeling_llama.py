@@ -2156,6 +2156,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         col_indices = torch.arange(seq_length).expand(batch_size, -1).to(input_ids.device) 
         attention_mask = col_indices >= modified_input_bos_sequence_indices 
         # attention_mask = input_ids != self.tokenizer_pad_id 
+        attention_mask = attention_mask.to(torch.long) 
         print("attention_mask {}".format(attention_mask[2])) 
                 
         # past_key_values is not used and input_ids is not changed 
