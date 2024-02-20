@@ -1472,7 +1472,8 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         print("start_of_sequenceidx shape {}".format(start_of_sequenceidx.shape)) 
         col_indices = torch.arange(sequence_length).expand(batch_size, -1).to(input_ids.device) 
         attention_mask = col_indices >= start_of_sequenceidx 
-        return attention_mask 
+        attention_mask = attention_mask.to(torch.long) 
+        return start_of_sequenceidx, attention_mask 
         
     def set_addonsmallmodel(self, addonsmallmodel): 
         self.addonsmallmodel = addonsmallmodel 
@@ -1773,7 +1774,16 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         extra_pass_in_embeds = torch.cat((start_token, extra_pass_in_embeds), dim = 1) # concatenate at the sequence length dimension 
 
         # NOTE we don't use the pass-in attention mask 
-        attention_mask = self.attention_mask_upper(large_input_ids) 
+        start_of_sequenceidx, attention_mask = self.attention_mask_upper(large_input_ids) 
+        for i in range(6): 
+            print("attention_mask of the {}th sequence: {}".format(i, attention_mask[i])) 
+        
+        # filled in start of sequence token to every line in the batch 
+        bos_token = torch.tensor([self.tokenizer_bos_id for i in range(extra_pass_in_embeds.shape[0])]).to(extra_pass_in_embeds.device) 
+        bos_embed_token = self.model.embed_tokens(bos_token.unsqueeze(1)) # shape (batch_size, 1, hidden_size) 
+        for i in range(extra_pass_in_embeds.shape[0]): 
+            extra_pass_in_embeds[i, start_of_sequenceidx[i]] = bos_embed_token[i] 
+        
         # the attention mask should be compatible to the new input_embeds 
         print("attention_mask shape {} and extra_pass_in_embeds shape {}".format(attention_mask.shape, extra_pass_in_embeds.shape)) 
         assert attention_mask.shape[1] == extra_pass_in_embeds.shape[1], "attention_mask shape is not compatible to the new input_embeds" 
@@ -1781,10 +1791,6 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         inputs_embeds = extra_pass_in_embeds 
         print(colored("inputs_embeds shape {} dtype {}".format(inputs_embeds.shape, inputs_embeds.dtype), "yellow")) 
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn) 
-        position_ids = attention_mask.long().cumsum(-1) - 1
-        position_ids.masked_fill_(attention_mask == 0, 1)
-        if past_key_values:
-            position_ids = position_ids[:, -inputs_embeds.shape[1] :] 
         # TODO delete the following line 
         
         print(colored("running the large model side", "yellow")) 
