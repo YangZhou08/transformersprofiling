@@ -1016,6 +1016,7 @@ training_args = TrainingArguments(
     per_device_eval_batch_size = 64, 
     do_train = False, 
     do_eval = True, 
+    label_names = ["labels"], 
 ) 
 
 if args.model_name == "debugging": 
