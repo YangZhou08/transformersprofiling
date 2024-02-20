@@ -826,8 +826,9 @@ trainer = CustomTrainer(
     text_eval = "just_evaluation_{}.txt".format(hash_of_time), 
     tokenizer = tokenizer, 
     kernel_size = args.kernel_size, 
+    time_hash = hash_of_time, 
+    commit_hash = commit_hash 
 ) 
-
 
 results = trainer.evaluate(eval_dataset = datasetnew) 
 print(results) 
