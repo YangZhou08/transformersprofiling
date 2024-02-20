@@ -2150,26 +2150,29 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
                     modified_input_bos_sequence_indices.append(torch.tensor([i, (input_sequence_indices[i][1] // self.sliding_window_length + 1) * self.sliding_window_length]).to(input_ids.device).view(1, -1)) 
                 else: 
                     raise ValueError("adjustment_scheme is not recognized") 
-        input_sequence_indices2 = torch.cat(input_sequence_indices2, dim = 0).to(input_ids.device).to(torch.long) 
-        modified_input_bos_sequence_indices = torch.cat(modified_input_bos_sequence_indices, dim = 0).to(input_ids.device).to(torch.long) 
-        print("shape of modified_input_bos_sequence_indices {}".format(modified_input_bos_sequence_indices.shape)) 
-        print(modified_input_bos_sequence_indices) 
-        
-        row_indices = input_sequence_indices2[:, 0] 
-        col_indices = input_sequence_indices2[:, 1] 
-        input_ids.index_put_((row_indices, col_indices), torch.full_like(row_indices, fill_value = self.tokenizer_pad_id, device = input_ids.device, dtype = input_ids.dtype), accumulate = False) 
-        
-        row_indices = modified_input_bos_sequence_indices[:, 0] 
-        col_indices = modified_input_bos_sequence_indices[:, 1] 
-        input_ids.index_put_((row_indices, col_indices), torch.full_like(row_indices, fill_value = self.tokenizer_bos_id, device = input_ids.device, dtype = input_ids.dtype), accumulate = False) 
-        
-        print("input_ids {}".format(input_ids[2])) 
-        # just for checking 
-        checking_indices = torch.nonzero(input_ids == self.tokenizer_bos_id) 
-        print("positions of the start of sequence after modification: {}".format(checking_indices)) 
-        for i in range(checking_indices.shape[0]): 
-            assert checking_indices[i][1] % self.sliding_window_length == 0, "start of sequence is not at the right position" 
-        
+        if len(input_sequence_indices2) != 0: 
+            # adjusting the input_ids 
+            input_sequence_indices2 = torch.cat(input_sequence_indices2, dim = 0).to(input_ids.device).to(torch.long) 
+            modified_input_bos_sequence_indices = torch.cat(modified_input_bos_sequence_indices, dim = 0).to(input_ids.device).to(torch.long) 
+            print("shape of modified_input_bos_sequence_indices {}".format(modified_input_bos_sequence_indices.shape)) 
+            print(modified_input_bos_sequence_indices) 
+            
+            row_indices = input_sequence_indices2[:, 0] 
+            col_indices = input_sequence_indices2[:, 1] 
+            input_ids.index_put_((row_indices, col_indices), torch.full_like(row_indices, fill_value = self.tokenizer_pad_id, device = input_ids.device, dtype = input_ids.dtype), accumulate = False) 
+            
+            row_indices = modified_input_bos_sequence_indices[:, 0] 
+            col_indices = modified_input_bos_sequence_indices[:, 1] 
+            input_ids.index_put_((row_indices, col_indices), torch.full_like(row_indices, fill_value = self.tokenizer_bos_id, device = input_ids.device, dtype = input_ids.dtype), accumulate = False) 
+            
+            print("input_ids {}".format(input_ids[2])) 
+            # just for checking 
+            checking_indices = torch.nonzero(input_ids == self.tokenizer_bos_id) 
+            print("positions of the start of sequence after modification: {}".format(checking_indices)) 
+            for i in range(checking_indices.shape[0]): 
+                assert checking_indices[i][1] % self.sliding_window_length == 0, "start of sequence is not at the right position" 
+            
+        # making attention_mask 
         modified_input_bos_sequence_indices = torch.nonzero(input_ids == self.tokenizer_bos_id).to(input_ids.device).to(torch.long) 
         modified_input_bos_sequence_indices = modified_input_bos_sequence_indices[:, 1].unsqueeze(1).expand(-1, seq_length) 
         print("modified_input_bos_sequence_indices shape {}".format(modified_input_bos_sequence_indices.shape)) 
@@ -2183,7 +2186,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
             if checking_indices[i][1] != 0: 
                 assert torch.unique(attention_mask[i][: checking_indices[i][1]]) == 0, "attention_mask is not correct" 
             assert torch.unique(attention_mask[i][checking_indices[i][1] : ]) == 1, "attention_mask is not correct" 
-        print(colored("checking attention_mask passed", "green")) 
+            print(colored("checking attention_mask passed", "green")) 
                 
         # past_key_values is not used and input_ids is not changed 
         '''
