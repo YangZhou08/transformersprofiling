@@ -2166,11 +2166,11 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
             input_ids.index_put_((row_indices, col_indices), torch.full_like(row_indices, fill_value = self.tokenizer_bos_id, device = input_ids.device, dtype = input_ids.dtype), accumulate = False) 
             
             print("input_ids {}".format(input_ids[2])) 
-            # just for checking 
-            checking_indices = torch.nonzero(input_ids == self.tokenizer_bos_id) 
-            print("positions of the start of sequence after modification: {}".format(checking_indices)) 
-            for i in range(checking_indices.shape[0]): 
-                assert checking_indices[i][1] % self.sliding_window_length == 0, "start of sequence is not at the right position" 
+        # just for checking 
+        checking_indices = torch.nonzero(input_ids == self.tokenizer_bos_id) 
+        print("positions of the start of sequence after modification: {}".format(checking_indices)) 
+        for i in range(checking_indices.shape[0]): 
+            assert checking_indices[i][1] % self.sliding_window_length == 0, "start of sequence is not at the right position" 
             
         # making attention_mask 
         modified_input_bos_sequence_indices = torch.nonzero(input_ids == self.tokenizer_bos_id).to(input_ids.device).to(torch.long) 
