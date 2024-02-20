@@ -3023,10 +3023,10 @@ class Trainer:
         """
         # memory metrics - must set up as early as possible
         self._memory_tracker.start()
-        for key in eval_dataset[0].keys(): 
-            print(colored("key is {}".format(key), "red")) 
 
-        eval_dataloader = self.get_eval_dataloader(eval_dataset)
+        eval_dataloader = self.get_eval_dataloader(eval_dataset) 
+        for key in eval_dataloader.dataset[0].keys(): 
+            print(colored("key is {}".format(key), "red")) 
         start_time = time.time()
 
         eval_loop = self.prediction_loop if self.args.use_legacy_prediction_loop else self.evaluation_loop
