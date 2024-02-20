@@ -1872,7 +1872,8 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         
         # seq_length = input_ids.shape[1] + hidden_states.shape[1] 
         ce_loss = None 
-        seq_length = small_input_ids.shape[1] + hidden_states.shape[1] 
+        # seq_length = small_input_ids.shape[1] + hidden_states.shape[1] 
+        seq_length = small_input_ids.shape[1] + self.generate_model_hidden_states.shape[1] 
         assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
         # mask_list_pos = [i * (self.sliding_window_length + 1) for i in range(seq_length // (self.sliding_window_length + 1))] 
         # mask_list_pos = [7 + i * (self.sliding_window_length + 1) for i in range((seq_length - 7) // (self.sliding_window_length + 1))] 
