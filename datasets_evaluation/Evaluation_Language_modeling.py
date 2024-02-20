@@ -254,6 +254,7 @@ class CustomTrainer(Trainer):
             dtype = None, 
             model_name = None, 
             text_eval = None, 
+            kernel_size = 7, 
             *args, 
             **kwargs, 
     ): 
@@ -271,6 +272,7 @@ class CustomTrainer(Trainer):
         self.dtype = dtype 
         self.model_name = model_name 
         self.text_eval = text_eval 
+        self.n = kernel_size 
         
         if self.args.resume_from_checkpoint is not None: 
             self.time_checkpoint = int(self.args.resume_from_checkpoint.split("-")[-1]) 
@@ -1034,7 +1036,9 @@ trainer = CustomTrainer(
     model_name = model_name, 
     text_eval = "just_evaluation_{}.txt".format(hash_of_time), 
     tokenizer = tokenizer, 
+    kernel_size = args.kernel_size, 
 ) 
+
 
 results = trainer.evaluate(eval_dataset = datasetnew) 
 print(results) 
