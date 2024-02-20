@@ -337,10 +337,11 @@ class CustomTrainer(Trainer):
             large_input_ids = inputs["input_ids"] 
             small_input_ids = inputs["input_ids"] 
             condensed_embeds_labels = None 
-            attention_mask = inputs["attention_mask"] 
+            original_attention_mask = inputs["attention_mask"] 
         else: 
             input_ids = inputs["input_ids"] 
-            original_attention_mask = inputs["attention_mask"] 
+            attention_mask = inputs["attention_mask"] 
+            
         label2 = inputs["labels"] 
         if isinstance(model, LlamaWeirdLarge3): 
             attention_mask = torch.ones((large_input_ids.shape[0], (large_input_ids.shape[1] - 1) // self.n + 1), dtype = torch.long).to(large_input_ids.device) 
