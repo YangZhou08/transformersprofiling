@@ -1003,13 +1003,13 @@ training_args = TrainingArguments(
 
 trainer = CustomTrainer( 
     args = training_args, 
-    model = large_model, 
+    model = model, 
     data_collator = data_collator, 
     experiment_setting = args.experiment_setting, 
     eval_mode = False, 
     time_hash = hash_of_time, 
     # dtype = model.dtype, 
-    dtype = large_model.dtype, 
+    dtype = model.dtype, 
     model_name = model_name, 
     text_eval = "just_evaluation_{}.txt".format(hash_of_time), 
     tokenizer = tokenizer, 
