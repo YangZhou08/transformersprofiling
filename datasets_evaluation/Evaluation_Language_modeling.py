@@ -374,7 +374,7 @@ class CustomTrainer(Trainer):
             else: 
                 condensed_embeds = None 
                 addedon_length = ((large_input_ids.shape[1] - 1) // self.n + 1) - 2 # length of the input_embeds of the large model minus the cropping length 
-                original_attention_mask = torch.cat((original_attention_mask, torch.ones((original_attention_mask.shape[0], addon_length), dtype = torch.long).to(original_attention_mask.device)), dim = 1) 
+                original_attention_mask = torch.cat((original_attention_mask, torch.ones((original_attention_mask.shape[0], addedon_length), dtype = torch.long).to(original_attention_mask.device)), dim = 1) 
             batch_size, seq_len = attention_mask.shape 
             # print("get the input sentence: {}".format(tokenizer.decode(input_ids[0]))) 
             if isinstance(getattr(model, "module", model), SimpleSmallModel) or isinstance(model, SimpleSmallModel) == True: 
