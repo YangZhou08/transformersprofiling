@@ -611,6 +611,8 @@ class CustomTrainer(Trainer):
         self.callback_handler.eval_dataloader = dataloader
         # Do this before wrapping.
         eval_dataset = getattr(dataloader, "dataset", None)
+        for key, value in eval_dataset[0].items(): 
+            print(colored("key {}".format(key), "green")) 
 
         if args.past_index >= 0:
             self._past = None
