@@ -25,6 +25,7 @@ import torch.nn.functional as F
 from transformers.generation.logits_process import LogitsProcessorList 
 import time 
 import numpy as np 
+import inspect 
 
 from termcolor import colored 
 from transformers import Trainer, TrainingArguments 
@@ -278,6 +279,19 @@ class CustomTrainer(Trainer):
             print(colored("the step count is {}".format(self.state.global_step), "yellow")) 
             if self.iteration_count == 0: 
                 self.iteration_count = 4 * self.state.global_step 
+    
+    def _set_signature_columns_if_needed(self): 
+        if self._signature_columns is None:
+            # Inspect model forward signature to keep only the arguments it accepts.
+            signature = inspect.signature(self.model.forward)
+            self._signature_columns = list(signature.parameters.keys())
+            # Labels may be named label or label_ids, the default data collator handles that.
+            self._signature_columns += list(set(["label", "label_ids"] + self.label_names)) 
+        self._signature_columns += ["attention_mask_chunk"] 
+        self._signature_columns += ["condensed_embeds"] 
+        self._signature_columns += ["large_input_ids"] 
+        # self._signature_columns += ["small_input_ids"] 
+        self._signature_columns += ["input_ids"] 
     
     def training_step(self, model, inputs): 
         model.train() 
