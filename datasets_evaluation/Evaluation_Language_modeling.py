@@ -1002,6 +1002,9 @@ training_args = TrainingArguments(
     do_eval = True, 
 ) 
 
+if args.model_name == "debugging": 
+    model = large_model 
+    
 trainer = CustomTrainer( 
     args = training_args, 
     model = model, 
