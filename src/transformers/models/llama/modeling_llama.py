@@ -1801,8 +1801,8 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn) 
         # TODO delete the following line 
         
-        print(colored("running the large model side", "yellow")) 
         if self.generate_iteration_count % self.sliding_window_length == 0: 
+            print(colored("running the large model side", "yellow")) 
             outputs = self.model(
                 input_ids=None, 
                 attention_mask=attention_mask,
