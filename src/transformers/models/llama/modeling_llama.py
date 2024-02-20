@@ -1594,13 +1594,13 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         # intermediate_l2_dist = self.l2distancecompute(inputs_embeds, hidden_states) 
         
         practical_mask = attention_mask.unsqueeze(-1).expand_as(inputs_embeds) 
+        hidden_states = hidden_states[:, 1:-1, :] # NOTE this is very important 
         if condensed_embed_labels is not None: 
             mselabels = condensed_embed_labels 
             # print("first 100 eleents of hidden_states: {}".format(hidden_states[0][0][: 100])) 
             # print("first 100 elements of mselabels: {}".format(mselabels[0][0][: 100])) 
             # hidden_states[practical_mask == 0] = 0 
             # hidden_states = hidden_states[:, :-1, :] # NOTE this is very important 
-            hidden_states = hidden_states[:, 1:-1, :] # NOTE this is very important 
             # output 30 condensed tokens, the last one and the first one doesn't have the condensed token label, so 28 left 
             # assert labels.shape == hidden_states.shape 
             assert mselabels.shape == hidden_states.shape 
