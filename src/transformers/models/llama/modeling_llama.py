@@ -1873,9 +1873,6 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         # mask_list_pos = [i * (self.sliding_window_length + 1) for i in range(seq_length // (self.sliding_window_length + 1))] 
         # mask_list_pos = [7 + i * (self.sliding_window_length + 1) for i in range((seq_length - 7) // (self.sliding_window_length + 1))] 
         # addonmodel_start = 1 
-        mask_list_pos = [1 + i * (self.sliding_window_length + 1) for i in range((seq_length - 1) // (self.sliding_window_length + 1))] 
-        mask_list_pos22 = [x - 1 for x in mask_list_pos] 
-        # print(colored("mask_list_pos {}".format(mask_list_pos), "red")) 
         loss = None 
 
         if not return_dict:
@@ -2180,6 +2177,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         print(colored("checking attention_mask passed", "green")) 
                 
         # past_key_values is not used and input_ids is not changed 
+        '''
         position_ids = kwargs.get("position_ids", None) 
         if attention_mask is not None and position_ids is None:
             # create position_ids on the fly for batch generation
@@ -2187,6 +2185,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
             position_ids.masked_fill_(attention_mask == 0, 1)
             if past_key_values:
                 position_ids = position_ids[:, -input_ids.shape[1] :] 
+        ''' 
         
         # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
         if inputs_embeds is not None and past_key_values is None:
@@ -4054,11 +4053,11 @@ class SimpleSmallModel(LlamaPreTrainedModel):
     
     def interleaving_embeddings_inputs(self, input_embeds, condensed_embeds, kernel_size = 4, start_idx = 64, generate_flag = False): 
         if not generate_flag: 
-            assert (input_embeds.shape[1] - start_idx - kernel_size)/kernel_size == condensed_embeds.shape[1] 
-            combined_embeds = input_embeds[:, : start_idx + kernel_size, :] 
-            input_embeds_count = start_idx + kernel_size 
+            assert (input_embeds.shape[1] - start_idx)/kernel_size == condensed_embeds.shape[1] 
+            combined_embeds = input_embeds[:, : start_idx, :] 
+            input_embeds_count = start_idx 
         else: 
-            # assert (input_embeds.shape[1] - start_idx)//kernel_size == condensed_embeds.shape[1] 
+            assert (input_embeds.shape[1] - start_idx)//kernel_size + 1 == condensed_embeds.shape[1] 
             combined_embeds = input_embeds[:, : start_idx, :] 
             input_embeds_count = start_idx 
         for i in range(condensed_embeds.shape[1]): 
