@@ -267,7 +267,7 @@ class CustomTrainer(Trainer):
         if self.args.resume_from_checkpoint is not None: 
             self.time_checkpoint = int(self.args.resume_from_checkpoint.split("-")[-1]) 
             print(colored("resuming from checkpoint {}".format(self.time_checkpoint), "yellow")) 
-            print(colored("the learning rate is {}".format(self.optimizer.param_groups[0]["lr"]), "yellow")) 
+            # print(colored("the learning rate is {}".format(self.optimizer.param_groups[0]["lr"]), "yellow")) 
             print(colored("the step count is {}".format(self.state.global_step), "yellow")) 
             if self.iteration_count == 0: 
                 self.iteration_count = 4 * self.state.global_step 
@@ -291,7 +291,7 @@ class CustomTrainer(Trainer):
 
         Subclass and override for custom behavior.
         """
-        print("self.optimizer has {} parameter groups, we have {} parameters, and the learning rate is {}".format(len(self.optimizer.param_groups), len(self.optimizer.param_groups[0]["params"]), self.optimizer.param_groups[0]["lr"])) 
+        # print("self.optimizer has {} parameter groups, we have {} parameters, and the learning rate is {}".format(len(self.optimizer.param_groups), len(self.optimizer.param_groups[0]["params"]), self.optimizer.param_groups[0]["lr"])) 
         if self.label_smoother is not None and "labels" in inputs:
             labels = inputs.pop("labels")
         else:
@@ -365,28 +365,6 @@ class CustomTrainer(Trainer):
         print(colored("rank {} l2_distance {}".format(self.accelerator.state.process_index, l2_distance), "yellow")) 
         print(colored("rank {} l2_distance_input {}".format(self.accelerator.state.process_index, l2_distance_input), "yellow")) 
         print(colored("rank {} cossim_input {}".format(self.accelerator.state.process_index, cossim_input), "yellow")) 
-        if self.accelerator.is_main_process and has_wandb and self.iteration_count % 20 == 0: 
-            if len(self.optimizer.param_groups) > 1: 
-                wandb.log({"loss": loss, 
-                        "group1.lr": self.optimizer.param_groups[0]["lr"], 
-                        "group2.lr": self.optimizer.param_groups[1]["lr"], 
-                        # "iteration_count": self.iteration_count * 50 
-                        "iteration_count": self.iteration_count, 
-                        "ce_loss": ce_loss, 
-                        "l2_distance": l2_distance, 
-                        "l2_distance_input": l2_distance_input, 
-                        "cosin_similarity_input": cossim_input, 
-                }) 
-                
-            else: 
-                wandb.log({"loss": loss, 
-                        "group1.lr": self.optimizer.param_groups[0]["lr"], 
-                        "iteration_count": self.iteration_count, 
-                        "ce_loss": ce_loss, 
-                        "l2_distance": l2_distance, 
-                        "l2_distance_input": l2_distance_input, 
-                        "cosin_similarity_input": cossim_input, 
-                }) 
                 
         # if self.accelerator.is_main_process and self.iteration_count % 1000 == 0 and has_wandb: 
         if self.accelerator.is_main_process and has_wandb and self.iteration_count % 500 == 0: 
