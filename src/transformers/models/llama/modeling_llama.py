@@ -1965,6 +1965,8 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         unfinished_sequences = torch.ones(input_ids.shape[0], dtype=torch.long, device=input_ids.device) 
         
         this_peer_finished = False # used by synced_gpus only 
+        
+        self.generate_iteration_count = 0 
         # auto-regressive generation 
         while True: 
             if synced_gpus:
