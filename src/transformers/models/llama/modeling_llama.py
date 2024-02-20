@@ -1887,8 +1887,10 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         return CausalLMOutputWithPastLargeDistance2(
             loss=loss,
             logits = logits, 
-            past_key_values=outputs.past_key_values,
-            hidden_states=outputs.hidden_states,
+            # past_key_values=outputs.past_key_values,
+            past_key_values = past_key_values, 
+            # hidden_states=outputs.hidden_states, 
+            hidden_states = self.generate_model_hidden_states, 
             # attentions=outputs.attentions, 
             attentions = addonmodeloutput.attentions, # delibrately using the model's attention mask with modifications 
             l2_distance = None, 
