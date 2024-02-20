@@ -1782,6 +1782,7 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         # filled in start of sequence token to every line in the batch 
         bos_token = torch.tensor([self.tokenizer_bos_id for i in range(extra_pass_in_embeds.shape[0])]).to(extra_pass_in_embeds.device) 
         bos_embed_token = self.model.embed_tokens(bos_token.unsqueeze(1)) # shape (batch_size, 1, hidden_size) 
+        print("shape of start_of_sequenceidx: {}".format(start_of_sequenceidx.shape)) 
         for i in range(extra_pass_in_embeds.shape[0]): 
             extra_pass_in_embeds[i, start_of_sequenceidx[i]] = bos_embed_token[i] 
         
