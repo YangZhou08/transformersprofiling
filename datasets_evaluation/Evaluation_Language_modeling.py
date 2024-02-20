@@ -367,12 +367,17 @@ class CustomTrainer(Trainer):
         # print("labels are {}".format(labels[0])) 
         print("type of the model is {}".format(type(model))) 
         if isinstance(getattr(model, "module", model), SimpleSmallModel) or isinstance(model, SimpleSmallModel) == True or isinstance(model, LlamaWeirdLarge3) == True: 
-            condensed_embeds = inputs["condensed_embeds"].to(self.dtype) 
-            print(colored("the shape of condensed_embeds is {}".format(condensed_embeds.shape), "yellow")) 
+            if "condensed_embeds" in inputs.keys(): 
+                condensed_embeds = inputs["condensed_embeds"].to(self.dtype) 
+                print(colored("the shape of condensed_embeds is {}".format(condensed_embeds.shape), "yellow")) 
+                addedon_length = condensed_embeds.shape[1] 
+            else: 
+                condensed_embeds = None 
+                addedon_length = (large_input_ids.shape[1] - 1) // self.n + 1 
             batch_size, seq_len = attention_mask.shape 
-            addedon_length = condensed_embeds.shape[1] 
             # print("get the input sentence: {}".format(tokenizer.decode(input_ids[0]))) 
-            attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
+            if isinstance(getattr(model, "module", model), SimpleSmallModel) or isinstance(model, SimpleSmallModel) == True: 
+                attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
             
             # print("condensed_embeds dtype is {}".format(condensed_embeds.dtype)) 
             # print("condensed_embeds is {}".format(condensed_embeds)) 
