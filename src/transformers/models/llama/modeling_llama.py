@@ -2123,7 +2123,6 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         print("input_sequence_indices: {}".format(input_sequence_indices[2])) 
         input_sequence_indices2 = [] 
         modified_input_bos_sequence_indices = [] 
-        print("input_sequence_indices shape {}".format(input_sequence_indices.shape)) 
         assert input_sequence_indices.shape[0] == input_ids.shape[0], "every row of sequences need to have an bos" 
         for i in range(input_ids.shape[0]): # iterate through the batch_size 
             # if input_sequence_indices[i] % self.sliding_window_length != 0: # we found a sequence that needs to be adjusted 
@@ -2149,6 +2148,8 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         input_ids.index_put_((row_indices, col_indices), torch.full_like(row_indices, fill_value = self.tokenizer_bos_id, device = input_ids.device, dtype = input_ids.dtype), accumulate = False) 
         
         print("input_ids {}".format(input_ids[2])) 
+        # just for checking 
+        print("positions of the start of sequence after modification: {}".format(torch.nonzero(input_ids == self.tokenizer_bos_id))) 
         
         modified_input_bos_sequence_indices = torch.nonzero(input_ids == self.tokenizer_bos_id).to(input_ids.device).to(torch.long) 
         modified_input_bos_sequence_indices = modified_input_bos_sequence_indices[:, 1].unsqueeze(1).expand(-1, seq_length) 
