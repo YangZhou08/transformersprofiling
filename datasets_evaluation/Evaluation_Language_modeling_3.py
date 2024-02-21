@@ -687,9 +687,14 @@ kernel_size = 7 # this is definitely subject to change
 if args.dataset_name == "c4llm_synthesized": 
     # datasetnew = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
     dfiles = [] 
-    filename = "c4synthesized_file1_kernel7_0.json" 
-    dfiles.append(dir_c4llmsynthesized + "{}/".format("tinyllama") + filename) 
-    datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
+    if "lovelace" in hostname: 
+        filename = "c4synthesized_file1_kernel7_0.json" 
+        dfiles.append(dir_c4llmsynthesized + "{}/".format("tinyllama") + filename) 
+        datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
+    else: 
+        filename = "c4synthesized_file1_kernel7_{}_combined.json".format(8) 
+        dfiles.append(dir_c4llmsynthesized + "{}_topk{}/".format("tinyllama", "na") + filename) 
+        datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
 elif args.dataset_name == "c4": 
     dfiles = [] 
     filename = "c4_file1.json" 
