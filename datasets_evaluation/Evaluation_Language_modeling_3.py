@@ -699,6 +699,18 @@ elif args.dataset_name == "pg19":
 else: 
     raise ValueError("dataset_name is not recognized") 
 
+def encode_with_truncationspecialized(examples): 
+    tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
+                     return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                     add_special_tokens = True) 
+    # tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 260, 
+    #                          return_attention_mask = True, return_tensors = "pt", truncation = True, 
+    #                          add_special_tokens = True) 
+    newdictionary = {} 
+    newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
+    newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
+    return newdictionary 
+
 def encode_with_truncation(examples): 
     # tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
     #                  return_attention_mask = True, return_tensors = "pt", truncation = True, 
@@ -716,7 +728,10 @@ def unflatten_list_func(examples):
     examples['attention_mask'] = examples['attention_mask'].squeeze(0) 
 
 # datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
-datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
+if not args.dataset_name == "pg19": 
+    datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
+else: 
+    datasetnew = datasetnew.map(encode_with_truncationspecialized, num_proc = 8) 
 # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
 
 datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
