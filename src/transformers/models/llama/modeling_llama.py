@@ -1364,8 +1364,10 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         self.model = LlamaModel(config) 
         self.vocab_size = config.vocab_size 
         self.lm_head = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias = False) 
-        self.addonsmallmodel = None 
+        # self.addonsmallmodel = None 
+        small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m") 
         self.sliding_window_length = 7 
+        self.addonsmallmodel = SimpleSmallModel(small_config, sliding_window_length = self.sliding_window_length, target_model_dim = self.config.hidden_size) 
         self.small_model_dtype = torch.bfloat16 
         self.use_mse_loss = False 
         self.ce_loss_only = False 
@@ -3786,8 +3788,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             else: 
                 self.criticalpath = "/fsx-storygen/beidic/yang/" 
 
-        if self.criticalpath is None or hostname is None: 
-            raise ValueError("critical path is not set") 
+        # if self.criticalpath is None or hostname is None: 
+            # raise ValueError("critical path is not set") 
     
     # input embeddings 
     def get_input_embeddings(self):
@@ -3803,7 +3805,16 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         return self.lm_head
 
     def set_output_embeddings(self, new_embeddings):
-        self.lm_head = new_embeddings
+        self.lm_head = new_embeddings 
+    
+    def set_criticalpath(self, hostname): 
+        if hostname is not None: 
+            if "lovelace" in hostname: 
+                self.criticalpath = "/home/yangzho6/" 
+            elif "ada" in hostname: 
+                self.criticalpath = "/home/beidic/yangzho6/" 
+            else: 
+                self.criticalpath = "/fsx-storygen/beidic/yang/" 
 
     # def set_decoder(self, decoder):
     #     self.model = decoder

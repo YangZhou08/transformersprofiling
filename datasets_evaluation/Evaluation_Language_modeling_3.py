@@ -774,9 +774,10 @@ else:
             large_model.set_cosinesimilarity(False) 
         else: 
             large_model = LlamaWeirdLarge3.from_pretrained(args.loading_from_checkpoint, cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
-            small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
-            small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = args.kernel_size, target_model_dim = 2048) 
-            large_model.set_addonsmallmodel(small_model) 
+            # small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
+            # small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = args.kernel_size, target_model_dim = 2048) 
+            # large_model.set_addonsmallmodel(small_model) 
+            large_model.addonsmallmodel.set_criticalpath(hostname = hostname) 
             exit(0) 
             
             
