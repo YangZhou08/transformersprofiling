@@ -993,34 +993,34 @@ kernel_size = 7 # this is definitely subject to change
 # dfiles = ["example_holdout_{}.jsonl".format(i) for i in range(6282)] 
 # dfiles = [dir_sdata + "example_holdout_{}combined.jsonl".format(0)] 
 dfiles = [dir_c4 + "c4_file1.json"] 
-datasetnew = load_dataset('json', data_files = dfiles, split = "train[:100000]") 
-# datasetnew = load_dataset('emozilla/pg19', split = "train") 
+# datasetnew = load_dataset('json', data_files = dfiles, split = "train[:100000]") 
+datasetnew = load_dataset('emozilla/pg19', split = "train") 
 
 # train_set, test_set = datasetnew.split(0.99) 
 # print(tokenizer(datasetnew[0]['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 256, 
 #                 return_attention_mask = True, return_tensors = "pt", truncation = True, 
 #                 add_special_tokens = True)) 
 
-# def encode_with_truncation(examples): 
-#     tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
-#                      return_attention_mask = True, return_tensors = "pt", truncation = True, 
-#                      add_special_tokens = True) 
-#     newdictionary = {} 
-#     newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
-#     newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
-#     return newdictionary 
-
 def encode_with_truncation(examples): 
-    # tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
-    #                  return_attention_mask = True, return_tensors = "pt", truncation = True, 
-    #                  add_special_tokens = True) 
-    tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 260, 
-                             return_attention_mask = True, return_tensors = "pt", truncation = True, 
-                             add_special_tokens = True) 
+    tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
+                     return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                     add_special_tokens = True) 
     newdictionary = {} 
     newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
     newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
     return newdictionary 
+
+# def encode_with_truncation(examples): 
+#     # tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
+#     #                  return_attention_mask = True, return_tensors = "pt", truncation = True, 
+#     #                  add_special_tokens = True) 
+#     tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 260, 
+#                              return_attention_mask = True, return_tensors = "pt", truncation = True, 
+#                              add_special_tokens = True) 
+#     newdictionary = {} 
+#     newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
+#     newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
+#     return newdictionary 
 
 def unflatten_list_func(examples): 
     examples['input_ids'] = examples['input_ids'].squeeze(0) 
