@@ -221,6 +221,7 @@ parser.add_argument("--kernel_size", type = int, default = 7)
 parser.add_argument("--experiment_setting", type = str, default = "setting0") 
 parser.add_argument("--condensed_token_random", action = "store_true") 
 parser.add_argument("--task_id", type = int, default = 0) 
+parser.add_argument("--dataset_name", type = str, choices = ["c4llm_synthesized", "c4", "pg19"], default = "pg19") 
 
 args = parser.parse_args() 
 
@@ -231,11 +232,13 @@ if "lovelace" in hostname:
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_models = "/home/yangzho6/model_checkpoints/" 
     dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+    dir_c4llmsynthesized = "/home/beidic/yangzho6/c4llm_synthesized/" 
+    dir_c4 = "/home/yangzho6/c4_parts/downloads/" 
     # dir_sdata = "/home/yangzho6/slimpajama/SlimPajama-627B/test/chunk1/" 
 elif "ada" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_models = "/home/beidic/yangzho6/model_checkpoints/" 
-    dir_sdata = "/home/beidic/yangzho6/c4llm_synthesized/" 
+    dir_c4llmsynthesized = "/home/beidic/yangzho6/c4llm_synthesized/" 
 else: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     # dir_models = "/home/yangzho6/model_checkpoints/" 
@@ -673,18 +676,27 @@ kernel_size = 7 # this is definitely subject to change
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
 # dfiles = ["example_holdout_{}.jsonl".format(i) for i in range(6282)] 
-dfiles = [dir_sdata + "example_holdout_{}combined.jsonl".format(0)] 
-# datasetnew = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
-datasetnew = load_dataset('emozilla/pg19', split = "train") 
-dfiles = [] 
-filename = "c4synthesized_file1_kernel7_0.json" 
-dfiles.append(dir_sdata + "{}/".format("tinyllama") + filename) 
-datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
 
 # train_set, test_set = datasetnew.split(0.99) 
-print(tokenizer(datasetnew[0]['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 256, 
-                return_attention_mask = True, return_tensors = "pt", truncation = True, 
-                add_special_tokens = True)) 
+# print(tokenizer(datasetnew[0]['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 256, 
+#                 return_attention_mask = True, return_tensors = "pt", truncation = True, 
+#                 add_special_tokens = True)) 
+
+if args.dataset_name == "c4llm_synthesized": 
+    # datasetnew = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
+    dfiles = [] 
+    filename = "c4synthesized_file1_kernel7_0.json" 
+    dfiles.append(dir_c4llmsynthesized + "{}/".format("tinyllama") + filename) 
+    datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
+elif args.dataset_name == "c4": 
+    dfiles = [] 
+    filename = "c4_file1.json" 
+    dfiles.append(dir_c4 + filename) 
+    datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
+elif args.dataset_name == "pg19": 
+    datasetnew = load_dataset('emozilla/pg19', split = "train") 
+else: 
+    raise ValueError("dataset_name is not recognized") 
 
 def encode_with_truncation(examples): 
     # tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
@@ -818,4 +830,3 @@ wandb.init(project = "chunkedlargefinetuning", config = wandblogconfigs, name = 
 results = trainer.evaluate(eval_dataset = datasetnew) 
 print(results) 
 # model.save_pretrained("../model_checkpoints/llama-160m_deciphering_{}_{}_{}".format(args.model_name, args.experiment_setting, commit_hash)) 
-
