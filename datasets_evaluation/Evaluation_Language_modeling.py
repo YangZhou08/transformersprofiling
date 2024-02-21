@@ -991,7 +991,6 @@ kernel_size = 7 # this is definitely subject to change
 dfiles = [dir_c4 + "c4_file1.json"] 
 datasetnew = load_dataset('json', data_files = dfiles, split = "train") 
 # datasetnew = load_dataset('emozilla/pg19', split = "train") 
-datasetnew = load_dataset()
 
 # train_set, test_set = datasetnew.split(0.99) 
 print(tokenizer(datasetnew[0]['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 256, 
