@@ -230,8 +230,8 @@ model_name = args.model_name
 if "lovelace" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_models = "/home/yangzho6/model_checkpoints/" 
-    # dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
-    dir_sdata = "/home/yangzho6/slimpajama/SlimPajama-627B/test/chunk1/" 
+    dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+    # dir_sdata = "/home/yangzho6/slimpajama/SlimPajama-627B/test/chunk1/" 
 elif "ada" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_models = "/home/beidic/yangzho6/model_checkpoints/" 
