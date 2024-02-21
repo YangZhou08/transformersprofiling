@@ -687,9 +687,12 @@ print(tokenizer(datasetnew[0]['text'][100000 : 100000 + 3000], padding = "max_le
                 add_special_tokens = True)) 
 
 def encode_with_truncation(examples): 
-    tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
-                     return_attention_mask = True, return_tensors = "pt", truncation = True, 
-                     add_special_tokens = True) 
+    # tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
+    #                  return_attention_mask = True, return_tensors = "pt", truncation = True, 
+    #                  add_special_tokens = True) 
+    tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 260, 
+                             return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                             add_special_tokens = True) 
     newdictionary = {} 
     newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
     newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
