@@ -517,7 +517,7 @@ class CustomTrainer(Trainer):
                 model = model.to(dtype=torch.bfloat16, device=args.device) 
         
         batch_size = self.args.eval_batch_size 
-        model.eval() 
+        # model.eval() 
         
         self.callback_handler.eval_dataloader = dataloader
         # Do this before wrapping.
