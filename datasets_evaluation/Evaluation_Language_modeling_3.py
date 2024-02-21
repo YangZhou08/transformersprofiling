@@ -671,8 +671,8 @@ if tokenizer.pad_token is not None:
 else: 
     tokenizer.pad_token = tokenizer.eos_token 
     print("We now use eos_token as pad token") 
-# tokenizer.padding_side = "left" 
-tokenizer.padding_side = "right" 
+tokenizer.padding_side = "left" 
+# tokenizer.padding_side = "right" 
 
 kernel_size = 7 # this is definitely subject to change 
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
@@ -856,6 +856,6 @@ wandblogconfigs["git_commit"] = commit_hash
 wandblogconfigs["time_hash"] = hash_of_time 
 wandb.init(project = "chunkedlargefinetuning", config = wandblogconfigs, name = "large_small_ce{}_{}".format(today, "unmasked")) 
 
-# results = trainer.evaluate(eval_dataset = datasetnew) 
-# print(results) 
-model.save_pretrained("../model_checkpoints/largesmall_deciphering_{}_{}_{}".format(args.model_name, args.experiment_setting, commit_hash)) 
+results = trainer.evaluate(eval_dataset = datasetnew) 
+print(results) 
+# model.save_pretrained("../model_checkpoints/largesmall_deciphering_{}_{}_{}".format(args.model_name, args.experiment_setting, commit_hash)) 
