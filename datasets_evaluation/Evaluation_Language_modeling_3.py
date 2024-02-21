@@ -676,6 +676,10 @@ kernel_size = 7 # this is definitely subject to change
 dfiles = [dir_sdata + "example_holdout_{}combined.jsonl".format(0)] 
 # datasetnew = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
 datasetnew = load_dataset('emozilla/pg19', split = "train") 
+dfiles = [] 
+filename = "c4synthesized_file1_kernel7_0.json" 
+dfiles.append(dir_sdata + "{}/".format(model_name) + filename) 
+datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
 
 # train_set, test_set = datasetnew.split(0.99) 
 print(tokenizer(datasetnew[0]['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 256, 
