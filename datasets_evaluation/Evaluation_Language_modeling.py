@@ -221,6 +221,7 @@ parser.add_argument("--kernel_size", type = int, default = 7)
 parser.add_argument("--experiment_setting", type = str, default = "setting0") 
 parser.add_argument("--condensed_token_random", action = "store_true") 
 parser.add_argument("--task_id", type = int, default = 0) 
+parser.add_argument("--use_small_model", action = "store_true") 
 
 args = parser.parse_args() 
 
@@ -964,8 +965,11 @@ class CustomDataset:
         eval_size = len(self) - train_size 
         return random_split(self, [train_size, eval_size]) 
 
-model_type = "use_large_model" 
-# model_type = "use_small_model" 
+if not args.use_small_model: 
+    model_type = "use_large_model" 
+else: 
+    model_type = "use_small_model" 
+
 if not model_type == "use_small_model" and model_name == "openllama3b": 
     tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
 elif not model_type == "use_small_model": 
@@ -989,13 +993,13 @@ kernel_size = 7 # this is definitely subject to change
 # dfiles = ["example_holdout_{}.jsonl".format(i) for i in range(6282)] 
 # dfiles = [dir_sdata + "example_holdout_{}combined.jsonl".format(0)] 
 dfiles = [dir_c4 + "c4_file1.json"] 
-datasetnew = load_dataset('json', data_files = dfiles, split = "train") 
+datasetnew = load_dataset('json', data_files = dfiles, split = "train[:100000]") 
 # datasetnew = load_dataset('emozilla/pg19', split = "train") 
 
 # train_set, test_set = datasetnew.split(0.99) 
-print(tokenizer(datasetnew[0]['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 256, 
-                return_attention_mask = True, return_tensors = "pt", truncation = True, 
-                add_special_tokens = True)) 
+# print(tokenizer(datasetnew[0]['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 256, 
+#                 return_attention_mask = True, return_tensors = "pt", truncation = True, 
+#                 add_special_tokens = True)) 
 
 # def encode_with_truncation(examples): 
 #     tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
