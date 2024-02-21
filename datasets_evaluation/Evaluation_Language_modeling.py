@@ -1003,26 +1003,26 @@ datasetnew = load_dataset('json', data_files = dfiles, split = "train[:100000]")
 #                 return_attention_mask = True, return_tensors = "pt", truncation = True, 
 #                 add_special_tokens = True)) 
 
-def encode_with_truncation(examples): 
-    tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
-                     return_attention_mask = True, return_tensors = "pt", truncation = True, 
-                     add_special_tokens = True) 
-    newdictionary = {} 
-    newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
-    newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
-    return newdictionary 
-
 # def encode_with_truncation(examples): 
-#     # tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
-#     #                  return_attention_mask = True, return_tensors = "pt", truncation = True, 
-#     #                  add_special_tokens = True) 
-#     tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 260, 
-#                              return_attention_mask = True, return_tensors = "pt", truncation = True, 
-#                              add_special_tokens = True) 
+#     tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
+#                      return_attention_mask = True, return_tensors = "pt", truncation = True, 
+#                      add_special_tokens = True) 
 #     newdictionary = {} 
 #     newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
 #     newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
 #     return newdictionary 
+
+def encode_with_truncation(examples): 
+    # tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
+    #                  return_attention_mask = True, return_tensors = "pt", truncation = True, 
+    #                  add_special_tokens = True) 
+    tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 260, 
+                             return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                             add_special_tokens = True) 
+    newdictionary = {} 
+    newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
+    newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
+    return newdictionary 
 
 def unflatten_list_func(examples): 
     examples['input_ids'] = examples['input_ids'].squeeze(0) 
