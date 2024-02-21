@@ -766,7 +766,8 @@ else:
             large_model.addonsmallmodel.set_criticalpath(hostname = hostname) 
             
         large_model.config.pad_token_id = tokenizer.pad_token_id 
-        small_model.config.pad_token_id = tokenizer.pad_token_id 
+        large_model.addonsmallmodel.config.pad_token_id = tokenizer.pad_token_id 
+        # small_model.config.pad_token_id = tokenizer.pad_token_id 
         
         large_model.model.eval() 
         large_model.addonsmallmodel.eval() 
