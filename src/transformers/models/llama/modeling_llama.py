@@ -1392,6 +1392,24 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
     def set_cosinesimilarity(self, use_cosinesimilarity): 
         if use_cosinesimilarity: 
             self.use_cosinesimilarity = True 
+    
+    def set_addonsmallmodel_statedict(self, small_state_dict_for_model): 
+        new_state_dict = {} 
+
+        for key in small_state_dict_for_model.keys(): 
+            new_key = key 
+            if 'lm_head' in key: 
+                print("got here found the following key {}".format(key)) 
+            if 'model.' in key: 
+                new_key = key[6 :] 
+            print(new_key) 
+            new_state_dict[new_key] = small_state_dict_for_model[key] 
+        # if args.embedding_pretrained: 
+        #     new_state_dict["embed_projection.weight"] = torch.load("linearprojectionweighttesting.pt") 
+        try: 
+            self.addonsmallmodel.load_state_dict(new_state_dict) 
+        except RuntimeError as r: 
+            print(colored(r, "yellow")) 
 
     def set_input_embeddings(self, value):
         self.model.embed_tokens = value 
