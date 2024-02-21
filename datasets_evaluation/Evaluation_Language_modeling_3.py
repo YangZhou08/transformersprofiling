@@ -244,7 +244,8 @@ else:
     # dir_models = "/home/yangzho6/model_checkpoints/" 
     dir_models = "/fsx-storygen/beidic/yang/model_checkpoints/" 
     # dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
-    dir_sdata = "/fsx-storygen/beidic/yang/c4llm_synthesized/" 
+    # dir_sdata = "/fsx-storygen/beidic/yang/c4llm_synthesized/" 
+    dir_c4llmsynthesized = "/fsx-storygen/beidic/yang/c4llm_synthesized/" 
 
 class CustomTrainer(Trainer): 
     def __init__(self, 
