@@ -455,7 +455,7 @@ class CustomTrainer(Trainer):
         if self.accelerator.state.num_processes > 1: 
             self.accelerator.wait_for_everyone() 
             
-        perplexity = torch.exp(loss).mean().item() 
+        perplexity = torch.exp(ce_loss).mean().item() 
         indices_to_keep = input_attention_mask == 1 # not sure whether we need this 
         total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
         correct_words = torch.sum((preds[indices_to_keep] == labels[indices_to_keep]).view(-1), dim = 0).item() 
