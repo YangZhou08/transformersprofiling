@@ -246,6 +246,7 @@ else:
     # dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
     # dir_sdata = "/fsx-storygen/beidic/yang/c4llm_synthesized/" 
     dir_c4llmsynthesized = "/fsx-storygen/beidic/yang/c4llm_synthesized/" 
+    dir_c4 = "/fsx-storygen/beidic/yang/c4_parts/downloads/" 
 
 class CustomTrainer(Trainer): 
     def __init__(self, 
@@ -818,7 +819,7 @@ else:
         # small_model.config.pad_token_id = tokenizer.pad_token_id 
         
         large_model.model.eval() 
-        large_model.addonsmallmodel.eval() 
+        large_model.addonsmallmodel.eval()
     else: 
         raise ValueError("model_name is not recognized") 
 
