@@ -692,7 +692,7 @@ if args.dataset_name == "c4llm_synthesized":
         dfiles.append(dir_c4llmsynthesized + "{}/".format("tinyllama") + filename) 
         datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
     else: 
-        filename = "c4synthesized_file1_kernel7_{}_combined.json".format(8) 
+        filename = "c4synthesized_file1_kernel7_{}_combined.json".format(7) 
         dfiles.append(dir_c4llmsynthesized + "{}_topk{}/".format("tinyllama", "na") + filename) 
         datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
 elif args.dataset_name == "c4": 
