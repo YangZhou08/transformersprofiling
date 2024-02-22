@@ -35,6 +35,7 @@ from transformers.generation.utils import GenerationConfig
 from transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSmallModel 
 from transformers.models.llama.modeling_llama import LlamaCausalLMWeirdTwo 
 from transformers.models.llama.modeling_llama import LlamaWeirdLarge3 
+from transformers.models.llama.modeling_llama import LlamaModelWeirdAttentionMap 
 from transformers.modeling_utils import PreTrainedModel, load_sharded_checkpoint, unwrap_model 
 import time 
 from torch.utils.data import random_split 
@@ -1115,6 +1116,8 @@ else:
         
         large_model.model.eval() 
         large_model.addonsmallmodel.eval() 
+    elif model_name == "window": 
+        model = LlamaModelWeirdAttentionMap.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     else: 
         raise ValueError("model_name is not recognized") 
 

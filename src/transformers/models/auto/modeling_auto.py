@@ -416,6 +416,7 @@ MODEL_FOR_CAUSAL_LM_MAPPING_NAMES = OrderedDict(
         ("gpt_neox_japanese", "GPTNeoXJapaneseForCausalLM"),
         ("gptj", "GPTJForCausalLM"),
         ("llama", "LlamaForCausalLM"),
+        ("weirdllama", "LlamaWeirdLarge3"), # This is a temporary model, it will be removed in the future 
         ("marian", "MarianForCausalLM"),
         ("mbart", "MBartForCausalLM"),
         ("mega", "MegaForCausalLM"),

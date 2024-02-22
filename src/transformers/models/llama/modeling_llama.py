@@ -3000,6 +3000,31 @@ class LlamaModelWeirdAttentionMap(LlamaPreTrainedModel):
         row_mask = row_mask.to(device = combined_attention_mask.device) 
 
         combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
+    
+    def _modify_decoder_attention_mask_for_hardest_neo(self, combined_attention_mask, dtype, mask_list_pos, start_idx = None, kernel_size = None): 
+        mask_shape = combined_attention_mask.shape # (batch_size, 1, tgt_seq_len, src_seq_len) 
+        seq_len = mask_shape[-1] 
+        start_idx = start_idx if start_idx is not None else self.start_idx 
+        kernel_size = kernel_size if kernel_size is not None else self.sliding_window_length 
+        
+        # row dimensional masking 
+        # row_idx_masked_out = [start_idx + i * (kernel_size + 1) for i in range((seq_len - start_idx) / (kernel_size + 1))] 
+        row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) # NOTE currently, this line only works for training 
+        # row_mask[row_idx_masked_out] = 1 
+        # row_mask[mask_list_pos] = 1 
+
+        condensed_token_idx_list = mask_list_pos 
+        for i in range(len(condensed_token_idx_list)): 
+            if i == 0: 
+                row_mask[condensed_token_idx_list[i] : , : condensed_token_idx_list[i]] = 1 
+            else: 
+                row_mask[condensed_token_idx_list[i] : , condensed_token_idx_list[i - 1] : condensed_token_idx_list[i]] = 1 
+        
+        # print("row mask shape {}".format(row_mask.shape)) 
+        row_mask = row_mask[None, None, :, :].expand(mask_shape).to(torch.bool) 
+        row_mask = row_mask.to(device = combined_attention_mask.device) 
+
+        combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
 
     @add_start_docstrings_to_model_forward(LLAMA_INPUTS_DOCSTRING)
     def forward(
@@ -3054,7 +3079,8 @@ class LlamaModelWeirdAttentionMap(LlamaPreTrainedModel):
             attention_mask = _prepare_4d_causal_attention_mask(
                 attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length
             ) 
-        # self._modify_attention_mask_in_a_weird_way(attention_mask, inputs_embeds.dtype, start_idx = 64, kernel_size = 4) 
+        assert (seq_length - 8) % 7 == 0, "seq_length is not compatible to the sliding window length" 
+        self._modify_decoder_attention_mask_for_hardest_neo(attention_mask, inputs_embeds.dtype, mask_list_pos = [8 + i * 7 for i in range((seq_length - 8) // 7)], start_idx = 8, kernel_size = 7) 
 
         # visualize the attention mask 
 
