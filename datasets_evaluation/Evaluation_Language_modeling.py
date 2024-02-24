@@ -889,7 +889,7 @@ for i in range(0, 10):
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
 if model_type == "use_small_model": 
-    if args.loading_from_checkpoint is not None: 
+    if args.model_name != "plain": 
         small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
         # target_model_dim = 3200 if model_name == "openllama3b" else 2560 
         if model_name == "openllama3b": 
