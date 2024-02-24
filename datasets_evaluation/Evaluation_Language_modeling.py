@@ -353,93 +353,18 @@ class CustomTrainer(Trainer):
 
     def compute_loss(self, model, inputs, return_outputs = False, evaluation_mode = True): 
         labels = None 
-        # print("attention_mask: {}".format(inputs["attention_mask"])) 
-        if isinstance(model, LlamaWeirdLarge3): 
-            large_input_ids = inputs["input_ids"] 
-            small_input_ids = inputs["input_ids"] 
-            condensed_embeds_labels = None 
-            original_attention_mask = inputs["attention_mask"] 
-        else: 
-            input_ids = inputs["input_ids"] 
-            attention_mask = inputs["attention_mask"] 
-            
+        input_ids = inputs["input_ids"] 
+        attention_mask = inputs["attention_mask"] 
         label2 = inputs["labels"] 
-        if isinstance(model, LlamaWeirdLarge3): 
-            attention_mask = torch.ones((large_input_ids.shape[0], (large_input_ids.shape[1] - 1) // self.n + 1), dtype = torch.long).to(large_input_ids.device) 
-        # print("the optimizer parameter group list 0 is {} learning rate is {}".format(len(self.optimizer.param_groups[0]['params']), self.optimizer.param_groups[0]['lr'])) 
-        # print("the optimizer parameter group list 1 is {} learning rate is {}".format(len(self.optimizer.param_groups[1]['params']), self.optimizer.param_groups[1]['lr'])) 
-        # print("the input ids are {}".format(input_ids[0])) 
-        # print("labels are {}".format(labels[0])) 
         print("type of the model is {}".format(type(model))) 
-        if isinstance(getattr(model, "module", model), SimpleSmallModel) or isinstance(model, SimpleSmallModel) == True or isinstance(model, LlamaWeirdLarge3) == True: 
-            if "condensed_embeds" in inputs.keys(): 
-                condensed_embeds = inputs["condensed_embeds"].to(self.dtype) 
-                print(colored("the shape of condensed_embeds is {}".format(condensed_embeds.shape), "yellow")) 
-                addedon_length = condensed_embeds.shape[1] 
-            else: 
-                condensed_embeds = None 
-                addedon_length = ((large_input_ids.shape[1] - 1) // self.n + 1) - 2 # length of the input_embeds of the large model minus the cropping length 
-                original_attention_mask = torch.cat((original_attention_mask, torch.ones((original_attention_mask.shape[0], addedon_length), dtype = torch.long).to(original_attention_mask.device)), dim = 1) 
-            batch_size, seq_len = attention_mask.shape 
-            # print("get the input sentence: {}".format(tokenizer.decode(input_ids[0]))) 
-            if isinstance(getattr(model, "module", model), SimpleSmallModel) or isinstance(model, SimpleSmallModel) == True: 
-                attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
-            
-            # print("condensed_embeds dtype is {}".format(condensed_embeds.dtype)) 
-            # print("condensed_embeds is {}".format(condensed_embeds)) 
-            # print("input_ids are {}".format(input_ids)) 
-            # outputs = model(input_ids = large_outputs.sequences, attention_mask = attention_mask, labels = large_outputs.sequences, condensed_embeds = downsampled_vectors) 
-            if self.accelerator.is_main_process: 
-                print("printing out the experiment_setting: {} eval_mode: {}".format(self.experiment_setting, self.eval_mode)) 
-            if not isinstance(model, LlamaWeirdLarge3): 
-                outputs = model(
-                    input_ids = input_ids, 
-                    attention_mask = attention_mask, 
-                    labels = label2, 
-                    condensed_embeds = condensed_embeds, 
-                    output_hidden_states = True, 
-                    output_attentions = True, 
-                    return_dict = True, 
-                    # condensed_fashion = "ground_truth", 
-                    iteration_count = self.iteration_count, 
-                    # eval_mode = True, 
-                    experiment_setting = self.experiment_setting, 
-                    # eval_model = self.eval_mode, 
-                    eval_mode = self.eval_mode, 
-                    start_idx = 64, 
-                ) 
-            else: 
-                outputs = model(
-                    # input_ids = input_ids, 
-                    large_input_ids = large_input_ids, 
-                    small_input_ids = small_input_ids, 
-                    attention_mask = attention_mask, 
-                    output_hidden_states = True, 
-                    output_attentions = True, 
-                    return_dict = True, 
-                    condensed_embed_labels = condensed_embeds_labels, 
-                    original_attention_mask = original_attention_mask, 
-                    labels = label2, 
-                ) 
-            # visualize attention map 
-            # print("the input ids are {}".format(input_ids))
-            
-        else: 
-            outputs = model(
-                input_ids = input_ids, 
-                attention_mask = attention_mask, 
-                labels = label2, 
-                # condensed_embeds = condensed_embeds, 
-                output_hidden_states = True, 
-                output_attentions = True, 
-                return_dict = True, 
-                # eval_mode = True, 
-            ) 
-        
-        # print(outputs.hidden_states[0].shape) 
-        # print(outputs.hidden_states[0][0][0][: 10]) 
-        # print(len(outputs.hidden_states)) 
-        # print(outputs.attentions[0][0]) 
+        outputs = model(
+            input_ids = input_ids, 
+            attention_mask = attention_mask, 
+            labels = label2, 
+            output_hidden_states = True, 
+            output_attentions = True, 
+            return_dict = True, 
+        ) 
         
         if labels is not None: 
             unwrapped_model = unwrap_model(model)
@@ -473,13 +398,21 @@ class CustomTrainer(Trainer):
                         "group1.lr": self.optimizer.param_groups[0]["lr"], 
                         "iteration_count": self.iteration_count 
                 }) 
+        
         if self.accelerator.is_main_process and self.iteration_count % 1000 == 0 and evaluation_mode is False and has_wandb: 
             print(colored("generating images ... at iteration {}".format(self.iteration_count), "yellow")) 
             for layer in [0, 6, 11]: 
                 for head in [0, 6, 11]: 
+                    '''
+                    if isinstance(outputs.attentions, tuple): 
+                        print("the attention mask have shape {}".format(len(outputs.attentions))) 
+                        print("the attention mask first element has shape {}".format(outputs.attentions[0].shape)) 
+                    else: 
+                        print("the attention mask has shape {}".format(outputs.attentions.shape)) 
+                    ''' 
                     # SimpleSmallModel.plot_attention_map(outputs.attentions, 0, 0, 144, "testing_attention_map.jpg") 
                     plot_name = "testing_attention_map_{}_{}_{}.jpg".format(self.commit_hash, self.time_hash, self.experiment_setting) 
-                    SimpleSmallModel.plot_attention_map(outputs.attentions, layer, head, input_ids.shape[1] + addedon_length, plot_name) 
+                    SimpleSmallModel.plot_attention_map(outputs.attentions, layer, head, input_ids.shape[1], plot_name) 
                     # print(outputs.attentions[0][0][0][64]) 
                     # time.sleep(0.1) # ensure the file is written to disk 
                     field_name = "layer{}_head{}".format(layer, head) 
@@ -488,14 +421,7 @@ class CustomTrainer(Trainer):
                         wandb.log({field_name: wandb.Image(plot_name)}) 
                     except Exception as e: 
                         print(f"An error has occured during logging attention map: {e}") 
-                        # try again 
-                        # time.sleep(1) 
-                        # if try_count < 2: 
-                        #     wandb.log({field_name: wandb.Image("testing_attention_map.jpg")}) 
-                        #     try_count += 1 
-
-        # inspect the hidden states here 
-
+        
         return (loss, outputs) if return_outputs else loss 
 
     def local_compute_metrics_weird(
@@ -570,106 +496,40 @@ class CustomTrainer(Trainer):
         return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "l2_distance": l2dist.item(), "ce_loss": ce_loss.item() if isinstance(ce_loss, torch.Tensor) else ce_loss, "l2_distance_input": l2dist_input.item(), "cosin_similarity": cos_sim_input.item()} 
 
     def local_compute_metrics(
-            self, 
-            logits, 
-            labels, 
-            loss, 
-            input_attention_mask, 
-            outside_step, 
+        self, 
+        logits, 
+        labels, 
+        loss, 
+        input_attention_mask, 
+        outside_step, 
     ): 
-
-        from sklearn.metrics import accuracy_score, precision_recall_fscore_support
-
-        print("shape of the logits is {}".format(logits.shape)) 
+        from sklearn.metrics import accuracy_score 
+        
         logits = logits[:, :-1, :] 
-        # input_attention_mask = input_attention_mask[:, :-1] 
         input_attention_mask = input_attention_mask[:, 1:] 
         labels = labels[:, 1:] 
         preds = torch.argmax(logits, dim = -1) 
-        if self.accelerator.is_main_process and outside_step == 0: 
-            print("*** evaluating at step {} ***".format(self.iteration_count)) 
-            # f = open("key_notes{}.md".format(self.commit_hash), "a") 
-            # f.write("writing key notes at step {}".format(self.iteration_count)) 
-            mask_correctness = (preds[: 20, 63 :] == labels[: 20, 63 :]).to(torch.bool) 
-            # print(mask_correctness.shape) 
-            pred_outputs = preds[: 20] 
-            write_out_text = [] 
-            for i in range(len(pred_outputs)): 
-                prediction_prefix = self.tokenizer.decode(pred_outputs[i][: 63]) 
-                prediction_text = "the prediction is: {}".format(prediction_prefix) 
-                for j in range(mask_correctness.shape[1]): 
-                    if mask_correctness[i][j]: 
-                        prediction_text += colored(self.tokenizer.decode(pred_outputs[i][63 + j]), "green") + " " 
-                    else: 
-                        prediction_text += colored(self.tokenizer.decode(pred_outputs[i][63 + j]), "red") + " " 
-                print(prediction_text) 
-                print() 
-                # print(labels[i]) 
-                mask_filtered = labels[i][input_attention_mask[i] == 1] 
-                mask_filtered[mask_filtered == -100] = 0 
-                labels_outputs1 = self.tokenizer.decode(mask_filtered[: 63]) 
-                label_text = "the label is: {}".format(colored(labels_outputs1, "yellow")) 
-                print(label_text, end = " ") 
-                labels_outputs2 = self.tokenizer.decode(mask_filtered[63 :]) 
-                write_out_text.append("the prediction is: " + prediction_prefix + " " + prediction_text + "\n" + "the label is: " + label_text + " " + labels_outputs2 + "\n") 
-                print(colored(labels_outputs2, "cyan")) 
-                print() 
-                print() 
-                # wandb.log({"key notes: ": prediction_text + label_text}) 
-                # f.write(prediction_text + "\n" + label_text + "\n") 
-                
-            with open(self.text_eval, "a") as f: 
-                f.write("*** at step {} {}".format(self.iteration_count, self.state.global_step)) 
-                f.write("\n") 
-                for i, text in enumerate(write_out_text): 
-                    f.write("example {}/{}\n".format(i, len(write_out_text))) 
-                    f.write(text) 
-                    f.write("\n") 
-                f.write("\n") 
-            # f.write("\n") 
-            # f.close() 
-            # self.artifact.add_file("key_notes{}.md".format(self.commit_hash), name = "key_notes.md") 
-            # wandb.log_artifact(self.artifact) 
-        if self.accelerator.state.num_processes > 1: 
-            # torch.distributed.barrier() # I found that barrier() works, but it still not as good as wait_for_everyone() 
-            self.accelerator.wait_for_everyone() 
-                
-        # print("the shape of preds is {}".format(preds.shape)) 
-        # use loss to compute perplexity 
+        
         perplexity = torch.exp(loss).mean().item() 
-        # print("the perplexity is {}".format(perplexity)) 
-        # use preds to compute accuracy 
         indices_to_keep = input_attention_mask == 1 # only for debugging purposes 
         total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
-        # print("shape of indices_to_keep: {}".format(indices_to_keep.shape)) 
         interest_token_count = torch.sum(indices_to_keep[:, 63 :].reshape(-1), dim = 0).item() # check whether 63 makes sense and make it more general if it is correct or not 
-        # accuracy = accuracy_score(labels[indices_to_keep], preds[indices_to_keep]) 
         correct_words = torch.sum((preds[indices_to_keep] == labels[indices_to_keep]).view(-1), dim = 0).item() 
-        # print("shape of indices_to_keep: {}".format(indices_to_keep.shape)) 
-        # interest_correct_count = torch.sum((preds[indices_to_keep][:, 63 :] == labels[indices_to_keep][:, 63 :]).view(-1), dim = 0).item() 
         interest_correct_count = torch.sum(((preds * indices_to_keep)[:, 63: ] == (labels * indices_to_keep)[:, 63: ]).view(-1), dim = 0).item() 
         print("correct words: {} and total words: {}".format(correct_words, total_valid_tokens)) 
         print("interest correct words: {} and interest total words: {}".format(interest_correct_count, interest_token_count)) 
-        # use preds to compute f1 score 
-        # f1 = precision_recall_fscore_support(labels, preds, average = "weighted") 
         return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "interest_correct_words": interest_correct_count, "interest_total_words": interest_token_count} 
     
     def evaluation_loop(
-        self,
-        dataloader: DataLoader,
-        description: str,
-        prediction_loss_only: Optional[bool] = None,
-        ignore_keys: Optional[List[str]] = None,
-        metric_key_prefix: str = "eval",
-    ) -> EvalLoopOutput:
-        """
-        Prediction/evaluation loop, shared by `Trainer.evaluate()` and `Trainer.predict()`.
-
-        Works both with or without labels.
-        """
-        # NOTE: note that this modification is only helpful for single GPU training 
-        args = self.args
-
+        self, 
+        dataloader: DataLoader, 
+        description: str, 
+        prediction_loss_only: Optional[bool] = None, 
+        ignore_keys: Optional[List[str]] = None, 
+        metric_key_prefix: str = "eval", 
+    ) -> EvalLoopOutput: 
+        args = self.args 
+        
         prediction_loss_only = prediction_loss_only if prediction_loss_only is not None else args.prediction_loss_only
 
         # if eval is called w/o train, handle model prep here
@@ -695,7 +555,7 @@ class CustomTrainer(Trainer):
             # backward compatibility
             if self.is_deepspeed_enabled:
                 self.deepspeed = self.model_wrapped
-
+        
         # if full fp16 or bf16 eval is wanted and this ``evaluation`` or ``predict`` isn't called
         # while ``train`` is running, cast it to the right dtype first and then put on device
         if not self.is_in_train:
@@ -710,8 +570,6 @@ class CustomTrainer(Trainer):
         self.callback_handler.eval_dataloader = dataloader
         # Do this before wrapping.
         eval_dataset = getattr(dataloader, "dataset", None)
-        for key, value in eval_dataset[0].items(): 
-            print(colored("key {}".format(key), "green")) 
 
         if args.past_index >= 0:
             self._past = None
@@ -736,7 +594,7 @@ class CustomTrainer(Trainer):
         total_loss = 0 # used to compute the correct perplexity 
         interest_total_words = 0 
         interest_correct_words = 0 
-
+        
         observed_num_examples = 0 
         total_num_steps = len(dataloader) 
         local_device = None 
@@ -762,10 +620,7 @@ class CustomTrainer(Trainer):
             # print(colored("the shape of logits is {}".format(logits.shape), "yellow")) 
             # print(colored("the shape of labels is {}".format(labels.shape), "yellow")) 
             total_loss += loss.item() 
-            if isinstance(model, LlamaWeirdLarge3): 
-                local_metrics = self.local_compute_metrics_weird(logits, labels, loss, inputs["attention_mask"], step) 
-            else: 
-                local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"], step) 
+            local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"], step) 
             total_correct_words += local_metrics["correct_words"] 
             total_words += local_metrics["total_words"] 
             sum_of_perplexity += local_metrics["perplexity"] 
@@ -774,7 +629,7 @@ class CustomTrainer(Trainer):
 
             if is_torch_tpu_available():
                 xm.mark_step()
-
+        
         if self.accelerator.is_main_process: 
             print("rank {} total_loss before aggregation is {}".format(self.accelerator.state.process_index, total_loss)) 
         # all gather the metrics 
@@ -813,31 +668,19 @@ class CustomTrainer(Trainer):
         global_accuracy = total_correct_words / total_words 
         global_interest_accuracy = interest_correct_words / interest_total_words 
         all_losses = total_loss / total_num_steps 
-
+        
         metrics = {"perplexity": global_perplexity, "accuracy": global_accuracy, "interest_accuracy": global_interest_accuracy} 
         if self.accelerator.is_main_process: 
             print(colored(metrics, "magenta")) 
             wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy, "global_eval_interest_accuracy": global_interest_accuracy}) 
-
-        # # Metrics!
-        # if self.compute_metrics is not None and all_preds is not None and all_labels is not None:
-        #     if args.include_inputs_for_metrics:
-        #         metrics = self.compute_metrics(
-        #             EvalPrediction(predictions=all_preds, label_ids=all_labels, inputs=all_inputs)
-        #         )
-        #     else:
-        #         metrics = self.compute_metrics(EvalPrediction(predictions=all_preds, label_ids=all_labels))
-        # else:
-        #     metrics = {}
-        # # To be JSON-serializable, we need to remove numpy types or zero-d tensors
-        metrics = denumpify_detensorize(metrics)
-
-        if all_losses is not None:
-            # metrics[f"{metric_key_prefix}_loss"] = all_losses.mean().item() 
+        
+        metrics = denumpify_detensorize(metrics) 
+        
+        if all_losses is not None: 
             metrics[f"{metric_key_prefix}_loss"] = all_losses 
-        if hasattr(self, "jit_compilation_time"):
-            metrics[f"{metric_key_prefix}_jit_compilation_time"] = self.jit_compilation_time
-
+        if hasattr(self, "jit_compilation_time"): 
+            metrics[f"{metric_key_prefix}_jit_compilation_time"] = self.jit_compilation_time 
+        
         # Prefix all keys with metric_key_prefix + '_'
         for key in list(metrics.keys()):
             if not key.startswith(f"{metric_key_prefix}_"):
