@@ -838,10 +838,10 @@ kernel_size = 7 # this is definitely subject to change
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
 # dfiles = ["example_holdout_{}.jsonl".format(i) for i in range(6282)] 
 # dfiles = [dir_sdata + "example_holdout_{}combined.jsonl".format(0)] 
-dfiles = [dir_c4 + "c4_file1.json"] 
-# dfiles = [dir_c4llmsynthesized + "{}/".format("tinyllama") + "c4synthesized_file1_kernel7_0.json"] 
-# datasetnew = load_dataset('json', data_files = dfiles, split = "train[:100000]") 
-datasetnew = load_dataset('emozilla/pg19', split = "train") 
+# dfiles = [dir_c4 + "c4_file1.json"] 
+dfiles = [dir_c4llmsynthesized + "{}/".format("tinyllama") + "c4synthesized_file1_kernel7_0.json"] 
+datasetnew = load_dataset('json', data_files = dfiles, split = "train[:100000]") 
+# datasetnew = load_dataset('emozilla/pg19', split = "train") 
 
 # train_set, test_set = datasetnew.split(0.99) 
 # print(tokenizer(datasetnew[0]['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 256, 
