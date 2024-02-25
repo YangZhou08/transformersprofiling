@@ -940,6 +940,7 @@ elif args.large_model == "tinyllama":
     if args.embedding_reinitialization_type is not None: 
         print(colored(args.embedding_reinitialization_type, "red")) 
         large_model.reinitialize_embeddings(type = args.embedding_reinitialization_type) 
+    large_model.addonsmallmodel.set_criticalpath(hostname = hostname) 
 # large_model = LlamaWeirdLarge.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models, sliding_window_length = 7, addonsmallmodel = small_model, use_mse_loss = True).to(torch.bfloat16).to(torch_device) 
 # large_model.set_smallmodelfull() # this function has proven to be very important 
 # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
