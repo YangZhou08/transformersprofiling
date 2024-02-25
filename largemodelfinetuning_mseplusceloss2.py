@@ -960,8 +960,11 @@ if args.use_pretrained_small_model:
     large_model.addonsmallmodel.load_state_dict(small_model_state_dict) 
     large_model.addonsmallmodel.eval() 
 
-large_model.config.pad_token_id = tokenizer.pad_token_id 
-small_model.config.pad_token_id = tokenizer.pad_token_id 
+large_model.config.pad_token_id = tokenizer[0].pad_token_id 
+if args.use_new_small_model_checkpoint: 
+    small_model.config.pad_token_id = tokenizer[1].pad_token_id 
+else: 
+    large_model.addonsmallmodel.config.pad_token_id = tokenizer[1].pad_token_id 
 
 large_model.model.train() 
 large_model.addonsmallmodel.train() 
