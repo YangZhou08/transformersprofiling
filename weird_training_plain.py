@@ -652,7 +652,6 @@ for i in range(0, 5):
     print("The input ids is {}".format(example["input_ids"])) 
     print("The attention mask is {}".format(example["attention_mask"])) 
     print("The text is {}".format(example["text"])) 
-exit(0) 
 
 if args.model_name == "tinyllama": 
     model = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device).to(torch.bfloat16) 
