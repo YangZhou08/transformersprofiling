@@ -253,8 +253,10 @@ elif "ada" in hostname:
     dir_sdata = "/home/beidic/yangzho6/c4llm_synthesized/" 
 else: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
-    dir_models = "/home/yangzho6/model_checkpoints/" 
-    dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+    # dir_models = "/home/yangzho6/model_checkpoints/" 
+    # dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+    dir_models = "/fsx-storygen/beidic/yang/model_checkpoints/" 
+    dir_sdata = "/fsx-storygen/beidic/yang/c4llm_synthesized/" 
 
 # has_wandb = False # disable for debugging 
 # model_name = "openllama3b" 
