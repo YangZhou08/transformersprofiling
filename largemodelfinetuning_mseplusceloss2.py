@@ -1014,6 +1014,10 @@ for name, param in large_model.named_parameters():
                     param_group2.append(param) 
                 else: 
                     param_group.append(param) 
+
+if not args.use_new_small_model_checkpoint: 
+    small_model = large_model.addonsmallmodel 
+
 for name, param in small_model.named_parameters(): 
     # print(colored("small model parameters {}".format(name), "yellow")) 
     # if args.use_pretrained_small_model: 
