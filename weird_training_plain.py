@@ -610,7 +610,7 @@ if tokenizer.pad_token is not None:
 else: 
     tokenizer.pad_token = tokenizer.eos_token 
     print("We now use eos_token as pad token") 
-tokenizer.padding_side = "left" 
+tokenizer.padding_side = "left" # we pad from the left 
 
 dfiles = [] 
 print(colored("hostname is {}".format(hostname), "yellow")) 
@@ -643,8 +643,15 @@ def encode_with_truncation(examples):
 train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 8) 
 test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 8) 
 
-train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
-test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask', "text"]) 
+test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask', "text"]) 
+
+for i in range(0, 5): 
+    example = train_dataset[i] 
+    print("The input ids is {}".format(example["input_ids"])) 
+    print("The attention mask is {}".format(example["attention_mask"])) 
+    print("The text is {}".format(example["text"])) 
+exit(0) 
 
 if args.model_name == "tinyllama": 
     model = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device).to(torch.bfloat16) 
