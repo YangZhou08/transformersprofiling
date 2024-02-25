@@ -228,6 +228,7 @@ parser.add_argument("--gradient_accumulation_steps", type = int, default = 4)
 parser.add_argument("--embedding_reinitialization_type", type = str, default = None) 
 parser.add_argument("--cosine_similarity", action = "store_true") 
 parser.add_argument("--use_old_checkpoint", action = "store_true") 
+parser.add_argument("--use_new_small_model_checkpoint", action = "store_true") 
 
 args = parser.parse_args() 
 model_name = args.large_model 
@@ -873,7 +874,7 @@ elif args.large_model == "tinyllama":
 else: 
     large_dim = 4096 
 
-if not args.use_pretrained_small_model: 
+if args.use_new_small_model_checkpoint and not args.use_pretrained_small_model: 
     small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
     print(colored("not using pretrained small model", "green")) 
     # small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 7, target_model_dim = large_dim) 
@@ -899,7 +900,7 @@ if not args.use_pretrained_small_model:
 
     small_model = small_model.to(torch.bfloat16).to(torch_device) 
     small_model.train() 
-else: 
+elif args.use_pretrained_small_model: 
     print(colored("using pretrained small model", "red")) 
     small_model = SimpleSmallModel(small_config, sliding_window_length = args.kernel_size, hostname = hostname, target_model_dim = large_dim).to(torch.bfloat16).to(torch_device) 
     # I found that the weights need to be loaded again once the large model is loaded 
@@ -917,10 +918,13 @@ elif args.large_model == "tinyllama":
             # print(colored("Using an earlier checkpoint", "yellow")) 
             print(colored("Using the very beginning checkpoint", "yellow")) 
             large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-step-50K-105b", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+            # NOTE this line now loads in both the large and the small model weights into the model 
         else: 
             large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     large_model.set_msece_loss(args.use_mse_loss, args.ce_loss_only) 
-    large_model.set_addonsmallmodel(small_model) 
+    if args.use_new_small_model_checkpoint: 
+        print(colored("using new small model checkpoint", "yellow")) 
+        large_model.set_addonsmallmodel(small_model) 
     if args.finetuned_small_model_checkpoint is not None: 
         if "setting0" in args.finetuned_small_model_checkpoint: 
             large_model.set_inference_setting("setting0") 
