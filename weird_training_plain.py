@@ -230,6 +230,12 @@ parser.add_argument("--model_name", type = str, default = "openllama3b")
 parser.add_argument("--resume_from_checkpoint", type = str, default = None) 
 parser.add_argument("--use_past", action = "store_true") 
 parser.add_argument("--debug", action = "store_true") 
+parser.add_argument("--gradient_accumulation_steps", type = int, default = 4) 
+parser.add_argument("--embedding_reinitialization_type", type = str, default = None) 
+parser.add_argument("--cosine_similarity", action = "store_true") 
+parser.add_argument("--use_old_checkpoint", action = "store_true") 
+parser.add_argument("--batch_size", type = int, default = 64) 
+parser.add_argument("--num_epochs", type = int, default = 5) 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
