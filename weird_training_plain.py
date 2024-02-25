@@ -716,7 +716,7 @@ if trainer.accelerator.is_main_process and has_wandb:
     wandblogconfigs = training_args.to_dict() 
     wandblogconfigs["git_commit"] = commit_hash 
     wandblogconfigs["time_hash"] = hash_of_time 
-    wandb.init(project = "chunkedlargefinetuning", config = wandblogconfigs, name = "large_small_ce{}_{}".format(today, "unmasked")) 
+    wandb.init(project = "chunkedlargefinetuning", config = wandblogconfigs, name = "plainmodel{}_{}".format(today, args.model_name)) 
 
 torch.autograd.set_detect_anomaly(True)
 
