@@ -2421,16 +2421,6 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
             }
         )
         return model_inputs 
-    
-    def train(self): 
-        self.model.train() 
-        if self.addonsmallmodel is not None: 
-            self.addonsmallmodel.train() 
-    
-    def eval(self): 
-        self.model.eval() 
-        if self.addonsmallmodel is not None: 
-            self.addonsmallmodel.eval() 
 
     @staticmethod
     def _reorder_cache(past_key_values, beam_idx):
