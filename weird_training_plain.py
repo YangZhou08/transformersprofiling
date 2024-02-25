@@ -652,8 +652,8 @@ def encode_with_truncation(examples):
 train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 8) 
 test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 8) 
 
-train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask', "text"]) 
-test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask', "text"]) 
+train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 
 for i in range(0, 5): 
     example = train_dataset[i] 
