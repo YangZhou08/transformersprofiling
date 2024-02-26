@@ -29,6 +29,7 @@ from src.transformers.models.llama.modeling_llama import LlamaCausalLMWeirdTwo
 from src.transformers.models.llama.modeling_llama import LlamaWeirdLarge 
 from src.transformers.models.llama.modeling_llama import LlamaWeirdLarge2 
 from src.transformers.models.llama.modeling_llama import LlamaWeirdLarge3 
+from src.transformers.models.llama.modeling_llama import LlamaWeirdLargeTest 
 import time 
 from torch.utils.data import random_split 
 from src.transformers import BitsAndBytesConfig 
@@ -333,7 +334,7 @@ class CustomTrainer(Trainer):
                 original_attention_mask = original_attention_mask, 
                 labels = label2, 
             ) 
-        elif isinstance(self.model, LlamaWeirdLarge): 
+        elif isinstance(self.model, LlamaWeirdLarge) or isinstance(self.model, LlamaWeirdLargeTest): 
             outputs = model(
                 large_input_ids = large_input_ids, 
                 small_input_ids = small_input_ids, 
