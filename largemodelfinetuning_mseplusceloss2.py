@@ -921,6 +921,7 @@ elif args.large_model == "tinyllama":
             large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-step-50K-105b", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
             # NOTE this line now loads in both the large and the small model weights into the model 
         elif args.autoregressive_baseline: 
+            print(colored("autoregressive baseline", "green")) 
             large_model = LlamaWeirdLarge.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
         else: 
             large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
