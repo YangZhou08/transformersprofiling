@@ -3017,6 +3017,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
             attention_mask = attention_mask, 
             position_ids = position_ids, 
             past_key_values = past_key_values, 
+            # input_embeds = input_embeds, 
             input_embeds = input_embeds, 
             use_cache = use_cache, 
             output_attentions = output_attentions, 
