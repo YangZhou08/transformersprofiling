@@ -886,6 +886,7 @@ else:
     for i in range(0, 8): 
         # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
         filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
+        topk = None 
         dfiles.append(dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
 
 if not args.debug: 
