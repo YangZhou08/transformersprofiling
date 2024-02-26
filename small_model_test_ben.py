@@ -993,8 +993,8 @@ if args.use_pretrained_small_model:
 large_model.config.pad_token_id = tokenizers[0].pad_token_id 
 if args.use_new_small_model_checkpoint: 
     small_model.config.pad_token_id = tokenizers[1].pad_token_id 
-else: 
-    large_model.addonsmallmodel.config.pad_token_id = tokenizers[1].pad_token_id 
+# else: 
+    # large_model.addonsmallmodel.config.pad_token_id = tokenizers[1].pad_token_id 
 
 # large_model.model.train() 
 # large_model.addonsmallmodel.train() 
