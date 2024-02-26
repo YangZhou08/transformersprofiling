@@ -302,33 +302,48 @@ class CustomTrainer(Trainer):
         # input_ids = inputs["input_ids"] # (batch_size, 203) 
         large_input_ids = inputs["large_input_ids"] # (batch_size, 203) 
         small_input_ids = inputs["input_ids"] # (batch_size, 203) 
+        attention_mask = inputs["attention_mask"] 
         # attention_mask = inputs["attention_mask_chunk"] 
-        condensed_embeds_labels = inputs["condensed_embeds"] # (batch_size, 28, 3200) 
-        condensed_embeds_labels = condensed_embeds_labels.to(self.model.small_model_dtype) 
+        if isinstance(self.model, LlamaWeirdLarge3): 
+            condensed_embeds_labels = inputs["condensed_embeds"] # (batch_size, 28, 3200) 
+            condensed_embeds_labels = condensed_embeds_labels.to(self.model.small_model_dtype) 
+            # attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 1), dtype = torch.long).to(large_input_ids.device) 
+            # attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 2), dtype = torch.long).to(large_input_ids.device) # sequence length is 204, one bos, 29 more tokens, so 30 in total, we have 28 condensed tokens 
+            attention_mask = torch.ones((large_input_ids.shape[0], (large_input_ids.shape[1] - 1) // self.n + 1), dtype = torch.long).to(large_input_ids.device) 
         original_attention_mask = inputs["attention_mask"] # (batch_size, 203) 
         label2 = inputs["labels"] # (batch_size, 203) 
         print("shape of large_input_ids {} shape of small_input_ids {}".format(large_input_ids.shape, small_input_ids.shape)) 
-        # attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 1), dtype = torch.long).to(large_input_ids.device) 
-        # attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 2), dtype = torch.long).to(large_input_ids.device) # sequence length is 204, one bos, 29 more tokens, so 30 in total, we have 28 condensed tokens 
-        attention_mask = torch.ones((large_input_ids.shape[0], (large_input_ids.shape[1] - 1) // self.n + 1), dtype = torch.long).to(large_input_ids.device) 
         
         batch_size, seq_len = original_attention_mask.shape 
         # addedon_length = (seq_len - 8) // self.n 
         addedon_length = (seq_len - self.n - 1) // self.n 
         original_attention_mask = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
         
-        outputs = model(
-            # input_ids = input_ids, 
-            large_input_ids = large_input_ids, 
-            small_input_ids = small_input_ids, 
-            attention_mask = attention_mask, 
-            output_hidden_states = True, 
-            output_attentions = True, 
-            return_dict = True, 
-            condensed_embed_labels = condensed_embeds_labels, 
-            original_attention_mask = original_attention_mask, 
-            labels = label2, 
-        ) 
+        if isinstance(self.model, LlamaWeirdLarge3): 
+            outputs = model(
+                # input_ids = input_ids, 
+                large_input_ids = large_input_ids, 
+                small_input_ids = small_input_ids, 
+                attention_mask = attention_mask, 
+                output_hidden_states = True, 
+                output_attentions = True, 
+                return_dict = True, 
+                condensed_embed_labels = condensed_embeds_labels, 
+                original_attention_mask = original_attention_mask, 
+                labels = label2, 
+            ) 
+        elif isinstance(self.model, LlamaWeirdLarge): 
+            outputs = model(
+                large_input_ids = large_input_ids, 
+                small_input_ids = small_input_ids, 
+                attention_mask = attention_mask, 
+                output_hidden_states = True, 
+                output_attentions = True, 
+                return_dict = True, 
+                condensed_embed_labels = None, 
+                original_attention_mask = original_attention_mask, 
+                labels = label2, 
+            ) 
         # Save past state if it exists
         # TODO: this needs to be fixed and made cleaner later.
         if self.args.past_index >= 0:
