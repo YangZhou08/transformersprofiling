@@ -987,8 +987,8 @@ if args.use_pretrained_small_model:
         print(new_key) 
         new_state_dict[new_key] = small_model_state_dict[key] 
     ''' 
-    large_model.addonsmallmodel.load_state_dict(small_model_state_dict) 
-    large_model.addonsmallmodel.eval() 
+    # large_model.addonsmallmodel.load_state_dict(small_model_state_dict) 
+    # large_model.addonsmallmodel.eval() 
 
 large_model.config.pad_token_id = tokenizers[0].pad_token_id 
 if args.use_new_small_model_checkpoint: 
