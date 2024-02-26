@@ -861,22 +861,61 @@ for tokenizer in tokenizers:
     else: 
         tokenizer.pad_token = tokenizer.eos_token 
         print("We now use eos_token as pad token") 
-    tokenizer.padding_side = "left" 
+    # tokenizer.padding_side = "left" 
+    tokenizer.padding_side = "right" 
 
 kernel_size = args.kernel_size 
 # datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
 # the max_length assignment is subject to change 
 max_length_lookup = {2 : 260, 3 : 259, 4 : 260, 5 : 259, 6 : 262, 7 : 260, 8 : 264} 
-datasetnew = CustomDataset(max_length = max_length_lookup[kernel_size], data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64) 
-if not args.use_pretrained_small_model: 
-    train_set, test_set = datasetnew.split(0.98) 
+# datasetnew = CustomDataset(max_length = max_length_lookup[kernel_size], data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64) 
+dfiles = [] 
+if "ada" in hostname: 
+    for i in range(0, 2): 
+        # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+        # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+        filename = "c4synthesized_file1_kernel7_{}.json".format(i) 
+        dfiles.append(dir_sdata + "{}/".format(model_name) + filename) 
+elif "lovelace" in hostname: 
+    # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
+    filename = "c4synthesized_file1_kernel7_0.json" 
+    dfiles.append(dir_sdata + "{}/".format(model_name) + filename) 
 else: 
-    train_set, test_set = datasetnew.static_split(0.98) 
+    for i in range(0, 8): 
+        # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
+        filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
+        dfiles.append(dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
 
-for i in range(0, 2): 
-    item = train_set[i] 
-    print("the shape of condensed_embeds is {}".format(item["condensed_embeds"].shape)) 
+if not args.debug: 
+    onedataset = load_dataset('json', data_files = dfiles, split = "train") 
+else: 
+    onedataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
+
+d = onedataset.train_test_split(test_size = 0.98) 
+def encode_with_truncation(examples): 
+    return tokenizer(examples["text"], padding = "max_length", max_length = 260, 
+                     return_attention_mask = True, return_tensors = "pt", truncation = True) 
+train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 8) 
+test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 8) 
+
+train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+
+# if not args.use_pretrained_small_model: 
+#     train_set, test_set = datasetnew.split(0.98) 
+# else: 
+#     train_set, test_set = datasetnew.static_split(0.98) 
+
+# for i in range(0, 2): 
+#     item = train_set[i] 
+#     print("the shape of condensed_embeds is {}".format(item["condensed_embeds"].shape)) 
+
+for i in range(0, 5): 
+    example = train_dataset[i] 
+    print("The input ids is {}".format(example["input_ids"])) 
+    print("The attention mask is {}".format(example["attention_mask"])) 
+    # print("The text is {}".format(example["text"])) 
 
 # TODO change the following code to use the checkpoint of the best trained window 7 model 
 small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
@@ -1101,10 +1140,10 @@ print(colored("resume_from_checkpoint is {}".format(args.resume_from_checkpoint)
 trainer = CustomTrainer(
     model = large_model, 
     args = training_args, 
-    # train_dataset = train_dataset, 
-    train_dataset = train_set, 
-    # eval_dataset = test_dataset, 
-    eval_dataset = test_set, 
+    train_dataset = train_dataset, 
+    # train_dataset = train_set, 
+    eval_dataset = test_dataset, 
+    # eval_dataset = test_set, 
     data_collator = data_collator, 
     optimizers = (custom_optimizer, None), 
     tokenizer = tokenizer, 
