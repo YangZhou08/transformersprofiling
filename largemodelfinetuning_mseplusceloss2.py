@@ -300,7 +300,8 @@ class CustomTrainer(Trainer):
         print(colored("iteration_count {}".format(self.iteration_count), "yellow")) 
         
         # input_ids = inputs["input_ids"] # (batch_size, 203) 
-        large_input_ids = inputs["large_input_ids"] # (batch_size, 203) 
+        # large_input_ids = inputs["large_input_ids"] # (batch_size, 203) 
+        large_input_ids = inputs["input_ids"] # (batch_size, 203) 
         small_input_ids = inputs["input_ids"] # (batch_size, 203) 
         attention_mask = inputs["attention_mask"] 
         # attention_mask = inputs["attention_mask_chunk"] 
