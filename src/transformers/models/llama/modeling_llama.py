@@ -2978,6 +2978,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None, 
         original_attention_mask = None, 
+        condensed_embed_labels = None, 
     ) -> Union[Tuple, CausalLMOutputWithPastLargeDistance2]: 
         r"""
         Args:
