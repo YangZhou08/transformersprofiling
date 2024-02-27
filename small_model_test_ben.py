@@ -993,6 +993,7 @@ if args.use_pretrained_small_model:
     ''' 
     large_model.addonsmallmodel.load_state_dict(small_model_state_dict) 
     large_model.addonsmallmodel.eval() 
+    large_model.set_msece_loss(False, True) 
     large_model.addonsmallmodel.set_criticalpath(hostname = hostname) 
 
 large_model.config.pad_token_id = tokenizers[0].pad_token_id 
