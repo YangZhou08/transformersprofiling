@@ -895,13 +895,13 @@ max_length_lookup = {2 : 260, 3 : 259, 4 : 260, 5 : 259, 6 : 262, 7 : 260, 8 : 2
 
 dfiles = [dir_c4 + "c4_file1.json"] 
 
-# if not args.debug: 
-#     onedataset = load_dataset('json', data_files = dfiles, split = "train") 
-# else: 
-#     onedataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
+if not args.debug: 
+    onedataset = load_dataset('json', data_files = dfiles, split = "train") 
+else: 
+    onedataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
 
 # datasetnew = load_dataset('emozilla/pg19', split = "train") 
-onedataset = load_dataset('emozilla/pg19', split = "train") 
+# onedataset = load_dataset('emozilla/pg19', split = "train") 
 
 d = onedataset.train_test_split(test_size = 0.98) 
 # def encode_with_truncation(examples): 
