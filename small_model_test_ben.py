@@ -1014,6 +1014,8 @@ if args.use_pretrained_small_model:
     large_model.addonsmallmodel.eval() 
     large_model.set_msece_loss(False, True) 
     large_model.addonsmallmodel.set_criticalpath(hostname = hostname) 
+    if args.experiment_setting is not None: 
+        large_model.set_inference_setting(args.experiment_setting) 
 
 large_model.config.pad_token_id = tokenizers[0].pad_token_id 
 if args.use_new_small_model_checkpoint: 
