@@ -865,8 +865,8 @@ for tokenizer in tokenizers:
     else: 
         tokenizer.pad_token = tokenizer.eos_token 
         print("We now use eos_token as pad token") 
-    # tokenizer.padding_side = "left" 
-    tokenizer.padding_side = "right" 
+    tokenizer.padding_side = "left" 
+    # tokenizer.padding_side = "right" 
 
 kernel_size = args.kernel_size 
 # datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
@@ -991,8 +991,8 @@ if args.use_pretrained_small_model:
         print(new_key) 
         new_state_dict[new_key] = small_model_state_dict[key] 
     ''' 
-    # large_model.addonsmallmodel.load_state_dict(small_model_state_dict) 
-    # large_model.addonsmallmodel.eval() 
+    large_model.addonsmallmodel.load_state_dict(small_model_state_dict) 
+    large_model.addonsmallmodel.eval() 
     large_model.addonsmallmodel.set_criticalpath(hostname = hostname) 
 
 large_model.config.pad_token_id = tokenizers[0].pad_token_id 
@@ -1129,12 +1129,12 @@ trainer = CustomTrainer(
     n = args.kernel_size, 
 ) 
 
-# if trainer.accelerator.is_main_process and has_wandb: 
-#     today = datetime.date.today() 
-#     wandblogconfigs = training_args.to_dict() 
-#     wandblogconfigs["git_commit"] = commit_hash 
-#     wandblogconfigs["time_hash"] = hash_of_time 
-#     wandb.init(project = "chunkedlargefinetuning", config = wandblogconfigs, name = "large_small_ce{}_{}".format(today, "unmasked")) 
+if trainer.accelerator.is_main_process and has_wandb: 
+    today = datetime.date.today() 
+    wandblogconfigs = training_args.to_dict() 
+    wandblogconfigs["git_commit"] = commit_hash 
+    wandblogconfigs["time_hash"] = hash_of_time 
+    wandb.init(project = "chunkedlargefinetuning", config = wandblogconfigs, name = "large_small_ce{}_{}".format(today, "unmasked")) 
 
 # torch.autograd.set_detect_anomaly(True) 
 
