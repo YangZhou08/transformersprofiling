@@ -3463,16 +3463,32 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         
         return diff 
     
-    def avgpool(self, hidden_states): 
-        seq_len = hidden_states.shape[1] # 0, 1, 2, 3, 4, 5, 6, 7
+    def avgpool2(self, hidden_states): 
+        seq_len = hidden_states.shape[1] # 0, 1, 2, 3, 4, 5, 6, 7 
+        assert (seq_len - 1) % self.sliding_window_length == 0, "seq_len is not compatible with sliding_window_length" 
         buffer_tensor = torch.zeros((hidden_states.shape[0], seq_len // self.sliding_window_length, hidden_states.shape[2]), dtype = hidden_states.dtype).to(hidden_states.device) 
-        for k in range(0, seq_len, self.sliding_window_length): 
+        for k in range(0, seq_len, self.sliding_window_length): # stride is fixed 
             for i in range(self.sliding_window_length): 
                 sum = torch.zeros((hidden_states.shape[0], hidden_states.shape[2]), dtype = hidden_states.dtype).to(hidden_states.device) 
                 sum += hidden_states[:, k + i, :] 
             sum /= self.sliding_window_length 
             buffer_tensor[:, k // self.sliding_window_length, :] = sum 
         return buffer_tensor 
+    
+    def avgpool(self, hidden_states): 
+        downsampled_vectors = [] 
+        sum = torch.zeros((hidden_states.shape[0], hidden_states.shape[2]), dtype = hidden_states.dtype).to(hidden_states.device) 
+        for i in range(hidden_states.shape[1]): 
+            if i % self.sliding_window_length == self.sliding_window_length - 1: 
+                sum += hidden_states[:, i, :] 
+                downsampled_vectors.append(sum / self.sliding_window_length) 
+                sum.mul_(0.) 
+                assert sum.view(-1).sum() == 0 
+            else: 
+                sum += hidden_states[:, i, :] 
+        downsampled_vectors = downsampled_vectors[1 :] 
+        
+        return torch.stack(downsampled_vectors, dim = 1) 
 
     @add_start_docstrings_to_model_forward(LLAMA_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=CausalLMOutputWithPast, config_class=_CONFIG_FOR_DOC)
