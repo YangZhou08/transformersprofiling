@@ -895,15 +895,28 @@ max_length_lookup = {2 : 260, 3 : 259, 4 : 260, 5 : 259, 6 : 262, 7 : 260, 8 : 2
 
 dfiles = [dir_c4 + "c4_file1.json"] 
 
-if not args.debug: 
-    onedataset = load_dataset('json', data_files = dfiles, split = "train") 
-else: 
-    onedataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
+# if not args.debug: 
+#     onedataset = load_dataset('json', data_files = dfiles, split = "train") 
+# else: 
+#     onedataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
+
+# datasetnew = load_dataset('emozilla/pg19', split = "train") 
+onedataset = load_dataset('emozilla/pg19', split = "train") 
 
 d = onedataset.train_test_split(test_size = 0.98) 
+# def encode_with_truncation(examples): 
+#     return tokenizer(examples["text"], padding = "max_length", max_length = 260, 
+#                      return_attention_mask = True, return_tensors = "pt", truncation = True) 
+
 def encode_with_truncation(examples): 
-    return tokenizer(examples["text"], padding = "max_length", max_length = 260, 
-                     return_attention_mask = True, return_tensors = "pt", truncation = True) 
+    tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
+                     return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                     add_special_tokens = True) 
+    newdictionary = {} 
+    newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
+    newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
+    return newdictionary 
+
 train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 8) 
 test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 8) 
 
