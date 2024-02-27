@@ -866,8 +866,8 @@ for tokenizer in tokenizers:
     else: 
         tokenizer.pad_token = tokenizer.eos_token 
         print("We now use eos_token as pad token") 
-    tokenizer.padding_side = "left" 
-    # tokenizer.padding_side = "right" 
+    # tokenizer.padding_side = "left" 
+    tokenizer.padding_side = "right" 
 
 kernel_size = args.kernel_size 
 # datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
@@ -905,7 +905,9 @@ else:
 
 d = onedataset.train_test_split(test_size = 0.98) 
 def encode_with_truncation(examples): 
-    return tokenizer(examples["text"], padding = "max_length", max_length = 260, 
+    # return tokenizer(examples["text"], padding = "max_length", max_length = 260, 
+                    #  return_attention_mask = True, return_tensors = "pt", truncation = True) 
+    return tokenizer(examples["text"], padding = "max_length", max_length = 204, 
                      return_attention_mask = True, return_tensors = "pt", truncation = True) 
 
 # def encode_with_truncation(examples): 
