@@ -905,10 +905,10 @@ else:
 
 d = onedataset.train_test_split(test_size = 0.98) 
 def encode_with_truncation(examples): 
-    # return tokenizer(examples["text"], padding = "max_length", max_length = 260, 
-                    #  return_attention_mask = True, return_tensors = "pt", truncation = True) 
-    return tokenizer(examples["text"], padding = "max_length", max_length = 204, 
+    return tokenizer(examples["text"], padding = "max_length", max_length = 260, 
                      return_attention_mask = True, return_tensors = "pt", truncation = True) 
+    # return tokenizer(examples["text"], padding = "max_length", max_length = 204, 
+    #                  return_attention_mask = True, return_tensors = "pt", truncation = True) 
 
 # def encode_with_truncation(examples): 
 #     tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
