@@ -917,11 +917,11 @@ def encode_with_truncation(examples):
 #     newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
 #     return newdictionary 
 
-# train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 8) 
-# test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 8) 
+train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 8) 
+test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 8) 
 
-train_dataset = d["train"].map(encode_with_truncation, num_proc = 8) 
-test_dataset = d["test"].map(encode_with_truncation, num_proc = 8) 
+# train_dataset = d["train"].map(encode_with_truncation, num_proc = 8) 
+# test_dataset = d["test"].map(encode_with_truncation, num_proc = 8) 
 
 train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
