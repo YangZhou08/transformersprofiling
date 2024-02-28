@@ -3061,6 +3061,7 @@ class LlamaWeirdLarge(LlamaPreTrainedModel):
         elif self.compression_scheme == "group_compress": 
             print("using group_compress") 
             hidden_states = self.avgpool(hidden_states) 
+            hidden_states = hidden_states[:, 1 :, :] 
         else: 
             raise ValueError("compression_scheme not recognized") 
         
