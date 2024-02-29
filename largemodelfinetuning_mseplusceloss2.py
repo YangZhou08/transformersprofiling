@@ -987,7 +987,7 @@ elif args.large_model == "tinyllama":
             elif args.group_compress: 
                 print(colored("group compress", "green")) 
                 large_model = LlamaWeirdLargeTest.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
-                large_model.set_hidden_states_compression_scheme("group_compress") 
+                # large_model.set_hidden_states_compression_scheme("group_compress") 
             else: 
                 raise ValueError("no compression scheme specified") 
         else: 
