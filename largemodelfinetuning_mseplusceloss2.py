@@ -336,7 +336,7 @@ class CustomTrainer(Trainer):
                 original_attention_mask = original_attention_mask, 
                 labels = label2, 
             ) 
-        elif isinstance(self.model, LlamaWeirdLarge): 
+        elif isinstance(self.model, LlamaWeirdLarge) or isinstance(self.model, LlamaWeirdLargeTest): 
             outputs = model(
                 large_input_ids = large_input_ids, 
                 small_input_ids = small_input_ids, 
