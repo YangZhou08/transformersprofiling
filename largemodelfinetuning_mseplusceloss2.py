@@ -1085,6 +1085,8 @@ for name, param in large_model.named_parameters():
                     param_group2.append(param) 
                 else: 
                     param_group.append(param) 
+        else: 
+            param.requires_grad = False 
 
 if not args.use_new_small_model_checkpoint: 
     small_model = large_model.addonsmallmodel 
