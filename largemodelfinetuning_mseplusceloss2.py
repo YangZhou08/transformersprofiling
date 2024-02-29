@@ -29,6 +29,7 @@ from src.transformers.models.llama.modeling_llama import LlamaCausalLMWeirdTwo
 from src.transformers.models.llama.modeling_llama import LlamaWeirdLarge 
 from src.transformers.models.llama.modeling_llama import LlamaWeirdLarge2 
 from src.transformers.models.llama.modeling_llama import LlamaWeirdLarge3 
+from src.transformers.models.llama.modeling_llama import LlamaWeirdLargeTest 
 import time 
 from torch.utils.data import random_split 
 from src.transformers import BitsAndBytesConfig 
@@ -985,7 +986,7 @@ elif args.large_model == "tinyllama":
                 large_model.set_hidden_states_compression_scheme("autoregressive_baseline") 
             elif args.group_compress: 
                 print(colored("group compress", "green")) 
-                large_model = LlamaWeirdLarge.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+                large_model = LlamaWeirdLargeTest.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
                 large_model.set_hidden_states_compression_scheme("group_compress") 
             else: 
                 raise ValueError("no compression scheme specified") 
