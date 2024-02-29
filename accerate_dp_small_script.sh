@@ -1,2 +1,2 @@
-accelerate launch --main_process_port 29503 --num_processes 2 --num_machines 1 weird_training_ddpstep2.py --experiment_setting setting0 --kernel_size 7 --model_name tinyllama --finetune_checkpoint YangZhoumill/llama-160m_deciphering_tinyllama_setting3_bfafdfa_hf 
+accelerate launch --main_process_port 29503 --num_processes 2 --num_machines 1 weird_training_ddpstep2.py --experiment_setting setting0 --kernel_size 7 --model_name tinyllama --finetune_checkpoint YangZhoumill/llama-160m_deciphering_tinyllama_setting3_bfafdfa_hf --group1lr 5e-5 --group2lr 5e-5 
 # accelerate launch --main_process_port 29502 --num_processes 2 --num_machines 1 weird_training_ddpstep.py --experiment_setting setting0 --kernel_size 7 --model_name tinyllama --use_plain_model 
