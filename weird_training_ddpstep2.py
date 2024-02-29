@@ -1263,7 +1263,7 @@ if (not args.use_plain_model or args.resume_from_checkpoint is not None) and not
     # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
 elif args.finetune_checkpoint: 
     print(colored("we use finetune model", "cyan")) 
-    small_model = SimpleSmallModel.from_pretrained(args.finetune_checkpoint).to(torch_device) 
+    small_model = SimpleSmallModel.from_pretrained(args.finetune_checkpoint, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 2048).to(torch_device) 
     small_model.train() 
 elif args.use_plain_model and not args.use_past: 
     print(colored("we use plain model", "cyan")) 
