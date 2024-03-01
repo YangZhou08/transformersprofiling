@@ -307,12 +307,15 @@ class CustomTrainer(Trainer):
         small_input_ids = inputs["input_ids"] # (batch_size, 203) 
         attention_mask = inputs["attention_mask"] 
         # attention_mask = inputs["attention_mask_chunk"] 
-        if isinstance(self.model, LlamaWeirdLarge3) or isinstance(self.model, LlamaWeirdLargeTest): 
+        if isinstance(self.model, LlamaWeirdLarge3): 
             condensed_embeds_labels = inputs["condensed_embeds"] # (batch_size, 28, 3200) 
             condensed_embeds_labels = condensed_embeds_labels.to(self.model.small_model_dtype) 
             # attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 1), dtype = torch.long).to(large_input_ids.device) 
             # attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 2), dtype = torch.long).to(large_input_ids.device) # sequence length is 204, one bos, 29 more tokens, so 30 in total, we have 28 condensed tokens 
             attention_mask = torch.ones((large_input_ids.shape[0], (large_input_ids.shape[1] - 1) // self.n + 1), dtype = torch.long).to(large_input_ids.device) 
+        elif isinstance(self.model, LlamaWeirdLargeTest): 
+            condensed_embeds_labels = inputs["condensed_embeds"] # (batch_size, 28, 3200) 
+            condensed_embeds_labels = condensed_embeds_labels.to(self.model.small_model_dtype) 
         original_attention_mask = inputs["attention_mask"] # (batch_size, 203) 
         label2 = inputs["labels"] # (batch_size, 203) 
         print("shape of large_input_ids {} shape of small_input_ids {}".format(large_input_ids.shape, small_input_ids.shape)) 
