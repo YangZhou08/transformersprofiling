@@ -3595,6 +3595,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         hidden_states = self.avgpool(hidden_states) 
         print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
         hidden_states = hidden_states[:, 1 :, :] 
+        print("some hidden states numbers: ", hidden_states.view(-1)[: 100]) 
         # hidden_states = hidden_states[:, -28 :, :] 
         
         mse_loss = torch.tensor(0) 
