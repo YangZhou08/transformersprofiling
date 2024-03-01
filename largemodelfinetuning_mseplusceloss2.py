@@ -996,7 +996,9 @@ elif args.large_model == "tinyllama":
     large_model.set_msece_loss(args.use_mse_loss, args.ce_loss_only) 
     if args.use_new_small_model_checkpoint: 
         print(colored("using new small model checkpoint", "yellow")) 
-        large_model.set_addonsmallmodel(small_model) 
+        # large_model.set_addonsmallmodel(small_model) 
+        small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
+        large_model.set_addonsmallmodel(small_state_dict_for_model) 
     if args.finetuned_small_model_checkpoint is not None: 
         if "setting0" in args.finetuned_small_model_checkpoint: 
             large_model.set_inference_setting("setting0") 
