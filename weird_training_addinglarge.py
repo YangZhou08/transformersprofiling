@@ -27,6 +27,7 @@ from src.transformers.models.llama.modeling_llama import LlamaForCausalLM, Simpl
 from src.transformers.models.llama.modeling_llama import LlamaCausalLMWeirdTwo 
 from src.transformers.models.llama.modeling_llama import LlamaWeirdLarge3 
 from src.transformers.models.llama.modeling_llama import SimpleSmallModel2 
+from src.transformers.models.llama.modeling_llama import LlamaWeirdLargeTest 
 from src.transformers.modeling_utils import PreTrainedModel, load_sharded_checkpoint, unwrap_model 
 import time 
 from torch.utils.data import random_split 
@@ -230,6 +231,7 @@ parser.add_argument("--model_name", type = str, default = "openllama3b")
 parser.add_argument("--resume_from_checkpoint", type = str, default = None) 
 parser.add_argument("--use_past", action = "store_true") 
 parser.add_argument("--finetune_checkpoint", type = str, default = None) 
+parser.add_argument("--use_large_model", action = "store_true") 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
@@ -732,6 +734,31 @@ class CustomTrainer(Trainer):
                 experiment_setting = self.experiment_setting, 
                 # eval_model = self.eval_mode, 
                 eval_mode = self.eval_mode, 
+            ) 
+        elif isinstance(model, LlamaWeirdLargeTest): 
+            if self.input_condensed: 
+                condensed_embeds = self.naive_grouping(input_ids[:, 64:]).to(self.dtype) # condensed_embeds shape is (28, d_model) 
+            else: 
+                condensed_embeds = inputs["condensed_embeds"].to(self.dtype) 
+            print(colored("the shape of condensed_embeds is {}".format(condensed_embeds.shape), "yellow")) 
+            batch_size, seq_len = attention_mask.shape 
+            addedon_length = condensed_embeds.shape[1] 
+            # print("get the input sentence: {}".format(tokenizer.decode(input_ids[0]))) 
+            original_attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
+            if self.accelerator.is_main_process: 
+                print("printing out the experiment_setting: {} eval_mode: {}".format(self.experiment_setting, self.eval_mode)) 
+            outputs = model(
+                large_input_ids = input_ids, 
+                small_input_ids = input_ids, 
+                attention_mask = attention_mask, 
+                original_attention_mask = original_attention_mask, 
+                labels = label2, 
+                condensed_embed_labels = condensed_embeds, 
+                output_hidden_states = True, 
+                output_attentions = True, 
+                return_dict = True, 
+                # condensed_fashion = "ground_truth", 
+                iteration_count = self.iteration_count, 
             ) 
         else: 
             outputs = model(
@@ -1256,7 +1283,7 @@ if (not args.use_plain_model or args.resume_from_checkpoint is not None) and not
     except RuntimeError as r: 
         print(colored(r, "yellow")) 
 
-    small_model = small_model.to(torch_device) 
+    small_model = small_model.to(torch_device).to(torch.bfloat16) 
     # small_model = small_model.to(torch.bfloat16).to(torch_device) 
     small_model.train() 
 
@@ -1276,6 +1303,22 @@ elif args.use_plain_model and not args.use_past:
     small_model = LlamaCausalLMWeirdTwo.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
     # small_model = LlamaCausalLMWeirdTwo.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
     small_model.train() 
+elif args.use_large_model: 
+    print(colored("we use large model", "cyan")) 
+    # set up a large model that supports the condensed token inputs 
+    large_model = LlamaWeirdLargeTest.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
+    large_model.set_msece_loss(use_mse_loss = False, use_ce_loss = True) 
+    # loading in the small model inside the larger one properly 
+    small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
+    large_model.set_addonsmallmodel_statedict(small_state_dict_for_model) 
+    large_model.set_inference_setting(args.experiment_setting) 
+    large_model.set_walpha(args.walpha) 
+    large_model.set_slidingwindowlength(args.kernel_size, addonmodel_start = 64) 
+    large_model.set_cosinesimilarity(False) 
+    large_model.set_criticalpath(hostname = hostname) 
+    large_model.train() 
+    large_model = large_model.to(torch_device).to(torch.bfloat16) 
+    small_model = large_model.addonsmallmodel 
 elif args.use_past: 
     print(colored("SimpleSmallModel with past", "cyan")) 
     small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
@@ -1356,9 +1399,9 @@ training_args = TrainingArguments(
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size = 32,  # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size = 64,  # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
-    per_device_eval_batch_size=32,  # evaluation batch size
+    per_device_eval_batch_size=64,  # evaluation batch size
     # logging_steps=1, 
     logging_steps = 500,            # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
@@ -1420,7 +1463,7 @@ def compute_metrics(p):
     return output 
 
 trainer = CustomTrainer( 
-    model = small_model, 
+    model = small_model if not args.use_large_model else large_model, 
     args = training_args, 
     train_dataset = train_set, 
     eval_dataset = test_set, 
