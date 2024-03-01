@@ -46,6 +46,7 @@ parser.add_argument("--model_name", type = str, default = "openllama3b")
 parser.add_argument("--topk", type = int, default = None) 
 parser.add_argument("--batch_size", type = int, default = 64) 
 parser.add_argument("--debug", action = "store_true") 
+parser.add_argument("--using_first_element", action = "store_true") 
 
 args = parser.parse_args() 
 
@@ -122,8 +123,8 @@ class CustomTrainer(Trainer):
     
     def use_first_element(self, listoflasthiddenstates, kernel_size = 4): 
         output_vectors = [] 
-        shape = listoflasthiddenstates[0].shape 
-        device = listoflasthiddenstates[0].device 
+        # shape = listoflasthiddenstates[0].shape 
+        # device = listoflasthiddenstates[0].device 
         for i in range(len(listoflasthiddenstates)): 
             if i % kernel_size == 0: 
                 output_vectors.append(listoflasthiddenstates[i]) 
@@ -322,11 +323,10 @@ for step, inputs in enumerate(train_dataloader):
     # if step > 1: 
     
     list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
-    if args.debug: 
-        token_hidden_states = large_outputs.hidden_states[1] 
-        print(token_hidden_states[-1][:, 0, :] == token_hidden_states[-1][:, -1, :]) 
-    exit(0) 
-    downsampled_vectors = trainer.downsample_vectors(list_of_last_hidden_states, kernel_size = kernel_size) 
+    if not args.use_first_element: 
+        downsampled_vectors = trainer.downsample_vectors(list_of_last_hidden_states, kernel_size = kernel_size) 
+    else: 
+        downsampled_vectors = trainer.use_first_element(list_of_last_hidden_states, kernel_size = kernel_size) 
     # break 
     if step % 100 == 0 and args.path_d == 0: 
         print("length of last hidden states list is {} and the shape of element is {}".format(len(list_of_last_hidden_states), list_of_last_hidden_states[0].shape)) 
