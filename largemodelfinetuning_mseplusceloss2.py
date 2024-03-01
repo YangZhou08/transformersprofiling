@@ -345,7 +345,7 @@ class CustomTrainer(Trainer):
                 output_hidden_states = True, 
                 output_attentions = True, 
                 return_dict = True, 
-                condensed_embed_labels = None, 
+                # condensed_embed_labels = None, 
                 original_attention_mask = original_attention_mask, 
                 labels = label2, 
                 condensed_embed_labels = condensed_embeds_labels, 
