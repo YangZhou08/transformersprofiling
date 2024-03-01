@@ -1200,20 +1200,29 @@ for name, param in small_model.named_parameters():
     else: 
         print(colored("small model parameters {}".format(name), "blue")) 
         param.requires_grad = True 
-        param_group.append(param) 
+        if "embed_projection" in name: 
+            param_group2.append(param) 
+        else: 
+            param_group.append(param) 
 print("length of param_group {}".format(len(param_group))) 
+print("length of param_group2 {}".format(len(param_group2))) 
 if args.embedding_reinitialization_type is not None: 
     print("length of param_group2 {}".format(len(param_group2))) 
 
-if args.embedding_reinitialization_type is None: 
-    custom_optimizer = torch.optim.AdamW(param_group, lr = args.lr) 
-    # custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-5) 
-    # custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-4) 
-else: 
-    custom_optimizer = torch.optim.AdamW([
-        {"params": param_group, "lr": args.lr}, 
-        {"params": param_group2, "lr": args.lr * 10}
-    ]) 
+# if args.embedding_reinitialization_type is None: 
+#     custom_optimizer = torch.optim.AdamW(param_group, lr = args.lr) 
+#     # custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-5) 
+#     # custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-4) 
+# else: 
+#     custom_optimizer = torch.optim.AdamW([
+#         {"params": param_group, "lr": args.lr}, 
+#         {"params": param_group2, "lr": args.lr * 10}
+#     ]) 
+    
+custom_optimizer = torch.optim.AdamW([
+    {"params": param_group, "lr": args.lr}, 
+    {"params": param_group2, "lr": args.lr * 10}
+]) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
