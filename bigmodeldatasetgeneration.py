@@ -88,7 +88,7 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # interest_idx_file = [1, 2, 3, 4, 5] 
 interest_idx_file = [2 * args.path_d + i for i in range(2)] 
 # d_files = ["c4_file{}.json".format(i) for i in interest_idx_file] 
-d_files = ["c4_file{}.json".format(i) for i in range(2)] 
+d_files = ["c4_file{}.json".format(i) for i in range(1, 2)] 
 print(colored("path_d: {}, the processing files are {}".format(args.path_d, d_files), "yellow")) 
 print(colored("path_d: {}, Using model name {} for synthesized data".format(args.path_d, model_name), "yellow")) 
 print(colored("path_d: {}, Using topk {} and debug is {}".format(args.path_d, args.topk, args.debug), "yellow")) 
@@ -324,7 +324,8 @@ for step, inputs in enumerate(train_dataloader):
     list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
     if args.debug: 
         token_hidden_states = large_outputs.hidden_states[0] 
-        
+        print(type(token_hidden_states)) 
+    exit(0) 
     downsampled_vectors = trainer.downsample_vectors(list_of_last_hidden_states, kernel_size = kernel_size) 
     # break 
     if step % 100 == 0 and args.path_d == 0: 
