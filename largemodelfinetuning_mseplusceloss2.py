@@ -1092,8 +1092,7 @@ for name, param in large_model.named_parameters():
         else: 
             param.requires_grad = False 
 
-if not args.use_new_small_model_checkpoint: 
-    small_model = large_model.addonsmallmodel 
+small_model = large_model.addonsmallmodel 
 
 for name, param in small_model.named_parameters(): 
     # print(colored("small model parameters {}".format(name), "yellow")) 
