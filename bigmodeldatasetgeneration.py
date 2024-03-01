@@ -273,6 +273,9 @@ trainer = CustomTrainer(
     data_collator = data_collator, 
 ) 
 
+if args.use_first_element: 
+    synthesized_dir_path = synthesized_dir_path[: -1] + "_first_element/" 
+    synthesized_data_path = synthesized_dir_path + "tensor_dir/" 
 synthesized_data_path = synthesized_data_path[: -1] + "_kernel_{}_{}/".format(args.kernel_size, args.path_d) 
 json_file_name = "c4synthesized_file1_kernel{}_{}.json".format(args.kernel_size, args.path_d) 
 
