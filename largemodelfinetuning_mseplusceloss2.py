@@ -307,7 +307,7 @@ class CustomTrainer(Trainer):
         small_input_ids = inputs["input_ids"] # (batch_size, 203) 
         attention_mask = inputs["attention_mask"] 
         # attention_mask = inputs["attention_mask_chunk"] 
-        if isinstance(self.model, LlamaWeirdLarge3): 
+        if isinstance(self.model, LlamaWeirdLarge3) or isinstance(self.model, LlamaWeirdLargeTest): 
             condensed_embeds_labels = inputs["condensed_embeds"] # (batch_size, 28, 3200) 
             condensed_embeds_labels = condensed_embeds_labels.to(self.model.small_model_dtype) 
             # attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 1), dtype = torch.long).to(large_input_ids.device) 
@@ -348,6 +348,7 @@ class CustomTrainer(Trainer):
                 condensed_embed_labels = None, 
                 original_attention_mask = original_attention_mask, 
                 labels = label2, 
+                condensed_embed_labels = condensed_embeds_labels, 
             ) 
         # Save past state if it exists
         # TODO: this needs to be fixed and made cleaner later.
@@ -871,7 +872,8 @@ for tokenizer in tokenizers:
 
 kernel_size = args.kernel_size 
 # datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
-# datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
+datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
+train_dataset, test_dataset = datasetnew.split(0.98) 
 # the max_length assignment is subject to change 
 max_length_lookup = {2 : 260, 3 : 259, 4 : 260, 5 : 259, 6 : 262, 7 : 260, 8 : 264} 
 # datasetnew = CustomDataset(max_length = max_length_lookup[kernel_size], data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64) 
@@ -893,20 +895,20 @@ else:
         topk = None 
         dfiles.append(dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
 
-if not args.debug: 
-    onedataset = load_dataset('json', data_files = dfiles, split = "train") 
-else: 
-    onedataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
+# if not args.debug: 
+#     onedataset = load_dataset('json', data_files = dfiles, split = "train") 
+# else: 
+#     onedataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
 
-d = onedataset.train_test_split(test_size = 0.98) 
-def encode_with_truncation(examples): 
-    return tokenizer(examples["text"], padding = "max_length", max_length = 260, 
-                     return_attention_mask = True, return_tensors = "pt", truncation = True) 
-train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 8) 
-test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 8) 
+# d = onedataset.train_test_split(test_size = 0.98) 
+# def encode_with_truncation(examples): 
+    # return tokenizer(examples["text"], padding = "max_length", max_length = 260, 
+                    #  return_attention_mask = True, return_tensors = "pt", truncation = True) 
+# train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 8) 
+# test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 8) 
 
-train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
-test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+# train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+# test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 
 # if not args.use_pretrained_small_model: 
 #     train_set, test_set = datasetnew.split(0.98) 
@@ -1010,6 +1012,7 @@ elif args.large_model == "tinyllama":
         large_model.set_inference_setting(args.experiment_setting) 
     large_model.set_walpha(args.alpha) 
     large_model.set_slidingwindowlength(args.kernel_size, addonmodel_start = 64) 
+    # large_model.set_slidingwindowlength(args.kernel_size) 
     large_model.set_cosinesimilarity(args.cosine_similarity) 
     if args.embedding_reinitialization_type is not None: 
         print(colored(args.embedding_reinitialization_type, "red")) 
