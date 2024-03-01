@@ -321,8 +321,8 @@ class CustomTrainer(Trainer):
         # addedon_length = (seq_len - 8) // self.n 
         addedon_length = (seq_len - self.n - 1) // self.n 
         # addedon_length = 28 
-        # original_attention_mask = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
-        original_attention_mask = torch.cat((torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device), original_attention_mask), dim = 1) 
+        original_attention_mask = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
+        # original_attention_mask = torch.cat((torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device), original_attention_mask), dim = 1) 
         
         if isinstance(self.model, LlamaWeirdLarge3): 
             outputs = model(
@@ -866,8 +866,8 @@ for tokenizer in tokenizers:
     else: 
         tokenizer.pad_token = tokenizer.eos_token 
         print("We now use eos_token as pad token") 
-    # tokenizer.padding_side = "left" 
-    tokenizer.padding_side = "right" 
+    tokenizer.padding_side = "left" 
+    # tokenizer.padding_side = "right" 
 
 kernel_size = args.kernel_size 
 # datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
