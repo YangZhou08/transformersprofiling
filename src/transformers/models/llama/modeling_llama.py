@@ -3632,30 +3632,35 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         # interleave the hidden_states and the input_ids 
         # assert hidden_states.shape[1] == small_input_ids.shape[1] // 7 - 1 
         print("expected {}".format(small_input_ids.shape[1] // self.sliding_window_length - 1)) 
+        print("small_input_ids: {}".format(small_input_ids[0])) 
         assert hidden_states.shape[1] == (small_input_ids.shape[1] - self.addonmodel_start) // self.sliding_window_length 
         print("condensed_embed_labels shape {} dtype {}".format(condensed_embed_labels.shape, condensed_embed_labels.dtype) if condensed_embed_labels is not None else "condensed_embed_labels is None") 
         addonmodeloutput = self.addonsmallmodel( 
             # input_ids = input_ids, 
             input_ids = small_input_ids, 
             attention_mask = original_attention_mask, 
-            position_ids = None, 
+            # position_ids = None, 
             past_key_values = None, 
             # condensed_embeds = hidden_states, 
             condensed_embeds = condensed_embed_labels, 
-            labels = None, 
-            use_cache = None, 
+            # labels = None, 
+            labels = labels, 
+            # use_cache = None, 
             output_attentions = True, 
             output_hidden_states = None, 
             return_dict = True, 
             start_idx = self.addonmodel_start, # NOTE this is very important 
             eval_mode = False, 
             iteration_count = 1, 
-            condensed_fashion = "projection_mode", 
+            # condensed_fashion = "projection_mode", 
             # experiment_setting = "setting3", 
             experiment_setting = self.inference_setting, 
         ) 
         
-        logits = addonmodeloutput.logits 
+        # logits = addonmodeloutput.logits 
+        loss = addonmodeloutput["loss"] 
+        logits = addonmodeloutput["logits"] 
+        ce_loss = loss 
         
         '''
         if self.config.pretraining_tp > 1:
@@ -3666,7 +3671,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             logits = self.lm_head(hidden_states)
         logits = logits.float()
         ''' 
-        
+        ''' 
         # seq_length = input_ids.shape[1] + hidden_states.shape[1] 
         seq_length = small_input_ids.shape[1] + hidden_states.shape[1] 
         assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
@@ -3711,6 +3716,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         else: 
             print(colored("mse_loss only", "red")) 
             loss = mse_loss 
+        ''' 
 
         if not return_dict:
             output = (logits,) + outputs[1:]
