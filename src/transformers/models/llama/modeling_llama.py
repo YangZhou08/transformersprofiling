@@ -3581,7 +3581,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         ) 
 
         hidden_states = outputs[0] # we don't need the lm_head 
-        print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
+        # print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
         if self.small_model_dtype == torch.float32: 
             hidden_states = hidden_states.to(torch.float32) 
         elif self.small_model_dtype == torch.bfloat16: 
@@ -3593,8 +3593,9 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         selected_seq_indices = [i * self.sliding_window_length for i in range(1, (seq_len - 1) // self.sliding_window_length)] 
         print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
         hidden_states = self.avgpool(hidden_states) 
-        # hidden_states = hidden_states[:, 1 :, :] 
-        hidden_states = hidden_states[:, -28 :, :] 
+        print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
+        hidden_states = hidden_states[:, 1 :, :] 
+        # hidden_states = hidden_states[:, -28 :, :] 
         
         mse_loss = torch.tensor(0) 
         cossim_loss = torch.tensor(0) 
