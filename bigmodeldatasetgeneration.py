@@ -119,6 +119,15 @@ class CustomTrainer(Trainer):
             else: 
                 sum += listoflasthiddenstates[i] 
         return downsampled_vectors 
+    
+    def use_first_element(self, listoflasthiddenstates, kernel_size = 4): 
+        output_vectors = [] 
+        shape = listoflasthiddenstates[0].shape 
+        device = listoflasthiddenstates[0].device 
+        for i in range(len(listoflasthiddenstates)): 
+            if i % kernel_size == 0: 
+                output_vectors.append(listoflasthiddenstates[i]) 
+        return output_vectors 
 
     def compute_loss(self, model, inputs, return_outputs = False): 
         torch.cuda.synchronize() 
@@ -303,16 +312,19 @@ for step, inputs in enumerate(train_dataloader):
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
     # tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step)) 
-    if args.debug: 
-        for i in range(input_ids.shape[0]): 
-            example = large_outputs.sequences[i] 
-            print(tokenizer.decode(example[: max_length])) 
-            print(colored(tokenizer.decode(example[max_length : ]), "blue")) 
-            print() 
-        exit(0) 
+    # if args.debug: 
+    #     for i in range(input_ids.shape[0]): 
+    #         example = large_outputs.sequences[i] 
+    #         print(tokenizer.decode(example[: max_length])) 
+    #         print(colored(tokenizer.decode(example[max_length : ]), "blue")) 
+    #         print() 
+    #     exit(0) 
     # if step > 1: 
     
     list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
+    if args.debug: 
+        token_hidden_states = large_outputs.hidden_states[0] 
+        
     downsampled_vectors = trainer.downsample_vectors(list_of_last_hidden_states, kernel_size = kernel_size) 
     # break 
     if step % 100 == 0 and args.path_d == 0: 
