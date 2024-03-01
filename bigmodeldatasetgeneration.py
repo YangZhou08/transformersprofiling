@@ -324,7 +324,7 @@ for step, inputs in enumerate(train_dataloader):
     list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
     if args.debug: 
         token_hidden_states = large_outputs.hidden_states[1] 
-        print(token_hidden_states[-1].shape) 
+        print(token_hidden_states[-1][:, 0, :] == token_hidden_states[-1][:, -1, :]) 
     exit(0) 
     downsampled_vectors = trainer.downsample_vectors(list_of_last_hidden_states, kernel_size = kernel_size) 
     # break 
