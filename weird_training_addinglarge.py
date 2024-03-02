@@ -881,6 +881,7 @@ class CustomTrainer(Trainer):
             logits = logits[0] 
             # print(l2dist) 
             logits = logits[:, :-1, :] 
+            print("the shape of logits is {}".format(logits.shape)) 
         else: 
             logits = logits[:, :-1, :] 
             # input_attention_mask = input_attention_mask[:, :-1] 
