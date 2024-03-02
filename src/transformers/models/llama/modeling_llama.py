@@ -3590,9 +3590,13 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         # intermediate_l2_dist = self.l2distancecompute(inputs_embeds, hidden_states) 
         seq_len = hidden_states.shape[1] 
         
+        # selected_seq_indices = [i * self.sliding_window_length for i in range(1, (seq_len - 1) // self.sliding_window_length)] 
+        # print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
+        # hidden_states = self.avgpool(hidden_states) 
         selected_seq_indices = [i * self.sliding_window_length for i in range(1, (seq_len - 1) // self.sliding_window_length)] 
         print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
-        hidden_states = self.avgpool(hidden_states) 
+        print("using autoregressive_baseline") 
+        hidden_states = hidden_states[:, selected_seq_indices, :] 
         print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
         # hidden_states = hidden_states[:, 1 :, :] 
         # print("some hidden states numbers: ", hidden_states.reshape(-1)[: 100]) 
