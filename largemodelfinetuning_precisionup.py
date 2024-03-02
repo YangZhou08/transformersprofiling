@@ -960,8 +960,8 @@ for tokenizer in tokenizers:
     else: 
         tokenizer.pad_token = tokenizer.eos_token 
         print("We now use eos_token as pad token") 
-    tokenizer.padding_side = "left" 
-    # tokenizer.padding_side = "right" 
+    # tokenizer.padding_side = "left" 
+    tokenizer.padding_side = "right" 
 
 kernel_size = args.kernel_size 
 # datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
