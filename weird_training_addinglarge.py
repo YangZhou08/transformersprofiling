@@ -885,8 +885,8 @@ class CustomTrainer(Trainer):
         else: 
             logits = logits[:, :-1, :] 
             # input_attention_mask = input_attention_mask[:, :-1] 
-            input_attention_mask = input_attention_mask[:, 1:] 
-            labels = labels[:, 1:] 
+        input_attention_mask = input_attention_mask[:, 1:] 
+        labels = labels[:, 1:] 
         preds = torch.argmax(logits, dim = -1) 
         if self.accelerator.is_main_process and outside_step == 0: 
             print("*** evaluating at step {} ***".format(self.iteration_count)) 
