@@ -3602,9 +3602,9 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
         else: 
             hidden_states = self.avgpool(hidden_states) 
-        hidden_states = hidden_states[:, 1 :, :] 
+        # hidden_states = hidden_states[:, 1 :, :] 
         # print("some hidden states numbers: ", hidden_states.reshape(-1)[: 100]) 
-        # hidden_states = hidden_states[:, -28 :, :] 
+        hidden_states = hidden_states[:, -28 :, :] 
         
         mse_loss = torch.tensor(0) 
         cossim_loss = torch.tensor(0) 
@@ -3666,9 +3666,9 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         ) 
         
         logits = addonmodeloutput.logits 
-        # loss = addonmodeloutput["loss"] 
-        # logits = addonmodeloutput["logits"] 
-        # ce_loss = loss 
+        loss = addonmodeloutput["loss"] 
+        logits = addonmodeloutput["logits"] 
+        ce_loss = loss 
         
         '''
         if self.config.pretraining_tp > 1:
@@ -3679,6 +3679,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             logits = self.lm_head(hidden_states)
         logits = logits.float()
         ''' 
+        '''
         # seq_length = input_ids.shape[1] + hidden_states.shape[1] 
         seq_length = small_input_ids.shape[1] + hidden_states.shape[1] 
         assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
@@ -3723,6 +3724,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         else: 
             print(colored("mse_loss only", "red")) 
             loss = mse_loss 
+        ''' 
 
         if not return_dict:
             output = (logits,) + outputs[1:]
