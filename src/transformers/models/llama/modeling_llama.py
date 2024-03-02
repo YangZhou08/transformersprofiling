@@ -3535,6 +3535,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         return_dict: Optional[bool] = None, 
         original_attention_mask = None, 
         condensed_embed_labels = None, 
+        autoregressive_first_element = False, 
     ) -> Union[Tuple, CausalLMOutputWithPastLargeDistance2]: 
         r"""
         Args:
@@ -3592,12 +3593,15 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         
         # selected_seq_indices = [i * self.sliding_window_length for i in range(1, (seq_len - 1) // self.sliding_window_length)] 
         # print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
-        # hidden_states = self.avgpool(hidden_states) 
-        selected_seq_indices = [i * self.sliding_window_length for i in range(1, (seq_len - 1) // self.sliding_window_length)] 
-        print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
-        print("using autoregressive_baseline") 
-        hidden_states = hidden_states[:, selected_seq_indices, :] 
-        print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
+        hidden_states = self.avgpool(hidden_states) 
+        if autoregressive_first_element: 
+            selected_seq_indices = [i * self.sliding_window_length for i in range(1, (seq_len - 1) // self.sliding_window_length)] 
+            print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
+            print("using autoregressive_baseline") 
+            hidden_states = hidden_states[:, selected_seq_indices, :] 
+            print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
+        else: 
+            hidden_states = self.avgpool(hidden_states) 
         # hidden_states = hidden_states[:, 1 :, :] 
         # print("some hidden states numbers: ", hidden_states.reshape(-1)[: 100]) 
         hidden_states = hidden_states[:, -28 :, :] 

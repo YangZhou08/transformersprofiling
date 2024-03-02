@@ -1440,6 +1440,7 @@ training_args = TrainingArguments(
     save_total_limit=5,            # whether you don't have much space so you let only 3 model weights saved in the disk 
     # lr_scheduler_type = "cosine", 
     warmup_steps = 100, 
+    label_names = ["labels"], 
 ) 
 print(colored("resum_from_checkpoint is {}".format(args.resume_from_checkpoint), "red")) 
 weightmodelfirst = next(small_model.parameters()) 
