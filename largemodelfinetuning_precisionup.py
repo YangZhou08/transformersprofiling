@@ -322,8 +322,8 @@ class CustomTrainer(Trainer):
         
         batch_size, seq_len = original_attention_mask.shape 
         # addedon_length = (seq_len - 8) // self.n 
-        # addedon_length = (seq_len - self.n - 1) // self.n 
-        addedon_length = 28 
+        addedon_length = (seq_len - self.n - 1) // self.n 
+        # addedon_length = 28 
         original_attention_mask = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
         # original_attention_mask = torch.cat((torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device), original_attention_mask), dim = 1) 
         
@@ -1105,8 +1105,8 @@ elif args.large_model == "tinyllama":
     elif args.experiment_setting is not None: 
         large_model.set_inference_setting(args.experiment_setting) 
     large_model.set_walpha(args.alpha) 
-    large_model.set_slidingwindowlength(args.kernel_size, addonmodel_start = 64) 
-    # large_model.set_slidingwindowlength(args.kernel_size) 
+    # large_model.set_slidingwindowlength(args.kernel_size, addonmodel_start = 64) 
+    large_model.set_slidingwindowlength(args.kernel_size) 
     large_model.set_cosinesimilarity(args.cosine_similarity) 
     if args.embedding_reinitialization_type is not None: 
         print(colored(args.embedding_reinitialization_type, "red")) 
