@@ -169,6 +169,8 @@ if is_accelerate_available():
 
 import subprocess
 
+import inspect 
+
 def get_git_commit_hash():
     try:
         # Run the git command to get the current commit hash
@@ -437,7 +439,20 @@ class CustomTrainer(Trainer):
                 resume_from_checkpoint=resume_from_checkpoint,
                 trial=trial,
                 ignore_keys_for_eval=ignore_keys_for_eval,
-            )
+            ) 
+    
+    def _set_signature_columns_if_needed(self): 
+        if self._signature_columns is None:
+            # Inspect model forward signature to keep only the arguments it accepts.
+            signature = inspect.signature(self.model.forward)
+            self._signature_columns = list(signature.parameters.keys())
+            # Labels may be named label or label_ids, the default data collator handles that.
+            self._signature_columns += list(set(["label", "label_ids"] + self.label_names)) 
+        self._signature_columns += ["attention_mask_chunk"] 
+        self._signature_columns += ["condensed_embeds"] 
+        self._signature_columns += ["large_input_ids"] 
+        # self._signature_columns += ["small_input_ids"] 
+        self._signature_columns += ["input_ids"] 
     
     '''
     def _save_checkpoint(self, model, trial, metrics = None): 
