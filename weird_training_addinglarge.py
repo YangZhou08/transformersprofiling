@@ -235,6 +235,7 @@ parser.add_argument("--use_past", action = "store_true")
 parser.add_argument("--finetune_checkpoint", type = str, default = None) 
 parser.add_argument("--use_large_model", action = "store_true") 
 parser.add_argument("--autoregressive_first_element", action = "store_true") 
+parser.add_argument("--debug", action = "store_true") 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
@@ -870,12 +871,21 @@ class CustomTrainer(Trainer):
             outside_step, 
     ): 
 
-        from sklearn.metrics import accuracy_score, precision_recall_fscore_support
-
-        logits = logits[:, :-1, :] 
-        # input_attention_mask = input_attention_mask[:, :-1] 
-        input_attention_mask = input_attention_mask[:, 1:] 
-        labels = labels[:, 1:] 
+        from sklearn.metrics import accuracy_score, precision_recall_fscore_support 
+        model = self.model 
+        if isinstance(getattr(model, "module", model), LlamaWeirdLargeTest) or isinstance(model, LlamaWeirdLargeTest): 
+            l2dist = logits[1].reshape(-1) 
+            ce_loss = logits[2].reshape(-1) 
+            l2dist_input = logits[3].reshape(-1) 
+            cos_sim_input = logits[4].reshape(-1) 
+            logits = logits[0] 
+            # print(l2dist) 
+            logits = logits[:, :-1, :] 
+        else: 
+            logits = logits[:, :-1, :] 
+            # input_attention_mask = input_attention_mask[:, :-1] 
+            input_attention_mask = input_attention_mask[:, 1:] 
+            labels = labels[:, 1:] 
         preds = torch.argmax(logits, dim = -1) 
         if self.accelerator.is_main_process and outside_step == 0: 
             print("*** evaluating at step {} ***".format(self.iteration_count)) 
@@ -1429,11 +1439,12 @@ training_args = TrainingArguments(
     per_device_train_batch_size = 64,  # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=64,  # evaluation batch size
-    # logging_steps=1, 
-    logging_steps = 500,            # evaluate, log and save model checkpoints every 1000 step
+    logging_steps=1, 
+    # logging_steps = 500,            # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 500, 
+    # save_steps = 500, 
+    save_steps = 1, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     learning_rate=2e-4, 
