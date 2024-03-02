@@ -645,6 +645,7 @@ class CustomTrainer(Trainer):
         input_ids = inputs["input_ids"] 
         attention_mask = inputs["attention_mask"] 
         label2 = inputs["labels"] 
+        print("input condensed: {}".format(self.input_condensed)) 
         condensed_embeds = inputs["condensed_embeds"] 
         # print("the optimizer parameter group list 0 is {} learning rate is {}".format(len(self.optimizer.param_groups[0]['params']), self.optimizer.param_groups[0]['lr'])) 
         # print("the optimizer parameter group list 1 is {} learning rate is {}".format(len(self.optimizer.param_groups[1]['params']), self.optimizer.param_groups[1]['lr'])) 

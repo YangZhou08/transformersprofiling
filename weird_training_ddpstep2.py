@@ -1135,6 +1135,7 @@ class CustomDataset:
         item = self.dataset[idx] 
         try: 
             if not self.input_condensed: 
+                print("we are ")
                 tensor = torch.load(item["condensed_token_path"]) 
         except IOError as e: 
             print(colored("///IOError occured replacing with an empty tensor///", "red")) 
