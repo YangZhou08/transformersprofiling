@@ -735,7 +735,7 @@ class CustomTrainer(Trainer):
                 # eval_model = self.eval_mode, 
                 eval_mode = self.eval_mode, 
             ) 
-        elif isinstance(model, LlamaWeirdLargeTest): 
+        elif isinstance(getattr(model, "module", model), LlamaWeirdLargeTest) or isinstance(model, LlamaWeirdLargeTest): 
             if self.input_condensed: 
                 condensed_embeds = self.naive_grouping(input_ids[:, 64:]).to(self.dtype) # condensed_embeds shape is (28, d_model) 
             else: 
