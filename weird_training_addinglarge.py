@@ -234,6 +234,7 @@ parser.add_argument("--resume_from_checkpoint", type = str, default = None)
 parser.add_argument("--use_past", action = "store_true") 
 parser.add_argument("--finetune_checkpoint", type = str, default = None) 
 parser.add_argument("--use_large_model", action = "store_true") 
+parser.add_argument("--autoregressive_first_element", action = "store_true") 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
@@ -273,6 +274,7 @@ class CustomTrainer(Trainer):
             input_condensed = False, 
             sliding_window_length = 7, 
             use_past = False, 
+            autoregressive_first_element = False, 
             *args, 
             **kwargs, 
     ): 
@@ -293,6 +295,7 @@ class CustomTrainer(Trainer):
         self.text_eval = text_eval 
         self.sliding_window_length = sliding_window_length 
         self.use_past = use_past 
+        self.autoregressive_first_element = autoregressive_first_element 
         
         if self.args.resume_from_checkpoint is not None: 
             self.time_checkpoint = int(self.args.resume_from_checkpoint.split("-")[-1]) 
@@ -775,6 +778,7 @@ class CustomTrainer(Trainer):
                 output_attentions = True, 
                 return_dict = True, 
                 # condensed_fashion = "ground_truth", 
+                autoregressive_first_element = self.autoregressive_first_element, 
             ) 
         else: 
             outputs = model(
@@ -1507,6 +1511,7 @@ trainer = CustomTrainer(
     input_condensed = args.input_condensed, 
     sliding_window_length = args.kernel_size, 
     use_past = args.use_past, 
+    autoregressive_first_element = args.autoregressive_first_element, 
 ) 
 
 max_length = 128 
