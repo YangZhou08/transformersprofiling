@@ -315,7 +315,7 @@ class CustomTrainer(Trainer):
             attention_mask = torch.ones((large_input_ids.shape[0], (large_input_ids.shape[1] - 1) // self.n + 1), dtype = torch.long).to(large_input_ids.device) 
         elif isinstance(self.model, LlamaWeirdLargeTest): 
             condensed_embeds_labels = inputs["condensed_embeds"] # (batch_size, 28, 3200) 
-            # condensed_embeds_labels = condensed_embeds_labels.to(self.model.small_model_dtype) 
+            condensed_embeds_labels = condensed_embeds_labels.to(self.model.small_model_dtype) 
         original_attention_mask = inputs["attention_mask"] # (batch_size, 203) 
         label2 = inputs["labels"] # (batch_size, 203) 
         print("shape of large_input_ids {} shape of small_input_ids {}".format(large_input_ids.shape, small_input_ids.shape)) 
@@ -1035,7 +1035,7 @@ if args.use_new_small_model_checkpoint and not args.use_pretrained_small_model:
     small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
     print(colored("not using pretrained small model", "green")) 
     # small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 7, target_model_dim = large_dim) 
-    small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = args.kernel_size, target_model_dim = large_dim) 
+    small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = args.kernel_size, target_model_dim = large_dim).to(torch.bfloat16) 
 
     new_state_dict = {} 
 
@@ -1083,7 +1083,7 @@ elif args.large_model == "tinyllama":
                 large_model.set_hidden_states_compression_scheme("autoregressive_baseline") 
             elif args.group_compress: 
                 print(colored("group compress", "green")) 
-                large_model = LlamaWeirdLargeTest.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
+                large_model = LlamaWeirdLargeTest.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
                 # large_model.set_hidden_states_compression_scheme("group_compress") 
             else: 
                 raise ValueError("no compression scheme specified") 
