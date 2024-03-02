@@ -691,7 +691,7 @@ class CustomTrainer(Trainer):
         # exit(0) 
         
         return EvalLoopOutput(predictions=all_preds, label_ids=all_labels, metrics=metrics, num_samples=num_samples) 
-'''
+
 class CustomDataset: 
     # def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7): 
     def __init__(self, data_dir, large_tokenizer = None, small_tokenizer = None, max_length = 256, kernel_size = 7, topk = None, prompt_length = 64): 
@@ -855,96 +855,6 @@ class CustomDatasetSubset:
     def __getitem__(self, idx): 
         actual_idx = self.indices[idx] 
         return self.dataset.__getitem__(actual_idx) 
-''' 
-
-class CustomDataset: 
-    def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7, input_condensed = True): 
-        # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
-        self.synthesize_dir = data_dir 
-        # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json", split = "train") 
-        # self.dataset = load_dataset('json', data_files = [self.synthesize_dir + 'c4synthesized_file1.json', self.synthesize_dir + 'c4synthesized_file2.json'], split="train") 
-        dfiles = [] 
-        if kernel_size != 4: 
-            if hostname == "ada": 
-                for i in range(0, 2): 
-                    # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
-                    filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
-                    dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
-            else: 
-                filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
-                dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
-        else: 
-            filename = "c4synthesized_file1.json" 
-        self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
-        self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
-        self.kernel_size = kernel_size 
-        self.input_condensed = input_condensed 
-        # self.dataset = self.dataset["train"][0: 5120] 
-
-        self.tokenizer = tokenizer 
-        self.max_length = max_length 
-    
-    def __len__(self): 
-        return len(self.dataset) 
-    
-    def preprocess_dataset(self): 
-        def encode_with_truncation(examples): 
-            # return tokenizer(examples["text"], truncation = True, padding = "max_length", 
-                            #  max_length = max_length, return_special_tokens_mask = True) 
-            return tokenizer(examples["text"], padding = "max_length", max_length = self.max_length, 
-                            return_attention_mask = True, return_tensors = "pt", truncation = True, 
-                            add_special_tokens = True) 
-        
-        def loading_condensed_embeds(examples): 
-            # not used because it consumes too much memory 
-            return {"condensed_embeds": torch.load(examples["condensed_token_path"])} 
-        
-        self.dataset = self.dataset.map(encode_with_truncation, batched = True, num_proc = 4) 
-        # self.dataset = self.dataset.map(loading_condensed_embeds, batched = True, num_proc = 4) 
-        # self.dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
-        
-    
-    def __getitem__(self, idx): 
-        item = self.dataset[idx] 
-        try: 
-            if not self.input_condensed: 
-                tensor = torch.load(item["condensed_token_path"]) 
-        except IOError as e: 
-            print(colored("///IOError occured replacing with an empty tensor///", "red")) 
-            tensor = torch.zeros((28, 2560 if model_name == "shearedllama2_7b" else 3200), dtype = torch.float32) 
-        
-        if self.tokenizer is not None: 
-            encoded_text = self.tokenizer( 
-                item["text"], 
-                # add_special_tokens = False, 
-                add_special_tokens = True, 
-                padding = "max_length", 
-                # max_length = 64 + self.dict_kernel_maxlength[self.kernel_size], 
-                max_length = self.max_length, 
-                return_attention_mask = True, 
-                return_tensors = "pt", 
-                truncation = True, 
-            ) 
-            
-            item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension
-            item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
-        
-        if not self.input_condensed: 
-            item["condensed_embeds"] = tensor 
-        else: 
-            # turn this field into a placeholder 
-            item["condensed_embeds"] = torch.zeros((28, ))
-        # print(colored("the shape of condensed_embeds is {}".format(tensor.shape), "yellow")) 
-        # item["input_ids"] = torch.tensor(item["input_ids"]) 
-        # item["attention_mask"] = torch.tensor(item["attention_mask"]) 
-
-        return item 
-
-    def split(self, train_size): 
-        if isinstance(train_size, float): 
-            train_size = int(train_size * len(self)) 
-        eval_size = len(self) - train_size 
-        return random_split(self, [train_size, eval_size]) 
     
 # tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 # large_tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
@@ -966,8 +876,8 @@ for tokenizer in tokenizers:
 kernel_size = args.kernel_size 
 # datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
-datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = False) 
-train_dataset, test_dataset = datasetnew.split(0.98) 
+# datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = False) 
+# train_dataset, test_dataset = datasetnew.split(0.98) 
 # the max_length assignment is subject to change 
 max_length_lookup = {2 : 260, 3 : 259, 4 : 260, 5 : 259, 6 : 262, 7 : 260, 8 : 264} 
 # datasetnew = CustomDataset(max_length = max_length_lookup[kernel_size], data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64) 
@@ -989,20 +899,20 @@ else:
         topk = None 
         dfiles.append(dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
 
-# if not args.debug: 
-#     onedataset = load_dataset('json', data_files = dfiles, split = "train") 
-# else: 
-#     onedataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
+if not args.debug: 
+    onedataset = load_dataset('json', data_files = dfiles, split = "train") 
+else: 
+    onedataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
 
-# d = onedataset.train_test_split(test_size = 0.98) 
-# def encode_with_truncation(examples): 
-    # return tokenizer(examples["text"], padding = "max_length", max_length = 260, 
-                    #  return_attention_mask = True, return_tensors = "pt", truncation = True) 
-# train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 8) 
-# test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 8) 
+d = onedataset.train_test_split(test_size = 0.98) 
+def encode_with_truncation(examples): 
+    return tokenizer(examples["text"], padding = "max_length", max_length = 260, 
+                     return_attention_mask = True, return_tensors = "pt", truncation = True) 
+train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 8) 
+test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 8) 
 
-# train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
-# test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 
 # if not args.use_pretrained_small_model: 
 #     train_set, test_set = datasetnew.split(0.98) 
