@@ -1250,7 +1250,7 @@ train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.0
                                                  # 356k * 0.99 = 352k 356k * 0.01 = 3.6k 
                                                  # 5 * 356k = 1780000, 1780000 * 0.98 = 1744400, 1780000 * 0.02 = 35600 
 
-if (not args.use_plain_model or args.resume_from_checkpoint is not None) and not args.use_past and not args.finetune_checkpoint: 
+if (not args.use_plain_model or args.resume_from_checkpoint is not None) and not args.use_past and not args.finetune_checkpoint and not args.use_large_model: 
     print(colored("we use custom small", "cyan")) 
     # handling simplesmallmodel 
     # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
