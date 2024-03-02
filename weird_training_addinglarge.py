@@ -1379,7 +1379,7 @@ for k, v in small_model.named_parameters():
         pretraining_weights_group.append(v) 
 print(len(pretraining_weights_group), len(newly_initialized_group)) 
 
-if large_model is not None: 
+if args.use_large_model: 
     for k, v in large_model.named_parameters(): 
         if "addonsmallmodel" in k: 
             v.requires_grad = True 
