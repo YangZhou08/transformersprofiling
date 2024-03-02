@@ -1312,7 +1312,7 @@ elif args.use_large_model:
     small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
     large_model.set_addonsmallmodel_statedict(small_state_dict_for_model) 
     large_model.set_inference_setting(args.experiment_setting) 
-    large_model.set_walpha(args.walpha) 
+    large_model.set_walpha(0.5) 
     large_model.set_slidingwindowlength(args.kernel_size, addonmodel_start = 64) 
     large_model.set_cosinesimilarity(False) 
     large_model.set_criticalpath(hostname = hostname) 
