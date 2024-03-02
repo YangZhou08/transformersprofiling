@@ -1307,7 +1307,7 @@ elif args.use_large_model:
     print(colored("we use large model", "cyan")) 
     # set up a large model that supports the condensed token inputs 
     large_model = LlamaWeirdLargeTest.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
-    large_model.set_msece_loss(use_mse_loss = False, use_ce_loss = True) 
+    large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True) 
     # loading in the small model inside the larger one properly 
     small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
     large_model.set_addonsmallmodel_statedict(small_state_dict_for_model) 
