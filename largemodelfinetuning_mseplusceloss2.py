@@ -307,17 +307,15 @@ class CustomTrainer(Trainer):
         small_input_ids = inputs["input_ids"] # (batch_size, 203) 
         attention_mask = inputs["attention_mask"] 
         # attention_mask = inputs["attention_mask_chunk"] 
+        if "condensed_embeds" in inputs.keys(): 
+            condensed_embeds_labels = inputs["condensed_embeds"] # (batch_size, 28, 3200) 
+            condensed_embeds_labels = condensed_embeds_labels.to(self.model.small_model_dtype) 
+        else: 
+            condensed_embeds_labels = None 
         if isinstance(self.model, LlamaWeirdLarge3): 
-            if "condensed_embeds" in inputs.keys(): 
-                condensed_embeds_labels = inputs["condensed_embeds"] # (batch_size, 28, 3200) 
-                condensed_embeds_labels = condensed_embeds_labels.to(self.model.small_model_dtype) 
-            else: 
-                condensed_embeds_labels = None 
             # attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 1), dtype = torch.long).to(large_input_ids.device) 
             # attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 2), dtype = torch.long).to(large_input_ids.device) # sequence length is 204, one bos, 29 more tokens, so 30 in total, we have 28 condensed tokens 
             attention_mask = torch.ones((large_input_ids.shape[0], (large_input_ids.shape[1] - 1) // self.n + 1), dtype = torch.long).to(large_input_ids.device) 
-        # condensed_embeds_labels = inputs["condensed_embeds"] # (batch_size, 28, 3200) 
-        # condensed_embeds_labels = condensed_embeds_labels.to(self.model.small_model_dtype) 
         original_attention_mask = inputs["attention_mask"] # (batch_size, 203) 
         label2 = inputs["labels"] # (batch_size, 203) 
         print("shape of large_input_ids {} shape of small_input_ids {}".format(large_input_ids.shape, small_input_ids.shape)) 
@@ -353,7 +351,7 @@ class CustomTrainer(Trainer):
                 # condensed_embed_labels = None, 
                 original_attention_mask = original_attention_mask, 
                 labels = label2, 
-                # condensed_embed_labels = condensed_embeds_labels, 
+                condensed_embed_labels = condensed_embeds_labels, 
             ) 
         # Save past state if it exists
         # TODO: this needs to be fixed and made cleaner later.
@@ -412,7 +410,7 @@ class CustomTrainer(Trainer):
                 }) 
                 
         # if self.accelerator.is_main_process and self.iteration_count % 1000 == 0 and has_wandb: 
-        if self.accelerator.is_main_process and has_wandb and self.iteration_count % 500 == 0: 
+        if self.accelerator.is_main_process and has_wandb and self.iteration_count % 500 == 0 and not args.debug: 
             print(colored("generating images ... at iteration {}".format(self.iteration_count), "yellow")) 
             for layer in [0, 6, 11]: 
                 for head in [0, 6, 11]: 
@@ -877,9 +875,9 @@ for tokenizer in tokenizers:
 
 kernel_size = args.kernel_size 
 # datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
-datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
+# datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = False) 
-train_dataset, test_dataset = datasetnew.split(0.98) 
+# train_dataset, test_dataset = datasetnew.split(0.98) 
 # the max_length assignment is subject to change 
 max_length_lookup = {2 : 260, 3 : 259, 4 : 260, 5 : 259, 6 : 262, 7 : 260, 8 : 264} 
 # datasetnew = CustomDataset(max_length = max_length_lookup[kernel_size], data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64) 
@@ -901,20 +899,20 @@ else:
         topk = None 
         dfiles.append(dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
 
-# if not args.debug: 
-#     onedataset = load_dataset('json', data_files = dfiles, split = "train") 
-# else: 
-#     onedataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
+if not args.debug: 
+    onedataset = load_dataset('json', data_files = dfiles, split = "train") 
+else: 
+    onedataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
 
-# d = onedataset.train_test_split(test_size = 0.98) 
-# def encode_with_truncation(examples): 
-#     return tokenizer(examples["text"], padding = "max_length", max_length = 260, 
-#                      return_attention_mask = True, return_tensors = "pt", truncation = True) 
-# train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 8) 
-# test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 8) 
+d = onedataset.train_test_split(test_size = 0.98) 
+def encode_with_truncation(examples): 
+    return tokenizer(examples["text"], padding = "max_length", max_length = 260, 
+                     return_attention_mask = True, return_tensors = "pt", truncation = True) 
+train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 8) 
+test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 8) 
 
-# train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
-# test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 
 # if not args.use_pretrained_small_model: 
 #     train_set, test_set = datasetnew.split(0.98) 
@@ -947,7 +945,7 @@ if args.use_new_small_model_checkpoint and not args.use_pretrained_small_model:
     small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
     print(colored("not using pretrained small model", "green")) 
     # small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = 7, target_model_dim = large_dim) 
-    small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = args.kernel_size, target_model_dim = large_dim) 
+    small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = args.kernel_size, target_model_dim = large_dim).to(torch.bfloat16) 
 
     new_state_dict = {} 
 
@@ -967,7 +965,7 @@ if args.use_new_small_model_checkpoint and not args.use_pretrained_small_model:
     except RuntimeError as r: 
         print(colored(r, "yellow")) 
 
-    small_model = small_model.to(torch.bfloat16).to(torch_device) 
+    small_model = small_model.to(torch_device) 
     small_model.train() 
 elif args.use_pretrained_small_model: 
     print(colored("using pretrained small model", "red")) 
@@ -991,7 +989,7 @@ elif args.large_model == "tinyllama":
         elif args.autoregressive_baseline or args.group_compress: 
             if args.autoregressive_baseline: 
                 print(colored("autoregressive baseline", "green")) 
-                large_model = LlamaWeirdLarge.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+                large_model = LlamaWeirdLarge.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
                 large_model.set_hidden_states_compression_scheme("autoregressive_baseline") 
             elif args.group_compress: 
                 print(colored("group compress", "green")) 
@@ -1112,21 +1110,29 @@ for name, param in small_model.named_parameters():
     else: 
         print(colored("small model parameters {}".format(name), "blue")) 
         param.requires_grad = True 
-        if "embed_tokens" in name: 
+        if "embed_projection" in name: 
             param_group2.append(param) 
         else: 
             param_group.append(param) 
 print("length of param_group {}".format(len(param_group))) 
-if args.embedding_reinitialization_type is not None or len(param_group2) != 0: 
+print("length of param_group2 {}".format(len(param_group2))) 
+if args.embedding_reinitialization_type is not None: 
     print("length of param_group2 {}".format(len(param_group2))) 
 
-if len(param_group2) == 0: 
-    custom_optimizer = torch.optim.AdamW(param_group, lr = args.lr) 
-else: 
-    custom_optimizer = torch.optim.AdamW([
-        {"params": param_group, "lr": args.lr}, 
-        {"params": param_group2, "lr": args.lr * 10}
-    ]) 
+# if args.embedding_reinitialization_type is None: 
+#     custom_optimizer = torch.optim.AdamW(param_group, lr = args.lr) 
+#     # custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-5) 
+#     # custom_optimizer = torch.optim.AdamW(param_group, lr = 2e-4) 
+# else: 
+#     custom_optimizer = torch.optim.AdamW([
+#         {"params": param_group, "lr": args.lr}, 
+#         {"params": param_group2, "lr": args.lr * 10}
+#     ]) 
+    
+custom_optimizer = torch.optim.AdamW([
+    {"params": param_group, "lr": args.lr}, 
+    {"params": param_group2, "lr": args.lr * 10}
+]) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 

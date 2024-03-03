@@ -1393,6 +1393,24 @@ class LlamaModelHybridSequenceLength(LlamaPreTrainedModel):
         kernel_size = kernel_size if kernel_size is not None else self.sliding_window_length 
         
         row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) 
+        mask_list_pos = [1 + i * kernel_size for i in range((seq_len - 1) // kernel_size)] # for our example, [1, 5] 
+        for i in range(1, len(mask_list_pos)): 
+            row_mask[mask_list_pos[i] : , mask_list_pos[i - 1] : mask_list_pos[i]] = 1 
+        
+        row_mask = row_mask[None, None, :, :].expand(mask_shape).to(torch.bool) 
+        row_mask = row_mask.to(device = combined_attention_mask.device) 
+        
+        out_attention_mask = combined_attention_mask.clone() 
+        out_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
+    
+    def _second_level_attention_mask(self, seq_len, dtype, mask_list_pos, kernel_size = None, batch_size = None, inputs_embeds = None, past_key_values_length = None): 
+        out_attention_mask = torch.ones( 
+            (batch_size, (seq_len - 1) // kernel_size), dtype = torch.bool, device = inputs_embeds.device 
+        ) 
+        out_attention_mask = self._prepare_decoder_attention_mask( 
+            out_attention_mask, (batch_size, (seq_len - 1) // kernel_size), inputs_embeds, past_key_values_length 
+        ) 
+        return out_attention_mask 
 
     @add_start_docstrings_to_model_forward(LLAMA_INPUTS_DOCSTRING)
     def forward(
@@ -1450,7 +1468,8 @@ class LlamaModelHybridSequenceLength(LlamaPreTrainedModel):
             ) 
         
         # attention mask changes 
-        
+        first_layer_attention_mask = self._first_level_attention_mask(attention_mask, dtype = inputs_embeds.dtype, mask_list_pos = None, kernel_size = self.kernel_size) 
+        second_layer_attention_mask = self._second_level_attention_mask(seq_length, dtype = inputs_embeds.dtype, mask_list_pos = None, kernel_size = self.kernel_size, batch_size = batch_size, inputs_embeds = inputs_embeds, past_key_values_length = past_key_values_length) 
 
         # embed positions
         hidden_states = inputs_embeds 
@@ -1485,27 +1504,29 @@ class LlamaModelHybridSequenceLength(LlamaPreTrainedModel):
                 # so the input would be (<bos> A B C D) (E F G H) -> (A B C D N1) (F G H N2) 
                 # the hidden states vectors that are picked would be N1 and N2 
                 picking_index_list = [self.kernel_size * i for i in range(1, (seq_length - 1) // self.kernel_size + 1)] 
-                hidden_states = hidden_states[picking_index_list] 
+                hidden_states = hidden_states[:, picking_index_list, :] 
+                assert hidden_states.shape[1] == second_layer_attention_mask.shape[-1] 
                 
-            if self.gradient_checkpointing and self.training:
-                layer_outputs = self._gradient_checkpointing_func(
-                    decoder_layer.__call__,
-                    hidden_states,
-                    attention_mask,
-                    position_ids,
-                    past_key_value,
-                    output_attentions,
-                    use_cache,
-                )
-            else:
-                layer_outputs = decoder_layer(
-                    hidden_states,
-                    attention_mask=attention_mask,
-                    position_ids=position_ids,
-                    past_key_value=past_key_value,
-                    output_attentions=output_attentions,
-                    use_cache=use_cache,
-                )
+            assert self.gradient_checkpointing == False # some lines below are deleted, if you need to recover it, please refer to full versions elsewhere in this file 
+            # if self.gradient_checkpointing and self.training:
+            #     layer_outputs = self._gradient_checkpointing_func(
+            #         decoder_layer.__call__,
+            #         hidden_states,
+            #         attention_mask,
+            #         position_ids,
+            #         past_key_value,
+            #         output_attentions,
+            #         use_cache,
+            #     ) 
+            layer_outputs = decoder_layer(
+                hidden_states,
+                # attention_mask=attention_mask, 
+                attention_mask = first_layer_attention_mask if idx < self.full_sequence_length_layer_pos else second_layer_attention_mask, 
+                position_ids=position_ids,
+                past_key_value=past_key_value,
+                output_attentions=output_attentions,
+                use_cache=use_cache,
+            ) 
 
             hidden_states = layer_outputs[0]
 
