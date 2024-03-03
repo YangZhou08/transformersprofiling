@@ -307,7 +307,7 @@ class CustomTrainer(Trainer):
         small_input_ids = inputs["input_ids"] # (batch_size, 203) 
         attention_mask = inputs["attention_mask"] 
         # attention_mask = inputs["attention_mask_chunk"] 
-        if "condensed_embeds" in inputs.keys(): 
+        if "condensed_embeds" in inputs.keys() and self.n == 7: 
             condensed_embeds_labels = inputs["condensed_embeds"] # (batch_size, 28, 3200) 
             condensed_embeds_labels = condensed_embeds_labels.to(self.model.small_model_dtype) 
         else: 
