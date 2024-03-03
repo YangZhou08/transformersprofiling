@@ -238,6 +238,8 @@ model_name = args.large_model
 if args.use_pretrained_small_model: 
     assert args.finetuned_small_model_checkpoint is not None 
 text_eval = "evaluating_printout_{}_{}_{}.txt".format(commit_hash, hash_of_time, model_name) 
+args.max_length = 260 
+args.max_length = ((args.max_length - 1) // args.kernel_size) * args.kernel_size + 1 
 
 assert not (args.freeze_small_model and args.freeze_large_model) 
 assert not (args.use_mse_loss and args.freeze_large_model) 
@@ -875,7 +877,9 @@ for tokenizer in tokenizers:
 
 kernel_size = args.kernel_size 
 # datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
-datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
+# datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
+print(colored("the max length for processing the dataset is {}".format(args.max_length), "yellow")) 
+datasetnew = CustomDataset(max_length = args.max_length, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = False) 
 train_dataset, test_dataset = datasetnew.split(0.98) 
 # the max_length assignment is subject to change 
