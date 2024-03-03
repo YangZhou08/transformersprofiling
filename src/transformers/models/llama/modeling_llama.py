@@ -2352,7 +2352,8 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         self.lm_head = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias = False) 
         # self.addonsmallmodel = None 
         small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m") 
-        self.sliding_window_length = 7 
+        # self.sliding_window_length = 7 
+        self.sliding_window_length = 3 
         self.addonsmallmodel = SimpleSmallModel(small_config, sliding_window_length = self.sliding_window_length, target_model_dim = self.config.hidden_size) 
         self.small_model_dtype = torch.bfloat16 
         self.use_mse_loss = False 
@@ -2404,6 +2405,8 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         self.inference_setting = setting 
     
     def set_slidingwindowlength(self, sliding_window_length, addonmodel_start = None): 
+        if self.sliding_window_length != sliding_window_length: 
+            raise Warning("Detecting sliding winodw length change, if this is not intended, please reinitialize the large model with the correct sliding window length") 
         self.sliding_window_length = sliding_window_length 
         if addonmodel_start is not None: 
             self.addonmodel_start = addonmodel_start 
