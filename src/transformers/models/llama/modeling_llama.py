@@ -1331,6 +1331,206 @@ class LlamaForCausalLM(LlamaPreTrainedModel):
             )
         return reordered_past 
 
+class LlamaModelHybridSequenceLength(LlamaPreTrainedModel): 
+    """
+    Transformer decoder consisting of *config.num_hidden_layers* layers. Each layer is a [`LlamaDecoderLayer`]
+
+    Args:
+        config: LlamaConfig
+    """
+
+    def __init__(self, config: LlamaConfig):
+        super().__init__(config)
+        self.padding_idx = config.pad_token_id
+        self.vocab_size = config.vocab_size
+
+        self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx)
+        self.layers = nn.ModuleList([LlamaDecoderLayer(config) for _ in range(config.num_hidden_layers)])
+        self.norm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+
+        self.gradient_checkpointing = False
+        # Initialize weights and apply final processing 
+        self.full_sequence_length_layer_pos = 1 # this line is for identifying which line we should remove 
+        self.kernel_size = 7 
+        self.post_init()
+
+    def set_kernel_size(self, kernel_size): 
+        self.kernel_size = kernel_size 
+        
+    def get_input_embeddings(self):
+        return self.embed_tokens
+
+    def set_input_embeddings(self, value):
+        self.embed_tokens = value
+
+    # Copied from transformers.models.bart.modeling_bart.BartDecoder._prepare_decoder_attention_mask
+    def _prepare_decoder_attention_mask(self, attention_mask, input_shape, inputs_embeds, past_key_values_length):
+        # create causal mask
+        # [bsz, seq_len] -> [bsz, 1, tgt_seq_len, src_seq_len]
+        combined_attention_mask = None
+        if input_shape[-1] > 1:
+            combined_attention_mask = _make_causal_mask(
+                input_shape,
+                inputs_embeds.dtype,
+                device=inputs_embeds.device,
+                past_key_values_length=past_key_values_length,
+            )
+
+        if attention_mask is not None:
+            # [bsz, seq_len] -> [bsz, 1, tgt_seq_len, src_seq_len]
+            expanded_attn_mask = _expand_mask(attention_mask, inputs_embeds.dtype, tgt_len=input_shape[-1]).to(
+                inputs_embeds.device
+            )
+            combined_attention_mask = (
+                expanded_attn_mask if combined_attention_mask is None else expanded_attn_mask + combined_attention_mask
+            )
+        return combined_attention_mask 
+    
+    def _first_level_attention_mask(self, combined_attention_mask, dtype, mask_list_pos, kernel_size = None): 
+        mask_shape = combined_attention_mask.shape 
+        seq_len = mask_shape[-1] 
+        start_idx = 0 
+        kernel_size = kernel_size if kernel_size is not None else self.sliding_window_length 
+        
+        row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) 
+
+    @add_start_docstrings_to_model_forward(LLAMA_INPUTS_DOCSTRING)
+    def forward(
+        self,
+        input_ids: torch.LongTensor = None,
+        attention_mask: Optional[torch.Tensor] = None,
+        position_ids: Optional[torch.LongTensor] = None,
+        past_key_values: Optional[List[torch.FloatTensor]] = None,
+        inputs_embeds: Optional[torch.FloatTensor] = None,
+        use_cache: Optional[bool] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        return_dict: Optional[bool] = None,
+    ) -> Union[Tuple, BaseModelOutputWithPast]:
+        output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
+        output_hidden_states = (
+            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
+        )
+        use_cache = use_cache if use_cache is not None else self.config.use_cache
+
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+
+        # retrieve input_ids and inputs_embeds
+        if input_ids is not None and inputs_embeds is not None:
+            raise ValueError("You cannot specify both input_ids and inputs_embeds at the same time")
+        elif input_ids is not None:
+            batch_size, seq_length = input_ids.shape[:2]
+        elif inputs_embeds is not None:
+            batch_size, seq_length = inputs_embeds.shape[:2]
+        else:
+            raise ValueError("You have to specify either input_ids or inputs_embeds")
+
+        past_key_values_length = 0
+        if past_key_values is not None:
+            past_key_values_length = past_key_values[0][0].shape[2]
+
+        if position_ids is None:
+            device = input_ids.device if input_ids is not None else inputs_embeds.device
+            position_ids = torch.arange(
+                past_key_values_length, seq_length + past_key_values_length, dtype=torch.long, device=device
+            )
+            position_ids = position_ids.unsqueeze(0) 
+            # print(colored("position_ids: {}".format(position_ids), "red")) # TODO remove this print once this is make sure to be correct 
+
+        if inputs_embeds is None:
+            inputs_embeds = self.embed_tokens(input_ids)
+
+        if getattr(self.config, "_flash_attn_2_enabled", False):
+            # 2d mask is passed through the layers
+            attention_mask = attention_mask if (attention_mask is not None and 0 in attention_mask) else None
+        else:
+            # 4d mask is passed through the layers
+            attention_mask = _prepare_4d_causal_attention_mask(
+                attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length
+            ) 
+        
+        # attention mask changes 
+        
+
+        # embed positions
+        hidden_states = inputs_embeds 
+        
+        # basic sanity check 
+        assert (hidden_states.shape[1] - 1) % self.kernel_size == 0 
+
+        if self.gradient_checkpointing and self.training:
+            if use_cache:
+                logger.warning_once(
+                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
+                )
+                use_cache = False
+
+        # decoder layers
+        all_hidden_states = () if output_hidden_states else None
+        all_self_attns = () if output_attentions else None
+        next_decoder_cache = () if use_cache else None
+
+        for idx, decoder_layer in enumerate(self.layers):
+            if output_hidden_states:
+                all_hidden_states += (hidden_states,)
+
+            past_key_value = past_key_values[idx] if past_key_values is not None else None 
+            
+            # sampling after a few layers 
+            if idx == self.full_sequence_length_layer_pos: 
+                # here is an illustration of sampling, say we have a sequence of <bos> A B C D E F G H, where the kernel size is 4 
+                # then, the designed downsampling or sampling on dimension reduction is as follows, we group tokens after the start 
+                # of sequence token into group of four, where all tokens inside the same group are attending with causal relationship 
+                # the start of sequence token will be added to the first group, so that the first group would have (<bos> A B C D) 
+                # so the input would be (<bos> A B C D) (E F G H) -> (A B C D N1) (F G H N2) 
+                # the hidden states vectors that are picked would be N1 and N2 
+                picking_index_list = [self.kernel_size * i for i in range(1, (seq_length - 1) // self.kernel_size + 1)] 
+                hidden_states = hidden_states[picking_index_list] 
+                
+            if self.gradient_checkpointing and self.training:
+                layer_outputs = self._gradient_checkpointing_func(
+                    decoder_layer.__call__,
+                    hidden_states,
+                    attention_mask,
+                    position_ids,
+                    past_key_value,
+                    output_attentions,
+                    use_cache,
+                )
+            else:
+                layer_outputs = decoder_layer(
+                    hidden_states,
+                    attention_mask=attention_mask,
+                    position_ids=position_ids,
+                    past_key_value=past_key_value,
+                    output_attentions=output_attentions,
+                    use_cache=use_cache,
+                )
+
+            hidden_states = layer_outputs[0]
+
+            if use_cache:
+                next_decoder_cache += (layer_outputs[2 if output_attentions else 1],)
+
+            if output_attentions:
+                all_self_attns += (layer_outputs[1],)
+
+        hidden_states = self.norm(hidden_states)
+
+        # add hidden states from the last decoder layer
+        if output_hidden_states:
+            all_hidden_states += (hidden_states,)
+
+        next_cache = next_decoder_cache if use_cache else None
+        if not return_dict:
+            return tuple(v for v in [hidden_states, next_cache, all_hidden_states, all_self_attns] if v is not None)
+        return BaseModelOutputWithPast(
+            last_hidden_state=hidden_states,
+            past_key_values=next_cache,
+            hidden_states=all_hidden_states,
+            attentions=all_self_attns,
+        ) 
+
 class LlamaForCausalLM2(LlamaPreTrainedModel):
     _tied_weights_keys = ["lm_head.weight"]
 
@@ -1506,6 +1706,586 @@ class LlamaForCausalLM2(LlamaPreTrainedModel):
             }
         )
         return model_inputs
+
+    @staticmethod
+    def _reorder_cache(past_key_values, beam_idx):
+        reordered_past = ()
+        for layer_past in past_key_values:
+            reordered_past += (
+                tuple(past_state.index_select(0, beam_idx.to(past_state.device)) for past_state in layer_past),
+            )
+        return reordered_past 
+
+class LlamaWeirdLargeIntermediate(LlamaPreTrainedModel): 
+    """ 
+    Inside this class, the lm_head is not used 
+    We also have a groupping function call at the beginning of the forward function 
+    """ 
+    # almost identical to LlamaWeirdLarge3, but weird fix for some model 
+    _tied_weights_keys = ["lm_head.weight"]
+    '''
+    def __init__(self, *args, small_config, hostname, large_dim, sliding_window_length = 7, use_mse_loss = False, **kwargs): 
+        super().__init__(*args, **kwargs) 
+        self.model = LlamaModel(self.config) 
+        self.vocab_size = self.config.vocab_size 
+        # self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False) 
+        self.lm_head = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias = False) 
+        
+        # self.addonsmallmodel = addonsmallmodel 
+        # self.addonsmallmodel = SimpleSmallModel(small_config, sliding_window_length = sliding_window_length, hostname = hostname, target_model_dim = large_dim) 
+        self.addonsmallmodel = None 
+        self.sliding_window_length = sliding_window_length 
+        # self.small_model_dtype = self.addonsmallmodel.embed_projection.weight.dtype 
+        self.small_model_dtype = torch.bfloat16 
+        print(colored("small_model_dtype {}".format(self.small_model_dtype), "red")) 
+        self.use_mse_loss = use_mse_loss 
+        self.alpha = 0.5 
+
+        # Initialize weights and apply final processing
+        self.post_init()
+    ''' 
+    def __init__(self, config): 
+        super().__init__(config) 
+        self.model = LlamaModel(config) 
+        self.vocab_size = config.vocab_size 
+        self.lm_head = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias = False) 
+        # self.addonsmallmodel = None 
+        small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m") 
+        self.sliding_window_length = 7 
+        self.addonsmallmodel = SimpleSmallModel(small_config, sliding_window_length = self.sliding_window_length, target_model_dim = self.config.hidden_size) 
+        self.small_model_dtype = torch.bfloat16 
+        self.use_mse_loss = False 
+        self.ce_loss_only = False 
+        self.alpha = 0.5 
+        self.addonmodel_start = self.sliding_window_length + 1 
+        self.inference_setting = "setting0" 
+        self.use_cosinesimilarity = False 
+        self.generate_iteration_count = 0 
+        self.generate_model_hidden_states = torch.tensor(0) # this field saves the intermediate tensors generated by the large model 
+        self.tokenizer_bos_id = 1 
+        self.tokenizer_pad_id = 2 
+        
+        self.post_init() 
+
+    def get_input_embeddings(self):
+        return self.model.embed_tokens 
+    
+    def set_msece_loss(self, use_mse_loss, ce_loss_only): 
+        self.use_mse_loss = use_mse_loss 
+        self.ce_loss_only = ce_loss_only 
+    
+    def set_cosinesimilarity(self, use_cosinesimilarity): 
+        if use_cosinesimilarity: 
+            self.use_cosinesimilarity = True 
+    
+    def set_addonsmallmodel_statedict(self, small_state_dict_for_model): 
+        new_state_dict = {} 
+
+        for key in small_state_dict_for_model.keys(): 
+            new_key = key 
+            if 'lm_head' in key: 
+                print("got here found the following key {}".format(key)) 
+            if 'model.' in key: 
+                new_key = key[6 :] 
+            print(new_key) 
+            new_state_dict[new_key] = small_state_dict_for_model[key] 
+        # if args.embedding_pretrained: 
+        #     new_state_dict["embed_projection.weight"] = torch.load("linearprojectionweighttesting.pt") 
+        try: 
+            self.addonsmallmodel.load_state_dict(new_state_dict) 
+        except RuntimeError as r: 
+            print(colored(r, "yellow")) 
+
+    def set_input_embeddings(self, value):
+        self.model.embed_tokens = value 
+    
+    def set_inference_setting(self, setting = "setting0"): 
+        self.inference_setting = setting 
+    
+    def set_slidingwindowlength(self, sliding_window_length, addonmodel_start = None): 
+        self.sliding_window_length = sliding_window_length 
+        if addonmodel_start is not None: 
+            self.addonmodel_start = addonmodel_start 
+        else: 
+            self.addonmodel_start = self.sliding_window_length + 1 
+    
+    def set_tokenizer_bos_id(self, bos_id, pad_id): 
+        self.tokenizer_bos_id = bos_id 
+        self.tokenizer_pad_id = pad_id 
+    
+    def set_walpha(self, alpha) : 
+        self.alpha = alpha 
+
+    def get_output_embeddings(self):
+        return self.lm_head
+
+    def set_output_embeddings(self, new_embeddings):
+        self.lm_head = new_embeddings
+
+    def set_decoder(self, decoder):
+        self.model = decoder
+        
+    def reinitialize_embeddings(self, type = "xavieruniform"): 
+        from torch.nn import init 
+        embedding = self.model.embed_tokens 
+        if type == "xavieruniform": 
+            init.xavier_uniform_(embedding.weight) 
+        elif type == "xaviernormal": 
+            init.xavier_normal_(embedding.weight) 
+        elif type == "kaimingnormal": 
+            init.kaiming_normal_(embedding.weight) 
+        else: 
+            raise ValueError("type not recognized") 
+
+    def get_decoder(self):
+        return self.model 
+    
+    def naive_grouping(self, input_ids): 
+        embedding_searched = self.model.embed_tokens(input_ids) 
+        # print("embedding_searched shape {} {}".format(embedding_searched.shape, embedding_searched.dtype)) 
+        seq_length = embedding_searched.shape[1] 
+        print("seq_length {}".format(seq_length)) 
+        
+        # assert seq_length % 7 == 0, "seq_length is not divisible by 7" 
+        # assert seq_length % self.sliding_window_length == 0, "seq_length is not divisible by sliding_window_length" 
+        # added_tensor = torch.zeros((embedding_searched.shape[0], seq_length // 7, embedding_searched.shape[2])).to(input_ids.device).to(embedding_searched.dtype) 
+        added_tensor = torch.zeros((embedding_searched.shape[0], seq_length // self.sliding_window_length, embedding_searched.shape[2])).to(input_ids.device).to(embedding_searched.dtype) 
+        # for i in range(seq_length // 7): 
+        for i in range(seq_length // self.sliding_window_length): 
+            sum = torch.zeros((embedding_searched.shape[0], embedding_searched.shape[2])).to(input_ids.device).to(embedding_searched.dtype) 
+            # for j in range(7): 
+            for j in range(self.sliding_window_length): 
+                # sum += embedding_searched[:, i * 7 + j, :] 
+                sum += embedding_searched[:, i * self.sliding_window_length + j, :] 
+                # sum /= 7. 
+                # print("sum dtype {}".format(sum.dtype)) 
+            sum /= float(self.sliding_window_length) 
+            added_tensor[:, i, :] = sum 
+        # print("added_tensor shape {}".format(added_tensor.shape)) 
+        
+        return added_tensor 
+    
+    def attention_mask_upper(self, input_ids): 
+        sequence_length = ((input_ids.shape[1] - 1) // self.sliding_window_length) + 1 
+        batch_size = input_ids.shape[0] 
+        condition_mask = input_ids == self.tokenizer_bos_id # finds the index of the start of sequence token 
+        start_of_sequenceidx = torch.nonzero(condition_mask)[:, 1] 
+        start_of_sequenceidx //= self.sliding_window_length 
+        start_of_sequenceidx = start_of_sequenceidx.to(torch.long) 
+        # modified_input_bos_sequence_indices = modified_input_bos_sequence_indices[:, 1].unsqueeze(1).expand(-1, seq_length) 
+        start_of_sequenceidx2 = start_of_sequenceidx.unsqueeze(1).expand(-1, sequence_length) 
+        print("start_of_sequenceidx shape {}".format(start_of_sequenceidx2.shape)) 
+        col_indices = torch.arange(sequence_length).expand(batch_size, -1).to(input_ids.device) 
+        attention_mask = col_indices >= start_of_sequenceidx2 
+        attention_mask = attention_mask.to(torch.long) 
+        return start_of_sequenceidx, attention_mask 
+        
+    def set_addonsmallmodel(self, addonsmallmodel): 
+        self.addonsmallmodel = addonsmallmodel 
+    
+    def set_smallmodelfull(self): 
+        self.addonsmallmodel = self.addonsmallmodel.to(torch.float32) 
+    
+    def l2distancecompute(self, inputs, hidden_states): 
+        input_used = inputs.clone().detach()[:, 1:, :]
+        hidden_states_used = hidden_states.clone().detach()[:, :-1, :] 
+        assert input_used.shape == hidden_states_used.shape 
+        dmod = input_used.shape[-1] 
+        input_used = input_used.reshape(-1, dmod) 
+        hidden_states_used = hidden_states_used.reshape(-1, dmod) 
+        # compute the difference 
+        diff = input_used - hidden_states_used 
+        
+        # compute the square 
+        diff = diff ** 2
+        
+        # sum up the square 
+        diff = torch.sum(diff, dim = 1) 
+        
+        # take square root 
+        diff = torch.sqrt(diff) 
+        
+        # average the l2 distance 
+        diff = torch.mean(diff) 
+        
+        return diff 
+
+    @add_start_docstrings_to_model_forward(LLAMA_INPUTS_DOCSTRING)
+    @replace_return_docstrings(output_type=CausalLMOutputWithPast, config_class=_CONFIG_FOR_DOC)
+    def forward(
+        self,
+        # input_ids: torch.LongTensor = None, 
+        large_input_ids: torch.LongTensor = None, 
+        small_input_ids: torch.LongTensor = None, 
+        attention_mask: Optional[torch.Tensor] = None,
+        position_ids: Optional[torch.LongTensor] = None,
+        past_key_values: Optional[List[torch.FloatTensor]] = None,
+        inputs_embeds: Optional[torch.FloatTensor] = None,
+        labels: Optional[torch.LongTensor] = None,
+        use_cache: Optional[bool] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        return_dict: Optional[bool] = None, 
+        original_attention_mask = None, 
+        condensed_embed_labels = None, 
+    ) -> Union[Tuple, CausalLMOutputWithPastLargeDistance2]: 
+        r"""
+        Args:
+            labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+                config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+                (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Returns:
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, LlamaForCausalLM
+
+        >>> model = LlamaForCausalLM.from_pretrained(PATH_TO_CONVERTED_WEIGHTS)
+        >>> tokenizer = AutoTokenizer.from_pretrained(PATH_TO_CONVERTED_TOKENIZER)
+
+        >>> prompt = "Hey, are you conscious? Can you talk to me?"
+        >>> inputs = tokenizer(prompt, return_tensors="pt")
+
+        >>> # Generate
+        >>> generate_ids = model.generate(inputs.input_ids, max_length=30)
+        >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        "Hey, are you conscious? Can you talk to me?\nI'm not conscious, but I can talk to you."
+        ```""" 
+
+        output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
+        output_hidden_states = (
+            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
+        )
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+
+        # inside this function callm, input is through input_embeds 
+        # now, we have a start of sequence token 
+        print("large_input_ids sequence first element: {}".format(large_input_ids[:, 0])) 
+        start_token = self.model.embed_tokens(large_input_ids[:, 0].unsqueeze(1)) 
+        extra_pass_in_embeds = self.naive_grouping(large_input_ids[:, 1: ]) 
+        extra_pass_in_embeds = torch.cat((start_token, extra_pass_in_embeds), dim = 1) # concatenate at the sequence length dimension 
+        # the attention mask should be compatible to the new input_embeds 
+        print("attention_mask shape {} and extra_pass_in_embeds shape {}".format(attention_mask.shape, extra_pass_in_embeds.shape)) 
+        # print("condensed_embeds_labels shape {}".format(condensed_embed_labels.shape)) 
+        assert attention_mask.shape[1] == extra_pass_in_embeds.shape[1], "attention_mask shape is not compatible to the new input_embeds" 
+        assert inputs_embeds is None, "inputs_embeds is not None" 
+        inputs_embeds = extra_pass_in_embeds 
+        print(colored("inputs_embeds shape {} dtype {}".format(inputs_embeds.shape, inputs_embeds.dtype), "yellow")) 
+        # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn) 
+        # TODO delete the following line 
+        
+        outputs = self.model(
+            input_ids=None, 
+            attention_mask=attention_mask,
+            position_ids=position_ids,
+            past_key_values=past_key_values,
+            inputs_embeds=inputs_embeds,
+            use_cache=use_cache,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+            return_dict=return_dict,
+        ) 
+
+        hidden_states = outputs[0] # we don't need the lm_head 
+        print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
+        if self.small_model_dtype == torch.float32: 
+            hidden_states = hidden_states.to(torch.float32) 
+        elif self.small_model_dtype == torch.bfloat16: 
+            hidden_states = hidden_states.to(torch.bfloat16) 
+        # print(colored("small_model_type: {}".format(self.small_model_dtype), "red")) 
+        # intermediate_l2_dist = self.l2distancecompute(inputs_embeds, hidden_states) 
+        
+        practical_mask = attention_mask.unsqueeze(-1).expand_as(inputs_embeds) 
+        hidden_states = hidden_states[:, 1:-1, :] # NOTE this is very important 
+        if condensed_embed_labels is not None: 
+            mselabels = condensed_embed_labels 
+            # print("first 100 eleents of hidden_states: {}".format(hidden_states[0][0][: 100])) 
+            # print("first 100 elements of mselabels: {}".format(mselabels[0][0][: 100])) 
+            # hidden_states[practical_mask == 0] = 0 
+            # hidden_states = hidden_states[:, :-1, :] # NOTE this is very important 
+            # output 30 condensed tokens, the last one and the first one doesn't have the condensed token label, so 28 left 
+            # assert labels.shape == hidden_states.shape 
+            assert mselabels.shape == hidden_states.shape 
+            mse_lossfunc = nn.MSELoss() 
+            mse_loss = mse_lossfunc(hidden_states, mselabels) 
+            cosinesimlossfunc = nn.CosineEmbeddingLoss() 
+            cossim_loss = cosinesimlossfunc(hidden_states.reshape(-1, hidden_states.shape[-1]), mselabels.reshape(-1, mselabels.shape[-1]), torch.ones(hidden_states.shape[0] * hidden_states.shape[1]).to(hidden_states.device)) 
+        else: 
+            mse_loss = torch.tensor(0) 
+            cossim_loss = torch.tensor(0) 
+        # mse_loss = 0.5 * mse_loss + 0.5 * cossim_loss 
+        # intermediate_l2_dist = mse_loss.clone().detach() 
+        intermediate_l2_dist = mse_loss.clone().detach() 
+        if self.use_cosinesimilarity: 
+            mse_loss = cossim_loss 
+        cossim_input = cossim_loss.clone().detach() 
+        # print(colored("mse_loss {}".format(mse_loss), "red")) 
+        
+        assert inputs_embeds.shape[1] - 2 == hidden_states.shape[1] 
+        mse_lossfunc2 = nn.MSELoss() 
+        # print("first 100 elements of input_embeds: {}".format(inputs_embeds[0][0][: 100])) 
+        # inputs_embeds = inputs_embeds[:, 1:, :] 
+        inputs_embeds = inputs_embeds[:, 2:, :] # NOTE first condensed token is the start of sequence, while the second one is the first token 
+        mse_loss_input = mse_lossfunc2(hidden_states, inputs_embeds) 
+        l2_distance_input = mse_loss_input.clone().detach() 
+        # print(colored("mse_loss_input {}".format(mse_loss_input), "red")) 
+        # cossim_input = F.cosine_similarity(hidden_states.reshape(-1, hidden_states.shape[-1]), inputs_embeds.reshape(-1, inputs_embeds.shape[-1]), dim = 1) 
+        # print("cossim_input shape {}".format(cossim_input.shape)) 
+        # cossim_input = cossim_input.mean(dim = 0) 
+        # print("cossim_input {}".format(cossim_input)) 
+        
+        if self.use_mse_loss: 
+            print(colored("mse_loss {}".format(mse_loss), "red")) 
+            # still use the small model and get ce 
+            hidden_states = hidden_states.detach().clone() 
+            # hidden_states = torch.zeros_like(hidden_states).detach() 
+            # hidden_states = condensed_embed_labels 
+            '''
+            return CausalLMOutputWithPastLargeDistance2(
+                loss = mse_loss, 
+                logits = None, 
+                past_key_values = outputs.past_key_values, 
+                hidden_states=outputs.hidden_states,
+                attentions = outputs.attentions, 
+                l2_distance = intermediate_l2_dist, 
+                ce_loss = torch.tensor(0), 
+            ) 
+            ''' 
+        # hidden_states has shape (batch_size, seq_length // 7, hidden states) 
+        # hidden_states = hidden_states[:, :-1, :] 
+        
+        # interleave the hidden_states and the input_ids 
+        # assert hidden_states.shape[1] == small_input_ids.shape[1] // 7 - 1 
+        assert hidden_states.shape[1] == (small_input_ids.shape[1] - self.addonmodel_start) // self.sliding_window_length 
+        addonmodeloutput = self.addonsmallmodel( 
+            # input_ids = input_ids, 
+            input_ids = small_input_ids, 
+            attention_mask = original_attention_mask, 
+            position_ids = None, 
+            past_key_values = None, 
+            condensed_embeds = hidden_states, 
+            labels = None, 
+            use_cache = None, 
+            output_attentions = True, 
+            output_hidden_states = None, 
+            return_dict = True, 
+            start_idx = self.addonmodel_start, # NOTE this is very important 
+            eval_mode = False, 
+            iteration_count = 1, 
+            condensed_fashion = "projection_mode", 
+            # experiment_setting = "setting3", 
+            experiment_setting = self.inference_setting, 
+        ) 
+        
+        logits = addonmodeloutput.logits 
+        
+        '''
+        if self.config.pretraining_tp > 1:
+            lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
+            logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]
+            logits = torch.cat(logits, dim=-1)
+        else:
+            logits = self.lm_head(hidden_states)
+        logits = logits.float()
+        ''' 
+        
+        # seq_length = input_ids.shape[1] + hidden_states.shape[1] 
+        seq_length = small_input_ids.shape[1] + hidden_states.shape[1] 
+        assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
+        # mask_list_pos = [i * (self.sliding_window_length + 1) for i in range(seq_length // (self.sliding_window_length + 1))] 
+        # mask_list_pos = [7 + i * (self.sliding_window_length + 1) for i in range((seq_length - 7) // (self.sliding_window_length + 1))] 
+        mask_list_pos = [self.addonmodel_start + i * (self.sliding_window_length + 1) for i in range((seq_length - self.addonmodel_start) // (self.sliding_window_length + 1))] 
+        mask_list_pos22 = [x - 1 for x in mask_list_pos] 
+        # print(colored("mask_list_pos {}".format(mask_list_pos), "red")) 
+        loss = None 
+        if labels is not None: 
+            # selected_indices = list(range(7)) 
+            selected_indices = list(range(self.addonmodel_start - 1)) 
+            # for i in range(7, seq_length): 
+                # if i not in mask_list_pos: 
+                    # selected_indices.append(i) 
+            for i in range(self.addonmodel_start - 1, seq_length): 
+                if i not in mask_list_pos22: 
+                    selected_indices.append(i) 
+            # print(colored("selected_indices {}".format(selected_indices), "red")) 
+            # select and shift the logits 
+            logits = logits[:, selected_indices, :] 
+            shift_logits = logits[..., :-1, :].contiguous() 
+            shift_labels = labels[..., 1:].contiguous() # shape (batch_size, seq_length - 1) 
+            print("shift_logits shape {}; shift_labels shape {}".format(shift_logits.shape, shift_labels.shape)) 
+            # Flatten the tokens 
+            loss_fct = CrossEntropyLoss() 
+            shift_logits = shift_logits.view(-1, self.config.vocab_size) 
+            shift_labels = shift_labels.view(-1) 
+            # Enable model parallelism 
+            shift_labels = shift_labels.to(shift_logits.device) 
+            ce_loss = loss_fct(shift_logits, shift_labels) 
+            loss = ce_loss 
+            # print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
+        if loss is not None and not self.use_mse_loss: 
+            if self.ce_loss_only: 
+                print(colored("ce_loss only", "red")) 
+                loss = ce_loss 
+            else: 
+                print(colored("ce_loss + mse_loss", "red")) 
+                # loss = self.alpha * loss + (1 - self.alpha) * mse_loss 
+                loss = self.alpha * ce_loss + (1 - self.alpha) * mse_loss 
+        else: 
+            print(colored("mse_loss only", "red")) 
+            loss = mse_loss 
+
+        if not return_dict:
+            output = (logits,) + outputs[1:]
+            return (loss,) + output if loss is not None else output 
+
+        return CausalLMOutputWithPastLargeDistance2(
+            loss=loss,
+            logits = logits, 
+            past_key_values=outputs.past_key_values,
+            hidden_states=outputs.hidden_states,
+            # attentions=outputs.attentions, 
+            attentions = addonmodeloutput.attentions, # delibrately using the model's attention mask with modifications 
+            l2_distance = intermediate_l2_dist, 
+            ce_loss = ce_loss.detach().clone(), 
+            l2_distance_input = l2_distance_input, 
+            cossim_input = cossim_input, 
+        ) 
+    
+    def prepare_inputs_for_generation2(
+        self, input_ids, past_key_values=None, attention_mask=None, inputs_embeds=None, **kwargs
+    ):
+        if past_key_values is not None:
+            past_length = past_key_values[0][0].shape[2]
+
+            # Some generation methods already pass only the last input ID
+            if input_ids.shape[1] > past_length:
+                remove_prefix_length = past_length
+            else:
+                # Default to old behavior: keep only final ID
+                remove_prefix_length = input_ids.shape[1] - 1
+
+            input_ids = input_ids[:, remove_prefix_length:]
+
+        position_ids = kwargs.get("position_ids", None)
+        if attention_mask is not None and position_ids is None:
+            # create position_ids on the fly for batch generation
+            position_ids = attention_mask.long().cumsum(-1) - 1
+            position_ids.masked_fill_(attention_mask == 0, 1)
+            if past_key_values:
+                position_ids = position_ids[:, -input_ids.shape[1] :]
+
+        # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
+        if inputs_embeds is not None and past_key_values is None:
+            model_inputs = {"inputs_embeds": inputs_embeds}
+        else:
+            model_inputs = {"input_ids": input_ids}
+
+        model_inputs.update(
+            {
+                "position_ids": position_ids,
+                "past_key_values": past_key_values,
+                "use_cache": kwargs.get("use_cache"),
+                "attention_mask": attention_mask,
+            }
+        )
+        return model_inputs 
+
+    def prepare_inputs_for_generation( 
+        self, input_ids, past_key_values = None, attention_mask = None, inputs_embeds = None, adjustment_scheme = None, **kwargs): 
+        # mainly used to debug preparing inputs for generation and not using past_key_values 
+        assert past_key_values is None, "past_key_values is not None" 
+        batch_size, seq_length = input_ids.shape 
+        print("batch_size {}; seq_length {}".format(batch_size, seq_length)) 
+        
+        # adjusting the inputs and mask 
+        print("input_ids {}".format(input_ids[2])) 
+        print("attention_mask {}".format(attention_mask[2])) 
+        condition_mask = input_ids == self.tokenizer_bos_id 
+        input_sequence_indices = torch.nonzero(condition_mask).to(input_ids.device).to(torch.long) 
+        print("input_sequence_indices shape {}".format(input_sequence_indices.shape)) 
+        print("input_sequence_indices: {}".format(input_sequence_indices[2])) 
+        input_sequence_indices2 = [] 
+        modified_input_bos_sequence_indices = [] 
+        assert input_sequence_indices.shape[0] == input_ids.shape[0], "every row of sequences need to have an bos" 
+        for i in range(input_ids.shape[0]): # iterate through the batch_size 
+            # if input_sequence_indices[i] % self.sliding_window_length != 0: # we found a sequence that needs to be adjusted 
+            if input_sequence_indices[i][1].data % self.sliding_window_length != 0: # we found a sequence that needs to be adjusted 
+                input_sequence_indices2.append(torch.tensor([i, (input_sequence_indices[i][1])]).to(input_ids.device).view(1, -1)) 
+                if adjustment_scheme == "case1": 
+                    modified_input_bos_sequence_indices.append(torch.tensor([i, (input_sequence_indices[i][1] // self.sliding_window_length) * self.sliding_window_length]).to(input_ids.device).view(1, -1)) 
+                elif adjustment_scheme == "case2": 
+                    modified_input_bos_sequence_indices.append(torch.tensor([i, (input_sequence_indices[i][1] // self.sliding_window_length + 1) * self.sliding_window_length]).to(input_ids.device).view(1, -1)) 
+                else: 
+                    raise ValueError("adjustment_scheme is not recognized") 
+        if len(input_sequence_indices2) != 0: 
+            # adjusting the input_ids 
+            input_sequence_indices2 = torch.cat(input_sequence_indices2, dim = 0).to(input_ids.device).to(torch.long) 
+            modified_input_bos_sequence_indices = torch.cat(modified_input_bos_sequence_indices, dim = 0).to(input_ids.device).to(torch.long) 
+            print("shape of modified_input_bos_sequence_indices {}".format(modified_input_bos_sequence_indices.shape)) 
+            print(modified_input_bos_sequence_indices) 
+            
+            row_indices = input_sequence_indices2[:, 0] 
+            col_indices = input_sequence_indices2[:, 1] 
+            input_ids.index_put_((row_indices, col_indices), torch.full_like(row_indices, fill_value = self.tokenizer_pad_id, device = input_ids.device, dtype = input_ids.dtype), accumulate = False) 
+            
+            row_indices = modified_input_bos_sequence_indices[:, 0] 
+            col_indices = modified_input_bos_sequence_indices[:, 1] 
+            input_ids.index_put_((row_indices, col_indices), torch.full_like(row_indices, fill_value = self.tokenizer_bos_id, device = input_ids.device, dtype = input_ids.dtype), accumulate = False) 
+            
+            print("input_ids {}".format(input_ids[2])) 
+        # just for checking 
+        checking_indices = torch.nonzero(input_ids == self.tokenizer_bos_id) 
+        print("positions of the start of sequence after modification: {}".format(checking_indices)) 
+        for i in range(checking_indices.shape[0]): 
+            assert checking_indices[i][1] % self.sliding_window_length == 0, "start of sequence is not at the right position" 
+            
+        # making attention_mask 
+        modified_input_bos_sequence_indices = torch.nonzero(input_ids == self.tokenizer_bos_id).to(input_ids.device).to(torch.long) 
+        modified_input_bos_sequence_indices = modified_input_bos_sequence_indices[:, 1].unsqueeze(1).expand(-1, seq_length) 
+        print("modified_input_bos_sequence_indices shape {}".format(modified_input_bos_sequence_indices.shape)) 
+        col_indices = torch.arange(seq_length).expand(batch_size, -1).to(input_ids.device) 
+        attention_mask = col_indices >= modified_input_bos_sequence_indices 
+        # attention_mask = input_ids != self.tokenizer_pad_id 
+        attention_mask = attention_mask.to(torch.long) 
+        print("attention_mask {}".format(attention_mask[2])) 
+        # just for checking 
+        for i in range(checking_indices.shape[0]): 
+            if checking_indices[i][1] != 0: 
+                assert torch.unique(attention_mask[i][: checking_indices[i][1]]) == 0, "attention_mask is not correct" 
+            assert torch.unique(attention_mask[i][checking_indices[i][1] : ]) == 1, "attention_mask is not correct" 
+            print(colored("checking attention_mask passed", "green")) 
+                
+        # past_key_values is not used and input_ids is not changed 
+        '''
+        position_ids = kwargs.get("position_ids", None) 
+        if attention_mask is not None and position_ids is None:
+            # create position_ids on the fly for batch generation
+            position_ids = attention_mask.long().cumsum(-1) - 1
+            position_ids.masked_fill_(attention_mask == 0, 1)
+            if past_key_values:
+                position_ids = position_ids[:, -input_ids.shape[1] :] 
+        ''' 
+        position_ids = None 
+        
+        # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
+        if inputs_embeds is not None and past_key_values is None:
+            model_inputs = {"inputs_embeds": inputs_embeds}
+        else:
+            model_inputs = {"large_input_ids": input_ids, 
+                            "small_input_ids": input_ids,} 
+
+        model_inputs.update(
+            {
+                "position_ids": position_ids,
+                "past_key_values": past_key_values,
+                "use_cache": kwargs.get("use_cache"),
+                "attention_mask": attention_mask,
+            }
+        )
+        return model_inputs 
 
     @staticmethod
     def _reorder_cache(past_key_values, beam_idx):
