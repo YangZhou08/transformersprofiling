@@ -410,7 +410,7 @@ class CustomTrainer(Trainer):
                 }) 
                 
         # if self.accelerator.is_main_process and self.iteration_count % 1000 == 0 and has_wandb: 
-        if self.accelerator.is_main_process and has_wandb and self.iteration_count % 500 == 0: 
+        if self.accelerator.is_main_process and has_wandb and self.iteration_count % 500 == 0 and not args.debug: 
             print(colored("generating images ... at iteration {}".format(self.iteration_count), "yellow")) 
             for layer in [0, 6, 11]: 
                 for head in [0, 6, 11]: 
