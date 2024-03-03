@@ -875,44 +875,44 @@ for tokenizer in tokenizers:
 
 kernel_size = args.kernel_size 
 # datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
-# datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
+datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = False) 
-# train_dataset, test_dataset = datasetnew.split(0.98) 
+train_dataset, test_dataset = datasetnew.split(0.98) 
 # the max_length assignment is subject to change 
 max_length_lookup = {2 : 260, 3 : 259, 4 : 260, 5 : 259, 6 : 262, 7 : 260, 8 : 264} 
 # datasetnew = CustomDataset(max_length = max_length_lookup[kernel_size], data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64) 
-dfiles = [] 
-if "ada" in hostname: 
-    for i in range(0, 2): 
-        # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
-        # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
-        filename = "c4synthesized_file1_kernel7_{}.json".format(i) 
-        dfiles.append(dir_sdata + "{}/".format(model_name) + filename) 
-elif "lovelace" in hostname: 
-    # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
-    filename = "c4synthesized_file1_kernel7_0.json" 
-    dfiles.append(dir_sdata + "{}/".format(model_name) + filename) 
-else: 
-    for i in range(0, 8): 
-        # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
-        filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
-        topk = None 
-        dfiles.append(dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
+# dfiles = [] 
+# if "ada" in hostname: 
+#     for i in range(0, 2): 
+#         # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+#         # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+#         filename = "c4synthesized_file1_kernel7_{}.json".format(i) 
+#         dfiles.append(dir_sdata + "{}/".format(model_name) + filename) 
+# elif "lovelace" in hostname: 
+#     # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
+#     filename = "c4synthesized_file1_kernel7_0.json" 
+#     dfiles.append(dir_sdata + "{}/".format(model_name) + filename) 
+# else: 
+#     for i in range(0, 8): 
+#         # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
+#         filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
+#         topk = None 
+#         dfiles.append(dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
 
-if not args.debug: 
-    onedataset = load_dataset('json', data_files = dfiles, split = "train") 
-else: 
-    onedataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
+# if not args.debug: 
+#     onedataset = load_dataset('json', data_files = dfiles, split = "train") 
+# else: 
+#     onedataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
 
-d = onedataset.train_test_split(test_size = 0.98) 
-def encode_with_truncation(examples): 
-    return tokenizer(examples["text"], padding = "max_length", max_length = 260, 
-                     return_attention_mask = True, return_tensors = "pt", truncation = True) 
-train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 8) 
-test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 8) 
+# d = onedataset.train_test_split(test_size = 0.98) 
+# def encode_with_truncation(examples): 
+#     return tokenizer(examples["text"], padding = "max_length", max_length = 260, 
+#                      return_attention_mask = True, return_tensors = "pt", truncation = True) 
+# train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 8) 
+# test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 8) 
 
-train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
-test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+# train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+# test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 
 # if not args.use_pretrained_small_model: 
 #     train_set, test_set = datasetnew.split(0.98) 
