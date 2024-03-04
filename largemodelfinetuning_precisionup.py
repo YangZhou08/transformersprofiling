@@ -909,11 +909,11 @@ d = onedataset.train_test_split(test_size = 0.98)
 def encode_with_truncation(examples): 
     return tokenizer(examples["text"], padding = "max_length", max_length = 260, 
                      return_attention_mask = True, return_tensors = "pt", truncation = True, add_special_tokens = True) 
-train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 8) 
-test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 8) 
+train_dataset = d["train"].map(encode_with_truncation, num_proc = 8) 
+test_dataset = d["test"].map(encode_with_truncation, num_proc = 8) 
 
-train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
-test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+# train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+# test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 
 # if not args.use_pretrained_small_model: 
 #     train_set, test_set = datasetnew.split(0.98) 
@@ -1043,11 +1043,11 @@ if args.use_pretrained_small_model:
     large_model.addonsmallmodel.load_state_dict(small_model_state_dict) 
     large_model.addonsmallmodel.eval() 
 
-large_model.config.pad_token_id = tokenizers[0].pad_token_id 
+large_model.config.pad_token_id = large_tokenizer.pad_token_id 
 if args.use_new_small_model_checkpoint: 
-    small_model.config.pad_token_id = tokenizers[1].pad_token_id 
+    small_model.config.pad_token_id = small_tokenizer.pad_token_id 
 else: 
-    large_model.addonsmallmodel.config.pad_token_id = tokenizers[1].pad_token_id 
+    large_model.addonsmallmodel.config.pad_token_id = small_tokenizer.pad_token_id 
 
 large_model.model.train() 
 large_model.addonsmallmodel.train() 
