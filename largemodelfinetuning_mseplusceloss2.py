@@ -357,6 +357,19 @@ class CustomTrainer(Trainer):
                 labels = label2, 
                 condensed_embed_labels = condensed_embeds_labels, 
             ) 
+        elif isinstance(self.model, LlamaWeirdLargeIntermediate): 
+            outputs = model(
+                large_input_ids = large_input_ids, 
+                small_input_ids = small_input_ids, 
+                attention_mask = attention_mask, 
+                output_hidden_states = True, 
+                output_attentions = True, 
+                return_dict = True, 
+                # condensed_embed_labels = None, 
+                original_attention_mask = original_attention_mask, 
+                labels = label2, 
+                condensed_embed_labels = condensed_embeds_labels, 
+            ) 
         # Save past state if it exists
         # TODO: this needs to be fixed and made cleaner later.
         if self.args.past_index >= 0:
