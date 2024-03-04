@@ -1005,7 +1005,7 @@ datasetnew = CustomDataset(data_dir = dir_sdata, tokenizer = tokenizer, kernel_s
 train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.05 = 36k 
                                                  # 356k * 0.99 = 352k 356k * 0.01 = 3.6k 
 ''' 
-
+''' 
 total_seq_count = 0 
 total_found_seg_collector = 0 
 
@@ -1033,7 +1033,7 @@ with mp.Pool(processes = 8) as pool:
         total_found_seg_collector += result["total_found_seg_collector"] 
 
 print("percentage of found segments is {} total seq found is {} total word in the train dataset is {}".format(total_found_seg_collector / total_seq_count, total_found_seg_collector, total_seq_count)) 
-
+'''
 param_group = [] 
 module_projection_name = "output_n_projection.weight" 
 # model = LlamaCausalLMWeirdTwo.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models, lookaheadcount = args.n).to(torch.bfloat16).to(torch_device) 
