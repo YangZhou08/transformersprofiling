@@ -2049,17 +2049,9 @@ class LlamaWeirdLargeIntermediate(LlamaPreTrainedModel):
 
         # inside this function callm, input is through input_embeds 
         # now, we have a start of sequence token 
-        print("large_input_ids sequence first element: {}".format(large_input_ids[:, 0])) 
-        start_token = self.model.embed_tokens(large_input_ids[:, 0].unsqueeze(1)) 
-        extra_pass_in_embeds = self.naive_grouping(large_input_ids[:, 1: ]) 
-        extra_pass_in_embeds = torch.cat((start_token, extra_pass_in_embeds), dim = 1) # concatenate at the sequence length dimension 
         # the attention mask should be compatible to the new input_embeds 
-        print("attention_mask shape {} and extra_pass_in_embeds shape {}".format(attention_mask.shape, extra_pass_in_embeds.shape)) 
         # print("condensed_embeds_labels shape {}".format(condensed_embed_labels.shape)) 
-        assert attention_mask.shape[1] == extra_pass_in_embeds.shape[1], "attention_mask shape is not compatible to the new input_embeds" 
         assert inputs_embeds is None, "inputs_embeds is not None" 
-        inputs_embeds = extra_pass_in_embeds 
-        print(colored("inputs_embeds shape {} dtype {}".format(inputs_embeds.shape, inputs_embeds.dtype), "yellow")) 
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn) 
         # TODO delete the following line 
         
