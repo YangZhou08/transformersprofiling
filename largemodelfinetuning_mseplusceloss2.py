@@ -30,6 +30,7 @@ from src.transformers.models.llama.modeling_llama import LlamaWeirdLarge
 from src.transformers.models.llama.modeling_llama import LlamaWeirdLarge2 
 from src.transformers.models.llama.modeling_llama import LlamaWeirdLarge3 
 from src.transformers.models.llama.modeling_llama import LlamaWeirdLargeTest 
+from src.transformers.models.llama.modeling_llama import LlamaWeirdLargeIntermediate 
 import time 
 from torch.utils.data import random_split 
 from src.transformers import BitsAndBytesConfig 
@@ -1003,7 +1004,8 @@ elif args.large_model == "tinyllama":
             else: 
                 raise ValueError("no compression scheme specified") 
         else: 
-            large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+            # large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+            large_model = LlamaWeirdLargeIntermediate.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     large_model.set_msece_loss(args.use_mse_loss, args.ce_loss_only) 
     if args.use_new_small_model_checkpoint: 
         print(colored("using new small model checkpoint", "yellow")) 

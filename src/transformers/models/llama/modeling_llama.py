@@ -1767,7 +1767,8 @@ class LlamaWeirdLargeIntermediate(LlamaPreTrainedModel):
     ''' 
     def __init__(self, config): 
         super().__init__(config) 
-        self.model = LlamaModel(config) 
+        # self.model = LlamaModel(config) 
+        self.model = LlamaModelHybridSequenceLength(config) 
         self.vocab_size = config.vocab_size 
         self.lm_head = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias = False) 
         # self.addonsmallmodel = None 
