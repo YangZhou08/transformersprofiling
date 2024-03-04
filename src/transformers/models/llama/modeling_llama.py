@@ -2119,6 +2119,7 @@ class LlamaWeirdLargeIntermediate(LlamaPreTrainedModel):
         # print("cossim_input shape {}".format(cossim_input.shape)) 
         # cossim_input = cossim_input.mean(dim = 0) 
         # print("cossim_input {}".format(cossim_input)) 
+        l2_distance_input = torch.tensor(0) 
         
         if self.use_mse_loss: 
             print(colored("mse_loss {}".format(mse_loss), "red")) 
