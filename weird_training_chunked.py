@@ -1105,8 +1105,8 @@ if has_wandb:
     # wandb.init(project = "llm160m", config = wandblogconfigs, name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain")) 
     wandb.init(project = "chunklargefinetuning", config = wandblogconfigs, name = "{}_{}".format(today, "unmasked")) 
 
-if has_wandb: 
-    wandb.log({"percentage of found segments": total_found_seg_collector / total_seq_count, "total seq found": total_found_seg_collector, "total word in the train dataset": total_seq_count}) 
+# if has_wandb: 
+    # wandb.log({"percentage of found segments": total_found_seg_collector / total_seq_count, "total seq found": total_found_seg_collector, "total word in the train dataset": total_seq_count}) 
 
 weightmodelfirst = next(model.parameters()) 
 # print(weightmodelfirst.dtype) 
