@@ -1513,10 +1513,18 @@ class LlamaModelHybridSequenceLength(LlamaPreTrainedModel):
 
         if position_ids is None:
             device = input_ids.device if input_ids is not None else inputs_embeds.device
-            position_ids = torch.arange(
-                past_key_values_length, seq_length + past_key_values_length, dtype=torch.long, device=device
-            )
-            position_ids = position_ids.unsqueeze(0) 
+            # position_ids = torch.arange(
+            #     past_key_values_length, seq_length + past_key_values_length, dtype=torch.long, device=device
+            # )
+            # position_ids = position_ids.unsqueeze(0) 
+            firstlayer_position_ids = torch.arange(
+                past_key_values_length, seq_length + past_key_values_length, dtype = torch.long, device = device 
+            ) 
+            firstlayer_position_ids = firstlayer_position_ids.unsqueeze(0) 
+            secondlayer_position_ids = torch.arange(
+                past_key_values_length, (seq_length - 1) // self.kernel_size + past_key_values_length, dtype = torch.long, device = device
+            ) 
+            secondlayer_position_ids = secondlayer_position_ids.unsqueeze(0) 
             # print(colored("position_ids: {}".format(position_ids), "red")) # TODO remove this print once this is make sure to be correct 
 
         if inputs_embeds is None:
@@ -1589,7 +1597,8 @@ class LlamaModelHybridSequenceLength(LlamaPreTrainedModel):
                 hidden_states,
                 # attention_mask=attention_mask, 
                 attention_mask = first_layer_attention_mask if idx < self.full_sequence_length_layer_pos else second_layer_attention_mask, 
-                position_ids=position_ids,
+                # position_ids=position_ids,
+                position_ids = firstlayer_position_ids if idx < self.full_sequence_length_layer_pos else secondlayer_position_ids, 
                 past_key_value=past_key_value,
                 output_attentions=output_attentions,
                 use_cache=use_cache,
