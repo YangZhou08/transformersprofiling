@@ -915,7 +915,7 @@ d = onedataset.train_test_split(test_size = 0.05)
 # def encode_with_truncation(examples): 
     # return tokenizer(examples["text"], truncation=True, padding="max_length",
                 #    max_length=max_length, return_special_tokens_mask=True) 
-hot_1000_3_grams = log_dict_converterc(synthesized_dir_path + "mostcommon100000{}grams.json".format(args.n), preproc = True, tokenizer = tokenizer) 
+# hot_1000_3_grams = log_dict_converterc(synthesized_dir_path + "mostcommon100000{}grams.json".format(args.n), preproc = True, tokenizer = tokenizer) 
 
 def encode_with_truncation(examples): 
     # return tokenizer(examples["text"], truncation = True, padding = "max_length", 
@@ -969,8 +969,8 @@ for i in range(len(train_dataset)):
         print("type of k is {} and k is {}".format(type(k), k)) 
         print("type of v is {} and v is {}".format(type(v), v)) 
 ''' 
-train_dataset = train_dataset.map(encode_with_truncation2, batched = True, num_proc = 16) # 16 or 8 
-test_dataset = test_dataset.map(encode_with_truncation2, batched = True, num_proc = 16) # 16 or 8 
+# train_dataset = train_dataset.map(encode_with_truncation2, batched = True, num_proc = 16) # 16 or 8 
+# test_dataset = test_dataset.map(encode_with_truncation2, batched = True, num_proc = 16) # 16 or 8 
 
 collection_verify = [] 
 for i in range(10): 
@@ -1159,7 +1159,7 @@ trainer = CustomTrainer(
     eval_dataset = test_dataset, 
     data_collator = data_collator, 
     optimizers = (custom_optimizer, None), 
-    common_n_gram_list = hot_1000_3_grams, 
+    # common_n_gram_list = hot_1000_3_grams, 
     use_filtered_hot_labels = False, 
     n = args.n, 
     tokenizer = tokenizer, 
