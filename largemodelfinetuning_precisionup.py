@@ -863,15 +863,16 @@ large_tokenizer = LlamaTokenizer.from_pretrained("TinyLlama/TinyLlama-1.1B-inter
 small_tokenizer = LlamaTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 # tokenizer = AutoTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
 # tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
-tokenizers = [large_tokenizer, small_tokenizer] 
-for tokenizer in tokenizers: 
-    if tokenizer.pad_token is not None: 
-        print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
-    else: 
-        tokenizer.pad_token = tokenizer.eos_token 
-        print("We now use eos_token as pad token") 
-    tokenizer.padding_side = "left" 
-    # tokenizer.padding_side = "right" 
+# tokenizers = [large_tokenizer, small_tokenizer] 
+# for tokenizer in tokenizers: 
+tokenizer = small_tokenizer 
+if tokenizer.pad_token is not None: 
+    print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
+else: 
+    tokenizer.pad_token = tokenizer.eos_token 
+    print("We now use eos_token as pad token") 
+tokenizer.padding_side = "left" 
+# tokenizer.padding_side = "right" 
 
 kernel_size = args.kernel_size 
 # datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
