@@ -187,7 +187,8 @@ print("Hostname:", hostname)
 if "lovelace" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     # datasetsrc = "/home/yangzho6/c4_parts/downloads/c4_file2.json" 
-    datasetsrc = "/home/yangzho6/c4llm_synthesized/c4synthesized_file1_kernel5.json" 
+    # datasetsrc = "/home/yangzho6/c4llm_synthesized/c4synthesized_file1_kernel5.json" 
+    datasetsrc = "/home/yangzho6/c4llm_synthesized/tinyllama/c4synthesized_file1_kernel7_0.json" 
     synthesized_dir_path = "/home/yangzho6/c4llm_synthesized/" 
     dir_models = "/home/yangzho6/model_checkpoints" 
     dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
@@ -1033,7 +1034,8 @@ print("percentage of found segments is {} total seq found is {} total word in th
 
 param_group = [] 
 module_projection_name = "output_n_projection.weight" 
-model = LlamaCausalLMWeirdTwo.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models, lookaheadcount = args.n).to(torch.bfloat16).to(torch_device) 
+# model = LlamaCausalLMWeirdTwo.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models, lookaheadcount = args.n).to(torch.bfloat16).to(torch_device) 
+model = LlamaCausalLMWeirdTwo.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models, lookaheadcount = args.n).to(torch.bfloat16) 
 model.set_lookaheadcount(args.n) 
 for name, param in model.named_parameters(): 
     if name == module_projection_name: 
