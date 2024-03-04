@@ -2114,13 +2114,6 @@ class LlamaWeirdLargeIntermediate(LlamaPreTrainedModel):
         cossim_input = cossim_loss.clone().detach() 
         # print(colored("mse_loss {}".format(mse_loss), "red")) 
         
-        assert inputs_embeds.shape[1] - 2 == hidden_states.shape[1] 
-        mse_lossfunc2 = nn.MSELoss() 
-        # print("first 100 elements of input_embeds: {}".format(inputs_embeds[0][0][: 100])) 
-        # inputs_embeds = inputs_embeds[:, 1:, :] 
-        inputs_embeds = inputs_embeds[:, 2:, :] # NOTE first condensed token is the start of sequence, while the second one is the first token 
-        mse_loss_input = mse_lossfunc2(hidden_states, inputs_embeds) 
-        l2_distance_input = mse_loss_input.clone().detach() 
         # print(colored("mse_loss_input {}".format(mse_loss_input), "red")) 
         # cossim_input = F.cosine_similarity(hidden_states.reshape(-1, hidden_states.shape[-1]), inputs_embeds.reshape(-1, inputs_embeds.shape[-1]), dim = 1) 
         # print("cossim_input shape {}".format(cossim_input.shape)) 
