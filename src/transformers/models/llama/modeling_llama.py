@@ -1464,6 +1464,8 @@ class LlamaModelHybridSequenceLength(LlamaPreTrainedModel):
         
         out_attention_mask = combined_attention_mask.clone() 
         out_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
+        
+        return out_attention_mask 
     
     def _second_level_attention_mask(self, seq_len, dtype, mask_list_pos, kernel_size = None, batch_size = None, inputs_embeds = None, past_key_values_length = None): 
         out_attention_mask = torch.ones( 
