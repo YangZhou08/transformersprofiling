@@ -906,8 +906,8 @@ tokenizer.padding_side = "left"
 
 # backup dataset 
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1.json', split = "train") 
-# onedataset = load_dataset('json', data_files = datasetsrc, split = "train[:3000]") 
-onedataset = load_dataset('json', data_files = datasetsrc, split = "train") 
+onedataset = load_dataset('json', data_files = datasetsrc, split = "train[:3000]") 
+# onedataset = load_dataset('json', data_files = datasetsrc, split = "train") 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 d = onedataset.train_test_split(test_size = 0.05) 
 # print(d["train"], d["test"]) 
@@ -992,8 +992,10 @@ for it in collection_verify:
     print(colored(tokenizer.decode(torch.tensor(it)), "blue"), end = ", ") # collection verified are the ngrams that appeared inthat 10 examples, not representative to the entire 10^5 ngrams collected 
 
 # print("The model max length is {}".format(small_model.config.max_position_embeddings)) 
-train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask', 'labels', 'total_pos', 'total_found_num']) 
-test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask', 'labels', 'total_pos', 'total_found_num']) 
+# train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask', 'labels', 'total_pos', 'total_found_num']) 
+# test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask', 'labels', 'total_pos', 'total_found_num']) 
+train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 '''
 # custom dataset 
 # defining custom dataset 
