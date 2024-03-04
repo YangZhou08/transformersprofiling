@@ -1570,7 +1570,7 @@ class LlamaModelHybridSequenceLength(LlamaPreTrainedModel):
             past_key_value = past_key_values[idx] if past_key_values is not None else None 
             
             # sampling after a few layers 
-            print(colored("idx: {}".format(idx), "red")) 
+            # print(colored("idx: {}".format(idx), "red")) 
             if idx == self.full_sequence_length_layer_pos: 
                 # here is an illustration of sampling, say we have a sequence of <bos> A B C D E F G H, where the kernel size is 4 
                 # then, the designed downsampling or sampling on dimension reduction is as follows, we group tokens after the start 
@@ -1581,7 +1581,7 @@ class LlamaModelHybridSequenceLength(LlamaPreTrainedModel):
                 picking_index_list = [self.kernel_size * i for i in range(1, (seq_length - 1) // self.kernel_size + 1)] 
                 hidden_states = hidden_states[:, picking_index_list, :] 
                 assert hidden_states.shape[1] == second_layer_attention_mask.shape[-1] 
-            print(colored("idx: {} hidden_states.shape: {}".format(idx, hidden_states.shape), "red")) 
+            # print(colored("idx: {} hidden_states.shape: {}".format(idx, hidden_states.shape), "red")) 
             assert self.gradient_checkpointing == False # some lines below are deleted, if you need to recover it, please refer to full versions elsewhere in this file 
             # if self.gradient_checkpointing and self.training:
             #     layer_outputs = self._gradient_checkpointing_func(
