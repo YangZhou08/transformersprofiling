@@ -1533,9 +1533,9 @@ class LlamaModelHybridSequenceLength(LlamaPreTrainedModel):
         
         # attention mask changes 
         first_layer_attention_mask = self._first_level_attention_mask(attention_mask, dtype = inputs_embeds.dtype, mask_list_pos = None, kernel_size = self.kernel_size) 
-        self.visualize_attention_mask(seq_length, first_layer_attention_mask, "first_layer_attention_mask.jpg") 
+        self.visualize_attention_mask(seq_length, first_layer_attention_mask[0][0], "first_layer_attention_mask.jpg") 
         second_layer_attention_mask = self._second_level_attention_mask(seq_length, dtype = inputs_embeds.dtype, mask_list_pos = None, kernel_size = self.kernel_size, batch_size = batch_size, inputs_embeds = inputs_embeds, past_key_values_length = past_key_values_length) 
-        self.visualize_attention_mask((seq_length - 1) // self.kernel_size, second_layer_attention_mask, "second_layer_attention_mask.jpg") 
+        self.visualize_attention_mask((seq_length - 1) // self.kernel_size, second_layer_attention_mask[0][0], "second_layer_attention_mask.jpg") 
 
         # embed positions
         hidden_states = inputs_embeds 
