@@ -2088,7 +2088,6 @@ class LlamaWeirdLargeIntermediate(LlamaPreTrainedModel):
         # print(colored("small_model_type: {}".format(self.small_model_dtype), "red")) 
         # intermediate_l2_dist = self.l2distancecompute(inputs_embeds, hidden_states) 
         
-        practical_mask = attention_mask.unsqueeze(-1).expand_as(inputs_embeds) 
         hidden_states = hidden_states[:, 1:-1, :] # NOTE this is very important 
         if condensed_embed_labels is not None: 
             mselabels = condensed_embed_labels 
