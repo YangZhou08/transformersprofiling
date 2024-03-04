@@ -319,6 +319,7 @@ class CustomTrainer(Trainer):
         original_attention_mask = inputs["attention_mask"] # (batch_size, 203) 
         label2 = inputs["labels"] # (batch_size, 203) 
         print("shape of large_input_ids {} shape of small_input_ids {}".format(large_input_ids.shape, small_input_ids.shape)) 
+        print("shape of output_attention_mask {}".format(original_attention_mask.shape)) 
         
         batch_size, seq_len = original_attention_mask.shape 
         # addedon_length = (seq_len - 8) // self.n 
@@ -909,8 +910,10 @@ d = onedataset.train_test_split(test_size = 0.98)
 def encode_with_truncation(examples): 
     return tokenizer(examples["text"], padding = "max_length", max_length = 260, 
                      return_attention_mask = True, return_tensors = "pt", truncation = True, add_special_tokens = True) 
-train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 8) 
-test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 8) 
+# train_dataset = d["train"].map(encode_with_truncation, batched = True, num_proc = 8) 
+train_dataset = d["train"].map(encode_with_truncation, num_proc = 8) 
+# test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 8) 
+test_dataset = d["test"].map(encode_with_truncation, num_proc = 8) 
 
 train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
