@@ -233,6 +233,7 @@ parser.add_argument("--use_old_checkpoint", action = "store_true")
 parser.add_argument("--use_new_small_model_checkpoint", action = "store_true") 
 parser.add_argument("--autoregressive_baseline", action = "store_true") 
 parser.add_argument("--group_compress", action = "store_true") 
+parser.add_argument("--hybrid_compress", action = "store_true") 
 
 args = parser.parse_args() 
 model_name = args.large_model 
@@ -1017,8 +1018,8 @@ elif args.large_model == "tinyllama":
             else: 
                 raise ValueError("no compression scheme specified") 
         else: 
-            # large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
-            large_model = LlamaWeirdLargeIntermediate.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+            large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+            # large_model = LlamaWeirdLargeIntermediate.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     large_model.set_msece_loss(args.use_mse_loss, args.ce_loss_only) 
     if args.use_new_small_model_checkpoint: 
         print(colored("using new small model checkpoint", "yellow")) 
