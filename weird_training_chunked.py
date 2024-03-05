@@ -946,8 +946,8 @@ class CustomTrainer(Trainer):
                        "average_acceptance_length": total_acceptance_length / total_length_token, 
                        "total_acceptance_length": total_acceptance_length, 
                        "total_length_counted_tokens": total_length_token, 
-                       "extra_ref_acceptance_length": extra_ref_acceptance_length / total_unfiltered_length, 
-                       "extra_ref_total_acceptance_length": extra_ref_acceptance_length, 
+                    #    "extra_ref_acceptance_length": extra_ref_acceptance_length / total_unfiltered_length, 
+                    #    "extra_ref_total_acceptance_length": extra_ref_acceptance_length, 
                        "extra_ref_total_unfiltered_length": total_unfiltered_length, 
                        **holding_dimsionacc
             }) 
