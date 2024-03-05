@@ -897,7 +897,7 @@ class CustomTrainer(Trainer):
             total_words += local_metrics["total_words"] 
             total_length_token += local_metrics["total_counted_pos"] 
             total_acceptance_length += local_metrics["total_acceptance_length"] 
-            total_unfiltered_length += local_metrics["total_unfiltered_token"] 
+            # total_unfiltered_length += local_metrics["total_unfiltered_token"] 
             for i in range(0, self.n): 
                 # holding_diff_dimensionacc["dimension acc {}".format(i)] = local_metrics["dimension acc {}".format(i)] 
                 holding_diff_dimensionacc["dimension acc {}".format(i)].append(local_metrics["dimension acc {}".format(i)]) 
@@ -932,13 +932,13 @@ class CustomTrainer(Trainer):
         for i in range(self.n): 
             holding_dimsionacc["dimension acc {}".format(i)] = sum(holding_diff_dimensionacc["dimension acc {}".format(i)])/len(holding_diff_dimensionacc["dimension acc {}".format(i)]) 
             print("dimension {} has accuracy {}".format(i, holding_dimsionacc["dimension acc {}".format(i)])) 
-        
+        '''
         # have an extra reference only when hotness measure is activated 
         length_diff = total_unfiltered_length - total_length_token # this is the number of tokens that are not filtered by the hotness measure 
         extra_ref_acceptance_length = length_diff + total_acceptance_length # for all the tokens that doesn't have their corresponding ngram in the list, we use one entire forward pass to process them 
         print(colored("average_accpetance_length is {} total_acceptance_length is {} total_length_counted_token is {}".format(total_acceptance_length / total_length_token, total_acceptance_length, total_length_token), "cyan")) 
         print(colored("extra_ref_acceptance_length is {} extra_ref_total_acceptance_length {} extra_ref_total_unfiltered_length {}".format(extra_ref_acceptance_length / total_unfiltered_length, extra_ref_acceptance_length, total_unfiltered_length), "yellow")) 
-
+        ''' 
         metrics = {"accuracy": global_accuracy, "average_acceptance_length": total_acceptance_length / total_length_token} 
         print(colored(metrics, "magenta")) 
         if has_wandb: 
@@ -1202,7 +1202,7 @@ data_collator = DataCollatorForLanguageModeling2(tokenizer = tokenizer, mlm = Fa
 
 # model_path = "/home/bc20/yang" 
 # model_path = "/home/yangzho6/model_checkpoints" 
-model_path = dir_models 
+model_path = dir_models + "blockwiseprojection_{}_{}_{}_{}".format("tinyllama", args.n, commit_hash, hash_of_time) 
 training_args = TrainingArguments(
     output_dir=model_path,          # output directory to where save model checkpoint
     # evaluation_strategy="steps",    # evaluate each `logging_steps` steps 
