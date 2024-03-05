@@ -462,7 +462,7 @@ class CustomTrainer(Trainer):
         print("total counted pos is {}".format(total_counted_pos)) 
         print("average acceptance length is {}".format(total_acceptance_length / total_counted_pos)) 
     
-    def local_compute_metrics(
+    def local_compute_metrics2(
         self, 
         logits, 
         labels, 
@@ -637,6 +637,146 @@ class CustomTrainer(Trainer):
         # return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "interest_correct_words": interest_correct_count, "interest_total_words": interest_token_count} 
         # return {"correct_words": correct_words, "total_words": total_acc_poscount, "total_counted_pos": total_counted_pos, "total_acceptance_length": total_acceptance_length, **holding_diff_dimensionacc} 
         return {"correct_words": correct_words, "total_words": total_acc_poscount, "total_counted_pos": total_counted_pos, "total_acceptance_length": total_acceptance_length, "total_unfiltered_token": total_unfiltered_tokens, **holding_diff_dimensionacc} 
+
+    def local_compute_metrics(
+        self, 
+        logits, 
+        labels, 
+        loss, 
+        input_attention_mask, 
+        outside_step, 
+    ): 
+        with torch.no_grad(): 
+            from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+
+            # print("length of logits is {}".format(len(logits))) 
+            for index in range(len(logits)): 
+                print("logits[{}] is {}".format(index, logits[index].shape)) 
+            # print(colored("printing out the type of logits {}".format(type(logits)), "red")) 
+            
+            # original_model_logits = logits[1] # dimension (batch_size, seq_len, vocab_size) 
+            model_output_logits = logits[0] # dimension (batch_size, seq_len, n, vocab_size) 
+            label_actual_mask = logits[1] # dimension (batch_size, seq_len - n) 
+            # print("as a sanity check, we see the datatype of label_actual_mask is {}".format(label_actual_mask.dtype)) 
+            # input_attention_mask = input_attention_mask[:, :-1] 
+            input_attention_mask = input_attention_mask[:, 1:] 
+            # labels = labels[:, 1:] 
+            # preds = torch.argmax(logits, dim = -1) # dimension (batch_size, seq_len - 1) 
+            if outside_step == 0: 
+                # print("*** evaluating at step {} ***".format(self.iteration_count)) 
+                # visualize the actual output prediction during the evaluation 
+                if self.use_filtered_hot_labels: 
+                    pass 
+                else: 
+                    pass 
+            
+            indices_to_keep = input_attention_mask == 1 
+            total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
+            
+            # computing the total accuracy of prediction 
+            shift_labels = [] 
+            # original_seq_len = original_model_logits.shape[1] 
+            original_seq_len = model_output_logits.shape[1] 
+            print(colored("original seq len is {}".format(original_seq_len), "yellow")) 
+            for i in range(1, self.n + 1): 
+                shift_labels.append(labels[:, i : i + original_seq_len - self.n].contiguous()) 
+            shift_labels = torch.stack(shift_labels, dim = 2) # dimension (batch_size, seq_len - n, n) 
+            print("shift_labels has shape {}".format(shift_labels.shape)) 
+            # shift_labels[shift_labels.unsqueeze(-1).expand(-1, -1, 3)] = -100 
+            # total_acc_poscount = (~(label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n).to(torch.bool))).to(torch.long).view(-1).sum(dim = 0).item() 
+            total_acc_poscount = (label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n).to(torch.bool)).to(torch.long).view(-1).sum(dim = 0).item() 
+            model_output_logits2 = model_output_logits[:, :-(self.n), :, :].contiguous() 
+            pred = torch.argmax(model_output_logits2, dim = -1) 
+            assert pred.shape == shift_labels.shape 
+            correctness_matrix = (pred == shift_labels).to(torch.long) # 1 for for matching while 0 is for not matching 
+            # filter the matrix with the original filter 
+            correctness_matrix = correctness_matrix * (label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n)) 
+            correct_words = torch.sum(correctness_matrix.view(-1), dim = 0) 
+            print(colored("total counted words is {} correct words is {}".format(total_acc_poscount, correct_words), "yellow")) 
+            
+            # nothing fancy now, just greedy speculative sampling 
+            # starting from 64th token, the rest 64th token should be used to compute the acceptance length 
+            # pred has shape (batch_size, seq_len - n, n) 
+            # pred = pred[:, self.generated_token_start_idx :, :] 
+            pred = pred[:, self.generated_token_start_idx - 1 :, :] 
+            shift_labels = shift_labels[:, self.generated_token_start_idx - 1 :, :] 
+            label_accept = label_actual_mask.unsqueeze(-1).expand(-1, -1, self.n)[:, self.generated_token_start_idx - 1 :] 
+            acceptance_intermediate = (pred == shift_labels).to(torch.long) # here one is for correct, zero is for incorrect 
+            acceptance_intermediate = acceptance_intermediate * label_accept # after filtering one is for keep and correct, zero is for discard 
+            dim0  = acceptance_intermediate.shape[0] 
+            dim1 = acceptance_intermediate.shape[1] 
+            # print("dim0 is {} dim1 is {}".format(dim0, dim1)) # we have to make sure dim0 and dim1 are assigned before we reshape acceptance_intermediate 
+            # print("pred, atch size {}, first 20 elements on dim 0 are {}".format(0, pred[0, : 20, 0])) 
+            # print("pred, batch size {}, first 20 elements on dim 1 are {}".format(0, pred[0, :20, 1])) 
+            # print("labels, batch size {}, first 20 elements on dim 0 are {}".format(0, shift_labels[0, : 20, 0])) 
+            # print("labels, batch size {}, first 20 elements on dim 1 are {}".format(0, shift_labels[0, :20, 1])) 
+            # print("acceptance_intermediate, batch size {}, first 20 elements are {}".format(0, acceptance_intermediate[0, : 20, 0])) 
+            # print("acceptance_intermediate, batch size {}, first 20 elements are {}".format(0, acceptance_intermediate[0, : 20, 1])) 
+            holding_diff_dimensionacc = {} 
+            for i in range(0, self.n): 
+                print("dimension {} has prediction accuracy: {}".format(i, torch.sum(acceptance_intermediate[:, :, i].view(-1), dim = 0).item() / (dim0 * dim1))) 
+                holding_diff_dimensionacc["dimension acc {}".format(i)] = torch.sum(acceptance_intermediate[:, :, i].view(-1), dim = 0).item() / (dim0 * dim1) 
+            acceptance_intermediate = acceptance_intermediate.reshape(-1, self.n) 
+            
+            row_indices, col_indices = torch.nonzero(~(acceptance_intermediate.to(torch.bool)), as_tuple = True) # this is very important, now one is for wrong or discard, zero is for correct and keep 
+            idx_row_col_traversal = 0 
+            total_counted_pos = 0 
+            total_acceptance_length = 0 
+            for i in range(dim0): 
+                # boundary check 
+                if idx_row_col_traversal >= row_indices.shape[0]: 
+                    break 
+                for j in range(dim1): 
+                    # row_i = i * mask.shape[1] + j 
+                    row_i = i * dim1 + j 
+                    # print(i, j) 
+                    # if input_attention_mask[i, j] == 0: 
+                    if label_accept[i, j, 0] == 0: # label_accept has dimension (batch_size, some length, n) 
+                        # we have this filtering such that after the if, we have 1 to signify keep and wrong, 0 is to signify keep and correct 
+                        # we skip this token 
+                        # print("we skip at batch size {} position {} row_i {} row_indices is at {}.format(i, j, row_i, row_indices[idx_row_col_traversal])") 
+                        while idx_row_col_traversal < row_indices.shape[0] and row_indices[idx_row_col_traversal] == row_i: 
+                        # while row_indices[idx_row_col_traversal] <= row_i: # should essentailly be ==, since previously we guarantee that row_indices is right at the new pos 
+                            idx_row_col_traversal += 1 
+                        # print("idx_row_col_traversal now at {}".format(idx_row_col_traversal)) 
+                        continue 
+                    # boundary check 
+                    if idx_row_col_traversal >= row_indices.shape[0]: 
+                        break 
+                    total_counted_pos += 1 
+                    assert row_i <= row_indices[idx_row_col_traversal] 
+                    if row_i < row_indices[idx_row_col_traversal]: 
+                        # print("we accept all n tokens at {} since row index is at {}".format(row_i, row_indices[idx_row_col_traversal])) 
+                        # we accept all n tokens at row_i position 
+                        total_acceptance_length += self.n 
+                    elif row_i == row_indices[idx_row_col_traversal]: 
+                        # print("we accept some tokens {}".format(row_i)) 
+                        # we accept some tokens
+                        total_acceptance_length += col_indices[idx_row_col_traversal] 
+                        # print("col_indices[idx_row_col_traversal] is {}".format(col_indices[idx_row_col_traversal])) 
+                        idx_row_col_traversal += 1 
+                        # boundary check 
+                        if idx_row_col_traversal >= row_indices.shape[0]: 
+                            # print("we break at {}".format(idx_row_col_traversal)) 
+                            break 
+                        # print("index_row_col_traversal now at {} and row_indices has length {}".format(idx_row_col_traversal, row_indices.shape[0])) 
+                        while idx_row_col_traversal < row_indices.shape[0] and row_indices[idx_row_col_traversal] == row_i: 
+                            idx_row_col_traversal += 1 
+                    else: 
+                        raise ValueError("We cannot have this scenario") 
+
+                    # print("inspect where is idx_row_col_traversal at {}".format(idx_row_col_traversal)) 
+                    # print("total acceptance length is {}".format(total_acceptance_length)) 
+                    # print("total counted pos is {}".format(total_counted_pos)) 
+        
+        print("total acceptance length is {}".format(total_acceptance_length)) 
+        print("total counted pos is {}".format(total_counted_pos)) 
+        print("average acceptance length is {}".format(total_acceptance_length / total_counted_pos)) 
+            
+        # use preds to compute f1 score 
+        # f1 = precision_recall_fscore_support(labels, preds, average = "weighted") 
+        # return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "interest_correct_words": interest_correct_count, "interest_total_words": interest_token_count} 
+        return {"correct_words": correct_words, "total_words": total_acc_poscount, "total_counted_pos": total_counted_pos, "total_acceptance_length": total_acceptance_length, **holding_diff_dimensionacc} 
     
     def evaluation_loop(
         self,
@@ -906,8 +1046,8 @@ tokenizer.padding_side = "left"
 
 # backup dataset 
 # onedataset = load_dataset('json', data_files = '/home/yangzho6/c4llm_synthesized/c4synthesized_file1.json', split = "train") 
-# onedataset = load_dataset('json', data_files = datasetsrc, split = "train[:3000]") 
-onedataset = load_dataset('json', data_files = datasetsrc, split = "train") 
+onedataset = load_dataset('json', data_files = datasetsrc, split = "train[:3000]") 
+# onedataset = load_dataset('json', data_files = datasetsrc, split = "train") 
 # onedataset = load_dataset("c4", "en", split = "train", cache_dir = dir_dataset) 
 d = onedataset.train_test_split(test_size = 0.05) 
 # print(d["train"], d["test"]) 
@@ -1071,11 +1211,12 @@ training_args = TrainingArguments(
     per_device_train_batch_size = 50, # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size= 40,  # evaluation batch size
-    # logging_steps=1, 
-    logging_steps = 300,          # evaluate, log and save model checkpoints every 1000 step
+    logging_steps=1, 
+    # logging_steps = 300,          # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 300, 
+    # save_steps = 300, 
+    save_steps = 1, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     # learning_rate=2e-4, 
