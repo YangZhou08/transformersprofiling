@@ -252,8 +252,10 @@ elif "ada" in hostname:
     dir_sdata = "/home/beidic/yangzho6/c4llm_synthesized/" 
 else: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
-    dir_models = "/home/yangzho6/model_checkpoints/" 
-    dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+    # dir_models = "/home/yangzho6/model_checkpoints/" 
+    # dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+    dir_models = "/fsx-storygen/beidic/yang/model_checkpoints/" 
+    dir_sdata = "/fsx-storygen/beidic/yang/c4llm_synthesized/" 
 
 # has_wandb = False # disable for debugging 
 # model_name = "openllama3b" 
@@ -1149,17 +1151,24 @@ class CustomDataset:
         # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json", split = "train") 
         # self.dataset = load_dataset('json', data_files = [self.synthesize_dir + 'c4synthesized_file1.json', self.synthesize_dir + 'c4synthesized_file2.json'], split="train") 
         dfiles = [] 
-        if kernel_size != 4: 
-            if hostname == "ada": 
-                for i in range(0, 2): 
-                    # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
-                    filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
-                    dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
-            else: 
-                filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
+        topk = None 
+        print(colored("hostname is {}".format(hostname), "yellow")) 
+        if "ada" in hostname: 
+            for i in range(0, 2): 
+                # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+                # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+                filename = "c4synthesized_file1_kernel7_{}.json".format(i) 
                 dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+        elif "lovelace" in hostname: 
+            # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
+            filename = "c4synthesized_file1_kernel7_0.json" 
+            dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
         else: 
-            filename = "c4synthesized_file1.json" 
+            for i in range(0, 8): 
+                # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
+                filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
+                dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
+        
         self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
         # self.dataset = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
         self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
@@ -1276,7 +1285,7 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 # defining custom dataset 
 kernel_size = args.kernel_size 
 
-datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed) 
+datasetnew = CustomDataset(max_length = 260 if args.kernel_size == 7 else 259, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed) 
 # datasetnew.preprocess_dataset() 
 train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.05 = 36k 
                                                  # 356k * 0.99 = 352k 356k * 0.01 = 3.6k 
