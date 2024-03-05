@@ -1247,7 +1247,7 @@ class CustomDataset:
 #     tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
 # else: 
 #     tokenizer = AutoTokenizer.from_pretrained(args.resume_from_checkpoint) 
-tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m") 
 # tokenizer = AutoTokenizer.from_pretrained("facebook/opt-125m", cache_dir = dir_models) 
 # tokenizer.add_special_tokens({"pad_token":"<pad>"}) 
 # print("the tokenizer pad token id is {}".format(tokenizer.pad_token_id)) 
