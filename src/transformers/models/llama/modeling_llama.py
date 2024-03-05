@@ -1353,6 +1353,9 @@ class LlamaModelHybridSequenceLength(LlamaPreTrainedModel):
         self.full_sequence_length_layer_pos = 1 # this line is for identifying which line we should remove 
         self.kernel_size = 7 
         self.post_init()
+        
+    def set_full_sequence_length_layer_pos(self, full_sequence_length_layer_pos): 
+        self.full_sequence_length_layer_pos = full_sequence_length_layer_pos 
 
     def set_kernel_size(self, kernel_size): 
         self.kernel_size = kernel_size 
@@ -1871,6 +1874,10 @@ class LlamaWeirdLargeIntermediate(LlamaPreTrainedModel):
     def set_msece_loss(self, use_mse_loss, ce_loss_only): 
         self.use_mse_loss = use_mse_loss 
         self.ce_loss_only = ce_loss_only 
+    
+    def set_full_sequence_length_layer_pos(self, full_sequence_length_layer_pos): 
+        self.model.set_full_sequence_length_layer_pos(full_sequence_length_layer_pos) 
+        print(colored("full_sequence_length_layer_pos {}".format(full_sequence_length_layer_pos), "yellow")) 
     
     def set_cosinesimilarity(self, use_cosinesimilarity): 
         if use_cosinesimilarity: 

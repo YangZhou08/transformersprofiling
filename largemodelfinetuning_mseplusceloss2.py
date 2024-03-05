@@ -234,6 +234,7 @@ parser.add_argument("--use_new_small_model_checkpoint", action = "store_true")
 parser.add_argument("--autoregressive_baseline", action = "store_true") 
 parser.add_argument("--group_compress", action = "store_true") 
 parser.add_argument("--hybrid_compress", action = "store_true") 
+parser.add_argument("--full_sequence_length_layer_pos", type = int, default = 1) 
 
 args = parser.parse_args() 
 model_name = args.large_model 
@@ -1019,6 +1020,7 @@ elif args.large_model == "tinyllama":
                 raise ValueError("no compression scheme specified") 
         elif args.hybrid_compress: 
             large_model = LlamaWeirdLargeIntermediate.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+            large_model.set_full_sequence_length_layer_pos(args.full_sequence_length_layer_pos) 
         else: 
             large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     large_model.set_msece_loss(args.use_mse_loss, args.ce_loss_only) 
