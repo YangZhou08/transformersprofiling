@@ -713,34 +713,41 @@ class CustomTrainer(Trainer):
 
 class CustomDataset: 
     # def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7): 
-    def __init__(self, data_dir, large_tokenizer = None, small_tokenizer = None, max_length = 256, kernel_size = 7, topk = None, prompt_length = 64): 
+    def __init__(self, data_dir, large_tokenizer = None, small_tokenizer = None, max_length = 256, kernel_size = 7, topk = None, prompt_length = 64, use_minipile = False, in_training = True): 
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
         self.synthesize_dir = data_dir 
         # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json", split = "train") 
         # self.dataset = load_dataset('json', data_files = [self.synthesize_dir + 'c4synthesized_file1.json', self.synthesize_dir + 'c4synthesized_file2.json'], split="train") 
         dfiles = [] 
         print(colored("hostname is {}".format(hostname), "yellow")) 
-        if "ada" in hostname: 
-            for i in range(0, 2): 
-                # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
-                # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
-                filename = "c4synthesized_file1_kernel7_{}.json".format(i) 
+        if not use_minipile: 
+            if "ada" in hostname: 
+                for i in range(0, 2): 
+                    # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+                    # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+                    filename = "c4synthesized_file1_kernel7_{}.json".format(i) 
+                    dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+            elif "lovelace" in hostname: 
+                # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
+                filename = "c4synthesized_file1_kernel7_0.json" 
                 dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
-        elif "lovelace" in hostname: 
-            # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
-            filename = "c4synthesized_file1_kernel7_0.json" 
-            dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+            else: 
+                for i in range(0, 8): 
+                    # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
+                    filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
+                    dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
+            
+            if not args.debug: 
+                self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
+            else: 
+                self.dataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
+            # self.dataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
         else: 
-            for i in range(0, 8): 
-                # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
-                filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
-                dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
-        
-        if not args.debug: 
-            self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
-        else: 
-            self.dataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
-        # self.dataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
+            if in_training: 
+                self.dataset = load_dataset("JeanKaddour/minipile", split = "train") 
+            else: 
+                self.dataset = load_dataset("JeanKaddour/minipile", split = "test") 
+        self.use_minipile = use_minipile 
         self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
         self.kernel_size = kernel_size 
         # self.dataset = self.dataset["train"][0: 5120] 
@@ -773,19 +780,22 @@ class CustomDataset:
     def __getitem__(self, idx): 
         item = self.dataset[idx] 
         
-        try: 
-            tensor = torch.load(item["condensed_token_path"]) 
-        except IOError as e: 
-            if model_name == "shearedllama2_7b": 
-                dmodel = 2560 
-            elif model_name == "openllama3b": 
-                dmodel = 3200 
-            elif model_name == "tinyllama": 
-                dmodel = 2048 
-            # tensor = torch.zeros((expected_condensed_token_length, dmodel), dtype = torch.float32) 
-            tensor = torch.zeros((28, dmodel), dtype = torch.float32) 
-            print(colored("///IOError occured replacing with an empty tensor///", "red")) 
-            # tensor = torch.zeros((28, dmodel), dtype = torch.float32) 
+        if not self.use_minipile: 
+            try: 
+                tensor = torch.load(item["condensed_token_path"]) 
+            except IOError as e: 
+                if model_name == "shearedllama2_7b": 
+                    dmodel = 2560 
+                elif model_name == "openllama3b": 
+                    dmodel = 3200 
+                elif model_name == "tinyllama": 
+                    dmodel = 2048 
+                # tensor = torch.zeros((expected_condensed_token_length, dmodel), dtype = torch.float32) 
+                tensor = torch.zeros((28, dmodel), dtype = torch.float32) 
+                print(colored("///IOError occured replacing with an empty tensor///", "red")) 
+                # tensor = torch.zeros((28, dmodel), dtype = torch.float32) 
+        else: 
+            tensor = torch.zeros((28, 2048), dtype = torch.float32) 
         
         # expected_condensed_token_length = (self.max_length - self.prompt_length) // self.kernel_size 
         # tensor = torch.zeros((expected_condensed_token_length, dmodel), dtype = torch.float32) 
@@ -896,9 +906,11 @@ kernel_size = args.kernel_size
 # datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
 print(colored("the max length for processing the dataset is {}".format(args.max_length), "yellow")) 
-datasetnew = CustomDataset(max_length = args.max_length, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
+# datasetnew = CustomDataset(max_length = args.max_length, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = False) 
-train_dataset, test_dataset = datasetnew.split(0.98) 
+# train_dataset, test_dataset = datasetnew.split(0.98) 
+train_dataset = CustomDataset(max_length = args.max_length, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64, use_minipile = args.use_minipile, in_training = True) 
+test_dataset = CustomDataset(max_length = args.max_length, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kerrnel_size = kernel_size, topk = args.topk, prompt_length = 64, use_minipile = args.use_minipile, in_training = False) 
 # the max_length assignment is subject to change 
 max_length_lookup = {2 : 260, 3 : 259, 4 : 260, 5 : 259, 6 : 262, 7 : 260, 8 : 264} 
 # datasetnew = CustomDataset(max_length = max_length_lookup[kernel_size], data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64) 
