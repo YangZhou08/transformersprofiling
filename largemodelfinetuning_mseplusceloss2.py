@@ -235,6 +235,7 @@ parser.add_argument("--autoregressive_baseline", action = "store_true")
 parser.add_argument("--group_compress", action = "store_true") 
 parser.add_argument("--hybrid_compress", action = "store_true") 
 parser.add_argument("--full_sequence_length_layer_pos", type = int, default = 1) 
+parser.add_argument("--use_minipile", action = "store_true") 
 
 args = parser.parse_args() 
 model_name = args.large_model 
