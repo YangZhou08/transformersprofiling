@@ -1551,6 +1551,8 @@ class LlamaModelHybridSequenceLength(LlamaPreTrainedModel):
         # embed positions
         hidden_states = inputs_embeds 
         
+        print(colored("hidden_states.shape: {}".format(hidden_states.shape), "yellow")) 
+        print(colored("self.kernel_size: {}".format(self.kernel_size), "yellow")) 
         # basic sanity check 
         assert (hidden_states.shape[1] - 1) % self.kernel_size == 0 
 
