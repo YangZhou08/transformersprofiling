@@ -766,7 +766,7 @@ class CustomTrainer(Trainer):
             print(colored("the shape of condensed_embeds is {}".format(condensed_embeds.shape), "yellow")) 
             batch_size, seq_len = attention_mask.shape 
             # addedon_length = condensed_embeds.shape[1] 
-            addedon_length = (seq_len - self.addonmodel_start) // self.sliding_window_length 
+            addedon_length = (seq_len - model.addonmodel_start) // self.sliding_window_length 
             # print("get the input sentence: {}".format(tokenizer.decode(input_ids[0]))) 
             original_attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
             if self.accelerator.is_main_process: 
