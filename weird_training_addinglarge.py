@@ -1173,7 +1173,10 @@ class CustomDataset:
                 filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
                 dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
         
-        self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
+        if args.debug: 
+            self.dataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
+        else: 
+            self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
         # self.dataset = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
         self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
         self.kernel_size = kernel_size 
