@@ -1,0 +1,1 @@
+accelerate launch --main_process_port 29509 --num_processes 1 --num_machines 1 full_input_sequence_training.py --large_model tinyllama --kernel_size 7 --alpha 0.5 --ce_loss_only --experiment_setting setting3 --batch_size 16 
