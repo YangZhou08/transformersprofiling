@@ -802,17 +802,11 @@ class CustomTrainer(Trainer):
                         "group1.lr": self.optimizer.param_groups[0]["lr"], 
                         "iteration_count": self.iteration_count 
                 }) 
+        '''
         if self.accelerator.is_main_process and self.iteration_count % 1000 == 0 and evaluation_mode is False and has_wandb: 
             print(colored("generating images ... at iteration {}".format(self.iteration_count), "yellow")) 
             for layer in [0, 6, 11]: 
                 for head in [0, 6, 11]: 
-                    '''
-                    if isinstance(outputs.attentions, tuple): 
-                        print("the attention mask have shape {}".format(len(outputs.attentions))) 
-                        print("the attention mask first element has shape {}".format(outputs.attentions[0].shape)) 
-                    else: 
-                        print("the attention mask has shape {}".format(outputs.attentions.shape)) 
-                    ''' 
                     # SimpleSmallModel.plot_attention_map(outputs.attentions, 0, 0, 144, "testing_attention_map.jpg") 
                     plot_name = "testing_attention_map_{}_{}_{}.jpg".format(self.commit_hash, self.time_hash, self.experiment_setting) 
                     SimpleSmallModel.plot_attention_map(outputs.attentions, layer, head, input_ids.shape[1] + addedon_length, plot_name) 
@@ -829,7 +823,7 @@ class CustomTrainer(Trainer):
                         # if try_count < 2: 
                         #     wandb.log({field_name: wandb.Image("testing_attention_map.jpg")}) 
                         #     try_count += 1 
-        
+        ''' 
         # inspect the hidden states here 
 
         return (loss, outputs) if return_outputs else loss 
