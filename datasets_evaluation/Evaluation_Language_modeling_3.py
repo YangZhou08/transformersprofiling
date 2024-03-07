@@ -35,6 +35,7 @@ from transformers.generation.utils import GenerationConfig
 from transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSmallModel 
 from transformers.models.llama.modeling_llama import LlamaCausalLMWeirdTwo 
 from transformers.models.llama.modeling_llama import LlamaWeirdLarge3 
+from transformers.models.llama.modeling_llama import LlamaWeirdLargeIntermediate 
 from transformers.modeling_utils import PreTrainedModel, load_sharded_checkpoint, unwrap_model 
 import time 
 from torch.utils.data import random_split 
@@ -327,18 +328,32 @@ class CustomTrainer(Trainer):
         addedon_length = (seq_len - self.n - 1) // self.n 
         original_attention_mask = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
         
-        outputs = model(
-            # input_ids = input_ids, 
-            large_input_ids = large_input_ids, 
-            small_input_ids = small_input_ids, 
-            attention_mask = attention_mask, 
-            output_hidden_states = True, 
-            output_attentions = True, 
-            return_dict = True, 
-            condensed_embed_labels = condensed_embeds_labels, 
-            original_attention_mask = original_attention_mask, 
-            labels = label2, 
-        ) 
+        if isinstance(self.model, LlamaWeirdLarge3): 
+            outputs = model(
+                # input_ids = input_ids, 
+                large_input_ids = large_input_ids, 
+                small_input_ids = small_input_ids, 
+                attention_mask = attention_mask, 
+                output_hidden_states = True, 
+                output_attentions = True, 
+                return_dict = True, 
+                condensed_embed_labels = condensed_embeds_labels, 
+                original_attention_mask = original_attention_mask, 
+                labels = label2, 
+            ) 
+        elif isinstance(self.model, LlamaWeirdLargeIntermediate): 
+            outputs = model(
+                large_input_ids = large_input_ids, 
+                small_input_ids = small_input_ids, 
+                attention_mask = attention_mask, 
+                output_hidden_states = True, 
+                output_attentions = True, 
+                return_dict = True, 
+                # condensed_embed_labels = None, 
+                original_attention_mask = original_attention_mask, 
+                labels = label2, 
+                condensed_embed_labels = condensed_embeds_labels, 
+            ) 
         # Save past state if it exists
         # TODO: this needs to be fixed and made cleaner later.
         if self.args.past_index >= 0:
@@ -704,7 +719,7 @@ elif args.dataset_name == "c4":
     dfiles.append(dir_c4 + filename) 
     datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
 elif args.dataset_name == "pg19": 
-    datasetnew = load_dataset('emozilla/pg19', split = "train") 
+    datasetnew = load_dataset('emozilla/pg19', split = "train[:10000]") 
 else: 
     raise ValueError("dataset_name is not recognized") 
 
@@ -822,9 +837,28 @@ else:
         large_model.config.pad_token_id = tokenizer.pad_token_id 
         large_model.addonsmallmodel.config.pad_token_id = tokenizer.pad_token_id 
         # small_model.config.pad_token_id = tokenizer.pad_token_id 
-        
         large_model.model.eval() 
-        large_model.addonsmallmodel.eval()
+        large_model.addonsmallmodel.eval() 
+    elif model_name == "debugging2": 
+        large_model = LlamaWeirdLargeIntermediate.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+        large_model.set_full_sequence_length_layer_pos(args.full_sequence_length_layer_pos) 
+        large_model.addonsmallmodel.set_criticalpath(hostname = hostname) 
+        large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True) 
+        large_model.to(torch.bfloat16).to(torch_device) 
+        if not args.setting0usedq: 
+            large_model.set_inference_setting("setting3") 
+        else: 
+            large_model.set_inference_setting("setting0") 
+        large_model.set_walpha(0.5) 
+        large_model.set_slidingwindowlength(sliding_window_length = args.kernel_size, addonmodel_start = args.kernel_size + 1) 
+        large_model.set_tokenizer_bos_id(bos_id = tokenizer.bos_token_id, pad_id = tokenizer.pad_token_id) 
+        large_model.set_cosinesimilarity(False) 
+            
+        large_model.config.pad_token_id = tokenizer.pad_token_id 
+        large_model.addonsmallmodel.config.pad_token_id = tokenizer.pad_token_id 
+        # small_model.config.pad_token_id = tokenizer.pad_token_id 
+        large_model.model.eval() 
+        large_model.addonsmallmodel.eval() 
     else: 
         raise ValueError("model_name is not recognized") 
 
