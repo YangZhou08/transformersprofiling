@@ -1007,7 +1007,8 @@ class CustomTrainer(Trainer):
         # else:
         #     metrics = {}
         # # To be JSON-serializable, we need to remove numpy types or zero-d tensors
-        metrics = denumpify_detensorize(metrics)
+        # metrics = denumpify_detensorize(metrics)
+        metrics = {} 
 
         if all_losses is not None:
             # metrics[f"{metric_key_prefix}_loss"] = all_losses.mean().item() 
