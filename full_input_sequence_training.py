@@ -754,6 +754,7 @@ class CustomTrainer(Trainer):
         else: 
             assert isinstance(getattr(model, "module", model), LlamaForCausalLMAddingSpecialToken) or isinstance(model, LlamaForCausalLMAddingSpecialToken) == True 
             condensed_embeds = inputs["condensed_embeds"].to(self.dtype) 
+            attention_mask = torch.cat([attention_mask, torch.ones((attention_mask.shape[0], 1), dtype = torch.long).to(attention_mask.device)], dim = 1) 
             condensed_label = condensed_embeds[:, 0, :] 
             outputs = model(
                 input_ids = input_ids, 
