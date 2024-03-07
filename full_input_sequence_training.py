@@ -27,6 +27,7 @@ from src.transformers.models.llama.modeling_llama import LlamaForCausalLM, Simpl
 from src.transformers.models.llama.modeling_llama import LlamaCausalLMWeirdTwo 
 from src.transformers.models.llama.modeling_llama import LlamaWeirdLarge3 
 from src.transformers.models.llama.modeling_llama import SimpleSmallModel2 
+from src.transformers.models.llama.modeling_llama import LlamaForCausalLMAddingSpecialToken 
 from src.transformers.modeling_utils import PreTrainedModel, load_sharded_checkpoint, unwrap_model 
 import time 
 from torch.utils.data import random_split 
@@ -1224,121 +1225,23 @@ train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.0
                                                  # 356k * 0.99 = 352k 356k * 0.01 = 3.6k 
                                                  # 5 * 356k = 1780000, 1780000 * 0.98 = 1744400, 1780000 * 0.02 = 35600 
 
-if (not args.use_plain_model or args.resume_from_checkpoint is not None) and not args.use_past and not args.finetune_checkpoint: 
-    print(colored("we use custom small", "cyan")) 
-    # handling simplesmallmodel 
-    # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
-    # small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
-    small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
-
-    small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
-    if model_name == "openllama3b": 
-        small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 3200) 
-    elif model_name == "shearedllama2_7b": 
-        small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 2560) 
-    else: 
-        small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 2048) 
-
-    new_state_dict = {} 
-
-    for key in small_state_dict_for_model.keys(): 
-        new_key = key 
-        if 'lm_head' in key: 
-            print("got here found the following key {}".format(key)) 
-        if 'model.' in key: 
-            new_key = key[6 :] 
-        print(new_key) 
-        new_state_dict[new_key] = small_state_dict_for_model[key] 
-    if args.embedding_pretrained: 
-        new_state_dict["embed_projection.weight"] = torch.load("linearprojectionweighttesting.pt") 
-
-    try: 
-        small_model.load_state_dict(new_state_dict) 
-    except RuntimeError as r: 
-        print(colored(r, "yellow")) 
-
-    small_model = small_model.to(torch_device) 
-    # small_model = small_model.to(torch.bfloat16).to(torch_device) 
-    small_model.train() 
-
-    # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
-elif args.finetune_checkpoint: 
-    print(colored("we use finetune model", "cyan")) 
-    small_model = SimpleSmallModel.from_pretrained(args.finetune_checkpoint, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 2048).to(torch_device) 
-    small_model.train() 
-elif args.use_plain_model and not args.use_past: 
-    print(colored("we use plain model", "cyan")) 
-    # alternative pretrained model 
-    # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m").to(torch_device) 
-    # config = LlamaConfig.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
-    # print(config) 
-    # small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
-    # small_model = AutoModelForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
-    small_model = LlamaCausalLMWeirdTwo.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
-    # small_model = LlamaCausalLMWeirdTwo.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
-    small_model.train() 
-elif args.use_past: 
-    print(colored("SimpleSmallModel with past", "cyan")) 
-    small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
-
-    small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
-    small_model = SimpleSmallModel2(small_config, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 2048) 
-    new_state_dict = {} 
-
-    for key in small_state_dict_for_model.keys(): 
-        new_key = key 
-        if 'lm_head' in key: 
-            print("got here found the following key {}".format(key)) 
-        if 'model.' in key: 
-            new_key = key[6 :] 
-        print(new_key) 
-        new_state_dict[new_key] = small_state_dict_for_model[key] 
-    if args.embedding_pretrained: 
-        new_state_dict["embed_projection.weight"] = torch.load("linearprojectionweighttesting.pt") 
-
-    try: 
-        small_model.load_state_dict(new_state_dict) 
-    except RuntimeError as r: 
-        print(colored(r, "yellow")) 
-
-    small_model = small_model.to(torch_device) 
-    # small_model = small_model.to(torch.bfloat16).to(torch_device) 
-    small_model.train() 
-else: 
-    raise ValueError("please specify whether you want to use plain model or custom model") 
+model = LlamaForCausalLMAddingSpecialToken.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 
 # for llama model we need to add the padding token 
-small_model.config.pad_token_id = tokenizer.pad_token_id 
+model.config.pad_token_id = tokenizer.pad_token_id 
 # print(small_model.embed_projection.weight.dtype) 
 
 pretraining_weights_group = []
-newly_initialized_group = [] 
-for k, v in small_model.named_parameters(): 
-    if "embed_projection" in k: 
-        print(k) 
-        newly_initialized_group.append(v) 
-    else: 
-        pretraining_weights_group.append(v) 
-print(len(pretraining_weights_group), len(newly_initialized_group)) 
+for k, v in model.named_parameters(): 
+    pretraining_weights_group.append(v) 
+print(len(pretraining_weights_group)) 
 
-if not args.embedding_pretrained: 
-    print("*** we are not using pretrained embeddings ***") 
-    custom_optimizer = torch.optim.AdamW([
-        # {"params": pretraining_weights_group, "lr": 2e-4}, 
-        # {"params": newly_initialized_group, "lr": 2e-3}, 
-        {"params": pretraining_weights_group, "lr": float(args.group1lr)}, 
-        {"params": newly_initialized_group, "lr": float(args.group2lr)}, 
-    ]) 
-else: 
-    print("*** we are using pretrained embeddings ***") 
-    if not os.path.exists("linearprojectionweighttesting.pt"): 
-        raise ValueError("please run analyzing_initial_perfromance.py before runnint this setting") 
-    for param in newly_initialized_group: 
-        pretraining_weights_group.append(param) 
-    custom_optimizer = torch.optim.AdamW([
-        # {"params": pretraining_weights_group, "lr": 2e-4}, 
-        {"params": pretraining_weights_group, "lr": float(args.group1lr)}, 
-    ]) 
+if not os.path.exists("linearprojectionweighttesting.pt"): 
+    raise ValueError("please run analyzing_initial_perfromance.py before runnint this setting") 
+custom_optimizer = torch.optim.AdamW([
+    # {"params": pretraining_weights_group, "lr": 2e-4}, 
+    {"params": pretraining_weights_group, "lr": float(args.group1lr)}, 
+]) 
 
 def _lr_scheduler_rewriting(current_step, *, num_warmup_steps: int, num_training_steps: int): 
     if current_step < num_warmup_steps:
@@ -1357,9 +1260,9 @@ training_args = TrainingArguments(
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs=5,            # number of training epochs, feel free to tweak
-    per_device_train_batch_size = 64,  # the training batch size, put it as high as your GPU memory fits
+    per_device_train_batch_size =16,  # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
-    per_device_eval_batch_size=128,  # evaluation batch size
+    per_device_eval_batch_size=16,  # evaluation batch size
     # logging_steps=1, 
     logging_steps = 500,            # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
@@ -1378,7 +1281,7 @@ training_args = TrainingArguments(
     lr_scheduler_type = "cosine", 
 ) 
 print(colored("resum_from_checkpoint is {}".format(args.resume_from_checkpoint), "red")) 
-weightmodelfirst = next(small_model.parameters()) 
+weightmodelfirst = next(model.parameters()) 
 # print(weightmodelfirst.dtype) 
 print(colored(weightmodelfirst.dtype, "red")) 
 
@@ -1422,7 +1325,7 @@ def compute_metrics(p):
     return output 
 
 trainer = CustomTrainer( 
-    model = small_model, 
+    model = model, 
     args = training_args, 
     train_dataset = train_set, 
     eval_dataset = test_set, 
