@@ -909,7 +909,7 @@ kernel_size = args.kernel_size
 print(colored("the max length for processing the dataset is {}".format(args.max_length), "yellow")) 
 if not args.use_minipile: 
     datasetnew = CustomDataset(max_length = args.max_length, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
-    datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = False) 
+    # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = False) 
     train_dataset, test_dataset = datasetnew.split(0.98) 
 else: 
     train_dataset = CustomDataset(max_length = args.max_length, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64, use_minipile = args.use_minipile, in_training = True) 
