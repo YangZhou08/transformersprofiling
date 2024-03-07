@@ -247,8 +247,10 @@ elif "ada" in hostname:
     dir_sdata = "/home/beidic/yangzho6/c4llm_synthesized/" 
 else: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
-    dir_models = "/home/yangzho6/model_checkpoints/" 
-    dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+    # dir_models = "/home/yangzho6/model_checkpoints/" 
+    # dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+    dir_models = "/fsx-storygen/beidic/yang/model_checkpoints/" 
+    dir_sdata = "/fsx-storygen/beidic/yang/c4llm_synthesized/" 
 
 # has_wandb = False # disable for debugging 
 # model_name = "openllama3b" 
@@ -735,15 +737,16 @@ class CustomTrainer(Trainer):
                 eval_mode = self.eval_mode, 
             ) 
         else: 
+            assert isinstance(getattr(model, "module", model), LlamaForCausalLMAddingSpecialToken) or isinstance(model, LlamaForCausalLMAddingSpecialToken) == True 
+            condensed_embeds = inputs["condensed_embeds"].to(self.dtype) 
+            condensed_label = condensed_embeds[:, 0, :] 
             outputs = model(
                 input_ids = input_ids, 
                 attention_mask = attention_mask, 
-                labels = label2, 
-                # condensed_embeds = condensed_embeds, 
-                output_hidden_states = True, 
+                condensed_labels = condensed_label, 
                 output_attentions = True, 
+                output_hidden_states = True, 
                 return_dict = True, 
-                # eval_mode = True, 
             ) 
         
         # print(outputs.hidden_states[0].shape) 
@@ -1219,7 +1222,7 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 # defining custom dataset 
 kernel_size = args.kernel_size 
 
-datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed) 
+datasetnew = CustomDataset(max_length = 64, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed) 
 # datasetnew.preprocess_dataset() 
 train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.05 = 36k 
                                                  # 356k * 0.99 = 352k 356k * 0.01 = 3.6k 
