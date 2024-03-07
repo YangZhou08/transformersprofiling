@@ -372,7 +372,7 @@ class CustomTrainer(Trainer):
         print(colored("rank {} l2_distance {}".format(self.accelerator.state.process_index, l2_distance), "yellow")) 
         print(colored("rank {} l2_distance_input {}".format(self.accelerator.state.process_index, l2_distance_input), "yellow")) 
         print(colored("rank {} cossim_input {}".format(self.accelerator.state.process_index, cossim_input), "yellow")) 
-                
+        '''
         # if self.accelerator.is_main_process and self.iteration_count % 1000 == 0 and has_wandb: 
         if self.accelerator.is_main_process and has_wandb and self.iteration_count % 500 == 0: 
             print(colored("generating images ... at iteration {}".format(self.iteration_count), "yellow")) 
@@ -394,6 +394,7 @@ class CustomTrainer(Trainer):
                         # if try_count < 2: 
                         #     wandb.log({field_name: wandb.Image("testing_attention_map.jpg")}) 
                         #     try_count += 1 
+        ''' 
         self.iteration_count += 1 
         return (loss, outputs) if return_outputs else loss 
 
