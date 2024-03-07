@@ -844,74 +844,8 @@ class CustomTrainer(Trainer):
         # input_attention_mask = input_attention_mask[:, :-1] 
         input_attention_mask = input_attention_mask[:, 1:] 
         labels = labels[:, 1:] 
-        preds = torch.argmax(logits, dim = -1) 
-        if self.accelerator.is_main_process and outside_step == 0: 
-            print("*** evaluating at step {} ***".format(self.iteration_count)) 
-            # f = open("key_notes{}.md".format(self.commit_hash), "a") 
-            # f.write("writing key notes at step {}".format(self.iteration_count)) 
-            mask_correctness = (preds[: 20, 63 :] == labels[: 20, 63 :]).to(torch.bool) 
-            # print(mask_correctness.shape) 
-            pred_outputs = preds[: 20] 
-            write_out_text = [] 
-            for i in range(len(pred_outputs)): 
-                prediction_prefix = self.tokenizer.decode(pred_outputs[i][: 63]) 
-                prediction_text = "the prediction is: {}".format(prediction_prefix) 
-                for j in range(mask_correctness.shape[1]): 
-                    if mask_correctness[i][j]: 
-                        prediction_text += colored(self.tokenizer.decode(pred_outputs[i][63 + j]), "green") + " " 
-                    else: 
-                        prediction_text += colored(self.tokenizer.decode(pred_outputs[i][63 + j]), "red") + " " 
-                print(prediction_text) 
-                print() 
-                # print(labels[i]) 
-                mask_filtered = labels[i][input_attention_mask[i] == 1] 
-                mask_filtered[mask_filtered == -100] = 0 
-                labels_outputs1 = self.tokenizer.decode(mask_filtered[: 63]) 
-                label_text = "the label is: {}".format(colored(labels_outputs1, "yellow")) 
-                print(label_text, end = " ") 
-                labels_outputs2 = self.tokenizer.decode(mask_filtered[63 :]) 
-                write_out_text.append("the prediction is: " + prediction_prefix + " " + prediction_text + "\n" + "the label is: " + label_text + " " + labels_outputs2 + "\n") 
-                print(colored(labels_outputs2, "cyan")) 
-                print() 
-                print() 
-                # wandb.log({"key notes: ": prediction_text + label_text}) 
-                # f.write(prediction_text + "\n" + label_text + "\n") 
-                
-            with open(self.text_eval, "a") as f: 
-                f.write("*** at step {} {}".format(self.iteration_count, self.state.global_step)) 
-                f.write("\n") 
-                for i, text in enumerate(write_out_text): 
-                    f.write("example {}/{}\n".format(i, len(write_out_text))) 
-                    f.write(text) 
-                    f.write("\n") 
-                f.write("\n") 
-            # f.write("\n") 
-            # f.close() 
-            # self.artifact.add_file("key_notes{}.md".format(self.commit_hash), name = "key_notes.md") 
-            # wandb.log_artifact(self.artifact) 
-        if self.accelerator.state.num_processes > 1: 
-            # torch.distributed.barrier() # I found that barrier() works, but it still not as good as wait_for_everyone() 
-            self.accelerator.wait_for_everyone() 
-                
-        # print("the shape of preds is {}".format(preds.shape)) 
-        # use loss to compute perplexity 
-        perplexity = torch.exp(loss).mean().item() 
-        # print("the perplexity is {}".format(perplexity)) 
-        # use preds to compute accuracy 
-        indices_to_keep = input_attention_mask == 1 # only for debugging purposes 
-        total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
-        # print("shape of indices_to_keep: {}".format(indices_to_keep.shape)) 
-        interest_token_count = torch.sum(indices_to_keep[:, 63 :].reshape(-1), dim = 0).item() # check whether 63 makes sense and make it more general if it is correct or not 
-        # accuracy = accuracy_score(labels[indices_to_keep], preds[indices_to_keep]) 
-        correct_words = torch.sum((preds[indices_to_keep] == labels[indices_to_keep]).view(-1), dim = 0).item() 
-        # print("shape of indices_to_keep: {}".format(indices_to_keep.shape)) 
-        # interest_correct_count = torch.sum((preds[indices_to_keep][:, 63 :] == labels[indices_to_keep][:, 63 :]).view(-1), dim = 0).item() 
-        interest_correct_count = torch.sum(((preds * indices_to_keep)[:, 63: ] == (labels * indices_to_keep)[:, 63: ]).view(-1), dim = 0).item() 
-        print("correct words: {} and total words: {}".format(correct_words, total_valid_tokens)) 
-        print("interest correct words: {} and interest total words: {}".format(interest_correct_count, interest_token_count)) 
-        # use preds to compute f1 score 
-        # f1 = precision_recall_fscore_support(labels, preds, average = "weighted") 
-        return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "interest_correct_words": interest_correct_count, "interest_total_words": interest_token_count} 
+        
+        # return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "interest_correct_words": interest_correct_count, "interest_total_words": interest_token_count} 
     
     def evaluation_loop(
         self,
@@ -987,12 +921,7 @@ class CustomTrainer(Trainer):
         all_inputs = None
         # Will be useful when we have an iterable dataset so don't know its length.
 
-        total_correct_words = 0 
-        total_words = 0 
-        sum_of_perplexity = 0 # used to compute the average perplexity 
         total_loss = 0 # used to compute the correct perplexity 
-        interest_total_words = 0 
-        interest_correct_words = 0 
 
         observed_num_examples = 0 
         total_num_steps = len(dataloader) 
@@ -1019,12 +948,14 @@ class CustomTrainer(Trainer):
             # print(colored("the shape of logits is {}".format(logits.shape), "yellow")) 
             # print(colored("the shape of labels is {}".format(labels.shape), "yellow")) 
             total_loss += loss.item() 
+            '''
             local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"], step) 
             total_correct_words += local_metrics["correct_words"] 
             total_words += local_metrics["total_words"] 
             sum_of_perplexity += local_metrics["perplexity"] 
             interest_total_words += local_metrics["interest_total_words"] 
             interest_correct_words += local_metrics["interest_correct_words"] 
+            ''' 
 
             if is_torch_tpu_available():
                 xm.mark_step()
@@ -1036,11 +967,11 @@ class CustomTrainer(Trainer):
         if self.accelerator.is_main_process: 
             print("rank {} total_loss after aggregation is {}".format(self.accelerator.state.process_index, aggregated_loss)) 
         total_loss = self.gather_function(torch.tensor(total_loss).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).div(self.accelerator.state.num_processes).item() 
-        total_correct_words = self.gather_function(torch.tensor(total_correct_words).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
-        total_words = self.gather_function(torch.tensor(total_words).reshape(-1, 1).to(local_device)).view(-1).sum(dim = -1).item() 
-        sum_of_perplexity = self.gather_function(torch.tensor(sum_of_perplexity).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
-        interest_total_words = self.gather_function(torch.tensor(interest_total_words).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
-        interest_correct_words = self.gather_function(torch.tensor(interest_correct_words).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
+        # total_correct_words = self.gather_function(torch.tensor(total_correct_words).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
+        # total_words = self.gather_function(torch.tensor(total_words).reshape(-1, 1).to(local_device)).view(-1).sum(dim = -1).item() 
+        # sum_of_perplexity = self.gather_function(torch.tensor(sum_of_perplexity).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
+        # interest_total_words = self.gather_function(torch.tensor(interest_total_words).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
+        # interest_correct_words = self.gather_function(torch.tensor(interest_correct_words).reshape(1, -1).to(local_device)).view(-1).sum(dim = -1).item() 
         
         # After all calls to `.gather_function`, reset to `gather_for_metrics`:
         self.gather_function = self.accelerator.gather_for_metrics
@@ -1063,15 +994,7 @@ class CustomTrainer(Trainer):
         if num_samples == 0 and observed_num_examples > 0:
             num_samples = observed_num_examples
         
-        global_perplexity = np.exp(total_loss / total_num_steps) 
-        global_accuracy = total_correct_words / total_words 
-        global_interest_accuracy = interest_correct_words / interest_total_words 
         all_losses = total_loss / total_num_steps 
-
-        metrics = {"perplexity": global_perplexity, "accuracy": global_accuracy, "interest_accuracy": global_interest_accuracy} 
-        if self.accelerator.is_main_process: 
-            print(colored(metrics, "magenta")) 
-            wandb.log({"global_eval_perplexity": global_perplexity, "global_eval_accuracy": global_accuracy, "global_eval_interest_accuracy": global_interest_accuracy}) 
 
         # # Metrics!
         # if self.compute_metrics is not None and all_preds is not None and all_labels is not None:
@@ -1272,11 +1195,12 @@ training_args = TrainingArguments(
     per_device_train_batch_size = args.batch_size,  # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=args.batch_size,  # evaluation batch size
-    # logging_steps=1, 
-    logging_steps = 500,            # evaluate, log and save model checkpoints every 1000 step
+    logging_steps=1, 
+    # logging_steps = 500,            # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 500, 
+    # save_steps = 500, 
+    save_steps = 1, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
     learning_rate=2e-4, 
