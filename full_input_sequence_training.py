@@ -1237,8 +1237,6 @@ for k, v in model.named_parameters():
     pretraining_weights_group.append(v) 
 print(len(pretraining_weights_group)) 
 
-if not os.path.exists("linearprojectionweighttesting.pt"): 
-    raise ValueError("please run analyzing_initial_perfromance.py before runnint this setting") 
 custom_optimizer = torch.optim.AdamW([
     # {"params": pretraining_weights_group, "lr": 2e-4}, 
     {"params": pretraining_weights_group, "lr": float(args.group1lr)}, 
