@@ -1338,7 +1338,7 @@ class LlamaModelSpecialTokenPrediction(LlamaPreTrainedModel):
             attention_mask = _prepare_4d_causal_attention_mask(
                 attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length
             ) 
-        self._modified_attention_mask_for_special_adding_soft_token(attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length) 
+        self._modified_attention_mask_for_special_adding_soft_token(attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length, inputs_embeds.dtype) 
         
         self.visualize_attention_mask(seq_length, attention_mask[0][0], "specialtokenattentionmask.jpg") 
 
