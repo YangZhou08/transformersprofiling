@@ -1,1 +1,0 @@
-accelerate launch --main_process_port 29509 --num_processes 2 --num_machines 1 full_input_sequence_training.py --model_name tinyllama --experiment_setting setting3 
