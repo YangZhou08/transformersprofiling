@@ -327,9 +327,9 @@ class CustomTrainer(Trainer):
         batch_size, seq_len = original_attention_mask.shape 
         # addedon_length = (seq_len - 8) // self.n 
         addedon_length = (seq_len - self.n - 1) // self.n 
-        original_attention_mask = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
         
         if isinstance(self.model, LlamaWeirdLarge3): 
+            original_attention_mask = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
             outputs = model(
                 # input_ids = input_ids, 
                 large_input_ids = large_input_ids, 
@@ -346,7 +346,8 @@ class CustomTrainer(Trainer):
             outputs = model(
                 large_input_ids = large_input_ids, 
                 small_input_ids = small_input_ids, 
-                attention_mask = attention_mask, 
+                # attention_mask = attention_mask, 
+                attention_mask = original_attention_mask, 
                 output_hidden_states = True, 
                 output_attentions = True, 
                 return_dict = True, 
