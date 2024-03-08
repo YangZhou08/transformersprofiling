@@ -4620,8 +4620,8 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         self.lm_head = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias = False) 
         # self.addonsmallmodel = None 
         small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m") 
-        # self.sliding_window_length = 7 
-        self.sliding_window_length = 3 
+        self.sliding_window_length = 7 
+        # self.sliding_window_length = 3 
         self.addonsmallmodel = SimpleSmallModel(small_config, sliding_window_length = self.sliding_window_length, target_model_dim = self.config.hidden_size) 
         self.small_model_dtype = torch.bfloat16 
         self.use_mse_loss = False 
@@ -6936,6 +6936,9 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 self._modify_decoder_attention_mask_for_hardest_neo(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
             # elif self.experiment_setting == "setting4": 
             #     self._modify_decoder_attention_mask_for_large_model_addon(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, kernel_size = self.sliding_window_length) 
+            elif self.experiment_setting == "setting5": 
+                # we make no change to the original attention mask 
+                pass 
             else: 
                 raise ValueError("We do not have the experiment setting you are looking for") 
             
