@@ -871,7 +871,7 @@ training_args = TrainingArguments(
     label_names = ["labels"], 
 ) 
 
-if args.model_name == "debugging": 
+if args.model_name == "debugging" or args.model_name == "debugging2": 
     model = large_model 
     
 trainer = CustomTrainer( 
