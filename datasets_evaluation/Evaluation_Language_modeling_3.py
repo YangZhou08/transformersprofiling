@@ -793,10 +793,7 @@ class CustomDataset:
                     filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
                     dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
             
-            if not args.debug: 
-                self.dataset = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
-            else: 
-                self.dataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
+            self.dataset = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
             # self.dataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
         else: 
             if in_training: 
