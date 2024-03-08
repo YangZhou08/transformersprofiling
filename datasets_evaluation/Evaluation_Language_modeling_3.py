@@ -311,8 +311,10 @@ class CustomTrainer(Trainer):
         print(colored("iteration_count {}".format(self.iteration_count), "yellow")) 
         
         # input_ids = inputs["input_ids"] # (batch_size, 203) 
-        large_input_ids = inputs["input_ids"] # (batch_size, 203) 
-        small_input_ids = inputs["input_ids"] # (batch_size, 203) 
+        # large_input_ids = inputs["input_ids"] # (batch_size, 203) 
+        # small_input_ids = inputs["input_ids"] # (batch_size, 203) 
+        large_input_ids = inputs["large_input_ids"] 
+        small_input_ids = inputs["small_input_ids"] 
         # attention_mask = inputs["attention_mask_chunk"] 
         # condensed_embeds_labels = inputs["condensed_embeds"] # (batch_size, 28, 3200) 
         condensed_embeds_labels = None 
@@ -705,7 +707,7 @@ kernel_size = 7 # this is definitely subject to change
 # print(tokenizer(datasetnew[0]['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 256, 
 #                 return_attention_mask = True, return_tensors = "pt", truncation = True, 
 #                 add_special_tokens = True)) 
-
+'''
 if args.dataset_name == "c4llm_synthesized": 
     # datasetnew = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
     dfiles = [] 
@@ -726,7 +728,7 @@ elif args.dataset_name == "pg19":
     datasetnew = load_dataset('emozilla/pg19', split = "train[:10000]") 
 else: 
     raise ValueError("dataset_name is not recognized") 
-
+''' 
 def encode_with_truncationspecialized(examples): 
     tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
                      return_attention_mask = True, return_tensors = "pt", truncation = True, 
@@ -756,14 +758,167 @@ def unflatten_list_func(examples):
     examples['attention_mask'] = examples['attention_mask'].squeeze(0) 
 
 # datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
-if not args.dataset_name == "pg19": 
-    datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
-else: 
-    datasetnew = datasetnew.map(encode_with_truncationspecialized, num_proc = 8) 
+# if not args.dataset_name == "pg19": 
+    # datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
+# else: 
+    # datasetnew = datasetnew.map(encode_with_truncationspecialized, num_proc = 8) 
 # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
 
-datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
+# datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
 # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
+
+class CustomDataset: 
+    # def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7): 
+    def __init__(self, data_dir, large_tokenizer = None, small_tokenizer = None, max_length = 256, kernel_size = 7, topk = None, prompt_length = 64, use_minipile = False, in_training = True): 
+        # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
+        self.synthesize_dir = data_dir 
+        # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json", split = "train") 
+        # self.dataset = load_dataset('json', data_files = [self.synthesize_dir + 'c4synthesized_file1.json', self.synthesize_dir + 'c4synthesized_file2.json'], split="train") 
+        dfiles = [] 
+        print(colored("hostname is {}".format(hostname), "yellow")) 
+        if not use_minipile: 
+            if "ada" in hostname: 
+                for i in range(0, 2): 
+                    # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+                    # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+                    filename = "c4synthesized_file1_kernel7_{}.json".format(i) 
+                    dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+            elif "lovelace" in hostname: 
+                # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
+                filename = "c4synthesized_file1_kernel7_0.json" 
+                dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+            else: 
+                for i in range(0, 8): 
+                    # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
+                    filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
+                    dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
+            
+            if not args.debug: 
+                self.dataset = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
+            else: 
+                self.dataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
+            # self.dataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
+        else: 
+            if in_training: 
+                self.dataset = load_dataset("JeanKaddour/minipile", split = "train") 
+            else: 
+                self.dataset = load_dataset("JeanKaddour/minipile", split = "test") 
+        self.use_minipile = use_minipile 
+        self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
+        self.kernel_size = kernel_size 
+        # self.dataset = self.dataset["train"][0: 5120] 
+
+        # self.tokenizer = tokenizer 
+        self.large_tokenizer = large_tokenizer 
+        self.small_tokenizer = small_tokenizer 
+        self.max_length = max_length 
+        self.prompt_length = prompt_length 
+    
+    def __len__(self): 
+        return len(self.dataset) 
+    
+    def preprocess_dataset(self): 
+        def encode_with_truncation(examples): 
+            # return tokenizer(examples["text"], truncation = True, padding = "max_length", 
+                            #  max_length = max_length, return_special_tokens_mask = True) 
+            return tokenizer(examples["text"], padding = "max_length", max_length = self.max_length, 
+                            return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                            add_special_tokens = True) 
+        
+        def loading_condensed_embeds(examples): 
+            # not used because it consumes too much memory 
+            return {"condensed_embeds": torch.load(examples["condensed_token_path"])} 
+        
+        self.dataset = self.dataset.map(encode_with_truncation, batched = True, num_proc = 4) 
+        # self.dataset = self.dataset.map(loading_condensed_embeds, batched = True, num_proc = 4) 
+        # self.dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+    
+    def __getitem__(self, idx): 
+        item = self.dataset[idx] 
+        
+        if not self.use_minipile: 
+            try: 
+                tensor = torch.load(item["condensed_token_path"]) 
+            except IOError as e: 
+                if model_name == "shearedllama2_7b": 
+                    dmodel = 2560 
+                elif model_name == "openllama3b": 
+                    dmodel = 3200 
+                elif model_name == "tinyllama": 
+                    dmodel = 2048 
+                # tensor = torch.zeros((expected_condensed_token_length, dmodel), dtype = torch.float32) 
+                tensor = torch.zeros((28, dmodel), dtype = torch.float32) 
+                print(colored("///IOError occured replacing with an empty tensor///", "red")) 
+                # tensor = torch.zeros((28, dmodel), dtype = torch.float32) 
+        else: 
+            tensor = torch.zeros((28, 2048), dtype = torch.float32) 
+        
+        # expected_condensed_token_length = (self.max_length - self.prompt_length) // self.kernel_size 
+        # tensor = torch.zeros((expected_condensed_token_length, dmodel), dtype = torch.float32) 
+        
+        if self.large_tokenizer is not None and self.small_tokenizer is not None: 
+            large_encoded_text = self.large_tokenizer( 
+                item["text"], # 6 word-level tokens + BOS to be the first chunk 
+                # add_special_tokens = False, 
+                add_special_tokens = True, 
+                padding = "max_length", 
+                # max_length = 64 + self.dict_kernel_maxlength[self.kernel_size], 
+                max_length = self.max_length, 
+                return_attention_mask = True, 
+                return_tensors = "pt", 
+                truncation = True, 
+            ) 
+            # item['large_input_ids'] = large_encoded_text['input_ids'][0].squeeze(0)  # remove the batch dimension 
+            input_idsfull = large_encoded_text['input_ids'].squeeze(0) # remove the batch dimension 
+            # if input_idsfull[57] == 2 or input_idsfull[57] == 1: # if the first token is </s> or <s> 
+            if input_idsfull[self.prompt_length - self.kernel_size] == 2 or input_idsfull[self.prompt_length - self.kernel_size] == 1: # if the first token is </s> or <s> 
+                head_token = torch.tensor([2], dtype = torch.long) # pad with </s> eos token 
+                head_mask = torch.zeros((1, ), dtype = torch.long) # attention mask starts with 0 
+            else: 
+                head_token = torch.ones((1, ), dtype = torch.long) # pad with <s> bos token 
+                head_mask = torch.ones((1, ), dtype = torch.long) # attention mask starts with 1 
+            # item['large_input_ids'] = torch.cat((head_token, input_idsfull[57 :]), dim = 0) 
+            item['large_input_ids'] = torch.cat((head_token, input_idsfull[(self.prompt_length - self.kernel_size) :]), dim = 0) 
+            small_encoded_text = self.small_tokenizer(
+                item["text"], # 6 word-level tokens + BOS to be the first chunk 
+                # add_special_tokens = False, 
+                add_special_tokens = True, 
+                padding = "max_length", 
+                # max_length = 64 + self.dict_kernel_maxlength[self.kernel_size],
+                max_length = self.max_length, 
+                return_attention_mask = True, 
+                return_tensors = "pt", 
+                truncation = True, 
+            ) 
+            input_idsfull2 = small_encoded_text['input_ids'].squeeze(0) # remove the batch dimension 
+            # if input_idsfull2[57] == 2 or input_idsfull2[57] == 1: # if the first token is </s> or <s> 
+            if input_idsfull2[self.prompt_length - self.kernel_size] == 2 or input_idsfull2[self.prompt_length - self.kernel_size] == 1: # if the first token is </s> or <s> 
+                head_token2 = torch.tensor([2], dtype = torch.long) # pad with </s> eos token 
+                head_mask2 = torch.zeros((1, ), dtype = torch.long) # attention mask starts with 0 
+            else: 
+                head_token2 = torch.ones((1, ), dtype = torch.long) # pad with <s> bos token 
+                head_mask2 = torch.ones((1, ), dtype = torch.long) # attention mask starts with 1 
+            # item['input_ids'] = torch.cat((head_token2, input_idsfull2[57 :]), dim = 0) 
+            item['input_ids'] = torch.cat((head_token2, input_idsfull2[(self.prompt_length - self.kernel_size) :]), dim = 0) 
+            # item['attention_mask'] = torch.cat((head_mask2, small_encoded_text['attention_mask'].squeeze(0)[57 :]), dim = 0) 
+            item['attention_mask'] = torch.cat((head_mask2, small_encoded_text['attention_mask'].squeeze(0)[(self.prompt_length - self.kernel_size) :]), dim = 0) 
+            
+            # print("input_ids is {}, the length is {}".format(item["input_ids"], item["input_ids"].shape[0])) 
+        
+        item["condensed_embeds"] = tensor 
+        # print(colored("the shape of condensed_embeds is {}".format(tensor.shape), "yellow")) 
+        # item["input_ids"] = torch.tensor(item["input_ids"]) 
+        # item["attention_mask"] = torch.tensor(item["attention_mask"]) 
+
+        return item 
+
+    def split(self, train_size): 
+        if isinstance(train_size, float): 
+            train_size = int(train_size * len(self)) 
+        eval_size = len(self) - train_size 
+        return random_split(self, [train_size, eval_size]) 
+
+datasetnew = CustomDataset(max_length = 260, data_dir = dir_c4llmsynthesized, large_tokenizer = tokenizer, small_tokenizer = tokenizer, kernel_size = kernel_size, topk = None) 
 
 for i in range(0, 10): 
     print(datasetnew[i]['text'][100000 : 100000 + 3000]) 
