@@ -343,6 +343,7 @@ class CustomTrainer(Trainer):
                 labels = label2, 
             ) 
         elif isinstance(self.model, LlamaWeirdLargeIntermediate): 
+            original_attention_mask2 = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
             outputs = model(
                 large_input_ids = large_input_ids, 
                 small_input_ids = small_input_ids, 
@@ -352,7 +353,8 @@ class CustomTrainer(Trainer):
                 output_attentions = True, 
                 return_dict = True, 
                 # condensed_embed_labels = None, 
-                original_attention_mask = original_attention_mask, 
+                # original_attention_mask = original_attention_mask, 
+                original_attention_mask = original_attention_mask2, 
                 labels = label2, 
                 condensed_embed_labels = condensed_embeds_labels, 
             ) 
