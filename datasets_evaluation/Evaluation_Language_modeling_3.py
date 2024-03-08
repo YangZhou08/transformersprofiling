@@ -841,7 +841,7 @@ else:
         large_model.model.eval() 
         large_model.addonsmallmodel.eval() 
     elif model_name == "debugging2": 
-        large_model = LlamaWeirdLargeIntermediate.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+        large_model = LlamaWeirdLargeIntermediate.from_pretrained(args.loading_from_checkpoint, cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
         large_model.set_full_sequence_length_layer_pos(args.full_sequence_length_layer_pos) 
         large_model.addonsmallmodel.set_criticalpath(hostname = hostname) 
         large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True) 
