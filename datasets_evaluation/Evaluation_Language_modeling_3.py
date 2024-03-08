@@ -224,7 +224,7 @@ parser.add_argument("--condensed_token_random", action = "store_true")
 parser.add_argument("--task_id", type = int, default = 0) 
 parser.add_argument("--dataset_name", type = str, choices = ["c4llm_synthesized", "c4", "pg19"], default = "pg19") 
 parser.add_argument("--setting0usedq", action = "store_true") 
-parser.add_argument("--full_sequence_length_layer_idx", type = int, default = 10) 
+parser.add_argument("--full_sequence_length_layer_pos", type = int, default = 10) 
 
 args = parser.parse_args() 
 
