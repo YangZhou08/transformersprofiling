@@ -230,6 +230,7 @@ parser.add_argument("--model_name", type = str, default = "openllama3b")
 parser.add_argument("--resume_from_checkpoint", type = str, default = None) 
 parser.add_argument("--use_past", action = "store_true") 
 parser.add_argument("--finetune_checkpoint", type = str, default = None) 
+parser.add_argument("--use_plain_model", action = "store_true") 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
