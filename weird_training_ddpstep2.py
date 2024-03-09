@@ -699,7 +699,7 @@ class CustomTrainer(Trainer):
                 print(outputs.hidden_states[i][0][64][: 10]) 
             exit(0) 
             ''' 
-        if isinstance(getattr(model, "module", model), LlamaForCausalLM) or isinstance(model, LlamaForCausalLM): 
+        elif isinstance(getattr(model, "module", model), LlamaForCausalLM) or isinstance(model, LlamaForCausalLM): 
             input_ids = inputs["input_ids"] 
             attention_mask = inputs["attention_mask"] 
             label2 = inputs["labels"] 
@@ -1283,6 +1283,7 @@ if (not args.use_plain_model or args.resume_from_checkpoint is not None) and not
 
     # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
 elif args.use_plain_model: 
+    print("using plain model") 
     small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device).to(torch.bfloat16) 
     small_model.train() 
 elif args.finetune_checkpoint: 
