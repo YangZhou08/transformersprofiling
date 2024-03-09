@@ -695,8 +695,8 @@ if tokenizer.pad_token is not None:
 else: 
     tokenizer.pad_token = tokenizer.eos_token 
     print("We now use eos_token as pad token") 
-# tokenizer.padding_side = "left" 
-tokenizer.padding_side = "right" 
+tokenizer.padding_side = "left" 
+# tokenizer.padding_side = "right" 
 
 kernel_size = 7 # this is definitely subject to change 
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
