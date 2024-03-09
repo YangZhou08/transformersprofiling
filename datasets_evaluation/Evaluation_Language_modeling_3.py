@@ -311,10 +311,10 @@ class CustomTrainer(Trainer):
         print(colored("iteration_count {}".format(self.iteration_count), "yellow")) 
         
         # input_ids = inputs["input_ids"] # (batch_size, 203) 
-        # large_input_ids = inputs["input_ids"] # (batch_size, 203) 
-        # small_input_ids = inputs["input_ids"] # (batch_size, 203) 
-        large_input_ids = inputs["large_input_ids"] 
-        small_input_ids = inputs["input_ids"] 
+        large_input_ids = inputs["input_ids"] # (batch_size, 203) 
+        small_input_ids = inputs["input_ids"] # (batch_size, 203) 
+        # large_input_ids = inputs["large_input_ids"] 
+        # small_input_ids = inputs["input_ids"] 
         # attention_mask = inputs["attention_mask_chunk"] 
         # condensed_embeds_labels = inputs["condensed_embeds"] # (batch_size, 28, 3200) 
         condensed_embeds_labels = None 
