@@ -699,6 +699,18 @@ class CustomTrainer(Trainer):
                 print(outputs.hidden_states[i][0][64][: 10]) 
             exit(0) 
             ''' 
+        if isinstance(getattr(model, "module", model), LlamaForCausalLM) or isinstance(model, LlamaForCausalLM): 
+            input_ids = inputs["input_ids"] 
+            attention_mask = inputs["attention_mask"] 
+            label2 = inputs["labels"] 
+            outputs = model(
+                input_ids = input_ids, 
+                attention_mask = attention_mask, 
+                labels = label2, 
+                output_hidden_states = True, 
+                output_attentions = True, 
+                return_dict = True, 
+            ) 
         elif isinstance(getattr(model, "module", model), SimpleSmallModel2) or isinstance(model, SimpleSmallModel2) and self.use_past: 
             if self.input_condensed: 
                 condensed_embeds = self.naive_grouping(input_ids[:, 64:]).to(self.dtype) # condensed_embeds shape is (28, d_model) 
@@ -1262,6 +1274,9 @@ if (not args.use_plain_model or args.resume_from_checkpoint is not None) and not
     small_model.train() 
 
     # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
+elif args.use_plain_model: 
+    small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device).to(torch.bfloat16) 
+    small_model.train() 
 elif args.finetune_checkpoint: 
     print(colored("we use finetune model", "cyan")) 
     small_model = SimpleSmallModel.from_pretrained(args.finetune_checkpoint, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 2048).to(torch_device) 
