@@ -636,7 +636,8 @@ class CustomTrainer(Trainer):
         if num_samples == 0 and observed_num_examples > 0:
             num_samples = observed_num_examples 
         
-        global_perplexity = np.exp(total_loss / total_num_steps) 
+        # global_perplexity = np.exp(total_loss / total_num_steps) 
+        global_perplexity = np.exp(ce_loss / total_num_steps) 
         global_accuracy = total_correct_words / total_words 
         all_losses = total_loss / total_num_steps 
         l2_distance = l2_distance / total_num_steps 
@@ -707,7 +708,7 @@ kernel_size = 7 # this is definitely subject to change
 # print(tokenizer(datasetnew[0]['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 256, 
 #                 return_attention_mask = True, return_tensors = "pt", truncation = True, 
 #                 add_special_tokens = True)) 
-'''
+
 if args.dataset_name == "c4llm_synthesized": 
     # datasetnew = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
     dfiles = [] 
@@ -728,7 +729,7 @@ elif args.dataset_name == "pg19":
     datasetnew = load_dataset('emozilla/pg19', split = "train[:10000]") 
 else: 
     raise ValueError("dataset_name is not recognized") 
-''' 
+
 def encode_with_truncationspecialized(examples): 
     tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
                      return_attention_mask = True, return_tensors = "pt", truncation = True, 
@@ -758,14 +759,14 @@ def unflatten_list_func(examples):
     examples['attention_mask'] = examples['attention_mask'].squeeze(0) 
 
 # datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
-# if not args.dataset_name == "pg19": 
-    # datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
-# else: 
-    # datasetnew = datasetnew.map(encode_with_truncationspecialized, num_proc = 8) 
+if not args.dataset_name == "pg19": 
+    datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
+else: 
+    datasetnew = datasetnew.map(encode_with_truncationspecialized, num_proc = 8) 
 # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
 
-# datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
-# datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
+datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
+datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
 
 class CustomDataset: 
     # def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7): 
@@ -915,7 +916,7 @@ class CustomDataset:
         eval_size = len(self) - train_size 
         return random_split(self, [train_size, eval_size]) 
 
-datasetnew = CustomDataset(max_length = 260, data_dir = dir_c4llmsynthesized, large_tokenizer = tokenizer, small_tokenizer = tokenizer, kernel_size = kernel_size, topk = None) 
+# datasetnew = CustomDataset(max_length = 260, data_dir = dir_c4llmsynthesized, large_tokenizer = tokenizer, small_tokenizer = tokenizer, kernel_size = kernel_size, topk = None) 
 
 for i in range(0, 10): 
     print(datasetnew[i]['text'][100000 : 100000 + 3000]) 
