@@ -320,7 +320,7 @@ class CustomTrainer(Trainer):
         condensed_embeds_labels = None 
         # condensed_embeds_labels = condensed_embeds_labels.to(self.model.small_model_dtype) 
         original_attention_mask = inputs["attention_mask"] # (batch_size, 203) 
-        label2 = inputs["labels"] # (batch_size, 203) 
+        label2 = inputs["labels"] # (batch_size, 203) 3
         print("shape of large_input_ids {} shape of small_input_ids {}".format(large_input_ids.shape, small_input_ids.shape)) 
         # attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 1), dtype = torch.long).to(large_input_ids.device) 
         # attention_mask = torch.ones((large_input_ids.shape[0], condensed_embeds_labels.shape[1] + 2), dtype = torch.long).to(large_input_ids.device) # sequence length is 204, one bos, 29 more tokens, so 30 in total, we have 28 condensed tokens 
@@ -766,7 +766,7 @@ else:
 # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
 
 datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
-datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
+# datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
 
 class CustomDataset: 
     # def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7): 
