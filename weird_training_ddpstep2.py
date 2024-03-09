@@ -1282,10 +1282,6 @@ if (not args.use_plain_model or args.resume_from_checkpoint is not None) and not
     small_model.train() 
 
     # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
-elif args.use_plain_model: 
-    print("using plain model") 
-    small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device).to(torch.bfloat16) 
-    small_model.train() 
 elif args.finetune_checkpoint: 
     print(colored("we use finetune model", "cyan")) 
     small_model = SimpleSmallModel.from_pretrained(args.finetune_checkpoint, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 2048).to(torch_device) 
@@ -1298,7 +1294,8 @@ elif args.use_plain_model and not args.use_past:
     # print(config) 
     # small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
     # small_model = AutoModelForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
-    small_model = LlamaCausalLMWeirdTwo.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
+    # small_model = LlamaCausalLMWeirdTwo.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
+    small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device).to(torch.bfloat16) 
     # small_model = LlamaCausalLMWeirdTwo.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
     small_model.train() 
 elif args.use_past: 
