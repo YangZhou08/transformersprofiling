@@ -197,6 +197,7 @@ if "lovelace" in hostname:
     dir_models = "/home/yangzho6/model_checkpoints/" 
     dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
     dir_unprocessed_dataset = "/home/yangzho6/c4_parts/downloads/" 
+    dir_c4_parts = "/home/yangzho6/c4_parts/downloads/" 
 elif "ada" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_models = "/home/beidic/yangzho6/model_checkpoints/" 
