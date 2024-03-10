@@ -734,9 +734,14 @@ class CustomDataset:
                 self.dataset = load_dataset("JeanKaddour/minipile", split = "test") 
         elif use_c4: 
             if in_training: 
-                for i in range(0, 10): 
-                    filename = "c4_file{}.json".format(i) 
-                    dfiles.append(data_dir + filename) 
+                if "lovelace" in hostname: 
+                    for i in range(1, 10): 
+                        filename = "c4_file{}.json".format(i) 
+                        dfiles.append(data_dir + filename) 
+                else: 
+                    for i in range(0, 10): 
+                        filename = "c4_file{}.json".format(i) 
+                        dfiles.append(data_dir + filename) 
             else: # validation 
                 filename = "c4_file10.json" 
                 dfiles.append(data_dir + filename) 
