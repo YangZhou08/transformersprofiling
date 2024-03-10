@@ -754,9 +754,10 @@ class CustomDataset:
                     dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
             elif "lovelace" in hostname: 
                 # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
-                filename = "c4synthesized_file1_kernel7_0.json" 
-                dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
-                raise ValueError("lovelace doesn't have the test set") 
+                if in_training: 
+                    dfiles = [self.synthesize_dir + "tinyllama/" + "c4synthesized_file1_kernel7_0_train.json"] 
+                else: 
+                    dfiles = [self.synthesize_dir + "tinyllama/" + "c4synthesized_file1_kernel7_0_test.json"] 
             else: 
                 if in_training: 
                     for i in range(0, 8): 
@@ -927,8 +928,12 @@ elif args.use_synthesized:
     # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = False) 
 else: 
     assert args.mixing_dataset_fla == True 
-    pg19dataset = load_dataset('emozilla/pg19', split = "train") 
-    test_pg19dataset = load_dataset('emozilla/pg19', split = "test") 
+    if args.debug: 
+        pg19dataset = load_dataset('emozilla/pg19', split = "train[:2000]") 
+        test_pg19dataset = load_dataset('emozilla/pg19', split = "test[:200]") 
+    else: 
+        pg19dataset = load_dataset('emozilla/pg19', split = "train") 
+        test_pg19dataset = load_dataset('emozilla/pg19', split = "test") 
     def encode_with_truncationspecialized(examples): 
         text_use = examples["text"] if len(examples["text"]) < 103000 else examples["text"][100000 : 100000 + 3000] 
         tokdictionary = tokenizer(text_use, padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
@@ -950,12 +955,12 @@ else:
         raise ValueError("lovelace doesn't have the test set") 
     else: 
         topk = None 
-        for i in range(0, 7): 
+        for i in range(0, 7): # deliberately use one less file 
             # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
             filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
             dfiles.append(dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
     synthesizeddataset = load_dataset('json', data_files = dfiles, split = 'train') 
-    test_synthesizeddataset = load_dataset('json', data_files = dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + "synthesized_test.json", split = "train") 
+    test_synthesizeddataset = load_dataset('json', data_files = [dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + "synthesized_test.json"], split = "train") 
     synthesizeddataset.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
     test_synthesizeddataset.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
     train_dataset = concatenate_datasets([pg19dataset, synthesizeddataset]) 
