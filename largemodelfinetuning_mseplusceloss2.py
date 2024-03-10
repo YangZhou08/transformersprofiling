@@ -5,6 +5,8 @@ import argparse
 import datasets 
 from datasets import load_dataset 
 
+from datasets import concatenate_datasets 
+
 from src.transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM 
 from src.transformers import GPTNeoXForCausalLM 
 from src.transformers import LlamaConfig, LlamaPreTrainedModel 
@@ -237,6 +239,9 @@ parser.add_argument("--group_compress", action = "store_true")
 parser.add_argument("--hybrid_compress", action = "store_true") 
 parser.add_argument("--full_sequence_length_layer_pos", type = int, default = 1) 
 parser.add_argument("--use_minipile", action = "store_true") 
+parser.add_argument("--use_c4", action = "store_true") 
+parser.add_argument("--mixing_dataset_fla", action = "store_true") 
+parser.add_argument("--use_synthesized", action = "store_true") 
 
 args = parser.parse_args() 
 model_name = args.large_model 
@@ -715,14 +720,32 @@ class CustomTrainer(Trainer):
 
 class CustomDataset: 
     # def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7): 
-    def __init__(self, data_dir, large_tokenizer = None, small_tokenizer = None, max_length = 256, kernel_size = 7, topk = None, prompt_length = 64, use_minipile = False, in_training = True): 
+    def __init__(self, data_dir, large_tokenizer = None, small_tokenizer = None, max_length = 256, kernel_size = 7, topk = None, prompt_length = 64, use_minipile = False, in_training = True, use_c4 = False): 
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
         self.synthesize_dir = data_dir 
         # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json", split = "train") 
         # self.dataset = load_dataset('json', data_files = [self.synthesize_dir + 'c4synthesized_file1.json', self.synthesize_dir + 'c4synthesized_file2.json'], split="train") 
         dfiles = [] 
         print(colored("hostname is {}".format(hostname), "yellow")) 
-        if not use_minipile: 
+        if use_minipile: 
+            if in_training: 
+                self.dataset = load_dataset("JeanKaddour/minipile", split = "train") 
+            else: 
+                self.dataset = load_dataset("JeanKaddour/minipile", split = "test") 
+        elif use_c4: 
+            if in_training: 
+                for i in range(0, 10): 
+                    filename = "c4_file{}.json".format(i) 
+                    dfiles.append(data_dir + filename) 
+            else: # validation 
+                filename = "c4_file10.json" 
+                dfiles.append(data_dir + filename) 
+            if not args.debug: 
+                self.dataset = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
+            else: 
+                self.dataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
+            # datasetsynthesized = load_dataset('json', data_files = self.synthesize_dir + 
+        else: 
             if "ada" in hostname: 
                 for i in range(0, 2): 
                     # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
@@ -733,23 +756,23 @@ class CustomDataset:
                 # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
                 filename = "c4synthesized_file1_kernel7_0.json" 
                 dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+                raise ValueError("lovelace doesn't have the test set") 
             else: 
-                for i in range(0, 8): 
-                    # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
-                    filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
-                    dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
-            
+                if in_training: 
+                    for i in range(0, 8): 
+                        # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
+                        filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
+                        dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
+                else: # validation 
+                    dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + "synthesized_test.json") 
             if not args.debug: 
                 self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
             else: 
                 self.dataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
             # self.dataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
-        else: 
-            if in_training: 
-                self.dataset = load_dataset("JeanKaddour/minipile", split = "train") 
-            else: 
-                self.dataset = load_dataset("JeanKaddour/minipile", split = "test") 
+        
         self.use_minipile = use_minipile 
+        self.use_c4 = use_c4 
         self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
         self.kernel_size = kernel_size 
         # self.dataset = self.dataset["train"][0: 5120] 
@@ -782,7 +805,7 @@ class CustomDataset:
     def __getitem__(self, idx): 
         item = self.dataset[idx] 
         
-        if not self.use_minipile: 
+        if not self.use_minipile and not self.use_c4: 
             try: 
                 tensor = torch.load(item["condensed_token_path"]) 
             except IOError as e: 
@@ -858,23 +881,6 @@ class CustomDataset:
 
         return item 
 
-    def split(self, train_size): 
-        if isinstance(train_size, float): 
-            train_size = int(train_size * len(self)) 
-        eval_size = len(self) - train_size 
-        return random_split(self, [train_size, eval_size]) 
-    
-    def static_split(self, train_size): 
-        if isinstance(train_size, float): 
-            train_size = int(train_size * len(self)) 
-        eval_size = len(self) - train_size 
-        train_indices = list(range(0, train_size)) 
-        eval_indices = list(range(train_size, len(self))) 
-        
-        train_set = CustomDatasetSubset(self, train_indices) 
-        eval_set = CustomDatasetSubset(self, eval_indices) 
-        return train_set, eval_set 
-
 class CustomDatasetSubset: 
     def __init__(self, dataset, indices): # indices here is a list of ints 
         self.dataset = dataset 
@@ -908,13 +914,52 @@ kernel_size = args.kernel_size
 # datasetnew = CustomDataset(max_length = 203, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size) 
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
 print(colored("the max length for processing the dataset is {}".format(args.max_length), "yellow")) 
-if not args.use_minipile: 
-    datasetnew = CustomDataset(max_length = args.max_length, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk) 
-    # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = False) 
-    train_dataset, test_dataset = datasetnew.split(0.98) 
-else: 
+if args.use_minipile: 
     train_dataset = CustomDataset(max_length = args.max_length, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64, use_minipile = args.use_minipile, in_training = True) 
     test_dataset = CustomDataset(max_length = args.max_length, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64, use_minipile = args.use_minipile, in_training = False) 
+elif args.use_c4: 
+    train_dataset = CustomDataset(max_length = args.max_length, data_dir = dir_c4_parts, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64, use_c4 = args.use_c4, in_training = True) 
+    test_dataset = CustomDataset(max_length = args.max_length, data_dir = dir_c4_parts, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64, use_c4 = args.use_c4, in_training = False) 
+elif args.use_synthesized: 
+    # using synthesized data 
+    train_dataset = CustomDataset(max_length = args.max_length, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64, in_training = True) # train_dataset 
+    test_dataset = CustomDataset(max_length = args.max_length, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64, in_training = False) # test_dataset 
+    # datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = False) 
+else: 
+    assert args.mixing_dataset_fla == True 
+    pg19dataset = load_dataset('emozilla/pg19', split = "train") 
+    test_pg19dataset = load_dataset('emozilla/pg19', split = "test") 
+    def encode_with_truncationspecialized(examples): 
+        text_use = examples["text"] if len(examples["text"]) < 103000 else examples["text"][100000 : 100000 + 3000] 
+        tokdictionary = tokenizer(text_use, padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
+                                  return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                                  add_special_tokens = True) 
+        newdictionary = {} 
+        newdictionary["input_ids"] = tokdictionary["input_ids"].squeeze(0) 
+        newdictionary["attention_mask"] = tokdictionary["attention_mask"].squeeze(0) 
+        return newdictionary 
+    pg19dataset = pg19dataset.map(encode_with_truncationspecialized, num_proc = 8) 
+    test_pg19dataset = test_pg19dataset.map(encode_with_truncationspecialized, num_proc = 8) 
+    pg19dataset.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
+    test_pg19dataset.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
+    dfiles = [] 
+    if "lovelace" in hostname: 
+        # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
+        filename = "c4synthesized_file1_kernel7_0.json" 
+        dfiles.append(dir_sdata + "{}/".format(model_name) + filename) 
+        raise ValueError("lovelace doesn't have the test set") 
+    else: 
+        topk = None 
+        for i in range(0, 7): 
+            # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
+            filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
+            dfiles.append(dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
+    synthesizeddataset = load_dataset('json', data_files = dfiles, split = 'train') 
+    test_synthesizeddataset = load_dataset('json', data_files = dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + "synthesized_test.json", split = "train") 
+    synthesizeddataset.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
+    test_synthesizeddataset.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
+    train_dataset = concatenate_datasets([pg19dataset, synthesizeddataset]) 
+    test_dataset = concatenate_datasets([test_pg19dataset, test_synthesizeddataset]) 
 # the max_length assignment is subject to change 
 max_length_lookup = {2 : 260, 3 : 259, 4 : 260, 5 : 259, 6 : 262, 7 : 260, 8 : 264} 
 # datasetnew = CustomDataset(max_length = max_length_lookup[kernel_size], data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64) 
