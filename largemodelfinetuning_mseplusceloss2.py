@@ -972,8 +972,12 @@ else:
         topk = None 
         dtest.append(dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + "synthesized_test.json") 
     def encode_with_truncation(examples): 
-        return tokenizer(examples["text"], padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
+        tokdictionary = tokenizer(examples["text"], padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
                         return_attention_mask = True, return_tensors = "pt", truncation = True) 
+        newdictionary = {} 
+        newdictionary["input_ids"] = tokdictionary["input_ids"].squeeze(0) 
+        newdictionary["attention_mask"] = tokdictionary["attention_mask"].squeeze(0) 
+        return newdictionary 
     if args.debug: 
         synthesizeddataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
         test_synthesizeddataset = load_dataset('json', data_files = dtest, split = "train[:200]") 
