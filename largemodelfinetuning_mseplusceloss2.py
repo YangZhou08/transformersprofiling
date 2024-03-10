@@ -936,7 +936,7 @@ else:
     assert args.mixing_dataset_fla == True 
     if args.debug: 
         pg19dataset = load_dataset('emozilla/pg19', split = "train[:2000]") 
-        test_pg19dataset = load_dataset('emozilla/pg19', split = "test[:200]") 
+        test_pg19dataset = load_dataset('emozilla/pg19', split = "test") 
     else: 
         pg19dataset = load_dataset('emozilla/pg19', split = "train") 
         test_pg19dataset = load_dataset('emozilla/pg19', split = "test") 
@@ -965,8 +965,12 @@ else:
             # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
             filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
             dfiles.append(dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
-    synthesizeddataset = load_dataset('json', data_files = dfiles, split = 'train') 
-    test_synthesizeddataset = load_dataset('json', data_files = [dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + "synthesized_test.json"], split = "train") 
+    if args.debug: 
+        synthesizeddataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
+        test_synthesizeddataset = load_dataset('json', data_files = [dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + "synthesized_test.json"], split = "train[:200]") 
+    else: 
+        synthesizeddataset = load_dataset('json', data_files = dfiles, split = 'train') 
+        test_synthesizeddataset = load_dataset('json', data_files = [dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + "synthesized_test.json"], split = "train") 
     synthesizeddataset.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
     test_synthesizeddataset.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
     train_dataset = concatenate_datasets([pg19dataset, synthesizeddataset]) 
