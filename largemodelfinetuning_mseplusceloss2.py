@@ -971,12 +971,17 @@ else:
     else: 
         topk = None 
         dtest.append(dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + "synthesized_test.json") 
+    def encode_with_truncation(examples): 
+        return tokenizer(examples["text"], padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
+                        return_attention_mask = True, return_tensors = "pt", truncation = True) 
     if args.debug: 
         synthesizeddataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
         test_synthesizeddataset = load_dataset('json', data_files = dtest, split = "train[:200]") 
     else: 
         synthesizeddataset = load_dataset('json', data_files = dfiles, split = 'train') 
         test_synthesizeddataset = load_dataset('json', data_files = dtest, split = 'train') 
+    synthesizeddataset = synthesizeddataset.map(encode_with_truncation, num_proc = 8) 
+    test_synthesizeddataset = test_synthesizeddataset.map(encode_with_truncation, num_proc = 8) 
     synthesizeddataset.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
     test_synthesizeddataset.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
     train_dataset = concatenate_datasets([pg19dataset, synthesizeddataset]) 
