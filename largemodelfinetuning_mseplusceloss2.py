@@ -957,6 +957,7 @@ else:
     if "lovelace" in hostname: 
         # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
         filename = "c4synthesized_file1_kernel7_0_train.json" 
+        dfiles.append(dir_sdata + "tinyllama/" + filename) 
     else: 
         topk = None 
         for i in range(0, 7): # deliberately use one less file 
