@@ -956,21 +956,26 @@ else:
     dfiles = [] 
     if "lovelace" in hostname: 
         # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
-        filename = "c4synthesized_file1_kernel7_0.json" 
-        dfiles.append(dir_sdata + "{}/".format(model_name) + filename) 
-        raise ValueError("lovelace doesn't have the test set") 
+        filename = "c4synthesized_file1_kernel7_0_train.json" 
     else: 
         topk = None 
         for i in range(0, 7): # deliberately use one less file 
             # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
             filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
             dfiles.append(dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
+            
+    dtest = [] 
+    if "lovelace" in hostname: 
+        dtest.append(dir_sdata + "tinyllama/" + "c4synthesized_file1_kernel7_0_test.json") 
+    else: 
+        topk = None 
+        dtest.append(dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + "synthesized_test.json") 
     if args.debug: 
         synthesizeddataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
-        test_synthesizeddataset = load_dataset('json', data_files = [dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + "synthesized_test.json"], split = "train[:200]") 
+        test_synthesizeddataset = load_dataset('json', data_files = dtest, split = "train[:200]") 
     else: 
         synthesizeddataset = load_dataset('json', data_files = dfiles, split = 'train') 
-        test_synthesizeddataset = load_dataset('json', data_files = [dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + "synthesized_test.json"], split = "train") 
+        test_synthesizeddataset = load_dataset('json', data_files = dtest, split = 'train') 
     synthesizeddataset.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
     test_synthesizeddataset.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
     train_dataset = concatenate_datasets([pg19dataset, synthesizeddataset]) 
