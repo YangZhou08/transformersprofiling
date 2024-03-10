@@ -246,6 +246,8 @@ parser.add_argument("--use_synthesized", action = "store_true")
 
 args = parser.parse_args() 
 model_name = args.large_model 
+if [args.use_minipile, args.use_c4, args.mixing_dataset_fla, args.use_synthesized].count(True) > 1: 
+    raise ValueError("only one of use_minipile, use_c4, mixing_dataset_fla, use_synthesized can be true") 
 if args.use_pretrained_small_model: 
     assert args.finetuned_small_model_checkpoint is not None 
 text_eval = "evaluating_printout_{}_{}_{}.txt".format(commit_hash, hash_of_time, model_name) 
@@ -736,18 +738,20 @@ class CustomDataset:
         elif use_c4: 
             if in_training: 
                 if "lovelace" in hostname: 
+                    print("loading training set from 1 to 9") 
                     for i in range(1, 10): 
                         filename = "c4_file{}.json".format(i) 
                         dfiles.append(data_dir + filename) 
                 else: 
-                    for i in range(0, 10): 
+                    print("loading training set from 0 to 9") 
+                    for i in range(0, 10): # training set using 0 to 9 
                         filename = "c4_file{}.json".format(i) 
                         dfiles.append(data_dir + filename) 
             else: # validation 
                 filename = "c4_file10.json" 
                 dfiles.append(data_dir + filename) 
             if not args.debug: 
-                self.dataset = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
+                self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
             else: 
                 self.dataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
             # datasetsynthesized = load_dataset('json', data_files = self.synthesize_dir + 
