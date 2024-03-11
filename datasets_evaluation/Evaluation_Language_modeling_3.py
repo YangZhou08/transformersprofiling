@@ -792,7 +792,7 @@ class CustomDataset:
                 for i in range(0, 8): 
                     # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
                     filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
-                    dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
+                    dfiles.append(self.synthesize_dir + "{}_topk{}/".format("tinyllama", topk if topk is not None else "na") + filename) 
             
             self.dataset = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
             # self.dataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
