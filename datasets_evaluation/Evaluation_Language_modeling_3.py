@@ -36,6 +36,7 @@ from transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSma
 from transformers.models.llama.modeling_llama import LlamaCausalLMWeirdTwo 
 from transformers.models.llama.modeling_llama import LlamaWeirdLarge3 
 from transformers.models.llama.modeling_llama import LlamaWeirdLargeIntermediate 
+from transformers.models.llama.modeling_llama import LlamaWeirdLargeTest 
 from transformers.modeling_utils import PreTrainedModel, load_sharded_checkpoint, unwrap_model 
 import time 
 from torch.utils.data import random_split 
@@ -345,6 +346,22 @@ class CustomTrainer(Trainer):
                 labels = label2, 
             ) 
         elif isinstance(self.model, LlamaWeirdLargeIntermediate): 
+            original_attention_mask2 = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
+            outputs = model(
+                large_input_ids = large_input_ids, 
+                small_input_ids = small_input_ids, 
+                # attention_mask = attention_mask, 
+                attention_mask = original_attention_mask, 
+                output_hidden_states = True, 
+                output_attentions = True, 
+                return_dict = True, 
+                # condensed_embed_labels = None, 
+                # original_attention_mask = original_attention_mask, 
+                original_attention_mask = original_attention_mask2, 
+                labels = label2, 
+                condensed_embed_labels = condensed_embeds_labels, 
+            ) 
+        elif isinstance(self.model, LlamaWeirdLargeTest): 
             original_attention_mask2 = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
             outputs = model(
                 large_input_ids = large_input_ids, 
@@ -709,26 +726,26 @@ kernel_size = 7 # this is definitely subject to change
 #                 return_attention_mask = True, return_tensors = "pt", truncation = True, 
 #                 add_special_tokens = True)) 
 
-# if args.dataset_name == "c4llm_synthesized": 
-#     # datasetnew = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
-#     dfiles = [] 
-#     if "lovelace" in hostname: 
-#         filename = "c4synthesized_file1_kernel7_0.json" 
-#         dfiles.append(dir_c4llmsynthesized + "{}/".format("tinyllama") + filename) 
-#         datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
-#     else: 
-#         filename = "c4synthesized_file1_kernel7_{}_combined.json".format(7) 
-#         dfiles.append(dir_c4llmsynthesized + "{}_topk{}/".format("tinyllama", "na") + filename) 
-#         datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
-# elif args.dataset_name == "c4": 
-#     dfiles = [] 
-#     filename = "c4_file1.json" 
-#     dfiles.append(dir_c4 + filename) 
-#     datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
-# elif args.dataset_name == "pg19": 
-#     datasetnew = load_dataset('emozilla/pg19', split = "train[:10000]") 
-# else: 
-#     raise ValueError("dataset_name is not recognized") 
+if args.dataset_name == "c4llm_synthesized": 
+    # datasetnew = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
+    dfiles = [] 
+    if "lovelace" in hostname: 
+        filename = "c4synthesized_file1_kernel7_0.json" 
+        dfiles.append(dir_c4llmsynthesized + "{}/".format("tinyllama") + filename) 
+        datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
+    else: 
+        filename = "c4synthesized_file1_kernel7_{}_combined.json".format(7) 
+        dfiles.append(dir_c4llmsynthesized + "{}_topk{}/".format("tinyllama", "na") + filename) 
+        datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
+elif args.dataset_name == "c4": 
+    dfiles = [] 
+    filename = "c4_file1.json" 
+    dfiles.append(dir_c4 + filename) 
+    datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
+elif args.dataset_name == "pg19": 
+    datasetnew = load_dataset('emozilla/pg19', split = "train[:10000]") 
+else: 
+    raise ValueError("dataset_name is not recognized") 
 
 def encode_with_truncationspecialized(examples): 
     tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
@@ -759,13 +776,13 @@ def unflatten_list_func(examples):
     examples['attention_mask'] = examples['attention_mask'].squeeze(0) 
 
 # datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
-# if not args.dataset_name == "pg19": 
-    # datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
-# else: 
-    # datasetnew = datasetnew.map(encode_with_truncationspecialized, num_proc = 8) 
+if not args.dataset_name == "pg19": 
+    datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
+else: 
+    datasetnew = datasetnew.map(encode_with_truncationspecialized, num_proc = 8) 
 # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
 
-# datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
+datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
 # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
 
 class CustomDataset: 
@@ -916,7 +933,7 @@ class CustomDataset:
         eval_size = len(self) - train_size 
         return random_split(self, [train_size, eval_size]) 
 
-datasetnew = CustomDataset(max_length = 260, data_dir = dir_c4llmsynthesized, large_tokenizer = tokenizer, small_tokenizer = tokenizer, kernel_size = kernel_size, topk = None) 
+# datasetnew = CustomDataset(max_length = 260, data_dir = dir_c4llmsynthesized, large_tokenizer = tokenizer, small_tokenizer = tokenizer, kernel_size = kernel_size, topk = None) 
 
 for i in range(0, 10): 
     print(datasetnew[i]['text'][100000 : 100000 + 3000]) 
@@ -1011,6 +1028,23 @@ else:
         large_model.set_tokenizer_bos_id(bos_id = tokenizer.bos_token_id, pad_id = tokenizer.pad_token_id) 
         large_model.set_cosinesimilarity(False) 
             
+        large_model.config.pad_token_id = tokenizer.pad_token_id 
+        large_model.addonsmallmodel.config.pad_token_id = tokenizer.pad_token_id 
+        # small_model.config.pad_token_id = tokenizer.pad_token_id 
+        large_model.model.eval() 
+        large_model.addonsmallmodel.eval() 
+    elif model_name == "debugging3": 
+        large_model = LlamaWeirdLargeTest.from_pretrained(args.loading_from_checkpoint, cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+        # large_model.set_full_sequence_length_layer_pos(args.full_sequence_length_layer_pos) 
+        large_model.addonsmallmodel.set_criticalpath(hostname = hostname) 
+        large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True) 
+        large_model.to(torch.bfloat16).to(torch_device) 
+        large_model.set_inference_setting(args.experiment_setting) 
+        large_model.set_walpha(0.5) 
+        large_model.set_slidingwindowlength(sliding_window_length = args.kernel_size, addonmodel_start = args.kernel_size + 1) 
+        large_model.set_tokenizer_bos_id(bos_id = tokenizer.bos_token_id, pad_id = tokenizer.pad_token_id) 
+        large_model.set_cosinesimilarity(False) 
+        
         large_model.config.pad_token_id = tokenizer.pad_token_id 
         large_model.addonsmallmodel.config.pad_token_id = tokenizer.pad_token_id 
         # small_model.config.pad_token_id = tokenizer.pad_token_id 
