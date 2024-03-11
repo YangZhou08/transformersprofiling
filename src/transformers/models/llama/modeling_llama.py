@@ -5110,11 +5110,43 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         self.generate_iteration_count += 1 
         
         print(colored("running the small model side", "green")) 
-        '''
+        
         addonmodeloutput = self.addonsmallmodel(
             input_ids = small_input_ids, 
             attention_mask = original_attention_mask, 
-        ''' 
+            past_key_values = None, 
+            condensed_embeds = hidden_states, 
+            labels = None, 
+            output_attentions = True, 
+            output_hidden_states = None, 
+            return_dict = True, 
+            start_idx = self.addonmodel_start, # NOTE this is very important 
+            eval_mode = False, 
+            iteration_count = 1, 
+            experiment_setting = self.inference_setting, 
+        ) 
+        
+        logits = addonmodeloutput.logits 
+        
+        seq_length = small_input_ids.shape[1] + hidden_states.shape[1] 
+        assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
+        loss = None 
+        
+        if not return_dict: 
+            output = (logits,) + outputs[1:] 
+            return (loss,) + output if loss is not None else output 
+        
+        return CausalLMOutputWithPastLargeDistance2(
+            loss = loss, 
+            logits = logits, 
+            past_key_values = past_key_values, 
+            hidden_states = self.generate_model_hidden_states, 
+            attentions = addonmodeloutput.attentions, 
+            l2_distance = None, 
+            ce_loss = None, 
+            l2_distance_input = None, 
+            cossim_input = None, 
+        ) 
     
     def prepare_inputs_for_generation( 
         self, input_ids, past_key_values = None, attention_mask = None, inputs_embeds = None, adjustment_scheme = None, **kwargs): 
