@@ -5034,6 +5034,81 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             cossim_input = cossim_input, 
         ) 
     
+    def forward_generate(
+        self,
+        # input_ids: torch.LongTensor = None, 
+        large_input_ids: torch.LongTensor = None, 
+        small_input_ids: torch.LongTensor = None, 
+        attention_mask: Optional[torch.Tensor] = None,
+        position_ids: Optional[torch.LongTensor] = None,
+        past_key_values: Optional[List[torch.FloatTensor]] = None,
+        input_embeds: Optional[torch.FloatTensor] = None, 
+        labels: Optional[torch.LongTensor] = None,
+        use_cache: Optional[bool] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        return_dict: Optional[bool] = None, 
+        original_attention_mask = None, 
+        condensed_embed_labels = None, 
+        autoregressive_first_element = False, 
+    ) -> Union[Tuple, CausalLMOutputWithPastLargeDistance2]: 
+        r"""
+        Args:
+            labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+                config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+                (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Returns:
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, LlamaForCausalLM
+
+        >>> model = LlamaForCausalLM.from_pretrained(PATH_TO_CONVERTED_WEIGHTS)
+        >>> tokenizer = AutoTokenizer.from_pretrained(PATH_TO_CONVERTED_TOKENIZER)
+
+        >>> prompt = "Hey, are you conscious? Can you talk to me?"
+        >>> inputs = tokenizer(prompt, return_tensors="pt")
+
+        >>> # Generate
+        >>> generate_ids = model.generate(inputs.input_ids, max_length=30)
+        >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        "Hey, are you conscious? Can you talk to me?\nI'm not conscious, but I can talk to you."
+        ```""" 
+
+        output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
+        output_hidden_states = (
+            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
+        )
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+
+        if self.generate_iteration_count % self.sliding_window_length == 0: 
+            # NOTE for this case, we use the pass-in attention mask 
+            outputs = self.model(
+                input_ids = large_input_ids, 
+                attention_mask = attention_mask, 
+                position_ids = position_ids, 
+                past_key_values = past_key_values, 
+                inputs_embeds = input_embeds, 
+                use_cache = use_cache, 
+                output_attentions = output_attentions, 
+                output_hidden_states = output_hidden_states, 
+                return_dict = return_dict, 
+            ) 
+            
+            hidden_states = outputs[0] # we don't need the lm_head 
+            print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
+            if self.small_model_dtype == torch.float32: 
+                hidden_states = hidden_states.to(torch.float32) 
+            elif self.small_model_dtype == torch.bfloat16: 
+                hidden_states = hidden_states.to(torch.bfloat16) 
+            self.generate_model_hidden_states = hidden_states.clone().detach() 
+        self.generate_iteration_count += 1 
+        
+        assert input_embeds.shape[1] == self.generate_model_hidden_states.shape[1] 
+    
     def prepare_inputs_for_generation( 
         self, input_ids, past_key_values = None, attention_mask = None, inputs_embeds = None, adjustment_scheme = None, **kwargs): 
         # mainly used to debug preparing inputs for generation and not using past_key_values 
