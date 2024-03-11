@@ -1097,4 +1097,7 @@ for datasetname in dataset_list:
     ce_loss_list.append(results["eval_loss"]) 
     ppl_list.append(results["eval_perplexity"]) 
     print(results) 
+
+for idx, datasetname in enumerate(dataset_list): 
+    print("{}: ce_loss is {}, ppl is {}".format(datasetname, ce_loss_list[idx], ppl_list[idx])) 
 # model.save_pretrained("../model_checkpoints/largesmall_deciphering_{}_{}_{}".format(args.model_name, args.experiment_setting, commit_hash)) 
