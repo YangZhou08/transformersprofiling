@@ -745,7 +745,7 @@ class CustomDataset:
                 else: 
                     print("loading training set from 0 to 9") 
                     # for i in range(0, 10): # training set using 0 to 9 
-                    for i in range(0, 20): 
+                    for i in range(0, 15): 
                         filename = "c4_file{}.json".format(i) 
                         dfiles.append(data_dir + filename) 
             else: # validation 
