@@ -222,7 +222,6 @@ parser.add_argument("--kernel_size", type = int, default = 7)
 parser.add_argument("--experiment_setting", type = str, default = "setting0") 
 parser.add_argument("--condensed_token_random", action = "store_true") 
 parser.add_argument("--task_id", type = int, default = 0) 
-parser.add_argument("--dataset_name", type = str, choices = ["c4llm_synthesized", "c4", "pg19"], default = "pg19") 
 parser.add_argument("--setting0usedq", action = "store_true") 
 parser.add_argument("--full_sequence_length_layer_pos", type = int, default = 10) 
 
@@ -709,65 +708,6 @@ kernel_size = 7 # this is definitely subject to change
 #                 return_attention_mask = True, return_tensors = "pt", truncation = True, 
 #                 add_special_tokens = True)) 
 
-if args.dataset_name == "c4llm_synthesized": 
-    # datasetnew = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
-    dfiles = [] 
-    if "lovelace" in hostname: 
-        filename = "c4synthesized_file1_kernel7_0.json" 
-        dfiles.append(dir_c4llmsynthesized + "{}/".format("tinyllama") + filename) 
-        datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
-    else: 
-        filename = "c4synthesized_file1_kernel7_{}_combined.json".format(7) 
-        dfiles.append(dir_c4llmsynthesized + "{}_topk{}/".format("tinyllama", "na") + filename) 
-        datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
-elif args.dataset_name == "c4": 
-    dfiles = [] 
-    filename = "c4_file1.json" 
-    dfiles.append(dir_c4 + filename) 
-    datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
-elif args.dataset_name == "pg19": 
-    datasetnew = load_dataset('emozilla/pg19', split = "train[:10000]") 
-else: 
-    raise ValueError("dataset_name is not recognized") 
-
-def encode_with_truncationspecialized(examples): 
-    tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
-                     return_attention_mask = True, return_tensors = "pt", truncation = True, 
-                     add_special_tokens = True) 
-    # tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 260, 
-    #                          return_attention_mask = True, return_tensors = "pt", truncation = True, 
-    #                          add_special_tokens = True) 
-    newdictionary = {} 
-    newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
-    newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
-    return newdictionary 
-
-def encode_with_truncation(examples): 
-    # tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
-    #                  return_attention_mask = True, return_tensors = "pt", truncation = True, 
-    #                  add_special_tokens = True) 
-    tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
-                             return_attention_mask = True, return_tensors = "pt", truncation = True, 
-                             add_special_tokens = True) 
-    newdictionary = {} 
-    newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
-    newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
-    return newdictionary 
-
-def unflatten_list_func(examples): 
-    examples['input_ids'] = examples['input_ids'].squeeze(0) 
-    examples['attention_mask'] = examples['attention_mask'].squeeze(0) 
-
-# datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
-if not args.dataset_name == "pg19": 
-    datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
-else: 
-    datasetnew = datasetnew.map(encode_with_truncationspecialized, num_proc = 8) 
-# datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
-
-datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
-# datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
-
 class CustomDataset: 
     # def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7): 
     def __init__(self, data_dir, large_tokenizer = None, small_tokenizer = None, max_length = 256, kernel_size = 7, topk = None, prompt_length = 64, use_minipile = False, in_training = True): 
@@ -918,11 +858,11 @@ class CustomDataset:
 
 # datasetnew = CustomDataset(max_length = 260, data_dir = dir_c4llmsynthesized, large_tokenizer = tokenizer, small_tokenizer = tokenizer, kernel_size = kernel_size, topk = None) 
 
-for i in range(0, 10): 
-    print(datasetnew[i]['text'][100000 : 100000 + 3000]) 
-    print(datasetnew[i]['input_ids']) 
-    print("length of every example: {}".format(datasetnew[i]['input_ids'].shape)) 
-    print() 
+# for i in range(0, 10): 
+#     print(datasetnew[i]['text'][100000 : 100000 + 3000]) 
+#     print(datasetnew[i]['input_ids']) 
+#     print("length of every example: {}".format(datasetnew[i]['input_ids'].shape)) 
+#     print() 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
@@ -1027,7 +967,7 @@ training_args = TrainingArguments(
     label_names = ["labels"], 
 ) 
 
-if args.model_name == "debugging" or args.model_name == "debugging2": 
+if args.model_name == "debugging" or args.model_name == "debugging2" or args.model_name == "debugging3": 
     model = large_model 
     
 trainer = CustomTrainer( 
@@ -1053,6 +993,74 @@ wandblogconfigs["git_commit"] = commit_hash
 wandblogconfigs["time_hash"] = hash_of_time 
 wandb.init(project = "chunkedlargefinetuning", config = wandblogconfigs, name = "large_small_ce{}_{}".format(today, "unmasked")) 
 
-results = trainer.evaluate(eval_dataset = datasetnew) 
-print(results) 
+def get_dataset(datasetname): 
+    if datasetname == "c4llm_synthesized": 
+        # datasetnew = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
+        dfiles = [] 
+        if "lovelace" in hostname: 
+            filename = "c4synthesized_file1_kernel7_0.json" 
+            dfiles.append(dir_c4llmsynthesized + "{}/".format("tinyllama") + filename) 
+            datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
+        else: 
+            filename = "c4synthesized_file1_kernel7_{}_combined.json".format(7) 
+            dfiles.append(dir_c4llmsynthesized + "{}_topk{}/".format("tinyllama", "na") + filename) 
+            datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
+    elif datasetname == "c4": 
+        dfiles = [] 
+        filename = "c4_file1.json" 
+        dfiles.append(dir_c4 + filename) 
+        datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
+    elif datasetname == "pg19": 
+        datasetnew = load_dataset('emozilla/pg19', split = "train[:10000]") 
+    else: 
+        raise ValueError("dataset_name is not recognized") 
+
+    def encode_with_truncationspecialized(examples): 
+        tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
+                        return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                        add_special_tokens = True) 
+        # tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 260, 
+        #                          return_attention_mask = True, return_tensors = "pt", truncation = True, 
+        #                          add_special_tokens = True) 
+        newdictionary = {} 
+        newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
+        newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
+        return newdictionary 
+
+    def encode_with_truncation(examples): 
+        # tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
+        #                  return_attention_mask = True, return_tensors = "pt", truncation = True, 
+        #                  add_special_tokens = True) 
+        tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
+                                return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                                add_special_tokens = True) 
+        newdictionary = {} 
+        newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
+        newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
+        return newdictionary 
+
+    def unflatten_list_func(examples): 
+        examples['input_ids'] = examples['input_ids'].squeeze(0) 
+        examples['attention_mask'] = examples['attention_mask'].squeeze(0) 
+
+    # datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
+    if not datasetname == "pg19": 
+        datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
+    else: 
+        datasetnew = datasetnew.map(encode_with_truncationspecialized, num_proc = 8) 
+    # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
+
+    datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
+    # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
+    return datasetnew 
+dataset_list = ["c4llm_synthesized", "c4", "pg19"] 
+ce_loss_list = [] 
+ppl_list = [] 
+
+for datasetname in dataset_list: 
+    eval_dataset = get_dataset(datasetname) 
+    results = trainer.evaluate(eval_dataset = eval_dataset) 
+    ce_loss_list.append(results["eval_loss"]) 
+    ppl_list.append(results["eval_perplexity"]) 
+    print(results) 
 # model.save_pretrained("../model_checkpoints/largesmall_deciphering_{}_{}_{}".format(args.model_name, args.experiment_setting, commit_hash)) 
