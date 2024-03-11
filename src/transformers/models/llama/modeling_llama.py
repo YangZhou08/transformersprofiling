@@ -5099,15 +5099,22 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             ) 
             
             hidden_states = outputs[0] # we don't need the lm_head 
+            seq_len = hidden_states.shape[1] 
             print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
             if self.small_model_dtype == torch.float32: 
                 hidden_states = hidden_states.to(torch.float32) 
             elif self.small_model_dtype == torch.bfloat16: 
                 hidden_states = hidden_states.to(torch.bfloat16) 
+            selected_seq_indices = [i * self.sliding_window_length for i in range(0, ())]
             self.generate_model_hidden_states = hidden_states.clone().detach() 
         self.generate_iteration_count += 1 
         
-        assert input_embeds.shape[1] == self.generate_model_hidden_states.shape[1] 
+        print(colored("running the small model side", "green")) 
+        
+        addonmodeloutput = self.addonsmallmodel(
+            input_ids = small_input_ids, 
+            attention_mask = original_attention_mask, 
+            
     
     def prepare_inputs_for_generation( 
         self, input_ids, past_key_values = None, attention_mask = None, inputs_embeds = None, adjustment_scheme = None, **kwargs): 
