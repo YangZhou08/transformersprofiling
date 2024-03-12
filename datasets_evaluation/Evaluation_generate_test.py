@@ -378,6 +378,28 @@ if args.kernel_size not in dict_kernel_maxlength:
 else: 
     kernel_size = int(args.kernel_size) 
 
+def visualizing_generated_sequence(original_sequence, large_outputs, index_to_peek): 
+    print("the sequence of inputs: {}".format(large_outputs.sequences[index_to_peek])) 
+    print("the sequence in words: {}".format(tokenizer.decode(large_outputs.sequences[index_to_peek][0 : 64])), end = " ") 
+    print(colored(tokenizer.decode(large_outputs.sequences[index_to_peek][64: ]), "blue")) 
+    print("expected sequence: {}".format(tokenizer.decode(original_sequence[index_to_peek][: 64])), end = " ") 
+    print(colored(tokenizer.decode(original_sequence[index_to_peek][64 :]), "green")) 
+
+def compute_hit_counts(original_sequence, large_outputs): 
+    agreement_matrix = original_sequence[64 : ] == large_outputs.sequences[64 : ] # (batch_size, 7) 
+    agreement_matrix = agreement_matrix.to(torch.long) 
+    summation_stats = torch.sum(agreement_matrix, dim = 0).reshape((1, 7))  # summing along the column dimension 
+    return summation_stats[0][0], summation_stats[0][1], summation_stats[0][2], summation_stats[0][3], summation_stats[0][4], summation_stats[0][5], summation_stats[0][6] 
+    
+first_pos_hit = 0 
+second_pos_hit = 0 
+third_pos_hit = 0 
+fourth_pos_hit = 0 
+fifth_pos_hit = 0 
+sixth_pos_hit = 0 
+seventh_pos_hit = 0 
+total_examples = 0 
+
 for step, inputs in enumerate(train_dataloader): 
     inputs = trainer._prepare_inputs(inputs) 
     original_sequence = inputs["input_ids"] 
@@ -397,13 +419,18 @@ for step, inputs in enumerate(train_dataloader):
         large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = True, top_k = top_k, output_hidden_states = True, return_dict_in_generate = True) 
     else: 
         index_to_peek = 2 
-        print("input in words is {}".format(tokenizer.decode(input_ids[0]))) 
-        print("input ids is {}".format(input_ids[index_to_peek])) 
-        # exit(0) 
+        # print("input in words is {}".format(tokenizer.decode(input_ids[0]))) 
+        # print("input ids is {}".format(input_ids[index_to_peek])) 
         large_outputs = large_model.generate(input_ids = input_ids, max_length = 71, do_sample = True, output_hidden_states = True, return_dict_in_generate = True) 
-        print("the sequence of inputs: {}".format(large_outputs.sequences[index_to_peek])) 
-        print("the sequence in words: {}".format(tokenizer.decode(large_outputs.sequences[index_to_peek][0 : 64])), end = " ") 
-        print(colored(tokenizer.decode(large_outputs.sequences[index_to_peek][64: ]), "blue")) 
-        print("expected sequence: {}".format(tokenizer.decode(original_sequence[index_to_peek][: 64])), end = " ") 
-        print(colored(tokenizer.decode(original_sequence[index_to_peek][64 :]), "green")) 
-        exit(0) 
+        visualizing_generated_sequence(original_sequence, large_outputs, index_to_peek) 
+        first_pos, second_pos, third_pos, fourth_pos, fifth_pos, sixth_pos, seventh_pos = compute_hit_counts(original_sequence, large_outputs) 
+    first_pos_hit += first_pos 
+    second_pos_hit += second_pos 
+    third_pos_hit += third_pos 
+    fourth_pos_hit += fourth_pos 
+    fifth_pos_hit += fifth_pos 
+    sixth_pos_hit += sixth_pos 
+    seventh_pos_hit += seventh_pos 
+    total_examples += input_ids.shape[0] 
+    print("first_pos hit rate {} second_pos hit rate {} third_pos hit rate {} fourth_pos hit rate {} fifth_pos hit rate {} sixth_pos hit rate {} seventh_pos hit rate {}".format(first_pos_hit/total_examples, second_pos_hit/total_examples, third_pos_hit/total_examples, fourth_pos_hit/total_examples, fifth_pos_hit/total_examples, sixth_pos_hit/total_examples, seventh_pos_hit/total_examples)) 
+print("first_pos hit rate {} second_pos hit rate {} third_pos hit rate {} fourth_pos hit rate {} fifth_pos hit rate {} sixth_pos hit rate {} seventh_pos hit rate {}".format(first_pos_hit/total_examples, second_pos_hit/total_examples, third_pos_hit/total_examples, fourth_pos_hit/total_examples, fifth_pos_hit/total_examples, sixth_pos_hit/total_examples, seventh_pos_hit/total_examples)) 
