@@ -5086,6 +5086,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
 
         if self.generate_iteration_count % self.sliding_window_length == 0: 
             # NOTE for this case, we use the pass-in attention mask 
+            print(colored("running the large model side", "green")) 
             outputs = self.model(
                 input_ids = large_input_ids, 
                 attention_mask = attention_mask, 
@@ -5109,7 +5110,9 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
             hidden_states = hidden_states[:, selected_seq_indices, :] 
             self.generate_model_hidden_states = hidden_states.clone().detach() 
+            print("self.generate_model_hidden_states shape {}".format(self.generate_model_hidden_states.shape)) 
         self.generate_iteration_count += 1 
+        exit(0) 
         
         print(colored("running the small model side", "green")) 
         
