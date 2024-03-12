@@ -294,6 +294,7 @@ elif model_name == "debugging2":
     large_model.set_msece_loss(False, False) 
     # large_model.set_addonsmallmodel(small_model) 
     large_model.set_addonsmallmodel_statedict(new_state_dict) 
+    large_model.addonsmallmodel.set_criticalpath(hostname = hostname) 
     large_model.set_inference_setting("setting3") 
     large_model.set_walpha(0.5) 
     large_model.set_slidingwindowlength(sliding_window_length = 7, addonmodel_start = 1) 
