@@ -212,7 +212,7 @@ elif model_name == "debugging":
 elif model_name == "debugging2": 
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 else: 
-    raise ValueError("model name should be one of shearedllama2_7b, openllama3b") 
+    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 # tokenizer.add_special_tokens({"pad_token":"<pad>"}) 
 # print("the tokenizer pad token id is {}".format(tokenizer.pad_token_id)) 
 # tokenizer.pad_token = "[PAD]" 
