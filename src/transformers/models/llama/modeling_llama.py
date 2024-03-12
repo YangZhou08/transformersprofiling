@@ -5141,7 +5141,6 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         seq_length = small_input_ids.shape[1] + hidden_states.shape[1] 
         assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
         loss = None 
-        exit(0) 
         
         if not return_dict: 
             output = (logits,) + outputs[1:] 
