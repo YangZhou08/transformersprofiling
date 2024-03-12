@@ -386,7 +386,7 @@ def visualizing_generated_sequence(original_sequence, large_outputs, index_to_pe
     print(colored(tokenizer.decode(original_sequence[index_to_peek][64 :]), "green")) 
 
 def compute_hit_counts(original_sequence, large_outputs): 
-    agreement_matrix = original_sequence[64 : ] == large_outputs.sequences[64 : ] # (batch_size, 7) 
+    agreement_matrix = original_sequence[:, 64 : ] == large_outputs.sequences[:, 64 : ] # (batch_size, 7) 
     agreement_matrix = agreement_matrix.to(torch.long) 
     summation_stats = torch.sum(agreement_matrix, dim = 0).reshape((1, 7))  # summing along the column dimension 
     return summation_stats[0][0], summation_stats[0][1], summation_stats[0][2], summation_stats[0][3], summation_stats[0][4], summation_stats[0][5], summation_stats[0][6] 
