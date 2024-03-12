@@ -206,6 +206,8 @@ elif model_name == "phi-2":
     tokenizer = AutoTokenizer.from_pretrained("microsoft/phi-2", cache_dir = dir_models) 
 elif model_name == "debugging": 
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+elif model_name == "debugging2": 
+    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 else: 
     raise ValueError("model name should be one of shearedllama2_7b, openllama3b") 
 # tokenizer.add_special_tokens({"pad_token":"<pad>"}) 
