@@ -5115,7 +5115,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         self.generate_iteration_count += 1 
         
         print(colored("running the small model side", "green")) 
-        
+        print("original_attention_mask shape {}".format(original_attention_mask.shape)) 
         addonmodeloutput = self.addonsmallmodel(
             input_ids = small_input_ids, 
             attention_mask = original_attention_mask, 
