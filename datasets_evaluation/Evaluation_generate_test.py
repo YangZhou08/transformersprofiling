@@ -404,5 +404,5 @@ for step, inputs in enumerate(train_dataloader):
         print("the sequence in words: {}".format(tokenizer.decode(large_outputs.sequences[0][0 : 64])), end = " ") 
         print(colored(tokenizer.decode(large_outputs.sequences[0][64: ]), "blue")) 
         print("expected sequence: {}".format(tokenizer.decode(input_ids[0][: 64]), end = " ")) 
-        print(colored(tokenizer.decode(input_ids[0][64 :], "green"))) 
+        print(colored(tokenizer.decode(input_ids[0][64 :]), "blue")) 
         exit(0) 
