@@ -5106,7 +5106,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 hidden_states = hidden_states.to(torch.float32) 
             elif self.small_model_dtype == torch.bfloat16: 
                 hidden_states = hidden_states.to(torch.bfloat16) 
-            selected_seq_indices = [i * self.sliding_window_length for i in range(0, (seq_len - 1) // self.sliding_window_length)] 
+            selected_seq_indices = [i * self.sliding_window_length for i in range(0, (seq_len - 1) // self.sliding_window_length + 1)] # adding the last one to get future tokens 
             print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
             hidden_states = hidden_states[:, selected_seq_indices, :] 
             hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
@@ -6885,7 +6885,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         for i in range(condensed_embeds.shape[1]): 
             print("i is {} length of combined_embeds is {}".format(i, combined_embeds.shape[1])) 
             combined_embeds = torch.cat([combined_embeds, condensed_embeds[:, i, :].unsqueeze(1)], dim = 1) 
-            combined_embeds = torch.cat([combined_embeds, input_embeds[:, input_embeds_count : min(input_embeds_count + kernel_size, input_embeds.shape[1]), :]], dim = 1) 
+            if (input_embeds_count < input_embeds.shape[1]): 
+                combined_embeds = torch.cat([combined_embeds, input_embeds[:, input_embeds_count : min(input_embeds_count + kernel_size, input_embeds.shape[1]), :]], dim = 1) 
             input_embeds_count += kernel_size 
         
         return combined_embeds 
