@@ -313,9 +313,11 @@ elif model_name == "debugging2":
 elif model_name == "plainsmall": 
     small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     small_model.eval() 
+    large_model = None 
 elif model_name == "finetunedsmall": 
     small_model = LlamaForCausalLM.from_pretrained(args.small_model_checkpoint).to(torch.bfloat16).to(torch_device) 
     small_model.eval() 
+    large_model = None 
 else: 
     raise ValueError("model name should be one of shearedllama2_7b, openllama3b") 
 # large_model.eval() 
