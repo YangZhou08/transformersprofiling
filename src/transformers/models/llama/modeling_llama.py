@@ -5453,7 +5453,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         if attention_mask.shape[1] == input_ids.shape[1] - 1: 
             torch.cat([attention_mask, torch.ones(attention_mask.shape[0], 1, device = attention_mask.device)], dim = 1) 
         assert attention_mask.shape[1] == input_ids.shape[1], "attention_mask is not compatible with input_ids" 
-        original_attention_mask = torch.cat([attention_mask, torch.ones(attention_mask.shape[0], (input_ids.shape[1] - self.addonmodel_start)//self.sliding_window_length, device = attention_mask.device)], dim = 1) 
+        original_attention_mask = torch.cat([attention_mask, torch.ones(attention_mask.shape[0], (input_ids.shape[1] - self.addonmodel_start)//self.sliding_window_length + 1, device = attention_mask.device)], dim = 1) 
         
         model_inputs.update( 
             { 
