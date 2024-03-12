@@ -55,6 +55,7 @@ parser.add_argument("--model_name", type = str, default = "debugging")
 parser.add_argument("--topk", type = int, default = None) 
 parser.add_argument("--batch_size", type = int, default = 64) 
 parser.add_argument("--debug", action = "store_true") 
+parser.add_argument("--small_model_checkpoint", type = str, default = None) 
 
 args = parser.parse_args() 
 
@@ -398,3 +399,4 @@ for step, inputs in enumerate(train_dataloader):
         large_outputs = large_model.generate(input_ids = input_ids, max_length = 71, do_sample = True, output_hidden_states = True, return_dict_in_generate = True) 
         print("the sequence of inputs: {}".format(large_outputs.sequences[0])) 
         print("the sequence of inputs in words: {}".format(tokenizer.decode(large_outputs.sequences[0]))) 
+        exit(0) 
