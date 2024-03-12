@@ -403,7 +403,7 @@ for step, inputs in enumerate(train_dataloader):
         large_outputs = large_model.generate(input_ids = input_ids, max_length = 71, do_sample = True, output_hidden_states = True, return_dict_in_generate = True) 
         print("the sequence of inputs: {}".format(large_outputs.sequences[index_to_peek])) 
         print("the sequence in words: {}".format(tokenizer.decode(large_outputs.sequences[index_to_peek][0 : 64])), end = " ") 
-        print(colored(tokenizer.decode(large_outputs.sequences[index_to_peek][64: ])), "blue") 
+        print(colored(tokenizer.decode(large_outputs.sequences[index_to_peek][64: ]), "blue")) 
         print("expected sequence: {}".format(tokenizer.decode(original_sequence[index_to_peek][: 64])), end = " ") 
         print(colored(tokenizer.decode(original_sequence[index_to_peek][64 :]), "green")) 
         exit(0) 
