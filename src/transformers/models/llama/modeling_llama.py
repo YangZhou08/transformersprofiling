@@ -5131,8 +5131,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             eval_mode = False, 
             iteration_count = 1, 
             experiment_setting = self.inference_setting, 
-            # generate_flag = True, 
-            generate_flag = False, 
+            generate_flag = True, 
             condensed_fashion = "projection_mode", 
         ) 
         
