@@ -840,7 +840,7 @@ kernel_size = 7 # this is definitely subject to change
 # dfiles = [dir_sdata + "example_holdout_{}combined.jsonl".format(0)] 
 # dfiles = [dir_c4 + "c4_file1.json"] 
 dfiles = [dir_c4llmsynthesized + "{}/".format("tinyllama") + "c4synthesized_file1_kernel7_0.json"] 
-datasetnew = load_dataset('json', data_files = dfiles, split = "train[:100000]") 
+# datasetnew = load_dataset('json', data_files = dfiles, split = "train[:100000]") 
 # datasetnew = load_dataset('emozilla/pg19', split = "train") 
 
 # train_set, test_set = datasetnew.split(0.99) 
@@ -874,17 +874,17 @@ def unflatten_list_func(examples):
     examples['attention_mask'] = examples['attention_mask'].squeeze(0) 
 
 # datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
-datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
+# datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
 # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
 
-datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
+# datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
 # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
 
-for i in range(0, 10): 
-    print(datasetnew[i]['text'][100000 : 100000 + 3000]) 
-    print(datasetnew[i]['input_ids']) 
-    print("length of every example: {}".format(datasetnew[i]['input_ids'].shape)) 
-    print() 
+# for i in range(0, 10): 
+    # print(datasetnew[i]['text'][100000 : 100000 + 3000]) 
+    # print(datasetnew[i]['input_ids']) 
+    # print("length of every example: {}".format(datasetnew[i]['input_ids'].shape)) 
+    # print() 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
@@ -995,7 +995,79 @@ trainer = CustomTrainer(
     kernel_size = args.kernel_size, 
 ) 
 
+def get_dataset(datasetname): 
+    if datasetname == "c4llm_synthesized": 
+        # datasetnew = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
+        dfiles = [] 
+        if "lovelace" in hostname: 
+            filename = "c4synthesized_file1_kernel7_0.json" 
+            dfiles.append(dir_c4llmsynthesized + "{}/".format("tinyllama") + filename) 
+            datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
+        else: 
+            filename = "c4synthesized_file1_kernel7_{}_combined.json".format(7) 
+            dfiles.append(dir_c4llmsynthesized + "{}_topk{}/".format("tinyllama", "na") + filename) 
+            datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
+    elif datasetname == "c4": 
+        dfiles = [] 
+        filename = "c4_file1.json" 
+        dfiles.append(dir_c4 + filename) 
+        datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
+    elif datasetname == "pg19": 
+        datasetnew = load_dataset('emozilla/pg19', split = "train[:10000]") 
+    else: 
+        raise ValueError("dataset_name is not recognized") 
 
-results = trainer.evaluate(eval_dataset = datasetnew) 
-print(results) 
+    def encode_with_truncationspecialized(examples): 
+        tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
+                        return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                        add_special_tokens = True) 
+        # tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 260, 
+        #                          return_attention_mask = True, return_tensors = "pt", truncation = True, 
+        #                          add_special_tokens = True) 
+        newdictionary = {} 
+        newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
+        newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
+        return newdictionary 
+
+    def encode_with_truncation(examples): 
+        # tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
+        #                  return_attention_mask = True, return_tensors = "pt", truncation = True, 
+        #                  add_special_tokens = True) 
+        tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
+                                return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                                add_special_tokens = True) 
+        newdictionary = {} 
+        newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
+        newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
+        return newdictionary 
+
+    def unflatten_list_func(examples): 
+        examples['input_ids'] = examples['input_ids'].squeeze(0) 
+        examples['attention_mask'] = examples['attention_mask'].squeeze(0) 
+
+    # datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
+    if not datasetname == "pg19": 
+        datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
+    else: 
+        datasetnew = datasetnew.map(encode_with_truncationspecialized, num_proc = 8) 
+    # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
+
+    datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
+    # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
+    return datasetnew 
+dataset_list = ["c4llm_synthesized", "c4", "pg19"] 
+ce_loss_list = [] 
+ppl_list = [] 
+
+for datasetname in dataset_list: 
+    eval_dataset = get_dataset(datasetname) 
+    results = trainer.evaluate(eval_dataset = eval_dataset) 
+    ce_loss_list.append(results["eval_loss"]) 
+    ppl_list.append(results["eval_perplexity"]) 
+    print(results) 
+
+for idx, datasetname in enumerate(dataset_list): 
+    print("{}: ce_loss is {}, ppl is {}".format(datasetname, ce_loss_list[idx], ppl_list[idx])) 
+# results = trainer.evaluate(eval_dataset = datasetnew) 
+# print(results) 
 # model.save_pretrained("../model_checkpoints/llama-160m_deciphering_{}_{}_{}".format(args.model_name, args.experiment_setting, commit_hash)) 
