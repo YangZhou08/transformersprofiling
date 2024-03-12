@@ -1039,7 +1039,7 @@ else:
         large_model.addonsmallmodel.set_criticalpath(hostname = hostname) 
         large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True) 
         large_model.to(torch.bfloat16).to(torch_device) 
-        large_model.set_inference_setting(args.experiment_setting) 
+        large_model.set_inference_setting("setting5") 
         large_model.set_walpha(0.5) 
         large_model.set_slidingwindowlength(sliding_window_length = args.kernel_size, addonmodel_start = args.kernel_size + 1) 
         large_model.set_tokenizer_bos_id(bos_id = tokenizer.bos_token_id, pad_id = tokenizer.pad_token_id) 

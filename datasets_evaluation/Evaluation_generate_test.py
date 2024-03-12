@@ -310,6 +310,7 @@ elif model_name == "debugging2":
     
     large_model.model.eval() 
     large_model.addonsmallmodel.eval() 
+elif model_name == "debugging3": 
 elif model_name == "plainsmall": 
     small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     small_model.eval() 
