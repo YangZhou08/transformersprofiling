@@ -99,7 +99,7 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 interest_idx_file = [2 * args.path_d + i for i in range(2)] 
 # d_files = ["c4_file{}.json".format(i) for i in interest_idx_file] 
 d_files = "c4synthesized_file1_kernel7_0.json" 
-dfiles = ["/home/yangzho6/c4llm_synthesized/" + d_files] 
+dfiles = ["/home/yangzho6/c4llm_synthesized/tinyllama/" + d_files] 
 print(colored("path_d: {}, the processing files are {}".format(args.path_d, d_files), "yellow")) 
 print(colored("path_d: {}, Using model name {} for synthesized data".format(args.path_d, model_name), "yellow")) 
 print(colored("path_d: {}, Using topk {} and debug is {}".format(args.path_d, args.topk, args.debug), "yellow")) 
