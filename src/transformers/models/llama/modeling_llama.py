@@ -7188,6 +7188,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                         position_list.append(pos_count) 
             position_ids = torch.tensor(position_list, dtype = torch.long, device = device) 
             position_ids = position_ids.unsqueeze(0) 
+            print("position ids shape {}".format(position_ids.shape)) 
         # print("mask list pos : {}".format(self.mask_list_pos)) 
         # print("position ids found is {}".format(self.visualize_position_ids(position_ids, self.mask_list_pos))) 
         
