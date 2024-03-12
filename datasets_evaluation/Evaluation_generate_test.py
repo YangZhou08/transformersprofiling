@@ -56,6 +56,7 @@ parser.add_argument("--topk", type = int, default = None)
 parser.add_argument("--batch_size", type = int, default = 64) 
 parser.add_argument("--debug", action = "store_true") 
 parser.add_argument("--small_model_checkpoint", type = str, default = None) 
+parser.add_argument("--use_large_model", action = "store_true") 
 
 args = parser.parse_args() 
 
@@ -309,6 +310,12 @@ elif model_name == "debugging2":
     
     large_model.model.eval() 
     large_model.addonsmallmodel.eval() 
+elif model_name == "plainsmall": 
+    small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    small_model.eval() 
+elif model_name == "finetunedsmall": 
+    small_model = LlamaForCausalLM.from_pretrained(args.small_model_checkpoint).to(torch.bfloat16).to(torch_device) 
+    small_model.eval() 
 else: 
     raise ValueError("model name should be one of shearedllama2_7b, openllama3b") 
 large_model.eval() 
@@ -417,11 +424,16 @@ for step, inputs in enumerate(train_dataloader):
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = max_length + dict_kernel_maxlength[kernel_size], do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     if args.topk is not None: 
         large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = True, top_k = top_k, output_hidden_states = True, return_dict_in_generate = True) 
-    else: 
+    elif args.use_large_model: 
         index_to_peek = 2 
         # print("input in words is {}".format(tokenizer.decode(input_ids[0]))) 
         # print("input ids is {}".format(input_ids[index_to_peek])) 
         large_outputs = large_model.generate(input_ids = input_ids, max_length = 71, do_sample = True, output_hidden_states = True, return_dict_in_generate = True) 
+        visualizing_generated_sequence(original_sequence, large_outputs, index_to_peek) 
+        first_pos, second_pos, third_pos, fourth_pos, fifth_pos, sixth_pos, seventh_pos = compute_hit_counts(original_sequence, large_outputs) 
+    else: 
+        index_to_peek = 2 
+        large_outputs = small_model.generate(input_ids = input_ids, max_length = 71, do_sample = True, output_hidden_states = True, return_dict_in_generate = True) 
         visualizing_generated_sequence(original_sequence, large_outputs, index_to_peek) 
         first_pos, second_pos, third_pos, fourth_pos, fifth_pos, sixth_pos, seventh_pos = compute_hit_counts(original_sequence, large_outputs) 
     first_pos_hit += first_pos 
