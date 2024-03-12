@@ -15,6 +15,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2Se
 from transformers.models.llama.modeling_llama import LlamaForCausalLM 
 from transformers.models.llama.modeling_llama import LlamaWeirdLarge3 
 from transformers.models.llama.modeling_llama import SimpleSmallModel 
+from transformers.models.llama.modeling_llama import LlamaWeirdLargeTest 
 from transformers.models.llama.configuration_llama import LlamaConfig 
 from transformers import LlamaTokenizer 
 from transformers import GPTNeoXForCausalLM 
@@ -262,6 +263,46 @@ elif model_name == "debugging":
     
     large_model.model.eval() 
     large_model.addonsmallmodel.eval() 
+elif model_name == "debugging2": 
+    large_model = LlamaWeirdLargeTest.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    
+    small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
+    small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
+    small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = args.kernel_size, target_model_dim = 2048) 
+
+    new_state_dict = {} 
+
+    for key in small_state_dict_for_model.keys(): 
+        new_key = key 
+        if 'lm_head' in key: 
+            print("got here found the following key {}".format(key)) 
+        if 'model.' in key: 
+            new_key = key[6 :] 
+        print(new_key) 
+        new_state_dict[new_key] = small_state_dict_for_model[key] 
+    # if args.embedding_pretrained: 
+    #     new_state_dict["embed_projection.weight"] = torch.load("linearprojectionweighttesting.pt") 
+
+    try: 
+        small_model.load_state_dict(new_state_dict) 
+    except RuntimeError as r: 
+        print(colored(r, "yellow")) 
+
+    small_model = small_model.to(torch.bfloat16).to(torch_device) 
+    large_model.set_msece_loss(False, False) 
+    # large_model.set_addonsmallmodel(small_model) 
+    large_model.set_addonsmallmodel_statedict(new_state_dict) 
+    large_model.set_inference_setting("setting3") 
+    large_model.set_walpha(0.5) 
+    large_model.set_slidingwindowlength(sliding_window_length = 7, addonmodel_start = 1) 
+    large_model.set_tokenizer_bos_id(bos_id = tokenizer.bos_token_id, pad_id = tokenizer.pad_token_id) 
+    large_model.set_cosinesimilarity(False) 
+    
+    large_model.config.pad_token_id = tokenizer.pad_token_id 
+    small_model.config.pad_token_id = tokenizer.pad_token_id 
+    
+    large_model.model.eval() 
+    large_model.addonsmallmodel.eval() 
 else: 
     raise ValueError("model name should be one of shearedllama2_7b, openllama3b") 
 large_model.eval() 
@@ -350,6 +391,6 @@ for step, inputs in enumerate(train_dataloader):
         print("input in words is {}".format(tokenizer.decode(input_ids[2]))) 
         print("input ids is {}".format(input_ids[2])) 
         # exit(0) 
-        large_outputs = large_model.generate(input_ids = input_ids, max_length = 320, do_sample = True, output_hidden_states = True, return_dict_in_generate = True) 
+        large_outputs = large_model.generate(input_ids = input_ids, max_length = 267, do_sample = True, output_hidden_states = True, return_dict_in_generate = True) 
         print("the sequence of inputs: {}".format(large_outputs.sequences[0])) 
         print("the sequence of inputs in words: {}".format(tokenizer.decode(large_outputs.sequences[0]))) 
