@@ -311,6 +311,23 @@ elif model_name == "debugging2":
     large_model.model.eval() 
     large_model.addonsmallmodel.eval() 
 elif model_name == "debugging3": 
+    large_model = LlamaWeirdLargeTest.from_pretrained("/home/yangzho6/model_checkpoints/kernelsize4checkpoint-3200").to(torch.bfloat16).to(torch_device) 
+    large_model.set_msece_loss(False, False) 
+    # large_model.set_addonsmallmodel(small_model) 
+    # large_model.set_addonsmallmodel_statedict(new_state_dict) 
+    large_model.addonsmallmodel.set_criticalpath(hostname = hostname) 
+    large_model.set_inference_setting("setting5") 
+    large_model.set_walpha(0.5) 
+    # large_model.set_slidingwindowlength(sliding_window_length = 7, addonmodel_start = 1) 
+    large_model.set_slidingwindowlength(sliding_window_length = 7) 
+    large_model.set_tokenizer_bos_id(bos_id = tokenizer.bos_token_id, pad_id = tokenizer.pad_token_id) 
+    large_model.set_cosinesimilarity(False) 
+    
+    large_model.config.pad_token_id = tokenizer.pad_token_id 
+    small_model.config.pad_token_id = tokenizer.pad_token_id 
+    
+    large_model.model.eval() 
+    large_model.addonsmallmodel.eval() 
 elif model_name == "plainsmall": 
     small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     small_model.eval() 
