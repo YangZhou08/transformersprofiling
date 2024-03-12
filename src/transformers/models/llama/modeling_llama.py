@@ -7290,6 +7290,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         
         # hidden_states = inputs_embeds 
         hidden_states = input_embeds 
+        print("hidden_states shape {}".format(hidden_states.shape)) 
         
         if self.gradient_checkpointing and self.training:
             if use_cache:
