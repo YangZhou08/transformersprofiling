@@ -744,13 +744,13 @@ class CustomDataset:
                         dfiles.append(data_dir + filename) 
                 else: 
                     print("loading training set from 0 to 9") 
-                    # for i in range(0, 10): # training set using 0 to 9 
-                    for i in range(0, 15): 
+                    for i in range(0, 10): # training set using 0 to 9 
+                    # for i in range(0, 15): 
                         filename = "c4_file{}.json".format(i) 
                         dfiles.append(data_dir + filename) 
             else: # validation 
-                # filename = "c4_file10.json" 
-                filename = "c4_file20.json" 
+                filename = "c4_file10.json" 
+                # filename = "c4_file20.json" 
                 dfiles.append(data_dir + filename) 
             if not args.debug: 
                 self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
