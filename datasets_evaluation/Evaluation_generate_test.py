@@ -98,14 +98,15 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # interest_idx_file = [1, 2, 3, 4, 5] 
 interest_idx_file = [2 * args.path_d + i for i in range(2)] 
 # d_files = ["c4_file{}.json".format(i) for i in interest_idx_file] 
-d_files = ["c4_file{}.json".format(i) for i in range(1, 2)] 
+d_files = "c4synthesized_file1_kernel7_0.json" 
+dfiles = ["/home/yangzho6/c4llm_synthesized/" + d_files] 
 print(colored("path_d: {}, the processing files are {}".format(args.path_d, d_files), "yellow")) 
 print(colored("path_d: {}, Using model name {} for synthesized data".format(args.path_d, model_name), "yellow")) 
 print(colored("path_d: {}, Using topk {} and debug is {}".format(args.path_d, args.topk, args.debug), "yellow")) 
 if not args.debug: 
-    onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train[:10000]") 
+    onedataset = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
 else: 
-    onedataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train[:2000]") 
+    onedataset = load_dataset("json", data_files = dfiles, split = "train[:2000]") 
 
 class CustomTrainer(Trainer): 
     def __init__(self, large_model = None, *args, **kwargs): 
@@ -313,7 +314,7 @@ else:
 large_model.eval() 
 
 # max_length = small_model.config.max_position_embeddings 
-max_length = 64 
+max_length = 71 
 # def encode_with_truncation(examples): 
     # return tokenizer(examples["text"], truncation=True, padding="max_length",
                 #    max_length=max_length, return_special_tokens_mask=True) 
@@ -379,7 +380,9 @@ else:
 
 for step, inputs in enumerate(train_dataloader): 
     inputs = trainer._prepare_inputs(inputs) 
+    original_sequence = inputs["input_ids"] 
     input_ids = inputs["input_ids"] 
+    input_ids = input_ids[:, : 64] 
     attention_mask = inputs["attention_mask"] 
     labels = inputs["labels"] 
     if args.topk is not None: 
@@ -393,10 +396,13 @@ for step, inputs in enumerate(train_dataloader):
     if args.topk is not None: 
         large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = True, top_k = top_k, output_hidden_states = True, return_dict_in_generate = True) 
     else: 
-        print("input in words is {}".format(tokenizer.decode(input_ids[2]))) 
-        print("input ids is {}".format(input_ids[2])) 
+        print("input in words is {}".format(tokenizer.decode(input_ids[0]))) 
+        print("input ids is {}".format(input_ids[0])) 
         # exit(0) 
         large_outputs = large_model.generate(input_ids = input_ids, max_length = 71, do_sample = True, output_hidden_states = True, return_dict_in_generate = True) 
         print("the sequence of inputs: {}".format(large_outputs.sequences[0])) 
-        print("the sequence of inputs in words: {}".format(tokenizer.decode(large_outputs.sequences[0]))) 
+        print("the sequence in words: {}".format(tokenizer.decode(large_outputs.sequences[0][0 : 64])), end = " ") 
+        print(colored(tokenizer.decode(large_outputs.sequences[0][64: ]), "blue")) 
+        print("expected sequence: {}".format(tokenizer.decode(input_ids[0][: 64]), end = " ")) 
+        print(colored(tokenizer.decode(input_ids[0][64 :], "green"))) 
         exit(0) 
