@@ -6868,7 +6868,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
     
     def interleaving_embeddings_inputs(self, input_embeds, condensed_embeds, kernel_size = 4, start_idx = 64, generate_flag = False): 
         if not generate_flag: 
-            assert (input_embeds.shape[1] - start_idx)/kernel_size == condensed_embeds.shape[1] 
+            # assert (input_embeds.shape[1] - start_idx)/kernel_size == condensed_embeds.shape[1] 
+            assert (input_embeds.shape[1] - start_idx)//kernel_size == condensed_embeds.shape[1] 
             combined_embeds = input_embeds[:, : start_idx, :] 
             input_embeds_count = start_idx 
         else: 

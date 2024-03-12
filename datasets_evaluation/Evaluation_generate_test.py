@@ -297,7 +297,8 @@ elif model_name == "debugging2":
     large_model.addonsmallmodel.set_criticalpath(hostname = hostname) 
     large_model.set_inference_setting("setting3") 
     large_model.set_walpha(0.5) 
-    large_model.set_slidingwindowlength(sliding_window_length = 7, addonmodel_start = 1) 
+    # large_model.set_slidingwindowlength(sliding_window_length = 7, addonmodel_start = 1) 
+    large_model.set_slidingwindowlength(sliding_window_length = 7) 
     large_model.set_tokenizer_bos_id(bos_id = tokenizer.bos_token_id, pad_id = tokenizer.pad_token_id) 
     large_model.set_cosinesimilarity(False) 
     
