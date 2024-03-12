@@ -318,7 +318,7 @@ elif model_name == "finetunedsmall":
     small_model.eval() 
 else: 
     raise ValueError("model name should be one of shearedllama2_7b, openllama3b") 
-large_model.eval() 
+# large_model.eval() 
 
 # max_length = small_model.config.max_position_embeddings 
 max_length = 71 
