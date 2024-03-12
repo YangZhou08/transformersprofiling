@@ -6883,9 +6883,11 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             combined_embeds = input_embeds[:, : start_idx, :] 
             input_embeds_count = start_idx 
         for i in range(condensed_embeds.shape[1]): 
+            print("i is {} length of combined_embeds is {}".format(i, combined_embeds.shape[1])) 
             combined_embeds = torch.cat([combined_embeds, condensed_embeds[:, i, :].unsqueeze(1)], dim = 1) 
-            combined_embeds = torch.cat([combined_embeds, input_embeds[:, input_embeds_count : input_embeds_count + kernel_size, :]], dim = 1) 
+            combined_embeds = torch.cat([combined_embeds, input_embeds[:, input_embeds_count : min(input_embeds_count + kernel_size, input_embeds.shape[1]), :]], dim = 1) 
             input_embeds_count += kernel_size 
+        
         return combined_embeds 
     
     def visualize_position_ids(self, position_ids, mask_idx): 
