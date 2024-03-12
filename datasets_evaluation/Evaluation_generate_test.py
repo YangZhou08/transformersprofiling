@@ -310,7 +310,7 @@ else:
 large_model.eval() 
 
 # max_length = small_model.config.max_position_embeddings 
-max_length = 260 
+max_length = 64 
 # def encode_with_truncation(examples): 
     # return tokenizer(examples["text"], truncation=True, padding="max_length",
                 #    max_length=max_length, return_special_tokens_mask=True) 
@@ -393,6 +393,6 @@ for step, inputs in enumerate(train_dataloader):
         print("input in words is {}".format(tokenizer.decode(input_ids[2]))) 
         print("input ids is {}".format(input_ids[2])) 
         # exit(0) 
-        large_outputs = large_model.generate(input_ids = input_ids, max_length = 267, do_sample = True, output_hidden_states = True, return_dict_in_generate = True) 
+        large_outputs = large_model.generate(input_ids = input_ids, max_length = 71, do_sample = True, output_hidden_states = True, return_dict_in_generate = True) 
         print("the sequence of inputs: {}".format(large_outputs.sequences[0])) 
         print("the sequence of inputs in words: {}".format(tokenizer.decode(large_outputs.sequences[0]))) 

@@ -5109,10 +5109,10 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             selected_seq_indices = [i * self.sliding_window_length for i in range(0, (seq_len - 1) // self.sliding_window_length)] 
             print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
             hidden_states = hidden_states[:, selected_seq_indices, :] 
+            hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
             self.generate_model_hidden_states = hidden_states.clone().detach() 
             print("self.generate_model_hidden_states shape {}".format(self.generate_model_hidden_states.shape)) 
         self.generate_iteration_count += 1 
-        exit(0) 
         
         print(colored("running the small model side", "green")) 
         
@@ -5127,7 +5127,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             output_attentions = True, 
             output_hidden_states = None, 
             return_dict = True, 
-            start_idx = 1, # NOTE this is very important 
+            start_idx = self.sliding_window_length + 1, # NOTE this is very important 
             eval_mode = False, 
             iteration_count = 1, 
             experiment_setting = self.inference_setting, 
@@ -5140,6 +5140,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         seq_length = small_input_ids.shape[1] + hidden_states.shape[1] 
         assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
         loss = None 
+        exit(0) 
         
         if not return_dict: 
             output = (logits,) + outputs[1:] 
@@ -5342,7 +5343,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         else:
             return input_ids 
     
-    def prepare_inputs_for_generation( 
+    def prepare_inputs_for_generation2( 
         self, input_ids, past_key_values = None, attention_mask = None, inputs_embeds = None, adjustment_scheme = None, **kwargs): 
         # mainly used to debug preparing inputs for generation and not using past_key_values 
         assert past_key_values is None, "past_key_values is not None" 
@@ -5434,6 +5435,30 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 "attention_mask": attention_mask,
             }
         )
+        return model_inputs 
+    
+    def prepare_inputs_for_generation(
+        self, input_ids, past_key_values = None, attention_mask = None, inputs_embeds = None, **kwargs
+    ): 
+        assert past_key_values is None, "past_key_values is not None" 
+        
+        position_ids = None 
+        
+        # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
+        if inputs_embeds is not None and past_key_values is None:
+            model_inputs = {"inputs_embeds": inputs_embeds}
+        else:
+            model_inputs = {"large_input_ids": input_ids, 
+                            "small_input_ids": input_ids,} 
+        
+        model_inputs.update( 
+            { 
+                "position_ids": position_ids, 
+                "past_key_values": past_key_values, 
+                "use_cache": kwargs.get("use_cache"), 
+                "attention_mask": attention_mask, 
+            } 
+        ) 
         return model_inputs 
 
     @staticmethod
