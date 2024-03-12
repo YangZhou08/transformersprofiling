@@ -396,13 +396,14 @@ for step, inputs in enumerate(train_dataloader):
     if args.topk is not None: 
         large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = True, top_k = top_k, output_hidden_states = True, return_dict_in_generate = True) 
     else: 
+        index_to_peek = 2 
         print("input in words is {}".format(tokenizer.decode(input_ids[0]))) 
-        print("input ids is {}".format(input_ids[0])) 
+        print("input ids is {}".format(input_ids[index_to_peek])) 
         # exit(0) 
         large_outputs = large_model.generate(input_ids = input_ids, max_length = 71, do_sample = True, output_hidden_states = True, return_dict_in_generate = True) 
-        print("the sequence of inputs: {}".format(large_outputs.sequences[0])) 
-        print("the sequence in words: {}".format(tokenizer.decode(large_outputs.sequences[0][0 : 64])), end = " ") 
-        print(colored(tokenizer.decode(large_outputs.sequences[0][64: ]), "blue")) 
-        print("expected sequence: {}".format(tokenizer.decode(input_ids[0][: 64]), end = " ")) 
-        print(colored(tokenizer.decode(input_ids[0][64 :]), "blue")) 
+        print("the sequence of inputs: {}".format(large_outputs.sequences[index_to_peek])) 
+        print("the sequence in words: {}".format(tokenizer.decode(large_outputs.sequences[index_to_peek][0 : 64])), end = " ") 
+        print(colored(tokenizer.decode(large_outputs.sequences[index_to_peek][64: ])), "blue") 
+        print("expected sequence: {}".format(tokenizer.decode(original_sequence[index_to_peek][: 64])), end = " ") 
+        print(colored(tokenizer.decode(original_sequence[index_to_peek][64 :]), "green")) 
         exit(0) 
