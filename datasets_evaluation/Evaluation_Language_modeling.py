@@ -1040,22 +1040,45 @@ def get_dataset(datasetname):
         newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
         newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
         return newdictionary 
+    
+    def encode_text_summary(examples): # cnn_dailymail uses "article" 
+        tokdictionary = tokenizer(examples['article'], padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
+                                return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                                add_special_tokens = True) 
+        newdictionary = {} 
+        newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
+        newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
+        return newdictionary 
+    
+    def encode_text_summary_xsum(examples): # xsum uses "document" 
+        tokdictionary = tokenizer(examples["document"], padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
+                                return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                                add_special_tokens = True) 
+        newdictionary = {} 
+        newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
+        newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
+        return newdictionary 
 
     def unflatten_list_func(examples): 
         examples['input_ids'] = examples['input_ids'].squeeze(0) 
         examples['attention_mask'] = examples['attention_mask'].squeeze(0) 
 
     # datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
-    if not datasetname == "pg19": 
-        datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
-    else: 
+    if datasetname == "pg19": 
         datasetnew = datasetnew.map(encode_with_truncationspecialized, num_proc = 8) 
+    elif datasetname == "xsum": 
+        datasetnew = datasetnew.map(encode_text_summary_xsum, num_proc = 8) 
+    elif datasetname == "cnn_dailymail": 
+        datasetnew = datasetnew.map(encode_text_summary, num_proc = 8) 
+    else: 
+        datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
     # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
 
     datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
     # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
     return datasetnew 
-dataset_list = ["c4llm_synthesized", "c4", "pg19"] 
+# dataset_list = ["c4llm_synthesized", "c4", "pg19"] 
+dataset_list = ["cnn_dailymail", "xsum", "openwebtext"] 
 ce_loss_list = [] 
 ppl_list = [] 
 
