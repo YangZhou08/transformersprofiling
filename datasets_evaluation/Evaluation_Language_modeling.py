@@ -1072,15 +1072,17 @@ def get_dataset(datasetname):
     # datasetnew = datasetnew.map(encode_with_truncation, batched = True, num_proc = 8) 
     if datasetname == "pg19": 
         datasetnew = datasetnew.map(encode_with_truncationspecialized, num_proc = 8) 
+        datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
     elif datasetname == "xsum": 
         datasetnew = datasetnew.map(encode_text_summary_xsum, num_proc = 8) 
+        datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "document"]) 
     elif datasetname == "cnn_dailymail": 
         datasetnew = datasetnew.map(encode_text_summary, num_proc = 8) 
+        datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "article"]) 
     else: 
         datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
+        datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
     # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
-
-    datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
     # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
     return datasetnew 
 # dataset_list = ["c4llm_synthesized", "c4", "pg19"] 
