@@ -208,7 +208,8 @@ else:
     dir_models = "/fsx-storygen/beidic/yang/model_checkpoints/" 
     # dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
     dir_sdata = "/fsx-storygen/beidic/yang/c4llm_synthesized/" 
-    dir_c4_parts = "/fsx-storygen/beidic/yang/c4_parts/downloads/" 
+    # dir_c4_parts = "/fsx-storygen/beidic/yang/c4_parts/downloads/" 
+    dir_c4_parts = "/fsx-storygen/beidic/hanshi/data/c4/" 
 
 logger = logging.get_logger(__name__) 
 
