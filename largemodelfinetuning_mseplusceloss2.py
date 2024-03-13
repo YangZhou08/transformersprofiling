@@ -221,7 +221,9 @@ parser.add_argument("--finetuned_large_model_checkpoint", type = str, default = 
 parser.add_argument("--large_model", type = str, default = "openllama3b") 
 parser.add_argument("--use_mse_loss", action = "store_true") 
 parser.add_argument("--resume_from_checkpoint", type = str, default = None) 
-parser.add_argument("--num_epochs", type = int, default = 1) 
+parser.add_argument("--num_epochs", type = int, default = 5) 
+# we need this field for our case 
+parser.add_argument("--epoch_idx", type = int, default = 0) 
 parser.add_argument("--freeze_small_model", action = "store_true") 
 parser.add_argument("--freeze_large_model", action = "store_true") 
 parser.add_argument("--ce_loss_only", action = "store_true") 
@@ -724,7 +726,7 @@ class CustomTrainer(Trainer):
 
 class CustomDataset: 
     # def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7): 
-    def __init__(self, data_dir, large_tokenizer = None, small_tokenizer = None, max_length = 256, kernel_size = 7, topk = None, prompt_length = 64, use_minipile = False, in_training = True, use_c4 = False): 
+    def __init__(self, data_dir, large_tokenizer = None, small_tokenizer = None, max_length = 256, kernel_size = 7, topk = None, prompt_length = 64, use_minipile = False, in_training = True, use_c4 = False, epoch_idx = 0): 
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
         self.synthesize_dir = data_dir 
         # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json", split = "train") 
@@ -745,8 +747,8 @@ class CustomDataset:
                         dfiles.append(data_dir + filename) 
                 else: 
                     print("loading training set from 0 to 9") 
-                    for i in range(0, 50): # training set using 0 to 9 
-                    # for i in range(0, 15): 
+                    # for i in range(0, 50): # training set using 0 to 9 
+                    for i in range(epoch_idx * 10, (epoch_idx + 1) * 10): 
                         filename = "c4_file{}.json".format(i) 
                         dfiles.append(data_dir + filename) 
             else: # validation 
@@ -935,7 +937,8 @@ if args.use_minipile:
     train_dataset = CustomDataset(max_length = args.max_length, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64, use_minipile = args.use_minipile, in_training = True) 
     test_dataset = CustomDataset(max_length = args.max_length, data_dir = dir_sdata, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64, use_minipile = args.use_minipile, in_training = False) 
 elif args.use_c4: 
-    train_dataset = CustomDataset(max_length = args.max_length, data_dir = dir_c4_parts, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64, use_c4 = args.use_c4, in_training = True) 
+    # train_dataset = CustomDataset(max_length = args.max_length, data_dir = dir_c4_parts, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64, use_c4 = args.use_c4, in_training = True) 
+    train_dataset = CustomDataset(max_length = args.max_length, data_dir = dir_c4_parts, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64, use_c4 = args.use_c4, in_training = True, epoch_idx = args.epoch_idx) 
     test_dataset = CustomDataset(max_length = args.max_length, data_dir = dir_c4_parts, large_tokenizer = large_tokenizer, small_tokenizer = small_tokenizer, kernel_size = kernel_size, topk = args.topk, prompt_length = 64, use_c4 = args.use_c4, in_training = False) 
 elif args.use_synthesized: 
     # using synthesized data 
