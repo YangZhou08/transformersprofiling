@@ -931,6 +931,10 @@ if model_type == "use_small_model":
         small_model = small_model.to(torch.bfloat16).to(torch_device) 
         model = small_model 
         model.eval() 
+    elif args.model_name == "plainsmall": 
+        model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16) 
+        model = model.to(torch_device) 
+        model.eval() 
     else: 
         # model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
         model = LlamaForCausalLM.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16) 
