@@ -1015,7 +1015,7 @@ def get_dataset(datasetname):
     elif datasetname == "pg19": 
         datasetnew = load_dataset('emozilla/pg19', split = "train[:10000]") 
     elif datasetname == "cnn_dailymail": # we need to use special processing for this dataset 
-        datasetnew = load_dataset("cnn_dailymail", split = "test[:10000]") 
+        datasetnew = load_dataset("cnn_dailymail", "3.0.0", split = "test[:10000]") 
     elif datasetname == "openwebtext": 
         datasetnew = load_dataset("Skylion007/openwebtext", split = "train[:10000]") 
     elif datasetname == "xsum": # we need to use special processing for this dataset 
