@@ -221,7 +221,7 @@ parser.add_argument("--finetuned_large_model_checkpoint", type = str, default = 
 parser.add_argument("--large_model", type = str, default = "openllama3b") 
 parser.add_argument("--use_mse_loss", action = "store_true") 
 parser.add_argument("--resume_from_checkpoint", type = str, default = None) 
-parser.add_argument("--num_epochs", type = int, default = 5) 
+parser.add_argument("--num_epochs", type = int, default = 1) 
 parser.add_argument("--freeze_small_model", action = "store_true") 
 parser.add_argument("--freeze_large_model", action = "store_true") 
 parser.add_argument("--ce_loss_only", action = "store_true") 
