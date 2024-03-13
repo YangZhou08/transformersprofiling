@@ -311,6 +311,7 @@ elif model_name == "debugging2":
     large_model.model.eval() 
     large_model.addonsmallmodel.eval() 
 elif model_name == "debugging3": 
+    print(colored("found the checkpoint of the model", "yellow")) 
     large_model = LlamaWeirdLargeTest.from_pretrained("/home/yangzho6/model_checkpoints/kernelsize4checkpoint-3200").to(torch.bfloat16).to(torch_device) 
     large_model.set_msece_loss(False, False) 
     # large_model.set_addonsmallmodel(small_model) 
