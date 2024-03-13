@@ -1115,8 +1115,10 @@ def get_dataset(datasetname):
     # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
     # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
     return datasetnew 
+
+dataset_list = ["c4llm_synthesized", "c4", "pg19", "cnn_dailymail", "openwebtext", "xsum"] 
 # dataset_list = ["c4llm_synthesized", "c4", "pg19"] 
-dataset_list = ["cnn_dailymail", "xsum", "openwebtext"] 
+# dataset_list = ["cnn_dailymail", "xsum", "openwebtext"] 
 ce_loss_list = [] 
 ppl_list = [] 
 
