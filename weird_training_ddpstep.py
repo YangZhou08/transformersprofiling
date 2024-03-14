@@ -1207,7 +1207,7 @@ else:
     # small_model = AutoModelForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
     # small_model = LlamaCausalLMWeirdTwo.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
     # small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
-    model = GPTNeoXForCausalLM.from_pretrained(
+    small_model = GPTNeoXForCausalLM.from_pretrained(
         "EleutherAI/pythia-70m-deduped",
         revision="step3000",
         cache_dir="./pythia-70m-deduped/step3000",
