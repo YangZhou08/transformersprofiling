@@ -823,7 +823,12 @@ elif not model_type == "use_small_model":
     # tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
     tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 elif model_type == "use_small_model": 
-    tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+    # tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
+    tokenizer = AutoTokenizer.from_pretrained(
+        "EleutherAI/pythia-70m-deduped",
+        revision="step3000",
+        cache_dir="./pythia-70m-deduped/step3000",
+    ) 
 else: 
     raise ValueError("model_type is not recognized") 
 if tokenizer.pad_token is not None: 
@@ -932,7 +937,13 @@ if model_type == "use_small_model":
         model = small_model 
         model.eval() 
     elif args.model_name == "plainsmall": 
-        model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16) 
+        # model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16) 
+        model = GPTNeoXForCausalLM.from_pretrained(
+            # "EleutherAI/pythia-70m-deduped", 
+            "EleutherAI/pythia-160m-deduped", 
+            revision="step3000",
+            cache_dir="./pythia-70m-deduped/step3000",
+        ) 
         model = model.to(torch_device) 
         model.eval() 
     else: 

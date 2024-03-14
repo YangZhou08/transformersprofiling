@@ -664,7 +664,9 @@ for i in range(0, 5):
     # print("The text is {}".format(example["text"])) 
 
 if args.model_name == "tinyllama": 
-    model = LlamaForCausalLM2.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device).to(torch.bfloat16) 
+    # model = LlamaForCausalLM2.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device).to(torch.bfloat16) 
+    config = LlamaConfig.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device).to(torch.bfloat16) 
+    model = LlamaForCausalLM2(config).to(torch_device).to(torch.bfloat16) 
     if args.embedding_reinitialization_type is not None: 
         print(colored(args.embedding_reinitialization_type, "red")) 
         model.reinitialize_embeddings(type = args.embedding_reinitialization_type) 
