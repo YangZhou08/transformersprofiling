@@ -2836,7 +2836,6 @@ class LlamaWeirdLarge3(LlamaPreTrainedModel):
         self.lm_head = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias = False) 
         # self.addonsmallmodel = None 
         small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m") 
-        self.sliding_window_length = 7 
         # self.sliding_window_length = 4 
         self.addonsmallmodel = SimpleSmallModel(small_config, sliding_window_length = self.sliding_window_length, target_model_dim = self.config.hidden_size) 
         self.small_model_dtype = torch.bfloat16 
@@ -6882,7 +6881,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             combined_embeds = input_embeds[:, : start_idx, :] 
             input_embeds_count = start_idx 
         for i in range(condensed_embeds.shape[1]): 
-            print("i is {} length of combined_embeds is {}".format(i, combined_embeds.shape[1])) 
+            # print("i is {} length of combined_embeds is {}".format(i, combined_embeds.shape[1])) 
             combined_embeds = torch.cat([combined_embeds, condensed_embeds[:, i, :].unsqueeze(1)], dim = 1) 
             if (input_embeds_count < input_embeds.shape[1]): 
                 combined_embeds = torch.cat([combined_embeds, input_embeds[:, input_embeds_count : min(input_embeds_count + kernel_size, input_embeds.shape[1]), :]], dim = 1) 
