@@ -724,6 +724,7 @@ class CustomTrainer(Trainer):
         
         return EvalLoopOutput(predictions=all_preds, label_ids=all_labels, metrics=metrics, num_samples=num_samples) 
 
+training_datasetfiles = [] 
 class CustomDataset: 
     # def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7): 
     def __init__(self, data_dir, large_tokenizer = None, small_tokenizer = None, max_length = 256, kernel_size = 7, topk = None, prompt_length = 64, use_minipile = False, in_training = True, use_c4 = False, epoch_idx = 0): 
@@ -750,6 +751,7 @@ class CustomDataset:
                     # for i in range(0, 50): # training set using 0 to 9 
                     for i in range(epoch_idx * 10, (epoch_idx + 1) * 10): 
                         filename = "c4_file{}.json".format(i) 
+                        training_datasetfiles.append(data_dir + filename) 
                         dfiles.append(data_dir + filename) 
             else: # validation 
                 if "lovelace" in hostname: 
@@ -1319,6 +1321,11 @@ if trainer.accelerator.is_main_process and has_wandb:
     wandblogconfigs = training_args.to_dict() 
     wandblogconfigs["git_commit"] = commit_hash 
     wandblogconfigs["time_hash"] = hash_of_time 
+    if len(training_datasetfiles) != 0: 
+        filenames = "" 
+        for filename in training_datasetfiles: 
+            filenames += filename + "," 
+        wandblogconfigs["trainingfiles"] = filenames 
     wandb.init(project = "chunkedlargefinetuning", config = wandblogconfigs, name = "large_small_ce{}_{}".format(today, "unmasked")) 
 
 torch.autograd.set_detect_anomaly(True) 
