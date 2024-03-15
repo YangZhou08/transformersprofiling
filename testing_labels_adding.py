@@ -6,6 +6,7 @@ addonmodel_start = 2
 sliding_window_length = 1 
 
 copy_idx = [addonmodel_start + (sliding_window_length * i) for i in range(8)] 
+print("copy_idx: ", copy_idx) 
 labels_addition = labels[:, copy_idx] 
 newlabels = labels[:, : addonmodel_start] 
 old_label_count = addonmodel_start 
