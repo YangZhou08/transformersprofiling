@@ -1419,6 +1419,7 @@ if args.use_large_model:
             v.requires_grad = True 
         else: 
             v.requires_grad = False 
+print("length of the pretraining_weights_group is {} and the length of the newly_initialized_group is {}".format(len(pretraining_weights_group), len(newly_initialized_group))) 
 
 if not args.embedding_pretrained: 
     print("*** we are not using pretrained embeddings ***") 
