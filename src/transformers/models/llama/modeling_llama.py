@@ -5014,7 +5014,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                     selected_indices.append(i) 
             # print(colored("selected_indices {}".format(selected_indices), "red")) 
             # select and shift the logits 
-            logits = logits[:, selected_indices, :] 
+            # logits = logits[:, selected_indices, :] 
             shift_logits = logits[..., :-1, :].contiguous() 
             shift_labels = labels[..., 1:].contiguous() # shape (batch_size, seq_length - 1) 
             print("shift_logits shape {}; shift_labels shape {}".format(shift_logits.shape, shift_labels.shape)) 
