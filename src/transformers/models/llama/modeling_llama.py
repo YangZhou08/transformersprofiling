@@ -4993,6 +4993,16 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 if old_label_count < labels.shape[1]: 
                     newlabels = torch.cat([newlabels, labels[:, old_label_count : min(old_label_count + self.sliding_window_length, labels.shape[1])]], dim = 1) 
                 old_label_count += self.sliding_window_length 
+            assert newlabels.shape[1] == labels.shape[1] 
+            
+            # some visual check, printing index and values together 
+            newlabelsone = newlabels[0] 
+            for i in range(newlabelsone.shape[0]): 
+                if i < labels.shape[0]: 
+                    print("index {} labels value {} newlabels value {}".format(i, labels[0, i], newlabels[0, i])) 
+                else: 
+                    print("index {} labels values {} new labels value {}".format(i, "None", newlabels[0, i])) 
+            exit(0) 
         
         if labels is not None: 
             # selected_indices = list(range(7)) 
