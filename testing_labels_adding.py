@@ -10,7 +10,7 @@ labels = torch.tensor(labels)
 addonmodel_start = 7 
 sliding_window_length = 8 
 
-copy_idx = [addonmodel_start + (sliding_window_length * i) for i in range(3)] 
+copy_idx = [addonmodel_start + (sliding_window_length * i) for i in range(1)] 
 print("copy_idx: ", copy_idx) 
 labels_addition = labels[:, copy_idx] 
 newlabels = labels[:, : addonmodel_start] 
