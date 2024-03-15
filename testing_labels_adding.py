@@ -13,7 +13,8 @@ old_label_count = addonmodel_start
 for i in range(labels_addition.shape[1]): 
     newlabels = torch.cat([newlabels, labels_addition[:, i].unsqueeze(1)], dim = 1) 
     if old_label_count < labels.shape[1]: 
-        newlabels = torch.cat([newlabels, labels[:, old_label_count : min(old_label_count + self.sliding_window_length, labels.shape[1])]], dim = 1) 
+        # newlabels = torch.cat([newlabels, labels[:, old_label_count : min(old_label_count + self.sliding_window_length, labels.shape[1])]], dim = 1) 
+        newlabels = torch.cat([newlabels, labels[:, old_label_count : min(old_label_count + sliding_window_length, labels.shape[1])]], dim = 1) 
     old_label_count += sliding_window_length 
 
 print(newlabels) 
