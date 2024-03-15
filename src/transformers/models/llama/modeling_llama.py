@@ -4826,6 +4826,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         original_attention_mask = None, 
         condensed_embed_labels = None, 
         autoregressive_first_element = False, 
+        label_adjustment = False, 
     ) -> Union[Tuple, CausalLMOutputWithPastLargeDistance2]: 
         r"""
         Args:
@@ -4981,6 +4982,18 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         mask_list_pos22 = [x - 1 for x in mask_list_pos] 
         # print(colored("mask_list_pos {}".format(mask_list_pos), "red")) 
         loss = None 
+        
+        if label_adjustment: # we adjust the labels to be completely information loss free 
+            copy_idx = [self.addonmodel_start + (self.sliding_window_length * i) for i in range(hidden_states.shape[1])] 
+            labels_addition = labels[:, copy_idx] 
+            newlabels = labels[:, : self.addonmodel_start] 
+            old_label_count = self.addonmodel_start 
+            for i in range(labels_addition.shape[1]): 
+                newlabels = torch.cat([newlabels, labels_addition[:, i].unsqueeze(1)], dim = 1) 
+                if old_label_count < labels.shape[1]: 
+                    newlabels = torch.cat([newlabels, labels[:, old_label_count : min(old_label_count + self.sliding_window_length, labels.shape[1])]], dim = 1) 
+                old_label_count += self.sliding_window_length 
+        
         if labels is not None: 
             # selected_indices = list(range(7)) 
             selected_indices = list(range(self.addonmodel_start - 1)) 
