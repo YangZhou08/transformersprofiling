@@ -774,6 +774,7 @@ class CustomTrainer(Trainer):
             original_attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
             if self.accelerator.is_main_process: 
                 print("printing out the experiment_setting: {} eval_mode: {}".format(self.experiment_setting, self.eval_mode)) 
+            print(colored("the length of input_ids is {}".format(input_ids.shape[1]), "green")) 
             outputs = model(
                 large_input_ids = input_ids, 
                 small_input_ids = input_ids, 
