@@ -4996,13 +4996,12 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             assert newlabels.shape[1] == seq_length 
             
             # some visual check, printing index and values together 
-            newlabelsone = newlabels[0] 
-            for i in range(newlabelsone.shape[0]): 
-                if i < labels.shape[0]: 
-                    print("index {} labels value {} newlabels value {}".format(i, labels[0, i], newlabels[0, i])) 
-                else: 
-                    print("index {} labels values {} new labels value {}".format(i, "None", newlabels[0, i])) 
-            exit(0) 
+            # for i in range(newlabelsone.shape[0]): 
+                # if i < labels.shape[0]: 
+                    # print("index {} labels value {} newlabels value {}".format(i, labels[0, i], newlabels[0, i])) 
+                # else: 
+                    # print("index {} labels values {} new labels value {}".format(i, "None", newlabels[0, i])) 
+            labels = newlabels 
         
         if labels is not None: 
             # selected_indices = list(range(7)) 
