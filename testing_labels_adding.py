@@ -1,14 +1,15 @@
 import torch 
 
 # labels = [[1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8]] 
-labels = [[0, 1, 2, 3, 4, 5, 6, 7], [0, 1, 2, 3, 4, 5, 6, 7]] 
+# labels = [[0, 1, 2, 3, 4, 5, 6, 7], [0, 1, 2, 3, 4, 5, 6, 7]] 
+labels = [[0, 1, 2, 3, 4, 5, 6, 7, 8], [0, 1, 2, 3, 4, 5, 6, 7, 8]] 
 labels = torch.tensor(labels) 
 # addonmodel_start = 2 
 # sliding_window_length = 1 
 # addonmodel_start = 3 
 # sliding_window_length = 2 
-addonmodel_start = 7 
-sliding_window_length = 8 
+addonmodel_start = 8 
+sliding_window_length = 7 
 
 copy_idx = [addonmodel_start + (sliding_window_length * i) for i in range(1)] 
 print("copy_idx: ", copy_idx) 
