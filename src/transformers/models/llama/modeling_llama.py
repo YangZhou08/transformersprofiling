@@ -4619,8 +4619,8 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         self.lm_head = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias = False) 
         # self.addonsmallmodel = None 
         small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m") 
-        # self.sliding_window_length = 7 
-        self.sliding_window_length = 1 
+        self.sliding_window_length = 7 
+        # self.sliding_window_length = 1 
         # self.sliding_window_length = 3 
         self.addonsmallmodel = SimpleSmallModel(small_config, sliding_window_length = self.sliding_window_length, target_model_dim = self.config.hidden_size) 
         self.small_model_dtype = torch.bfloat16 
