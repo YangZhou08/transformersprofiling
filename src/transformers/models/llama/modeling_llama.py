@@ -4619,8 +4619,8 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         self.lm_head = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias = False) 
         # self.addonsmallmodel = None 
         small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m") 
-        self.sliding_window_length = 7 
-        # self.sliding_window_length = 2 
+        # self.sliding_window_length = 7 
+        self.sliding_window_length = 1 
         self.addonsmallmodel = SimpleSmallModel(small_config, sliding_window_length = self.sliding_window_length, target_model_dim = self.config.hidden_size) 
         self.small_model_dtype = torch.bfloat16 
         self.use_mse_loss = False 
@@ -4891,10 +4891,10 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             hidden_states = hidden_states[:, selected_seq_indices, :] 
             print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
         else: 
-            print("before avgpool, the length of hidden_states is {}".format(hidden_states.shape[1])) 
+            removelast = (hidden_states.shape[1] % self.sliding_window_length == 0) 
             hidden_states = self.avgpool(hidden_states) 
-            print("after avgpool, the length of hidden_states is {}".format(hidden_states.shape[1])) 
-        exit(0) 
+            if removelast: 
+                hidden_states = hidden_states[:, :-1, :] 
         hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
         # print("some hidden states numbers: ", hidden_states.reshape(-1)[: 100]) 
         # hidden_states = hidden_states[:, -28 :, :] 
