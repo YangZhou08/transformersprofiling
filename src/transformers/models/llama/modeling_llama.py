@@ -4894,6 +4894,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             print("before avgpool, the length of hidden_states is {}".format(hidden_states.shape[1])) 
             hidden_states = self.avgpool(hidden_states) 
             print("after avgpool, the length of hidden_states is {}".format(hidden_states.shape[1])) 
+        exit(0) 
         hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
         # print("some hidden states numbers: ", hidden_states.reshape(-1)[: 100]) 
         # hidden_states = hidden_states[:, -28 :, :] 
