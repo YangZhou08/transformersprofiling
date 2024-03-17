@@ -5043,12 +5043,12 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             print("shift_logits shape {}; shift_labels shape {}".format(shift_logits.shape, shift_labels.shape)) 
             # Flatten the tokens 
             loss_fct = CrossEntropyLoss() 
+            shift_logits2 = shift_logits.clone().detach() # used for position investigation 
+            shift_labels2 = shift_labels.clone().detach() # used for position investigation 
             shift_logits = shift_logits.view(-1, self.config.vocab_size) 
             shift_labels = shift_labels.view(-1) 
             
             # position loss performance investigation below 
-            shift_logits2 = shift_logits.clone().detach() 
-            shift_labels2 = shift_labels.clone().detach() 
             num_chunks = (shift_logits2.shape[1] - 1) // (self.sliding_window_length + 1) 
             first_pos_indices = [self.addonmodel_start - 1 + (self.sliding_window_length + 1) * i for i in range(num_chunks)] 
             first_pos_ce_loss = loss_fct(shift_logits2[:, first_pos_indices, :], shift_labels2[:, first_pos_indices]) 

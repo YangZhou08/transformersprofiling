@@ -824,11 +824,16 @@ class CustomTrainer(Trainer):
                     f"{','.join(outputs.keys())}. For reference, the inputs it received are {','.join(inputs.keys())}."
                 ) 
             loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
+            
+            first_pos_loss = outputs["first_pos_loss"] if isinstance(outputs, dict) else outputs[1] 
+            second_pos_loss = outputs["second_pos_loss"] if isinstance(outputs, dict) else outputs[2] 
         
         print(colored("rank {} and the loss is {}".format(self.accelerator.state.process_index, loss), "yellow" if evaluation_mode is False else "cyan")) 
         if self.accelerator.is_main_process and has_wandb and evaluation_mode is False and self.iteration_count % 20 == 0: 
             if len(self.optimizer.param_groups) > 1: 
                 wandb.log({"loss": loss, 
+                        "first_pos_loss": first_pos_loss, 
+                        "second_pos_loss": second_pos_loss, 
                         "group1.lr": self.optimizer.param_groups[0]["lr"], 
                         "group2.lr": self.optimizer.param_groups[1]["lr"], 
                         # "iteration_count": self.iteration_count * 50 
@@ -836,6 +841,8 @@ class CustomTrainer(Trainer):
                 }) 
             else: 
                 wandb.log({"loss": loss, 
+                        "first_pos_loss": first_pos_loss, 
+                        "second_pos_loss": second_pos_loss, 
                         "group1.lr": self.optimizer.param_groups[0]["lr"], 
                         "iteration_count": self.iteration_count 
                 }) 
