@@ -7214,7 +7214,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         
         # self.mask_list_pos = [self.start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - self.start_idx) // (self.sliding_window_length + 1))] 
         # mask_list_pos = [self.start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - self.start_idx) // (self.sliding_window_length + 1))] 
-        mask_list_pos = [start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - start_idx) // (self.sliding_window_length + 1))] 
+        # mask_list_pos = [start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - start_idx) // (self.sliding_window_length + 1))] 
+        mask_list_pos = [start_idx - 1 + i * (self.sliding_window_length + 1) for i in range((seq_length - start_idx) // (self.sliding_window_length + 1))] 
         if position_ids is None: 
             device = input_ids.device 
             # device = inputs_embeds.device 
@@ -7239,7 +7240,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                         position_list.append(pos_count) 
             position_ids = torch.tensor(position_list, dtype = torch.long, device = device) 
             position_ids = position_ids.unsqueeze(0) 
-            print("position ids shape {}".format(position_ids.shape)) 
+            # print("position ids shape {}".format(position_ids.shape)) 
+            print("position ids found is {}".format(position_ids)) 
         # print("mask list pos : {}".format(self.mask_list_pos)) 
         # print("position ids found is {}".format(self.visualize_position_ids(position_ids, self.mask_list_pos))) 
         
