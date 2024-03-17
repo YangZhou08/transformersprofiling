@@ -5051,9 +5051,9 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             # position loss performance investigation below 
             num_chunks = (shift_logits2.shape[1] - 1) // (self.sliding_window_length + 1) 
             first_pos_indices = [self.addonmodel_start - 1 + (self.sliding_window_length + 1) * i for i in range(num_chunks)] 
-            first_pos_ce_loss = loss_fct(shift_logits2[:, first_pos_indices, :].view(-1, self.config.vocab_size), shift_labels2[:, first_pos_indices].view(-1, self.config.vocab_size)) 
+            first_pos_ce_loss = loss_fct(shift_logits2[:, first_pos_indices, :].view(-1, self.config.vocab_size), shift_labels2[:, first_pos_indices].view(-1)) 
             second_pos_indices = [self.addonmodel_start + (self.sliding_window_length + 1) * i for i in range(num_chunks)] 
-            second_pos_ce_loss = loss_fct(shift_logits2[:, second_pos_indices, :].view(-1, self.config.vocab_size), shift_labels2[:, second_pos_indices].view(-1, self.config.vocab_size)) 
+            second_pos_ce_loss = loss_fct(shift_logits2[:, second_pos_indices, :].view(-1, self.config.vocab_size), shift_labels2[:, second_pos_indices].view(-1)) 
             
             # Enable model parallelism 
             shift_labels = shift_labels.to(shift_logits.device) 
