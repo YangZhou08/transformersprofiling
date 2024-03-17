@@ -7378,7 +7378,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                     create_custom_forward(decoder_layer), hidden_states, attention_mask, position_ids
                 )
             else:
-                horizontal_bar_enabled = False 
+                # horizontal_bar_enabled = False 
+                horizontal_bar_enabled = True 
                 layer_outputs = decoder_layer(
                     hidden_states,
                     attention_mask=attention_mask,
