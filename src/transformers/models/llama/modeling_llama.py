@@ -6916,8 +6916,6 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 combined_embeds = torch.cat([combined_embeds, input_embeds[:, input_embeds_count : min(input_embeds_count + kernel_size, input_embeds.shape[1]), :]], dim = 1) 
             input_embeds_count += kernel_size 
         if input_embeds_count < input_embeds.shape[1]: 
-            print("input_embeds_count is {} input_embeds.shape[1] is {}".format(input_embeds_count, input_embeds.shape[1])) 
-            exit(0) 
             combined_embeds = torch.cat([combined_embeds, input_embeds[:, input_embeds_count :, :]], dim = 1) 
         
         return combined_embeds 
