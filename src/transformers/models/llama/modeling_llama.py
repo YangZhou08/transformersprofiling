@@ -7273,7 +7273,9 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             # for i in range(input_embeds.shape[1]): 
                 # print("input_id for it is {} does it has nan number {}".format(input_ids[0][i], torch.isnan(input_embeds[0][i]).any())) 
             # print() 
-            input_embeds = self.interleaving_embeddings_inputs(input_embeds, condensed_embeds, kernel_size = self.sliding_window_length, start_idx = start_idx, generate_flag = generate_flag) 
+            # input_embeds = self.interleaving_embeddings_inputs(input_embeds, condensed_embeds, kernel_size = self.sliding_window_length, start_idx = start_idx, generate_flag = generate_flag) 
+            input_embeds = self.interleaving_embeddings_inputs2(input_embeds, condensed_embeds, kernel_size = self.sliding_window_length, start_idx = start_idx, generate_flag = generate_flag) 
+            
             # print("input_embeds first ten numbers: {}".format(input_embeds[0][0][: 200])) 
             # print("weights in embed_tokens first ten numbers: {}".format(self.embed_tokens.weight[0][: 10])) 
             # print("weights in embed_projection first ten numbers: {}".format(self.embed_projection.weight[0][: 10])) 
