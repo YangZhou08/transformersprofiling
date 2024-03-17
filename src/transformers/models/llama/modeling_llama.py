@@ -5045,12 +5045,16 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             loss_fct = CrossEntropyLoss() 
             shift_logits = shift_logits.view(-1, self.config.vocab_size) 
             shift_labels = shift_labels.view(-1) 
-            '''
+            
             # position loss performance investigation below 
             shift_logits2 = shift_logits.clone().detach() 
             shift_labels2 = shift_labels.clone().detach() 
-            first_pos_ce_loss = loss_fct(shift_logits2
-            ''' 
+            num_chunks = (shift_logits2.shape[1] - 1) // (self.sliding_window_length + 1) 
+            first_pos_indices = [self.addonmodel_start - 1 + (self.sliding_window_length + 1) * i for i in range(num_chunks)] 
+            first_pos_ce_loss = loss_fct(shift_logits2[:, first_pos_indices, :], shift_labels2[:, first_pos_indices]) 
+            second_pos_indices = [self.addonmodel_start + (self.sliding_window_length + 1) * i for i in range(num_chunks)] 
+            second_pos_ce_loss = loss_fct(shift_logits2[:, second_pos_indices, :], shift_labels2[:, second_pos_indices]) 
+            
             # Enable model parallelism 
             shift_labels = shift_labels.to(shift_logits.device) 
             ce_loss = loss_fct(shift_logits, shift_labels) 
@@ -5074,6 +5078,8 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
 
         return CausalLMOutputWithPastLargeDistance2(
             loss=loss,
+            first_pos_loss = first_pos_ce_loss, 
+            second_pos_loss = second_pos_ce_loss, 
             logits = logits, 
             past_key_values=outputs.past_key_values,
             hidden_states=outputs.hidden_states,
