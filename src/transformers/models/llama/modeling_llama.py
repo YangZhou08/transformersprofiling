@@ -4620,7 +4620,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         # self.addonsmallmodel = None 
         small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m") 
         # self.sliding_window_length = 7 
-        self.sliding_window_length = 1 
+        self.sliding_window_length = 2 
         self.addonsmallmodel = SimpleSmallModel(small_config, sliding_window_length = self.sliding_window_length, target_model_dim = self.config.hidden_size) 
         self.small_model_dtype = torch.bfloat16 
         self.use_mse_loss = False 
@@ -5045,6 +5045,12 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             loss_fct = CrossEntropyLoss() 
             shift_logits = shift_logits.view(-1, self.config.vocab_size) 
             shift_labels = shift_labels.view(-1) 
+            '''
+            # position loss performance investigation below 
+            shift_logits2 = shift_logits.clone().detach() 
+            shift_labels2 = shift_labels.clone().detach() 
+            first_pos_ce_loss = loss_fct(shift_logits2
+            ''' 
             # Enable model parallelism 
             shift_labels = shift_labels.to(shift_logits.device) 
             ce_loss = loss_fct(shift_logits, shift_labels) 
