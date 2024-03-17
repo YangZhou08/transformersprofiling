@@ -6895,6 +6895,33 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         return combined_embeds 
     ''' 
     
+    def interleaving_embeddings_inputs2(self, input_embeds, condensed_embeds, kernel_size = 4, start_idx = 64, generate_flag = False): 
+        if not generate_flag: 
+            # assert (input_embeds.shape[1] - start_idx)/kernel_size == condensed_embeds.shape[1] 
+            assert (input_embeds.shape[1] - start_idx)//kernel_size == condensed_embeds.shape[1] 
+            # combined_embeds = input_embeds[:, : start_idx, :] 
+            combined_embeds = input_embeds[:, : start_idx - 1, :] 
+            # input_embeds_count = start_idx 
+            input_embeds_count = start_idx - 1 
+        else: 
+            assert (input_embeds.shape[1] - start_idx)//kernel_size + 1 == condensed_embeds.shape[1] 
+            # combined_embeds = input_embeds[:, : start_idx, :] 
+            combined_embeds = input_embeds[:, : start_idx - 1, :] 
+            # input_embeds_count = start_idx 
+            input_embeds_count = start_idx - 1 
+        for i in range(condensed_embeds.shape[1]): 
+            # print("i is {} length of combined_embeds is {}".format(i, combined_embeds.shape[1])) 
+            combined_embeds = torch.cat([combined_embeds, condensed_embeds[:, i, :].unsqueeze(1)], dim = 1) 
+            if (input_embeds_count < input_embeds.shape[1]): 
+                combined_embeds = torch.cat([combined_embeds, input_embeds[:, input_embeds_count : min(input_embeds_count + kernel_size, input_embeds.shape[1]), :]], dim = 1) 
+            input_embeds_count += kernel_size 
+        if input_embeds_count < input_embeds.shape[1]: 
+            print("input_embeds_count is {} input_embeds.shape[1] is {}".format(input_embeds_count, input_embeds.shape[1])) 
+            exit(0) 
+            combined_embeds = torch.cat([combined_embeds, input_embeds[:, input_embeds_count :, :]], dim = 1) 
+        
+        return combined_embeds 
+    
     def interleaving_embeddings_inputs(self, input_embeds, condensed_embeds, kernel_size = 4, start_idx = 64, generate_flag = False): 
         if not generate_flag: 
             # assert (input_embeds.shape[1] - start_idx)/kernel_size == condensed_embeds.shape[1] 
