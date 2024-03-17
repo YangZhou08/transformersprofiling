@@ -4791,7 +4791,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             buffer_tensor[:, k // self.sliding_window_length, :] = sum 
         return buffer_tensor 
     
-    def avgpool(self, hidden_states): 
+    def avgpool3(self, hidden_states): 
         assert self.sliding_window_length == 1 # remove this line 
         downsampled_vectors = [] 
         sum = torch.zeros((hidden_states.shape[0], hidden_states.shape[2]), dtype = hidden_states.dtype).to(hidden_states.device) 
@@ -4803,6 +4803,21 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                     sum += hidden_states[:, i, :] 
                     sum += hidden_states[:, i - 1, :] # remove this line 
                     sum /= 2. # remove this line 
+                downsampled_vectors.append(sum / self.sliding_window_length) 
+                sum.mul_(0.) 
+                assert sum.view(-1).sum() == 0 
+            else: 
+                sum += hidden_states[:, i, :] 
+        # downsampled_vectors = downsampled_vectors[1 :] 
+        
+        return torch.stack(downsampled_vectors, dim = 1) 
+    
+    def avgpool(self, hidden_states): 
+        downsampled_vectors = [] 
+        sum = torch.zeros((hidden_states.shape[0], hidden_states.shape[2]), dtype = hidden_states.dtype).to(hidden_states.device) 
+        for i in range(hidden_states.shape[1]): 
+            if i % self.sliding_window_length == self.sliding_window_length - 1: 
+                sum += hidden_states[:, i, :] 
                 downsampled_vectors.append(sum / self.sliding_window_length) 
                 sum.mul_(0.) 
                 assert sum.view(-1).sum() == 0 
