@@ -4961,7 +4961,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         print("self.addonmodel_start {}".format(self.addonmodel_start)) 
         print("sliding_window_length {}".format(self.sliding_window_length)) 
         print("hidden_states.shape[1] {}".format(hidden_states.shape[1])) 
-        assert hidden_states.shape[1] == (small_input_ids.shape[1] - self.addonmodel_start) // self.sliding_window_length - 1 # please add back 
+        assert hidden_states.shape[1] == (small_input_ids.shape[1] - self.addonmodel_start) // self.sliding_window_length  # please add back 
         # print("condensed_embed_labels shape {} dtype {}".format(condensed_embed_labels.shape, condensed_embed_labels.dtype) if condensed_embed_labels is not None else "condensed_embed_labels is None") 
         addonmodeloutput = self.addonsmallmodel( 
             # input_ids = input_ids, 
