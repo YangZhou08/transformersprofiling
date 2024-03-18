@@ -4824,6 +4824,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             else: 
                 sum += hidden_states[:, i, :] 
         # downsampled_vectors = downsampled_vectors[1 :] 
+        downsampled_vectors.append(downsampled_vectors[-1]) 
         
         return torch.stack(downsampled_vectors, dim = 1) 
 
@@ -6935,7 +6936,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
     def interleaving_embeddings_inputs2(self, input_embeds, condensed_embeds, kernel_size = 4, start_idx = 64, generate_flag = False): 
         print("start_idx is {}".format(start_idx)) # debug this is 2 
         if not generate_flag: 
-            # assert (input_embeds.shape[1] - start_idx)/kernel_size == condensed_embeds.shape[1] 
+            assert (input_embeds.shape[1] - start_idx)/kernel_size == condensed_embeds.shape[1] 
             # assert (input_embeds.shape[1] - start_idx)//kernel_size == condensed_embeds.shape[1] 
             # combined_embeds = input_embeds[:, : start_idx, :] 
             combined_embeds = input_embeds[:, : start_idx - 1, :] 
@@ -7214,7 +7215,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 print("start_idx: {}".format(start_idx)) 
                 print("self.sliding_window_length: {}".format(self.sliding_window_length)) 
                 print("condensed_embeds.shape[1]: {}".format(condensed_embeds.shape[1])) 
-                # assert (input_ids.shape[1] - start_idx)//self.sliding_window_length == condensed_embeds.shape[1] # number of condensed tokens should have desired mapping with sequence length 
+                assert (input_ids.shape[1] - start_idx)//self.sliding_window_length == condensed_embeds.shape[1] # number of condensed tokens should have desired mapping with sequence length 
             else: 
                 print("start_idx: {}".format(start_idx)) 
                 print(((input_ids.shape[1] - start_idx)//self.sliding_window_length) + 1) 
