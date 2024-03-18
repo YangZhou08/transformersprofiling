@@ -5034,18 +5034,20 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         
         if labels is not None: 
             # selected_indices = list(range(7)) 
-            selected_indices = list(range(self.addonmodel_start - 1)) 
+            # selected_indices = list(range(self.addonmodel_start - 1)) 
             # for i in range(7, seq_length): 
                 # if i not in mask_list_pos: 
                     # selected_indices.append(i) 
-            for i in range(self.addonmodel_start - 1, seq_length): 
-                if i not in mask_list_pos22: 
-                    selected_indices.append(i) 
+            # for i in range(self.addonmodel_start - 1, seq_length): 
+                # if i not in mask_list_pos22: 
+                    # selected_indices.append(i) 
+            selected_indices = mask_list_pos22 
             # print(colored("selected_indices {}".format(selected_indices), "red")) 
             # select and shift the logits 
             logits = logits[:, selected_indices, :] 
             shift_logits = logits[..., :-1, :].contiguous() 
-            shift_labels = labels[..., 1:].contiguous() # shape (batch_size, seq_length - 1) 
+            # shift_labels = labels[..., 1:].contiguous() # shape (batch_size, seq_length - 1) 
+            shift_labels = labels[..., 1:-1].contiguous() # shape (batch_size, seq_length - 1) 
             print("shift_logits shape {}; shift_labels shape {}".format(shift_logits.shape, shift_labels.shape)) 
             # Flatten the tokens 
             loss_fct = CrossEntropyLoss() 
