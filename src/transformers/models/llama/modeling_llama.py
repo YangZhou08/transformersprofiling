@@ -4916,8 +4916,9 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             removelast = (hidden_states.shape[1] % self.sliding_window_length == 0) 
             hidden_states = self.avgpool(hidden_states) 
             if removelast: 
-                hidden_states = hidden_states[:, :-1, :] 
-        hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
+                # hidden_states = hidden_states[:, :-1, :] 
+                hidden_states = hidden_states[:, :-2, :] 
+        # hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
         # hidden_states = hidden_states[:, 2 :, :] # works with 1 as the start of the sampling index 
         # hidden_states = hidden_states[:, 3:, :] 
         # print("some hidden states numbers: ", hidden_states.reshape(-1)[: 100]) 
@@ -7465,6 +7466,9 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         logits = logits.float() 
 
         mask_list_pos22 = [x - 1 for x in mask_list_pos] # just trying 
+        print("mask list pos22: {}".format(mask_list_pos22)) 
+        print("length of mask list pos22: {}".format(len(mask_list_pos22))) 
+        exit(0) 
         loss = None 
         if labels is not None: 
             # Shift so that tokens < n predict n 
