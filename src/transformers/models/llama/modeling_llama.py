@@ -4620,7 +4620,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         # self.addonsmallmodel = None 
         small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m") 
         # self.sliding_window_length = 7 
-        self.sliding_window_length = 2 
+        self.sliding_window_length = 1 
         self.addonsmallmodel = SimpleSmallModel(small_config, sliding_window_length = self.sliding_window_length, target_model_dim = self.config.hidden_size) 
         self.small_model_dtype = torch.bfloat16 
         self.use_mse_loss = False 
@@ -4914,9 +4914,10 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         else: 
             removelast = (hidden_states.shape[1] % self.sliding_window_length == 0) 
             hidden_states = self.avgpool(hidden_states) 
-            if removelast: 
-                hidden_states = hidden_states[:, :-1, :] 
-        hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
+            # if removelast: 
+                # hidden_states = hidden_states[:, :-1, :] 
+        # hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
+        hidden_states = hidden_states[:, 2 :, :] # works with 1 as the start of the sampling index 
         # print("some hidden states numbers: ", hidden_states.reshape(-1)[: 100]) 
         # hidden_states = hidden_states[:, -28 :, :] 
         
@@ -5043,17 +5044,19 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             print("shift_logits shape {}; shift_labels shape {}".format(shift_logits.shape, shift_labels.shape)) 
             # Flatten the tokens 
             loss_fct = CrossEntropyLoss() 
-            shift_logits2 = shift_logits.clone().detach() # used for position investigation 
-            shift_labels2 = shift_labels.clone().detach() # used for position investigation 
+            # shift_logits2 = shift_logits.clone().detach() # used for position investigation 
+            # shift_labels2 = shift_labels.clone().detach() # used for position investigation 
             shift_logits = shift_logits.view(-1, self.config.vocab_size) 
             shift_labels = shift_labels.view(-1) 
             
             # position loss performance investigation below 
-            num_chunks = (shift_logits2.shape[1] - 1) // (self.sliding_window_length + 1) 
-            first_pos_indices = [self.addonmodel_start - 1 + (self.sliding_window_length + 1) * i for i in range(num_chunks)] 
-            first_pos_ce_loss = loss_fct(shift_logits2[:, first_pos_indices, :].view(-1, self.config.vocab_size), shift_labels2[:, first_pos_indices].view(-1)) 
-            second_pos_indices = [self.addonmodel_start + (self.sliding_window_length + 1) * i for i in range(num_chunks)] 
-            second_pos_ce_loss = loss_fct(shift_logits2[:, second_pos_indices, :].view(-1, self.config.vocab_size), shift_labels2[:, second_pos_indices].view(-1)) 
+            # num_chunks = (shift_logits2.shape[1] - 1) // (self.sliding_window_length + 1) 
+            # first_pos_indices = [self.addonmodel_start - 1 + (self.sliding_window_length + 1) * i for i in range(num_chunks)] 
+            # first_pos_ce_loss = loss_fct(shift_logits2[:, first_pos_indices, :].view(-1, self.config.vocab_size), shift_labels2[:, first_pos_indices].view(-1)) 
+            # second_pos_indices = [self.addonmodel_start + (self.sliding_window_length + 1) * i for i in range(num_chunks)] 
+            # second_pos_ce_loss = loss_fct(shift_logits2[:, second_pos_indices, :].view(-1, self.config.vocab_size), shift_labels2[:, second_pos_indices].view(-1)) 
+            first_pos_ce_loss = torch.tensor(0) 
+            second_pos_ce_loss = torch.tensor(0) 
             
             # Enable model parallelism 
             shift_labels = shift_labels.to(shift_logits.device) 
