@@ -4915,11 +4915,11 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         else: 
             removelast = (hidden_states.shape[1] % self.sliding_window_length == 0) 
             hidden_states = self.avgpool(hidden_states) 
-            # if removelast: 
-                # hidden_states = hidden_states[:, :-1, :] 
-        # hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
+            if removelast: 
+                hidden_states = hidden_states[:, :-1, :] 
+        hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
         # hidden_states = hidden_states[:, 2 :, :] # works with 1 as the start of the sampling index 
-        hidden_states = hidden_states[:, 3:, :] 
+        # hidden_states = hidden_states[:, 3:, :] 
         # print("some hidden states numbers: ", hidden_states.reshape(-1)[: 100]) 
         # hidden_states = hidden_states[:, -28 :, :] 
         
