@@ -5007,6 +5007,8 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         # mask_list_pos = [7 + i * (self.sliding_window_length + 1) for i in range((seq_length - 7) // (self.sliding_window_length + 1))] 
         mask_list_pos = [self.addonmodel_start + i * (self.sliding_window_length + 1) for i in range((seq_length - self.addonmodel_start) // (self.sliding_window_length + 1))] 
         mask_list_pos22 = [x - 1 for x in mask_list_pos] 
+        print("mask list pos22: {}".format(mask_list_pos22)) 
+        print("length of mask list pos22: {}".format(len(mask_list_pos22))) 
         # print(colored("mask_list_pos {}".format(mask_list_pos), "red")) 
         loss = None 
         
@@ -7466,9 +7468,6 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         logits = logits.float() 
 
         mask_list_pos22 = [x - 1 for x in mask_list_pos] # just trying 
-        print("mask list pos22: {}".format(mask_list_pos22)) 
-        print("length of mask list pos22: {}".format(len(mask_list_pos22))) 
-        exit(0) 
         loss = None 
         if labels is not None: 
             # Shift so that tokens < n predict n 
