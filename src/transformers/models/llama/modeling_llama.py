@@ -6955,6 +6955,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         if input_embeds_count < input_embeds.shape[1]: 
             combined_embeds = torch.cat([combined_embeds, input_embeds[:, input_embeds_count :, :]], dim = 1) 
         
+        exit(0) 
         return combined_embeds 
     
     def interleaving_embeddings_inputs(self, input_embeds, condensed_embeds, kernel_size = 4, start_idx = 64, generate_flag = False): 
