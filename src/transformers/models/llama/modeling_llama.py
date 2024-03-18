@@ -4824,7 +4824,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             else: 
                 sum += hidden_states[:, i, :] 
         # downsampled_vectors = downsampled_vectors[1 :] 
-        downsampled_vectors.append(downsampled_vectors[-1]) 
+        # downsampled_vectors.append(downsampled_vectors[-1]) 
         
         return torch.stack(downsampled_vectors, dim = 1) 
 
