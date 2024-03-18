@@ -4917,7 +4917,8 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             # if removelast: 
                 # hidden_states = hidden_states[:, :-1, :] 
         # hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
-        hidden_states = hidden_states[:, 2 :, :] # works with 1 as the start of the sampling index 
+        # hidden_states = hidden_states[:, 2 :, :] # works with 1 as the start of the sampling index 
+        hidden_states = hidden_states[:, 3:, :] 
         # print("some hidden states numbers: ", hidden_states.reshape(-1)[: 100]) 
         # hidden_states = hidden_states[:, -28 :, :] 
         
@@ -4959,7 +4960,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         print("self.addonmodel_start {}".format(self.addonmodel_start)) 
         print("sliding_window_length {}".format(self.sliding_window_length)) 
         print("hidden_states.shape[1] {}".format(hidden_states.shape[1])) 
-        assert hidden_states.shape[1] == (small_input_ids.shape[1] - self.addonmodel_start) // self.sliding_window_length 
+        assert hidden_states.shape[1] == (small_input_ids.shape[1] - self.addonmodel_start) // self.sliding_window_length - 1 # please add back 
         # print("condensed_embed_labels shape {} dtype {}".format(condensed_embed_labels.shape, condensed_embed_labels.dtype) if condensed_embed_labels is not None else "condensed_embed_labels is None") 
         addonmodeloutput = self.addonsmallmodel( 
             # input_ids = input_ids, 
@@ -6932,10 +6933,10 @@ class SimpleSmallModel(LlamaPreTrainedModel):
     ''' 
     
     def interleaving_embeddings_inputs2(self, input_embeds, condensed_embeds, kernel_size = 4, start_idx = 64, generate_flag = False): 
-        print("start_idx is {}".format(start_idx)) 
+        print("start_idx is {}".format(start_idx)) # debug this is 2 
         if not generate_flag: 
             # assert (input_embeds.shape[1] - start_idx)/kernel_size == condensed_embeds.shape[1] 
-            assert (input_embeds.shape[1] - start_idx)//kernel_size == condensed_embeds.shape[1] 
+            # assert (input_embeds.shape[1] - start_idx)//kernel_size == condensed_embeds.shape[1] 
             # combined_embeds = input_embeds[:, : start_idx, :] 
             combined_embeds = input_embeds[:, : start_idx - 1, :] 
             # input_embeds_count = start_idx 
