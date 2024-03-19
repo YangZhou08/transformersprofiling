@@ -723,8 +723,6 @@ class CausalLMOutputWithPastLargeDistance2(ModelOutput):
             heads.
     """ 
     loss: Optional[torch.FloatTensor] = None 
-    first_pos_loss: Optional[torch.FloatTensor] = None 
-    second_pos_loss: Optional[torch.FloatTensor] = None 
     logits: torch.FloatTensor = None
     past_key_values: Optional[Tuple[Tuple[torch.FloatTensor]]] = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
@@ -733,6 +731,8 @@ class CausalLMOutputWithPastLargeDistance2(ModelOutput):
     ce_loss: Optional[torch.Tensor] = None 
     l2_distance_input: Optional[torch.Tensor] = None 
     cossim_input: Optional[torch.Tensor] = None 
+    first_pos_loss: Optional[torch.FloatTensor] = None 
+    second_pos_loss: Optional[torch.FloatTensor] = None 
 
 @dataclass 
 class CausalLMOutputWithPastWithOriginalOutput(ModelOutput): 
