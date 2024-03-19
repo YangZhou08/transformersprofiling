@@ -4620,7 +4620,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         # self.addonsmallmodel = None 
         small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m") 
         # self.sliding_window_length = 7 
-        self.sliding_window_length = 1 
+        self.sliding_window_length = 2 
         self.addonsmallmodel = SimpleSmallModel(small_config, sliding_window_length = self.sliding_window_length, target_model_dim = self.config.hidden_size) 
         self.small_model_dtype = torch.bfloat16 
         self.use_mse_loss = False 
@@ -4919,8 +4919,8 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             if removelast: 
                 hidden_states = hidden_states[:, :-1, :] 
                 # hidden_states = hidden_states[:, :-2, :] 
-        # hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
-        hidden_states = hidden_states[:, 2 :, :] # works with 1 as the start of the sampling index 
+        hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
+        # hidden_states = hidden_states[:, 2 :, :] # works with 1 as the start of the sampling index 
         # hidden_states = hidden_states[:, 3:, :] 
         # print("some hidden states numbers: ", hidden_states.reshape(-1)[: 100]) 
         # hidden_states = hidden_states[:, -28 :, :] 
