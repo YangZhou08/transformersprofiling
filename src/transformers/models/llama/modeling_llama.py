@@ -4629,8 +4629,8 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         self.lm_head = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias = False) 
         # self.addonsmallmodel = None 
         small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m") 
-        # self.sliding_window_length = 7 
-        self.sliding_window_length = 2 
+        self.sliding_window_length = 7 
+        # self.sliding_window_length = 2 
         self.addonsmallmodel = SimpleSmallModel(small_config, sliding_window_length = self.sliding_window_length, target_model_dim = self.config.hidden_size) 
         self.small_model_dtype = torch.bfloat16 
         self.use_mse_loss = False 
@@ -5049,7 +5049,6 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         
         if labels is not None: 
             # selected_indices = list(range(7)) 
-            selected_indices = list(range(self.addonmodel_start - 1)) 
             # selected_indices = list(range(self.addonmodel_start)) 
             # for i in range(7, seq_length): 
                 # if i not in mask_list_pos: 
@@ -5057,6 +5056,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             # for i in range(self.addonmodel_start, seq_length): 
             #     if i not in mask_list_pos: 
             #         selected_indices.append(i) 
+            selected_indices = list(range(self.addonmodel_start - 1)) 
             for i in range(self.addonmodel_start - 1, seq_length): 
                 if i not in mask_list_pos22: 
                     selected_indices.append(i) 
