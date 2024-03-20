@@ -2629,6 +2629,9 @@ class LlamaWeirdLargeIntermediate(LlamaPreTrainedModel):
             shift_labels = shift_labels.to(shift_logits.device) 
             ce_loss = loss_fct(shift_logits, shift_labels) 
             loss = ce_loss 
+            
+            first_pos_loss = torch.tensor(0) 
+            second_pos_loss = torch.tensor(0) 
             # print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
         if loss is not None and not self.use_mse_loss: 
             if self.ce_loss_only: 
@@ -2657,6 +2660,8 @@ class LlamaWeirdLargeIntermediate(LlamaPreTrainedModel):
             ce_loss = ce_loss.detach().clone(), 
             l2_distance_input = l2_distance_input, 
             cossim_input = cossim_input, 
+            first_pos_loss = first_pos_loss, 
+            second_pos_loss = second_pos_loss, 
         ) 
     
     def prepare_inputs_for_generation2(
