@@ -5028,6 +5028,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         loss = None 
         
         if label_adjustment: # we adjust the labels to be completely information loss free 
+            print("got inside") 
             copy_idx = [self.addonmodel_start + (self.sliding_window_length * i) for i in range(hidden_states.shape[1])] 
             labels_addition = labels[:, copy_idx] 
             newlabels = labels[:, : self.addonmodel_start] 
