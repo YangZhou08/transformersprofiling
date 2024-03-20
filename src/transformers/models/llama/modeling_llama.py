@@ -6937,16 +6937,16 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         if not generate_flag: 
             assert (input_embeds.shape[1] - start_idx)/kernel_size == condensed_embeds.shape[1] 
             # assert (input_embeds.shape[1] - start_idx)//kernel_size == condensed_embeds.shape[1] 
-            combined_embeds = input_embeds[:, : start_idx, :] 
-            # combined_embeds = input_embeds[:, : start_idx - 1, :] 
-            input_embeds_count = start_idx 
-            # input_embeds_count = start_idx - 1 
+            # combined_embeds = input_embeds[:, : start_idx, :] 
+            combined_embeds = input_embeds[:, : start_idx - 1, :] 
+            # input_embeds_count = start_idx 
+            input_embeds_count = start_idx - 1 
         else: 
             assert (input_embeds.shape[1] - start_idx)//kernel_size + 1 == condensed_embeds.shape[1] 
-            combined_embeds = input_embeds[:, : start_idx, :] 
-            # combined_embeds = input_embeds[:, : start_idx - 1, :] 
-            input_embeds_count = start_idx 
-            # input_embeds_count = start_idx - 1 
+            # combined_embeds = input_embeds[:, : start_idx, :] 
+            combined_embeds = input_embeds[:, : start_idx - 1, :] 
+            # input_embeds_count = start_idx 
+            input_embeds_count = start_idx - 1 
         for i in range(condensed_embeds.shape[1]): 
             # print("i is {} length of combined_embeds is {}".format(i, combined_embeds.shape[1])) 
             combined_embeds = torch.cat([combined_embeds, condensed_embeds[:, i, :].unsqueeze(1)], dim = 1) 
