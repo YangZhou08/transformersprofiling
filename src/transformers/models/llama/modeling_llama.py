@@ -4629,8 +4629,8 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         self.lm_head = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias = False) 
         # self.addonsmallmodel = None 
         small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m") 
-        self.sliding_window_length = 7 
-        # self.sliding_window_length = 2 
+        # self.sliding_window_length = 7 
+        self.sliding_window_length = 2 
         self.addonsmallmodel = SimpleSmallModel(small_config, sliding_window_length = self.sliding_window_length, target_model_dim = self.config.hidden_size) 
         self.small_model_dtype = torch.bfloat16 
         self.use_mse_loss = False 
@@ -5063,7 +5063,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             # selected_indices = mask_list_pos22 
             # print(colored("selected_indices {}".format(selected_indices), "red")) 
             # select and shift the logits 
-            logits = logits[:, selected_indices, :] 
+            # logits = logits[:, selected_indices, :] 
             shift_logits = logits[..., :-1, :].contiguous() 
             shift_labels = labels[..., 1:].contiguous() # shape (batch_size, seq_length - 1) 
             # shift_labels = labels[..., 1:-1].contiguous() # shape (batch_size, seq_length - 1) 
