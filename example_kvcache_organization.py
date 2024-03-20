@@ -3,6 +3,19 @@ import time
 import torch 
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union 
 import torch.functional as F 
+from termcolor import colored 
+
+def spec_stream(pred_token_idx, tokenizer, color='blue'):
+    decoded_token = tokenizer.decode(
+            pred_token_idx,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=True,
+            # spaces_between_special_tokens=False,
+        )
+
+    decoded_token = decoded_token.replace("<0x0A>", "\n")
+
+    print(colored(decoded_token, color), flush=True, end=" ")
 
 def max_fn(x):
     """

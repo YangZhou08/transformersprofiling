@@ -6937,16 +6937,16 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         if not generate_flag: 
             assert (input_embeds.shape[1] - start_idx)/kernel_size == condensed_embeds.shape[1] 
             # assert (input_embeds.shape[1] - start_idx)//kernel_size == condensed_embeds.shape[1] 
-            # combined_embeds = input_embeds[:, : start_idx, :] 
-            combined_embeds = input_embeds[:, : start_idx - 1, :] 
-            # input_embeds_count = start_idx 
-            input_embeds_count = start_idx - 1 
+            combined_embeds = input_embeds[:, : start_idx, :] 
+            # combined_embeds = input_embeds[:, : start_idx - 1, :] 
+            input_embeds_count = start_idx 
+            # input_embeds_count = start_idx - 1 
         else: 
             assert (input_embeds.shape[1] - start_idx)//kernel_size + 1 == condensed_embeds.shape[1] 
-            # combined_embeds = input_embeds[:, : start_idx, :] 
-            combined_embeds = input_embeds[:, : start_idx - 1, :] 
-            # input_embeds_count = start_idx 
-            input_embeds_count = start_idx - 1 
+            combined_embeds = input_embeds[:, : start_idx, :] 
+            # combined_embeds = input_embeds[:, : start_idx - 1, :] 
+            input_embeds_count = start_idx 
+            # input_embeds_count = start_idx - 1 
         for i in range(condensed_embeds.shape[1]): 
             # print("i is {} length of combined_embeds is {}".format(i, combined_embeds.shape[1])) 
             combined_embeds = torch.cat([combined_embeds, condensed_embeds[:, i, :].unsqueeze(1)], dim = 1) 
@@ -7245,8 +7245,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         
         # self.mask_list_pos = [self.start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - self.start_idx) // (self.sliding_window_length + 1))] 
         # mask_list_pos = [self.start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - self.start_idx) // (self.sliding_window_length + 1))] 
-        # mask_list_pos = [start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - start_idx) // (self.sliding_window_length + 1))] 
-        mask_list_pos = [start_idx - 1 + i * (self.sliding_window_length + 1) for i in range((seq_length - start_idx) // (self.sliding_window_length + 1))] 
+        mask_list_pos = [start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - start_idx) // (self.sliding_window_length + 1))] 
+        # mask_list_pos = [start_idx - 1 + i * (self.sliding_window_length + 1) for i in range((seq_length - start_idx) // (self.sliding_window_length + 1))] 
         if position_ids is None: 
             device = input_ids.device 
             position_list = [] 
