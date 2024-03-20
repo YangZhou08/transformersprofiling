@@ -502,11 +502,14 @@ class CustomTrainer(Trainer):
             self.accelerator.wait_for_everyone() 
             
         perplexity = torch.exp(ce_loss).mean().item() 
-        indices_to_keep = input_attention_mask == 1 # not sure whether we need this 
-        total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
-        correct_words = torch.sum((preds[indices_to_keep] == labels[indices_to_keep]).view(-1), dim = 0).item() 
-        print("correct words: {} and total words: {}".format(correct_words, total_valid_tokens)) 
-        return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "l2_distance": l2dist.item(), "ce_loss": ce_loss.item() if isinstance(ce_loss, torch.Tensor) else ce_loss, "l2_distance_input": l2dist_input.item(), "cosin_similarity": cos_sim_input.item()} 
+        if not args.label_adjustment: 
+            indices_to_keep = input_attention_mask == 1 # not sure whether we need this 
+            total_valid_tokens = torch.sum(indices_to_keep.view(-1), dim = 0).item() 
+            correct_words = torch.sum((preds[indices_to_keep] == labels[indices_to_keep]).view(-1), dim = 0).item() 
+            print("correct words: {} and total words: {}".format(correct_words, total_valid_tokens)) 
+            return {"perplexity": perplexity, "correct_words": correct_words, "total_words": total_valid_tokens, "l2_distance": l2dist.item(), "ce_loss": ce_loss.item() if isinstance(ce_loss, torch.Tensor) else ce_loss, "l2_distance_input": l2dist_input.item(), "cosin_similarity": cos_sim_input.item()} 
+        else: 
+            return {"perplexity": perplexity, "l2_distance": l2dist.item(), "ce_loss": ce_loss.item() if isinstance(ce_loss, torch.Tensor) else ce_loss, "l2_distance_input": l2dist_input.item(), "cosin_similarity": cos_sim_input.item()} 
                 
     def evaluation_loop(
         self,
@@ -608,13 +611,20 @@ class CustomTrainer(Trainer):
             # print(colored("the shape of labels is {}".format(labels.shape), "yellow")) 
             total_loss += loss.item() 
             local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"], step) 
-            total_correct_words += local_metrics["correct_words"] 
-            total_words += local_metrics["total_words"] 
-            sum_of_perplexity += local_metrics["perplexity"] 
-            l2_distance += local_metrics["l2_distance"] 
-            l2_distance_input += local_metrics["l2_distance_input"] 
-            cosine_similarity_input += local_metrics["cosin_similarity"] 
-            ce_loss += local_metrics["ce_loss"] 
+            if not args.label_adjustment: 
+                total_correct_words += local_metrics["correct_words"] 
+                total_words += local_metrics["total_words"] 
+                sum_of_perplexity += local_metrics["perplexity"] 
+                l2_distance += local_metrics["l2_distance"] 
+                l2_distance_input += local_metrics["l2_distance_input"] 
+                cosine_similarity_input += local_metrics["cosin_similarity"] 
+                ce_loss += local_metrics["ce_loss"] 
+            else: 
+                sum_of_perplexity += local_metrics["perplexity"] 
+                l2_distance += local_metrics["l2_distance"] 
+                l2_distance_input += local_metrics["l2_distance_input"] 
+                cosine_similarity_input += local_metrics["cosin_similarity"] 
+                ce_loss += local_metrics["ce_loss"] 
 
             if is_torch_tpu_available(): 
                 xm.mark_step() 
