@@ -295,7 +295,7 @@ def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len
             next_token = next_token.unsqueeze(0)
         
         pred_token_idx = next_token 
-        pred_token_idx = torch.cat([input_ids, pred_token_idx], dim = 1) 
+        small_model_input_full_context = torch.cat([input_ids, next_token], dim = 1).to(draft.device) 
         print("pred_token_idx: {}".format(pred_token_idx.shape)) 
 
         speculation_probs = []
@@ -303,7 +303,7 @@ def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len
 
         for _ in range(gamma):
             outputs = draft(
-                input_ids=pred_token_idx,
+                input_ids = small_model_input_full_context, 
                 # past_key_values=draft_cache, 
                 # use_cache=True, 
                 past_key_values = None, 
@@ -321,7 +321,8 @@ def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len
 
         # verification
         # verify_tokens = torch.cat([next_token, torch.LongTensor([generated_ids]).to(draft.device)], dim=1) 
-        verify_tokens = torch.cat([pred_token_idx, torch.LongTensor([generated_ids]).to(draft.device)], dim = 1) 
+        # verify_tokens = torch.cat([pred_token_idx, torch.LongTensor([generated_ids]).to(draft.device)], dim = 1) 
+        verify_tokens = torch.cat([small_model_input_full_context, torch.LongTensor([generated_ids]).to(draft.device)], dim = 1) 
         large_model_start_verifying_index = pred_token_idx.shape[1] - 1 
         print("verify_tokens: {}".format(verify_tokens.shape[1])) 
         print("large_model_start_verifying_index: {}".format(large_model_start_verifying_index)) 
