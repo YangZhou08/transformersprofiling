@@ -354,7 +354,7 @@ def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len
                 n += 1
                 pred_token_idx = torch.tensor([[i]]).to(draft.device)
                 if verbose:
-                    spec_stream(i, tokenizer, 'green')
+                    spec_stream(pred_token_idx, tokenizer, 'green') 
 
                 # if eos
                 if tokenizer.eos_token_id == i:
