@@ -7273,7 +7273,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         if generate_flag: 
             mask_list_pos = [start_idx - 1 + i * (self.sliding_window_length + 1) for i in range((seq_length - start_idx) // (self.sliding_window_length + 1))] 
         else: 
-            mask_list_pos = [start_idx - 1 + i * (self.sliding_window_length + 1) for i in range(int(math.roof((seq_length - start_idx) / (self.sliding_window_length + 1))))] 
+            print((seq_length - start_idx) / (self.sliding_window_length + 1)) 
+            mask_list_pos = [start_idx - 1 + i * (self.sliding_window_length + 1) for i in range(int(math.ceil((seq_length - start_idx) / (self.sliding_window_length + 1))))] 
         if position_ids is None: 
             device = input_ids.device 
             position_list = [] 
