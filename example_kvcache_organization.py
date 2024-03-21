@@ -472,7 +472,7 @@ if __name__ == "__main__":
     dfiles = [] 
     filename = "c4_file1.json" 
     dfiles.append(dir_c4 + filename) 
-    datasetnew = load_dataset("json", data_files = dfiles, split = "train[:1000]") 
+    datasetnew = load_dataset("json", data_files = dfiles, split = "train[:5000]") 
     
     def encode_with_truncation(examples): 
         # tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
