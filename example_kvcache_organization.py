@@ -347,14 +347,12 @@ if __name__ == "__main__":
         attention_mask = batch["attention_mask"].to(torch_device) 
         
         acceptancer, draftcount = Vanilla_Spec_nokvcache(tokenizer, 
-                           large_model, 
-                           SimpleCache(large_model, max_budget = 1024), 
-                           small_model, 
-                           SimpleCache(small_model, max_budget = 1024), 
-                           input_ids, 
-                           gamma = 1, 
-                           max_len = 1, 
-                        ) 
+                            large_model, 
+                            small_model, 
+                            input_ids, 
+                            gamma = 1, 
+                            max_len = 1, 
+                           ) 
         globalacceptancerate += (acceptancer * draftcount) 
         globaldraftcount += draftcount 
     
