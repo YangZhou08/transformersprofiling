@@ -570,6 +570,8 @@ class SimpleCache(Cache):
 if __name__ == "__main__": 
     parser = argparse.ArgumentParser(description = "Speculative Acceptance Rate") 
     parser.add_argument("--loading_from_checkpoint", type = str, default = None) 
+    parser.add_argument("--experiment_setting", type = str, default = None) 
+    parser.add_argument("--kernel_size", type = int, default = None) 
     
     args = parser.parse_args() 
     
