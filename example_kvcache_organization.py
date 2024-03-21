@@ -48,7 +48,8 @@ def spec_stream(pred_token_idx, tokenizer, color='blue'):
             skip_special_tokens=True,
             clean_up_tokenization_spaces=True,
             # spaces_between_special_tokens=False,
-        )
+        ) 
+    print("decoded token: ", decoded_token) 
 
     decoded_token = decoded_token.replace("<0x0A>", "\n")
 
