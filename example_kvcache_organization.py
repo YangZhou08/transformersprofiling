@@ -2,7 +2,7 @@ import math
 import time 
 import torch 
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union 
-import torch.functional as F 
+import torch.nn.functional as F 
 from termcolor import colored 
 from datasets import load_dataset 
 
