@@ -362,7 +362,7 @@ def Vanilla_spec_dectesting(tokenizer, target, model, input_ids, attention_mask,
         # print(f"Use {time2 - time1} sec to generate {n} tokens (now {target_cache.seq_len} tokens), Tokens/s: {n / (time2 - time1)}", flush=True) 
         print(f"accepted rate {acceptance_rate}, avg generated tokens {avg_tokens}")
 
-    return acceptance_rate 
+    return acceptance_rate, draft_count 
 
 @torch.inference_mode()
 def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len=256, top_k=-1, top_p=0.9, temperature=0.6, verbose=False, file_path=None, attention_mask = None): 
