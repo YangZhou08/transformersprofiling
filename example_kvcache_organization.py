@@ -111,11 +111,8 @@ def sample(probs : torch.Tensor, num_samples: int = 1, random_seed = None):
     return idx_next 
 
 @torch.inference_mode()
-def Vanilla_Spec_cache(tokenizer, target, target_cache, draft, draft_cache, input_ids, gamma=4, max_len=256, top_k=-1, top_p=0.9, temperature=0.6, verbose=False, file_path=None):
-    # reset cache
-    target_cache.reset()
-    draft_cache.reset()
-    
+def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len=256, top_k=-1, top_p=0.9, temperature=0.6, verbose=False, file_path=None, attention_mask = None): 
+    '''
     ############ Iterative Pre-fill ############
     iter_prefill = math.ceil(input_ids.shape[1] / 100)
     for i in (range(iter_prefill)):
@@ -130,13 +127,20 @@ def Vanilla_Spec_cache(tokenizer, target, target_cache, draft, draft_cache, inpu
             past_key_values=draft_cache,
             use_cache=True,
         )
+    ''' 
+    outputs = target(
+        input_ids = input_ids, 
+        past_key_values = None, 
+        use_cache = False, 
+        attention_mask = attention_mask, 
+    ) 
 
     resample_count = 0
     accepted_count = 0
     target_sample_count = 0
     draft_count = 0
 
-    next_token = sample(norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p))
+    next_token = sample(norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)) # predicting for the next token 
     
     if verbose:
         spec_stream(next_token[0], tokenizer, 'cyan')
@@ -149,7 +153,8 @@ def Vanilla_Spec_cache(tokenizer, target, target_cache, draft, draft_cache, inpu
         if next_token.shape == torch.Size([1]):
             next_token = next_token.unsqueeze(0)
         
-        pred_token_idx = next_token
+        pred_token_idx = next_token 
+        pred_token_idx = torch.cat([input_ids, pred_token_idx], dim = 1) 
 
         speculation_probs = []
         generated_ids = []
@@ -157,9 +162,12 @@ def Vanilla_Spec_cache(tokenizer, target, target_cache, draft, draft_cache, inpu
         for _ in range(gamma):
             outputs = draft(
                 input_ids=pred_token_idx,
-                past_key_values=draft_cache,
-                use_cache=True,
-            )
+                # past_key_values=draft_cache, 
+                # use_cache=True, 
+                past_key_values = None, 
+                use_cache = False, 
+                attention_mask = attention_mask, 
+            ) 
 
             probs = norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)
             pred_token_idx = sample(probs)
@@ -169,21 +177,25 @@ def Vanilla_Spec_cache(tokenizer, target, target_cache, draft, draft_cache, inpu
             draft_count += 1
 
         # verification
-        verify_tokens = torch.cat([next_token, torch.LongTensor([generated_ids]).to(draft.device)], dim=1)
+        # verify_tokens = torch.cat([next_token, torch.LongTensor([generated_ids]).to(draft.device)], dim=1) 
+        verify_tokens = torch.cat([pred_token_idx, torch.LongTensor([generated_ids]).to(draft.device)], dim = 1) 
+        large_model_start_verifying_index = pred_token_idx.shape[1] - 1 
 
         with torch.no_grad():
             outputs = target(
                 input_ids=verify_tokens,
-                past_key_values=target_cache,
-                use_cache=True,
-            )
+                past_key_values = None, 
+                use_cache = False, 
+            ) 
 
         count = 0
         verify_probs = []
     
-        for i in range(gamma + 1):
-            assert outputs.logits.shape[1] == gamma + 1
-            verify_probs.append(norm_logits(outputs.logits[:, i, :], temperature=temperature ,top_k=top_k, top_p=top_p)[0])
+        for i in range(gamma + 1): 
+            # assert outputs.logits.shape[1] == gamma + 1 
+            idx = i + large_model_start_verifying_index 
+            verify_probs.append(norm_logits(outputs[:, idx, :], temperature=temperature ,top_k=top_k, top_p=top_p)[0]) 
+        # verify_probs.append(norm_logits(outputs.logits[:, -2, :], temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
 
         for i, speculation_prob, verify_prob in zip(generated_ids, speculation_probs, verify_probs[:-1]):
             r = torch.rand(1, device = draft.device)
@@ -221,28 +233,13 @@ def Vanilla_Spec_cache(tokenizer, target, target_cache, draft, draft_cache, inpu
                 spec_stream(pred_token_idx, tokenizer, 'blue')
 
         next_token = pred_token_idx
-        
-        if gamma - count > 0:
-            draft_cache.seq_len -= (gamma - count) - 1
-        else:
-            # gamma == count, we need to update the cache for draft
-            with torch.no_grad():
-                outputs = draft(
-                    input_ids=torch.tensor([[generated_ids[-1]]]).to(draft.device),
-                    past_key_values=draft_cache,
-                    use_cache=True,
-                )
-
-        target_cache.seq_len -= (gamma - count)
-        assert target_cache.seq_len == draft_cache.seq_len, f"{target_cache.seq_len} != {draft_cache.seq_len}"
-
 
     time2 = time.time()
     acceptance_rate = accepted_count / draft_count
     avg_tokens = accepted_count / draft_count * gamma
     if verbose:
-        print(f"Use {time2 - time1} sec to generate {n} tokens (now {target_cache.seq_len} tokens), Tokens/s: {n / (time2 - time1)}", flush=True)
-        print(f"accepted rate {acceptance_rate}, avg generated tokens {avg_tokens}")
+        # print(f"Use {time2 - time1} sec to generate {n} tokens (now {target_cache.seq_len} tokens), Tokens/s: {n / (time2 - time1)}", flush=True) 
+        print(f"accepted rate {acceptance_rate}, avg generated tokens {avg_tokens}") 
 
     return acceptance_rate, draft_count 
 
@@ -339,7 +336,8 @@ if __name__ == "__main__":
     datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
     datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
     
-    dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 32, shuffle = False) 
+    # dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 32, shuffle = False) 
+    dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 1, shuffle = False) 
     
     globalacceptancerate = 0 
     globaldraftcount = 0 
@@ -348,13 +346,15 @@ if __name__ == "__main__":
         input_ids = batch["input_ids"].to(torch_device) 
         attention_mask = batch["attention_mask"].to(torch_device) 
         
-        acceptancer, draftcount = Vanilla_Spec_cache(tokenizer, 
+        acceptancer, draftcount = Vanilla_Spec_nokvcache(tokenizer, 
                            large_model, 
                            SimpleCache(large_model, max_budget = 1024), 
                            small_model, 
                            SimpleCache(small_model, max_budget = 1024), 
                            input_ids, 
-                    ) 
+                           gamma = 1, 
+                           max_len = 1, 
+                        ) 
         globalacceptancerate += (acceptancer * draftcount) 
         globaldraftcount += draftcount 
     
