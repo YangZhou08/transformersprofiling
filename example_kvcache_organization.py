@@ -197,7 +197,7 @@ def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len
             verify_probs.append(norm_logits(outputs.logits[:, idx, :], temperature=temperature ,top_k=top_k, top_p=top_p)[0]) 
         # verify_probs.append(norm_logits(outputs.logits[:, -2, :], temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
         
-        print("verify_probs: {}".format(type(verify_probs[0]))) 
+        print("verify_probs: {}".format(verify_probs[0].shape)) 
         for i, speculation_prob, verify_prob in zip(generated_ids, speculation_probs, verify_probs[:-1]):
             r = torch.rand(1, device = draft.device)
 
