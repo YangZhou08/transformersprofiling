@@ -304,7 +304,7 @@ class SimpleCache(Cache):
 
         return key, value 
 
-if __name__ == "main": 
+if __name__ == "__main__": 
     tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
     if tokenizer.pad_token is not None: 
         print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
