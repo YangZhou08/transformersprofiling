@@ -1033,6 +1033,7 @@ trainer = CustomTrainer(
     n = args.kernel_size, 
     # time_hash = hash_of_time, 
     commit_hash = commit_hash 
+    label_adjustment = args.label_adjustment, 
 ) 
 
 today = datetime.date.today() 
