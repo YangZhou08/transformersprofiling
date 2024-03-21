@@ -215,7 +215,9 @@ def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len
 
             else:
                 resample_count += 1
-                n += 1
+                n += 1 
+                print("verify_prob: {}".format(len(verify_prob))) 
+                print("speculative_prob: {}".format(len(speculation_prob))) 
                 pred_token_idx = sample(max_fn(verify_prob-speculation_prob))
                 if verbose:
                     spec_stream(pred_token_idx, tokenizer, 'red')
