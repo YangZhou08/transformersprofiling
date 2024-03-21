@@ -339,7 +339,9 @@ def Vanilla_spec_dectesting(tokenizer, target, model, input_ids, attention_mask,
 
         else:
             resample_count += 1
-            n += 1
+            n += 1 
+            verify_prob = verify_prob.unsqueeze(0) 
+            speculation_prob = speculation_prob.unsqueeze(0) 
             pred_token_idx = sample(max_fn(verify_prob-speculation_prob))
             if verbose:
                 spec_stream(pred_token_idx, tokenizer, 'red')
