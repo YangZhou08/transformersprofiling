@@ -4988,7 +4988,8 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 # if i not in mask_list_pos: 
                     # selected_indices.append(i) 
             for i in range(self.addonmodel_start - 1, seq_length): 
-                if i not in mask_list_pos22: 
+                # if i not in mask_list_pos22: 
+                if i not in mask_list_pos: 
                     selected_indices.append(i) 
             # print(colored("selected_indices {}".format(selected_indices), "red")) 
             # select and shift the logits 
