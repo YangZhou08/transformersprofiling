@@ -293,14 +293,13 @@ def Vanilla_spec_dectesting(tokenizer, target, model, input_ids, attention_mask,
             output_hidden_states = False, 
         ) 
         print("outputs.logits.shape: {}".format(outputs.logits.shape)) 
-        exit(0) 
 
         probs = norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)
         pred_token_idx = sample(probs)
         speculation_probs.append(probs[0])
         
         generated_ids.append(pred_token_idx.item())
-        draft_count += 1
+        draft_count += 1 
 
     # verification
     verify_tokens = torch.cat([input_ids, torch.LongTensor([generated_ids]).to(model.device)], dim = 1) 
@@ -344,6 +343,9 @@ def Vanilla_spec_dectesting(tokenizer, target, model, input_ids, attention_mask,
             if verbose:
                 spec_stream(pred_token_idx, tokenizer, 'red')
             break 
+        
+        print("speculation_probs: {}, verify_probs: {}".format(speculation_prob.shape, verify_prob.shape)) 
+        exit(0) 
 
     if count == len(generated_ids):
         target_sample_count += 1
