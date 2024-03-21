@@ -41,7 +41,7 @@ else:
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 
 def spec_stream(pred_token_idx, tokenizer, color='blue'): 
-    print("pred_token_idx: ", pred_token_idx) 
+    # print("pred_token_idx: ", pred_token_idx) 
     pred_token_idx = pred_token_idx.squeeze(0) 
     decoded_token = tokenizer.decode(
             pred_token_idx,
@@ -49,7 +49,6 @@ def spec_stream(pred_token_idx, tokenizer, color='blue'):
             clean_up_tokenization_spaces=True,
             # spaces_between_special_tokens=False,
         ) 
-    print("decoded token: ", decoded_token) 
 
     decoded_token = decoded_token.replace("<0x0A>", "\n")
 
@@ -288,7 +287,6 @@ def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len
 
     n = 0
     time1 = time.time() 
-    exit(0) 
     
     ############ Spec Decoding ############
     while n < max_len:
