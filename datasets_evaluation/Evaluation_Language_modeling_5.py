@@ -378,7 +378,7 @@ class CustomTrainer(Trainer):
                 original_attention_mask = original_attention_mask2, 
                 labels = label2, 
                 condensed_embed_labels = condensed_embeds_labels, 
-                # label_adjustment = self.label_adjustment, 
+                label_adjustment = self.label_adjustment, 
             ) 
         # Save past state if it exists
         # TODO: this needs to be fixed and made cleaner later.
