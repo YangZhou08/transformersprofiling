@@ -329,7 +329,8 @@ def Vanilla_spec_dectesting(tokenizer, target, model, input_ids, attention_mask,
             n += 1
             pred_token_idx = torch.tensor([[i]]).to(model.device) 
             if verbose:
-                spec_stream(i, tokenizer, 'green')
+                # spec_stream(i, tokenizer, 'green') 
+                spec_stream(pred_token_idx, tokenizer, "green") 
 
             # if eos
             if tokenizer.eos_token_id == i:
