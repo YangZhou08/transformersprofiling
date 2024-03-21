@@ -260,6 +260,7 @@ class CustomTrainer(Trainer):
                  time_hash = None, 
                  model_name = None, 
                  text_eval = None, 
+                 label_adjustment = False, 
                  *args, 
                  **kwargs, 
     ): 
@@ -272,6 +273,7 @@ class CustomTrainer(Trainer):
         self.time_hash = time_hash 
         self.model_name = model_name 
         self.text_eval = text_eval 
+        self.label_adjustment = label_adjustment 
         
         if self.args.resume_from_checkpoint is not None: 
             self.time_checkpoint = int(self.args.resume_from_checkpoint.split("-")[-1]) 
@@ -376,7 +378,7 @@ class CustomTrainer(Trainer):
                 original_attention_mask = original_attention_mask2, 
                 labels = label2, 
                 condensed_embed_labels = condensed_embeds_labels, 
-                label_adjustment = args.label_adjustment, 
+                label_adjustment = self.label_adjustment, 
             ) 
         # Save past state if it exists
         # TODO: this needs to be fixed and made cleaner later.
@@ -611,7 +613,7 @@ class CustomTrainer(Trainer):
             # print(colored("the shape of labels is {}".format(labels.shape), "yellow")) 
             total_loss += loss.item() 
             local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"], step) 
-            if not args.label_adjustment: 
+            if not self.label_adjustment: 
                 total_correct_words += local_metrics["correct_words"] 
                 total_words += local_metrics["total_words"] 
                 sum_of_perplexity += local_metrics["perplexity"] 
