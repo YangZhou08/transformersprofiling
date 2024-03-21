@@ -4657,6 +4657,9 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         if use_cosinesimilarity: 
             self.use_cosinesimilarity = True 
     
+    def resetgenerationcount(self): 
+        self.generate_iteration_count = 0 
+    
     def set_addonsmallmodel_statedict(self, small_state_dict_for_model): 
         new_state_dict = {} 
 
@@ -5193,7 +5196,10 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 hidden_states = hidden_states.to(torch.float32) 
             elif self.small_model_dtype == torch.bfloat16: 
                 hidden_states = hidden_states.to(torch.bfloat16) 
-            selected_seq_indices = [i * self.sliding_window_length for i in range(0, (seq_len - 1) // self.sliding_window_length + 1)] # adding the last one to get future tokens 
+            if self.sliding_window_length != 1: 
+                selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length + 1)]  # adding the last one to get future tokens 
+            else: 
+                selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
             print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
             hidden_states = hidden_states[:, selected_seq_indices, :] 
             hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 

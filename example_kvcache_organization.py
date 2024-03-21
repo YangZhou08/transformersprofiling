@@ -251,6 +251,118 @@ def Vanilla_Spec_cache(tokenizer, target, target_cache, draft, draft_cache, inpu
     return acceptance_rate 
 
 @torch.inference_mode()
+def Vanilla_spec_dectesting(tokenizer, target, model, input_ids, gamma=4, max_len=256, top_k=-1, top_p=0.9, temperature=0.6, verbose=False, file_path=None): 
+    # reset cache 
+    '''
+    ############ Iterative Pre-fill ############
+    iter_prefill = math.ceil(input_ids.shape[1] / 100)
+    for i in (range(iter_prefill)):
+        outputs = target(
+            input_ids=input_ids[:, i*100:(i+1)*100],
+            past_key_values=target_cache,
+            use_cache=True,
+        )
+
+        outputs_draft = draft(
+            input_ids=input_ids[:, i*100:(i+1)*100],
+            past_key_values=draft_cache,
+            use_cache=True,
+        )
+    ''' 
+    resample_count = 0
+    accepted_count = 0
+    target_sample_count = 0
+    draft_count = 0
+
+    n = 0
+    time1 = time.time()
+    
+    ############ Spec Decoding ############ 
+
+    speculation_probs = []
+    generated_ids = []
+
+    for _ in range(gamma): 
+        model_inputs = model.prepare_inputs_for_generation(input_ids, past_key_values = None, input_embeds = None) 
+        print("model_inputs[large_input_ids]: {}".format(model_inputs["large_input_ids"].shape)) 
+        print("model_inputs[attention_mask]: {}".format(model_inputs["attention_mask"].shape)) 
+        outputs = model.forward_generate(
+            **model_inputs, 
+            return_dict = True, 
+            output_attentions = False, 
+            output_hidden_states = False, 
+        ) 
+        print("outputs.logits.shape: {}".format(outputs.logits.shape)) 
+        exit(0) 
+
+        probs = norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)
+        pred_token_idx = sample(probs)
+        speculation_probs.append(probs[0])
+        
+        generated_ids.append(pred_token_idx.item())
+        draft_count += 1
+
+    # verification
+    verify_tokens = torch.cat([input_ids, torch.LongTensor([generated_ids]).to(model.device)], dim = 1) 
+    large_model_start_verifying_index = input_ids.shape[1] - 1 
+
+    with torch.no_grad():
+        outputs = target(
+            input_ids=verify_tokens,
+            past_key_values = None, 
+            use_cache = False, 
+        ) 
+
+    count = 0
+    verify_probs = []
+
+    for i in range(gamma + 1):
+        # assert outputs.logits.shape[1] == gamma + 1 
+        idx = i + large_model_start_verifying_index 
+        verify_probs.append(norm_logits(outputs.logits[:, idx, :], temperature=temperature ,top_k=top_k, top_p=top_p)[0]) 
+
+    for i, speculation_prob, verify_prob in zip(generated_ids, speculation_probs, verify_probs[:-1]):
+        r = torch.rand(1, device = model.device) 
+
+        if r < torch.min(torch.tensor([1], device=r.device), (verify_prob[i] / speculation_prob[i])):
+            count += 1
+            accepted_count += 1
+            n += 1
+            pred_token_idx = torch.tensor([[i]]).to(model.device) 
+            if verbose:
+                spec_stream(i, tokenizer, 'green')
+
+            # if eos
+            if tokenizer.eos_token_id == i:
+                draft_count -= gamma - count
+                break
+
+        else:
+            resample_count += 1
+            n += 1
+            pred_token_idx = sample(max_fn(verify_prob-speculation_prob))
+            if verbose:
+                spec_stream(pred_token_idx, tokenizer, 'red')
+            break 
+
+    if count == len(generated_ids):
+        target_sample_count += 1
+        n += 1
+        pred_token_idx = sample(verify_probs[-1])
+        if verbose:
+            spec_stream(pred_token_idx, tokenizer, 'blue') 
+
+
+    time2 = time.time()
+    acceptance_rate = accepted_count / draft_count
+    avg_tokens = accepted_count / draft_count * gamma
+    if verbose:
+        # print(f"Use {time2 - time1} sec to generate {n} tokens (now {target_cache.seq_len} tokens), Tokens/s: {n / (time2 - time1)}", flush=True) 
+        print(f"accepted rate {acceptance_rate}, avg generated tokens {avg_tokens}")
+
+    return acceptance_rate 
+
+@torch.inference_mode()
 def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len=256, top_k=-1, top_p=0.9, temperature=0.6, verbose=False, file_path=None, attention_mask = None): 
     '''
     ############ Iterative Pre-fill ############
@@ -470,12 +582,27 @@ if __name__ == "__main__":
     tokenizer.padding_side = "left" 
     
     # large model 
-    large_model = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    target_largemodel = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    large_model = LlamaWeirdLargeTest.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device) 
+    large_model.addonsmallmodel.set_criticalpath(hostname = hostname) 
+    large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True) 
+    large_model.to(torch.bfloat16).to(torch_device) 
+    large_model.set_inference_setting(args.experiment_setting) 
+    large_model.set_walpha(0.5) 
+    large_model.set_slidingwindowlength(sliding_window_length = args.kernel_size, addonmodel_start = args.kernel_size + 1) 
+    large_model.set_tokenizer_bos_id(bos_id = tokenizer.bos_token_id, pad_id = tokenizer.pad_token_id) 
+    large_model.set_cosinesimilarity(False) 
+    
+    large_model.config.pad_token_id = tokenizer.pad_token_id 
+    large_model.addonsmallmodel.config.pad_token_id = tokenizer.pad_token_id 
+    # small_model.config.pad_token_id = tokenizer.pad_token_id 
+    large_model.model.eval() 
+    large_model.addonsmallmodel.eval() 
     
     # small model 
-    # small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
-    small_model = LlamaForCausalLM.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device) 
+    small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    # small_model = LlamaForCausalLM.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device) 
     
     dfiles = [] 
     filename = "c4_file1.json" 
@@ -506,7 +633,8 @@ if __name__ == "__main__":
     for batch in tqdm(dataloader): 
         input_ids = batch["input_ids"].to(torch_device) 
         attention_mask = batch["attention_mask"].to(torch_device) 
-        
+        large_model.resetgenerationcount() 
+        '''
         acceptancer, draftcount = Vanilla_Spec_nokvcache(tokenizer, 
                             large_model, 
                             small_model, 
@@ -515,6 +643,17 @@ if __name__ == "__main__":
                             max_len = 1, 
                             verbose = True, 
                             ) 
+        ''' 
+        acceptancer, draftcount = Vanilla_spec_dectesting(tokenizer, 
+                            target_largemodel, 
+                            large_model, 
+                            input_ids, 
+                            gamma = 1, 
+                            max_len = 1, 
+                            verbose = True, 
+                            ) 
+                            
+                            
         globalacceptancerate += (acceptancer * draftcount) 
         globaldraftcount += draftcount 
     
