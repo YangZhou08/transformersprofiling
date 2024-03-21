@@ -311,10 +311,12 @@ def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len
 
             probs = norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)
             pred_token_idx = sample(probs)
-            speculation_probs.append(probs[0])
+            speculation_probs.append(probs[0]) 
+            print("pred_token_idx: {} speculation_probs: {}".format(pred_token_idx, speculation_probs[0].shape)) 
             
             generated_ids.append(pred_token_idx.item())
-            draft_count += 1
+            draft_count += 1 
+        exit(0) 
 
         # verification
         # verify_tokens = torch.cat([next_token, torch.LongTensor([generated_ids]).to(draft.device)], dim=1) 
