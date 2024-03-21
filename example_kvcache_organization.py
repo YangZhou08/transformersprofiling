@@ -284,6 +284,7 @@ def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len
         print("\n") 
         spec_stream(input_ids, tokenizer, "black") 
         spec_stream(next_token[0], tokenizer, 'cyan') 
+    print("input_ids shape: {}".format(input_ids.shape)) 
 
     n = 0
     time1 = time.time() 
@@ -323,6 +324,7 @@ def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len
         large_model_start_verifying_index = pred_token_idx.shape[1] - 1 
         print("verify_tokens: {}".format(verify_tokens.shape[1])) 
         print("large_model_start_verifying_index: {}".format(large_model_start_verifying_index)) 
+        exit(0) 
 
         with torch.no_grad():
             outputs = target(
