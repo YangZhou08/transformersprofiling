@@ -283,7 +283,7 @@ def Vanilla_spec_dectesting(tokenizer, target, model, input_ids, attention_mask,
     generated_ids = []
 
     for _ in range(gamma): 
-        model_inputs = model.prepare_inputs_for_generation(input_ids, past_key_values = None, input_embeds = None) 
+        model_inputs = model.prepare_inputs_for_generation(input_ids, past_key_values = None, input_embeds = None, attention_mask = attention_mask) 
         print("model_inputs[large_input_ids]: {}".format(model_inputs["large_input_ids"].shape)) 
         print("model_inputs[attention_mask]: {}".format(model_inputs["attention_mask"].shape)) 
         outputs = model.forward_generate(
