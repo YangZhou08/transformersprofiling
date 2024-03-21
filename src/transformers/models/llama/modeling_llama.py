@@ -7290,6 +7290,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             position_ids = torch.tensor(position_list, dtype = torch.long, device = device) 
             position_ids = position_ids.unsqueeze(0) 
             
+            print("position ids found is {}".format(position_ids.shape)) 
             print("position ids found is {}".format(position_ids)) 
         
         # the important part 
