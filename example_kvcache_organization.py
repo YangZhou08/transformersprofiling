@@ -194,7 +194,7 @@ def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len
         for i in range(gamma + 1): 
             # assert outputs.logits.shape[1] == gamma + 1 
             idx = i + large_model_start_verifying_index 
-            verify_probs.append(norm_logits(outputs[:, idx, :], temperature=temperature ,top_k=top_k, top_p=top_p)[0]) 
+            verify_probs.append(norm_logits(outputs.logits[:, idx, :], temperature=temperature ,top_k=top_k, top_p=top_p)[0]) 
         # verify_probs.append(norm_logits(outputs.logits[:, -2, :], temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
 
         for i, speculation_prob, verify_prob in zip(generated_ids, speculation_probs, verify_probs[:-1]):
