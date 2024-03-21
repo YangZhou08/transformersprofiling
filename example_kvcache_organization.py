@@ -353,8 +353,8 @@ def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len
             else:
                 resample_count += 1
                 n += 1 
-                print("verify_prob: {}".format(verify_prob.shape)) 
-                print("speculative_prob: {}".format(speculation_prob.shape)) 
+                # print("verify_prob: {}".format(verify_prob.shape)) 
+                # print("speculative_prob: {}".format(speculation_prob.shape)) 
                 verify_prob = verify_prob.unsqueeze(0) 
                 speculation_prob = speculation_prob.unsqueeze(0) 
                 pred_token_idx = sample(max_fn(verify_prob-speculation_prob)) 
@@ -493,7 +493,8 @@ if __name__ == "__main__":
                             input_ids, 
                             gamma = 1, 
                             max_len = 1, 
-                           ) 
+                            verbose = True, 
+                            ) 
         globalacceptancerate += (acceptancer * draftcount) 
         globaldraftcount += draftcount 
     
