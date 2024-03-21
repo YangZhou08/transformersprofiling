@@ -108,8 +108,8 @@ def sample(probs : torch.Tensor, num_samples: int = 1, random_seed = None):
     if random_seed:
         torch.manual_seed(random_seed)
     idx_next = torch.multinomial(probs, num_samples=num_samples)
-    if (idx_next.item() == 0):
-        raise RuntimeError
+    # if (idx_next.item() == 0):
+        # raise RuntimeError 
     return idx_next 
 
 @torch.inference_mode()
