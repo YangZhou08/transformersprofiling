@@ -15,6 +15,7 @@ from transformers.models.llama.modeling_llama import LlamaWeirdLargeTest
 
 import socket 
 from tqdm import tqdm 
+import argparse 
 
 hostname = socket.gethostname() 
 print("Hostname:", hostname) 
@@ -455,6 +456,11 @@ class SimpleCache(Cache):
         return key, value 
 
 if __name__ == "__main__": 
+    parser = argparse.ArgumentParser(description = "Speculative Acceptance Rate") 
+    parser.add_argument("--loading_from_checkpoint", type = str, default = None) 
+    
+    args = parser.parse_args() 
+    
     tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
     if tokenizer.pad_token is not None: 
         print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
@@ -468,7 +474,8 @@ if __name__ == "__main__":
     # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     
     # small model 
-    small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    # small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    small_model = LlamaForCausalLM.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device) 
     
     dfiles = [] 
     filename = "c4_file1.json" 
