@@ -292,7 +292,7 @@ def Vanilla_spec_dectesting(tokenizer, target, model, input_ids, attention_mask,
             output_attentions = False, 
             output_hidden_states = False, 
         ) 
-        print("outputs.logits.shape: {}".format(outputs.logits.shape)) 
+        # print("outputs.logits.shape: {}".format(outputs.logits.shape)) 
 
         probs = norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)
         pred_token_idx = sample(probs)
@@ -345,8 +345,7 @@ def Vanilla_spec_dectesting(tokenizer, target, model, input_ids, attention_mask,
                 spec_stream(pred_token_idx, tokenizer, 'red')
             break 
         
-        print("speculation_probs: {}, verify_probs: {}".format(speculation_prob.shape, verify_prob.shape)) 
-        exit(0) 
+        # print("speculation_probs: {}, verify_probs: {}".format(speculation_prob.shape, verify_prob.shape)) 
 
     if count == len(generated_ids):
         target_sample_count += 1
