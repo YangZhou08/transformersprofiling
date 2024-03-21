@@ -284,7 +284,7 @@ def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len
         print("\n") 
         spec_stream(input_ids, tokenizer, "black") 
         spec_stream(next_token[0], tokenizer, 'cyan') 
-    print("input_ids shape: {}".format(input_ids.shape)) 
+    # print("input_ids shape: {}".format(input_ids.shape)) 
 
     n = 0
     time1 = time.time() 
@@ -296,7 +296,7 @@ def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len
         
         pred_token_idx = next_token 
         small_model_input_full_context = torch.cat([input_ids, next_token], dim = 1).to(draft.device) 
-        print("pred_token_idx: {}".format(pred_token_idx.shape)) 
+        # print("pred_token_idx: {}".format(pred_token_idx.shape)) 
 
         speculation_probs = []
         generated_ids = []
@@ -314,7 +314,7 @@ def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len
             probs = norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)
             pred_token_idx = sample(probs)
             speculation_probs.append(probs[0]) 
-            print("pred_token_idx: {} speculation_probs: {}".format(pred_token_idx, speculation_probs[0].shape)) 
+            # print("pred_token_idx: {} speculation_probs: {}".format(pred_token_idx, speculation_probs[0].shape)) 
             
             generated_ids.append(pred_token_idx.item())
             draft_count += 1 
@@ -324,8 +324,8 @@ def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len
         # verify_tokens = torch.cat([pred_token_idx, torch.LongTensor([generated_ids]).to(draft.device)], dim = 1) 
         verify_tokens = torch.cat([small_model_input_full_context, torch.LongTensor([generated_ids]).to(draft.device)], dim = 1) 
         large_model_start_verifying_index = small_model_input_full_context.shape[1] - 1 
-        print("verify_tokens: {}".format(verify_tokens.shape[1])) 
-        print("large_model_start_verifying_index: {}".format(large_model_start_verifying_index)) 
+        # print("verify_tokens: {}".format(verify_tokens.shape[1])) 
+        # print("large_model_start_verifying_index: {}".format(large_model_start_verifying_index)) 
 
         with torch.no_grad():
             outputs = target(
@@ -342,9 +342,9 @@ def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len
             idx = i + large_model_start_verifying_index 
             verify_probs.append(norm_logits(outputs.logits[:, idx, :], temperature=temperature ,top_k=top_k, top_p=top_p)[0]) 
         # verify_probs.append(norm_logits(outputs.logits[:, -2, :], temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
-        print("length of speculation_probs: {} length of verify_probs: {}".format(len(speculation_probs), len(verify_probs))) 
+        # print("length of speculation_probs: {} length of verify_probs: {}".format(len(speculation_probs), len(verify_probs))) 
         
-        print("verify_probs: {}".format(verify_probs[0].shape)) 
+        # print("verify_probs: {}".format(verify_probs[0].shape)) 
         for i, speculation_prob, verify_prob in zip(generated_ids, speculation_probs, verify_probs[:-1]):
             r = torch.rand(1, device = draft.device)
 
