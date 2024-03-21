@@ -296,6 +296,7 @@ def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len
         
         pred_token_idx = next_token 
         pred_token_idx = torch.cat([input_ids, pred_token_idx], dim = 1) 
+        print("pred_token_idx: {}".format(pred_token_idx.shape)) 
 
         speculation_probs = []
         generated_ids = []
