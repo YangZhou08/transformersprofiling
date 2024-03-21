@@ -4,6 +4,41 @@ import torch
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union 
 import torch.functional as F 
 from termcolor import colored 
+from datasets import load_dataset 
+
+from transformers import LlamaTokenizer 
+from transformers import LlamaConfig, LlamaPreTrainedModel 
+from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM 
+
+from transformers.models.llama.modeling_llama import LlamaForCausalLM 
+from transformers.models.llama.modeling_llama import LlamaWeirdLargeTest 
+
+import socket 
+
+hostname = socket.gethostname() 
+print("Hostname:", hostname) 
+
+if "lovelace" in hostname: 
+    # cache_dir = "/home/bc20/yang/transformersprofiling" 
+    dir_models = "/home/yangzho6/model_checkpoints/" 
+    dir_c4llmsynthesized = "/home/yangzho6/c4llm_synthesized/" 
+    # dir_c4llmsynthesized = "/home/beidic/yangzho6/c4llm_synthesized/" 
+    dir_c4 = "/home/yangzho6/c4_parts/downloads/" 
+    # dir_sdata = "/home/yangzho6/slimpajama/SlimPajama-627B/test/chunk1/" 
+elif "ada" in hostname: 
+    # cache_dir = "/home/bc20/yang/transformersprofiling" 
+    dir_models = "/home/beidic/yangzho6/model_checkpoints/" 
+    dir_c4llmsynthesized = "/home/beidic/yangzho6/c4llm_synthesized/" 
+else: 
+    # cache_dir = "/home/bc20/yang/transformersprofiling" 
+    # dir_models = "/home/yangzho6/model_checkpoints/" 
+    dir_models = "/fsx-storygen/beidic/yang/model_checkpoints/" 
+    # dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+    # dir_sdata = "/fsx-storygen/beidic/yang/c4llm_synthesized/" 
+    dir_c4llmsynthesized = "/fsx-storygen/beidic/yang/c4llm_synthesized/" 
+    dir_c4 = "/fsx-storygen/beidic/yang/c4_parts/downloads/" 
+
+torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 
 def spec_stream(pred_token_idx, tokenizer, color='blue'):
     decoded_token = tokenizer.decode(
@@ -209,7 +244,7 @@ def Vanilla_Spec_cache(tokenizer, target, target_cache, draft, draft_cache, inpu
         print(f"Use {time2 - time1} sec to generate {n} tokens (now {target_cache.seq_len} tokens), Tokens/s: {n / (time2 - time1)}", flush=True)
         print(f"accepted rate {acceptance_rate}, avg generated tokens {avg_tokens}")
 
-    return acceptance_rate 
+    return acceptance_rate, draft_count 
 
 class Cache: 
     pass 
@@ -267,4 +302,60 @@ class SimpleCache(Cache):
         if layer_idx == self.layers-1:
             self.seq_len += key_states.shape[-2]
 
-        return key, value
+        return key, value 
+
+if __name__ == "main": 
+    tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+    if tokenizer.pad_token is not None: 
+        print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
+    else: 
+        tokenizer.pad_token = tokenizer.eos_token 
+        print("We now use eos_token as pad token") 
+    tokenizer.padding_side = "left" 
+    
+    # large model 
+    large_model = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    
+    # small model 
+    small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    
+    dfiles = [] 
+    filename = "c4_file1.json" 
+    dfiles.append(dir_c4 + filename) 
+    datasetnew = load_dataset("json", data_files = dfiles, split = "train[:128]") 
+    
+    def encode_with_truncation(examples): 
+        # tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
+        #                  return_attention_mask = True, return_tensors = "pt", truncation = True, 
+        #                  add_special_tokens = True) 
+        tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 260, 
+                                return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                                add_special_tokens = True) 
+        newdictionary = {} 
+        newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
+        newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
+        return newdictionary 
+    
+    datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
+    datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
+    
+    dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 32, shuffle = False) 
+    
+    globalacceptancerate = 0 
+    globaldraftcount = 0 
+    
+    for batch in dataloader: 
+        input_ids = batch["input_ids"].to(torch_device) 
+        attention_mask = batch["attention_mask"].to(torch_device) 
+        
+        acceptancer, draftcount = Vanilla_Spec_cache(tokenizer, 
+                           large_model, 
+                           SimpleCache(large_model, max_budget = 1024), 
+                           small_model, 
+                           SimpleCache(small_model, max_budget = 1024), 
+                           input_ids, 
+                    ) 
+        globalacceptancerate += (acceptancer * draftcount) 
+        globaldraftcount += draftcount 
+    
+    print("global acceptance rate: ", globalacceptancerate / globaldraftcount) 
