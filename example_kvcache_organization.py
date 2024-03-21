@@ -373,7 +373,6 @@ def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len
                     spec_stream(pred_token_idx, tokenizer, 'red')
                 break
         
-        exit(0) 
         # if eos
         if tokenizer.eos_token_id == pred_token_idx:
             break
