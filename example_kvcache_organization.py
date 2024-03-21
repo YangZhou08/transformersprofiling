@@ -251,7 +251,7 @@ def Vanilla_Spec_cache(tokenizer, target, target_cache, draft, draft_cache, inpu
     return acceptance_rate 
 
 @torch.inference_mode()
-def Vanilla_spec_dectesting(tokenizer, target, model, input_ids, gamma=4, max_len=256, top_k=-1, top_p=0.9, temperature=0.6, verbose=False, file_path=None): 
+def Vanilla_spec_dectesting(tokenizer, target, model, input_ids, attention_mask, gamma=4, max_len=256, top_k=-1, top_p=0.9, temperature=0.6, verbose=False, file_path=None): 
     # reset cache 
     '''
     ############ Iterative Pre-fill ############
@@ -650,11 +650,11 @@ if __name__ == "__main__":
                             target_largemodel, 
                             large_model, 
                             input_ids, 
+                            attention_mask, 
                             gamma = 1, 
                             max_len = 1, 
                             verbose = True, 
                             ) 
-                            
                             
         globalacceptancerate += (acceptancer * draftcount) 
         globaldraftcount += draftcount 
