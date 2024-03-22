@@ -7241,7 +7241,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 assert (input_ids.shape[1] - start_idx)//self.sliding_window_length == condensed_embeds.shape[1] # number of condensed tokens should have desired mapping with sequence length 
             else: 
                 print("start_idx: {}".format(start_idx)) 
-                print(((input_ids.shape[1] - start_idx)//self.sliding_window_length) + 1) 
+                print(math.ceil((input_ids.shape[1] - start_idx)/self.sliding_window_length)) 
                 print(condensed_embeds.shape[1]) 
                 # assert ((input_ids.shape[1] - start_idx)//self.sliding_window_length) + 1 == condensed_embeds.shape[1] 
                 assert math.ceil((input_ids.shape[1] - start_idx)/self.sliding_window_length) == condensed_embeds.shape[1] 
