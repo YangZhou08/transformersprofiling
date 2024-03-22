@@ -5200,9 +5200,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             elif self.small_model_dtype == torch.bfloat16: 
                 hidden_states = hidden_states.to(torch.bfloat16) 
             if self.sliding_window_length != 1: 
-                # selected_seq_indices = [i * self.sliding_window_length for i in range(0, math.ceil(seq_len / self.sliding_window_length))]  # adding the last one to get future tokens 
-                selected_seq_indices = [i * self.sliding_window_length for i in range(0, math.ceil(seq_len / self.sliding_window_length) + 1)] 
-                print("selected_seq_indices {}".format(selected_seq_indices)) 
+                selected_seq_indices = [i * self.sliding_window_length for i in range(0, math.ceil(seq_len / self.sliding_window_length))]  # adding the last one to get future tokens 
             else: 
                 selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
             print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
