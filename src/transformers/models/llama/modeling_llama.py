@@ -7245,7 +7245,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 print(math.ceil((input_ids.shape[1] - (start_idx - 1))/self.sliding_window_length)) 
                 print(condensed_embeds.shape[1]) 
                 # assert ((input_ids.shape[1] - start_idx)//self.sliding_window_length) + 1 == condensed_embeds.shape[1] 
-                assert math.ceil((input_ids.shape[1] - (start_idx - 1))/self.sliding_window_length) == condensed_embeds.shape[1] 
+                # assert math.ceil((input_ids.shape[1] - (start_idx - 1))/self.sliding_window_length) == condensed_embeds.shape[1] 
+                assert math.ceil((input_ids.shape[1] - start_idx)/self.sliding_window_length) == condensed_embeds.shape[1] 
 
             if self.condensed_fashion == "ground_truth": 
                 with torch.no_grad(): 
