@@ -4930,7 +4930,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             print("using autoregressive_baseline") 
             hidden_states = hidden_states[:, selected_seq_indices, :] 
             print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
-            removelast = (hidden_states.shape[1] % self.sliding_window_length == 0) 
+            removelast = (seq_len % self.sliding_window_length == 0) 
             if removelast: 
                 hidden_states = hidden_states[:, :-1, :] 
         else: 
