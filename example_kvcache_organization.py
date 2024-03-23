@@ -570,6 +570,34 @@ class SimpleCache(Cache):
             self.seq_len += key_states.shape[-2]
 
         return key, value 
+    
+def get_dataset(datasetname = None, tokenizer = None, max_length = None): 
+    
+    def encode_with_truncation(examples): 
+        # tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
+        #                  return_attention_mask = True, return_tensors = "pt", truncation = True, 
+        #                  add_special_tokens = True) 
+        tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = max_length, 
+                                return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                                add_special_tokens = True) 
+        newdictionary = {} 
+        newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
+        newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
+        return newdictionary 
+    
+    if datasetname == "c4": 
+        dfiles = [] 
+        filename = "c4_file1.json" 
+        dfiles.append(dir_c4 + filename) 
+        datasetnew = load_dataset("json", data_files = dfiles, split = "train[:1000]") 
+        
+        datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
+        datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
+    else: 
+        # TODO: loading another dataset 
+        raise NotImplementedError
+    
+    return datasetnew 
 
 if __name__ == "__main__": 
     parser = argparse.ArgumentParser(description = "Speculative Acceptance Rate") 
@@ -610,57 +638,47 @@ if __name__ == "__main__":
     small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     # small_model = LlamaForCausalLM.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device) 
     
-    dfiles = [] 
-    filename = "c4_file1.json" 
-    dfiles.append(dir_c4 + filename) 
-    datasetnew = load_dataset("json", data_files = dfiles, split = "train[:1000]") 
+    acceptanceratelist = [] 
     
-    def encode_with_truncation(examples): 
-        # tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
-        #                  return_attention_mask = True, return_tensors = "pt", truncation = True, 
-        #                  add_special_tokens = True) 
-        tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 64, 
-                                return_attention_mask = True, return_tensors = "pt", truncation = True, 
-                                add_special_tokens = True) 
-        newdictionary = {} 
-        newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
-        newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
-        return newdictionary 
+    for i in range(args.kernel_size): # we need a forloop 
+        datasetnew = get_dataset(datasetname = "c4", tokenizer = tokenizer, max_length = 64 + i) # i 0 means the first position, i 1 means the second position, etc. 
+        
+        # dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 32, shuffle = False) 
+        dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 1, shuffle = False) 
+        
+        globalacceptancerate = 0 
+        globaldraftcount = 0 
+        
+        for batch in tqdm(dataloader): 
+            input_ids = batch["input_ids"].to(torch_device) 
+            attention_mask = batch["attention_mask"].to(torch_device) 
+            large_model.resetgenerationcount() 
+            '''
+            acceptancer, draftcount = Vanilla_Spec_nokvcache(tokenizer, 
+                                large_model, 
+                                small_model, 
+                                input_ids, 
+                                gamma = 1, 
+                                max_len = 1, 
+                                verbose = True, 
+                                ) 
+            ''' 
+            acceptancer, draftcount = Vanilla_spec_dectesting(tokenizer, 
+                                target_largemodel, 
+                                large_model, 
+                                input_ids, 
+                                attention_mask, 
+                                gamma = 1, 
+                                max_len = 1, 
+                                verbose = True, 
+                                ) 
+                                
+            globalacceptancerate += (acceptancer * draftcount) 
+            globaldraftcount += draftcount 
+        
+        # print("global acceptance rate: ", globalacceptancerate / globaldraftcount) 
+        print("position {} acceptancerate: {}".format(i + 1, globalacceptancerate / globaldraftcount)) 
+        acceptanceratelist.append(globalacceptancerate / globaldraftcount) 
     
-    datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
-    datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
-    
-    # dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 32, shuffle = False) 
-    dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 1, shuffle = False) 
-    
-    globalacceptancerate = 0 
-    globaldraftcount = 0 
-    
-    for batch in tqdm(dataloader): 
-        input_ids = batch["input_ids"].to(torch_device) 
-        attention_mask = batch["attention_mask"].to(torch_device) 
-        large_model.resetgenerationcount() 
-        '''
-        acceptancer, draftcount = Vanilla_Spec_nokvcache(tokenizer, 
-                            large_model, 
-                            small_model, 
-                            input_ids, 
-                            gamma = 1, 
-                            max_len = 1, 
-                            verbose = True, 
-                            ) 
-        ''' 
-        acceptancer, draftcount = Vanilla_spec_dectesting(tokenizer, 
-                            target_largemodel, 
-                            large_model, 
-                            input_ids, 
-                            attention_mask, 
-                            gamma = 1, 
-                            max_len = 1, 
-                            verbose = True, 
-                            ) 
-                            
-        globalacceptancerate += (acceptancer * draftcount) 
-        globaldraftcount += draftcount 
-    
-    print("global acceptance rate: ", globalacceptancerate / globaldraftcount) 
+    for i in range(args.kernel_size): 
+        print("position {} acceptance rate: {}".format(i + 1, acceptanceratelist[i])) 

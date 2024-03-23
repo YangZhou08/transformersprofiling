@@ -4618,6 +4618,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         # self.small_model_dtype = self.addonsmallmodel.embed_projection.weight.dtype 
         self.small_model_dtype = torch.bfloat16 
         print(colored("small_model_dtype {}".format(self.small_model_dtype), "red")) 
+        
         self.use_mse_loss = use_mse_loss 
         self.alpha = 0.5 
 
