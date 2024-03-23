@@ -585,6 +585,18 @@ def get_dataset(datasetname = None, tokenizer = None, max_length = None):
         newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
         return newdictionary 
     
+    def encode_with_truncationspecialized(examples): 
+        tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = max_length, 
+                                  eturn_attention_mask = True, return_tensors = "pt", truncation = True, 
+                                  add_special_tokens = True) 
+        # tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 260, 
+        #                          return_attention_mask = True, return_tensors = "pt", truncation = True, 
+        #                          add_special_tokens = True) 
+        newdictionary = {} 
+        newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
+        newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
+        return newdictionary 
+    
     if datasetname == "c4": 
         dfiles = [] 
         filename = "c4_file1.json" 
@@ -593,9 +605,13 @@ def get_dataset(datasetname = None, tokenizer = None, max_length = None):
         
         datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
         datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
-    else: 
+    elif datasetname == "pg19": 
         # TODO: loading another dataset 
-        raise NotImplementedError
+        # datasetnew = load_dataset('emozilla/pg19', split = "train[:10000]") 
+        datasetnew = load_dataset('emozilla/pg19', split = "train[:1000]") 
+        
+        datasetnew = datasetnew.map(encode_with_truncationspecialized, num_proc = 8) 
+        datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
     
     return datasetnew 
 
@@ -604,6 +620,8 @@ if __name__ == "__main__":
     parser.add_argument("--loading_from_checkpoint", type = str, default = None) 
     parser.add_argument("--experiment_setting", type = str, default = None) 
     parser.add_argument("--kernel_size", type = int, default = None) 
+    parser.add_argument("--dataset_name", type = str, default = None) 
+    parser.add_argument("--use_small_draft", action = "store_true") 
     
     args = parser.parse_args() 
     
@@ -642,8 +660,10 @@ if __name__ == "__main__":
     
     acceptanceratelist = [] 
     
-    for i in range(args.kernel_size): # we need a forloop 
-        datasetnew = get_dataset(datasetname = "c4", tokenizer = tokenizer, max_length = max_length_table[args.kernel_size] + i) # i 0 means the first position, i 1 means the second position, etc. 
+    iterationscounts = args.kernel_size if not args.use_small_draft else 1 
+    
+    for i in range(iterationscounts): # we need a forloop 
+        datasetnew = get_dataset(datasetname = args.dataset_name, tokenizer = tokenizer, max_length = max_length_table[args.kernel_size] + i) # i 0 means the first position, i 1 means the second position, etc. 
         
         # dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 32, shuffle = False) 
         dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 1, shuffle = False) 
@@ -682,5 +702,5 @@ if __name__ == "__main__":
         print("position {} acceptancerate: {}".format(i + 1, globalacceptancerate / globaldraftcount)) 
         acceptanceratelist.append(globalacceptancerate / globaldraftcount) 
     
-    for i in range(args.kernel_size): 
+    for i in range(iterationscounts): 
         print("position {} acceptance rate: {}".format(i + 1, acceptanceratelist[i])) 
