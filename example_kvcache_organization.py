@@ -607,6 +607,8 @@ if __name__ == "__main__":
     
     args = parser.parse_args() 
     
+    max_length_table = {1 : 64, 2 : 63, 3 : 64, 4 : 65, 5 : 66, 6: 67, 7 : 64, 10 : 71} # the pattern is as follows: the first position is corresponding to the sequence_length that mod kernel_size by 1, for example, 63 % 2 = 1, etc. 
+    
     tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
     if tokenizer.pad_token is not None: 
         print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
@@ -641,7 +643,7 @@ if __name__ == "__main__":
     acceptanceratelist = [] 
     
     for i in range(args.kernel_size): # we need a forloop 
-        datasetnew = get_dataset(datasetname = "c4", tokenizer = tokenizer, max_length = 64 + i) # i 0 means the first position, i 1 means the second position, etc. 
+        datasetnew = get_dataset(datasetname = "c4", tokenizer = tokenizer, max_length = max_length_table[args.kernel_size] + i) # i 0 means the first position, i 1 means the second position, etc. 
         
         # dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 32, shuffle = False) 
         dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 1, shuffle = False) 
