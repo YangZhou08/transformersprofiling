@@ -4940,6 +4940,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 hidden_states = hidden_states[:, :-1, :] 
                 # hidden_states = hidden_states[:, :-2, :] 
         hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
+        print("hidden_states shape {}".format(hidden_states.shape)) 
         # hidden_states = hidden_states[:, 2 :, :] # works with 1 as the start of the sampling index 
         # hidden_states = hidden_states[:, 3:, :] 
         # print("some hidden states numbers: ", hidden_states.reshape(-1)[: 100]) 
