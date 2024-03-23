@@ -638,25 +638,29 @@ if __name__ == "__main__":
     # large model 
     target_largemodel = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
-    large_model = LlamaWeirdLargeTest.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device) 
-    large_model.addonsmallmodel.set_criticalpath(hostname = hostname) 
-    large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True) 
-    large_model.to(torch.bfloat16).to(torch_device) 
-    large_model.set_inference_setting(args.experiment_setting) 
-    large_model.set_walpha(0.5) 
-    large_model.set_slidingwindowlength(sliding_window_length = args.kernel_size, addonmodel_start = args.kernel_size + 1) 
-    large_model.set_tokenizer_bos_id(bos_id = tokenizer.bos_token_id, pad_id = tokenizer.pad_token_id) 
-    large_model.set_cosinesimilarity(False) 
+    if not args.use_small_draft: 
+        large_model = LlamaWeirdLargeTest.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device) 
+        large_model.addonsmallmodel.set_criticalpath(hostname = hostname) 
+        large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True) 
+        large_model.to(torch.bfloat16).to(torch_device) 
+        large_model.set_inference_setting(args.experiment_setting) 
+        large_model.set_walpha(0.5) 
+        large_model.set_slidingwindowlength(sliding_window_length = args.kernel_size, addonmodel_start = args.kernel_size + 1) 
+        large_model.set_tokenizer_bos_id(bos_id = tokenizer.bos_token_id, pad_id = tokenizer.pad_token_id) 
+        large_model.set_cosinesimilarity(False) 
+        
+        large_model.config.pad_token_id = tokenizer.pad_token_id 
+        large_model.addonsmallmodel.config.pad_token_id = tokenizer.pad_token_id 
+        # small_model.config.pad_token_id = tokenizer.pad_token_id 
+        large_model.model.eval() 
+        large_model.addonsmallmodel.eval() 
     
-    large_model.config.pad_token_id = tokenizer.pad_token_id 
-    large_model.addonsmallmodel.config.pad_token_id = tokenizer.pad_token_id 
-    # small_model.config.pad_token_id = tokenizer.pad_token_id 
-    large_model.model.eval() 
-    large_model.addonsmallmodel.eval() 
-    
+    small_model = None 
     # small model 
-    small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
-    # small_model = LlamaForCausalLM.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device) 
+    if args.use_small_draft and args.loading_from_checkpoint is not None: 
+        small_model = LlamaForCausalLM.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device) 
+    elif args.use_small_draft: 
+        small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     
     acceptanceratelist = [] 
     
@@ -674,26 +678,26 @@ if __name__ == "__main__":
         for batch in tqdm(dataloader): 
             input_ids = batch["input_ids"].to(torch_device) 
             attention_mask = batch["attention_mask"].to(torch_device) 
-            large_model.resetgenerationcount() 
-            '''
-            acceptancer, draftcount = Vanilla_Spec_nokvcache(tokenizer, 
-                                large_model, 
-                                small_model, 
-                                input_ids, 
-                                gamma = 1, 
-                                max_len = 1, 
-                                verbose = True, 
-                                ) 
-            ''' 
-            acceptancer, draftcount = Vanilla_spec_dectesting(tokenizer, 
-                                target_largemodel, 
-                                large_model, 
-                                input_ids, 
-                                attention_mask, 
-                                gamma = 1, 
-                                max_len = 1, 
-                                verbose = True, 
-                                ) 
+            if args.use_small_draft: 
+                acceptancer, draftcount = Vanilla_Spec_nokvcache(tokenizer, 
+                                    target_largemodel, 
+                                    small_model, 
+                                    input_ids, 
+                                    gamma = 1, 
+                                    max_len = 1, 
+                                    verbose = True, 
+                                    ) 
+            else: 
+                large_model.resetgenerationcount() 
+                acceptancer, draftcount = Vanilla_spec_dectesting(tokenizer, 
+                                    target_largemodel, 
+                                    large_model, 
+                                    input_ids, 
+                                    attention_mask, 
+                                    gamma = 1, 
+                                    max_len = 1, 
+                                    verbose = True, 
+                                    ) 
                                 
             globalacceptancerate += (acceptancer * draftcount) 
             globaldraftcount += draftcount 
