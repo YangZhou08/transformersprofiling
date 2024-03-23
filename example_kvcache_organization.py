@@ -619,7 +619,7 @@ if __name__ == "__main__":
         # tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
         #                  return_attention_mask = True, return_tensors = "pt", truncation = True, 
         #                  add_special_tokens = True) 
-        tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 65, 
+        tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 64, 
                                 return_attention_mask = True, return_tensors = "pt", truncation = True, 
                                 add_special_tokens = True) 
         newdictionary = {} 
