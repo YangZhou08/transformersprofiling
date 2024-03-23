@@ -667,7 +667,10 @@ if __name__ == "__main__":
     iterationscounts = args.kernel_size if not args.use_small_draft else 1 
     
     for i in range(iterationscounts): # we need a forloop 
-        datasetnew = get_dataset(datasetname = args.dataset_name, tokenizer = tokenizer, max_length = max_length_table[args.kernel_size] + i) # i 0 means the first position, i 1 means the second position, etc. 
+        if args.use_small_draft: 
+            datasetnew = get_dataset(datasetname = args.dataset_name, tokenizer = tokenizer, max_length = 64) 
+        else: 
+            datasetnew = get_dataset(datasetname = args.dataset_name, tokenizer = tokenizer, max_length = max_length_table[args.kernel_size] + i) # i 0 means the first position, i 1 means the second position, etc. 
         
         # dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 32, shuffle = False) 
         dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 1, shuffle = False) 
