@@ -610,8 +610,8 @@ def get_dataset(datasetname = None, tokenizer = None, max_length = None):
         datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
     elif datasetname == "pg19": 
         # TODO: loading another dataset 
-        datasetnew = load_dataset('emozilla/pg19', split = "test") 
-        # datasetnew = load_dataset('emozilla/pg19', split = "train[:10000]") 
+        # datasetnew = load_dataset('emozilla/pg19', split = "test") 
+        datasetnew = load_dataset('emozilla/pg19', split = "train[:10000]") 
         # datasetnew = load_dataset('emozilla/pg19', split = "train[:1000]") 
         
         datasetnew = datasetnew.map(encode_with_truncationspecialized, num_proc = 8) 
