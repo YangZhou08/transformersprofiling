@@ -611,7 +611,7 @@ def get_dataset(datasetname = None, tokenizer = None, max_length = None):
     elif datasetname == "pg19": 
         # TODO: loading another dataset 
         # datasetnew = load_dataset('emozilla/pg19', split = "test") 
-        datasetnew = load_dataset('emozilla/pg19', split = "train[:10000]") 
+        datasetnew = load_dataset('emozilla/pg19', split = "train[:1000]") 
         # datasetnew = load_dataset('emozilla/pg19', split = "train[:1000]") 
         
         datasetnew = datasetnew.map(encode_with_truncationspecialized, num_proc = 8) 
@@ -673,7 +673,7 @@ if __name__ == "__main__":
     
     for i in range(iterationscounts): # we need a forloop 
         if args.use_small_draft: 
-            datasetnew = get_dataset(datasetname = args.dataset_name, tokenizer = tokenizer, max_length = 64) 
+            datasetnew = get_dataset(datasetname = args.dataset_name, tokenizer = tokenizer, max_length = 128) 
         else: 
             datasetnew = get_dataset(datasetname = args.dataset_name, tokenizer = tokenizer, max_length = max_length_table[args.kernel_size] + i) # i 0 means the first position, i 1 means the second position, etc. 
         
