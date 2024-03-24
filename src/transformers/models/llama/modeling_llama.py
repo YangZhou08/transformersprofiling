@@ -4640,7 +4640,6 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         self.use_mse_loss = False 
         self.ce_loss_only = False 
         self.alpha = 0.5 
-        self.addonmodel_start = self.sliding_window_length + 1 
         self.inference_setting = "setting0" 
         self.use_cosinesimilarity = False 
         self.generate_iteration_count = 0 
@@ -4652,7 +4651,8 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
     
     def set_sliding_window_length(self, sliding_window_length): 
         self.sliding_window_length = sliding_window_length 
-        self.addonmodel_start.set_sliding_window_length(self.sliding_window_length) 
+        self.addonmodel_start = self.sliding_window_length + 1 
+        self.addonsmallmodel.set_sliding_window_length(self.sliding_window_length) 
 
     def get_input_embeddings(self):
         return self.model.embed_tokens 
@@ -7607,7 +7607,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False) 
 
         # needed to be used for the interleaving embeddings 
-        self.sliding_window_length = sliding_window_length 
+        # self.sliding_window_length = sliding_window_length 
         
         # Initialize weights and apply final processing
         self.post_init() 

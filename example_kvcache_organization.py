@@ -650,6 +650,7 @@ if __name__ == "__main__":
     # target_largemodel = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     if not args.use_small_draft: 
         large_model = LlamaWeirdLargeTest.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device) 
+        large_model.set_sliding_window_length(args.kernel_size) 
         large_model.addonsmallmodel.set_criticalpath(hostname = hostname) 
         large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True) 
         large_model.to(torch.bfloat16).to(torch_device) 
