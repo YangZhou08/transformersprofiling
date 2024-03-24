@@ -646,8 +646,8 @@ if __name__ == "__main__":
     tokenizer.padding_side = "left" 
     
     # large model 
-    # target_largemodel = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
-    target_largemodel = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    target_largemodel = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    # target_largemodel = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     if not args.use_small_draft: 
         large_model = LlamaWeirdLargeTest.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device) 
         large_model.addonsmallmodel.set_criticalpath(hostname = hostname) 
