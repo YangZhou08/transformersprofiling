@@ -611,7 +611,7 @@ def get_dataset(datasetname = None, tokenizer = None, max_length = None):
     elif datasetname == "pg19": 
         # TODO: loading another dataset 
         # datasetnew = load_dataset('emozilla/pg19', split = "test") 
-        datasetnew = load_dataset('emozilla/pg19', split = "train[:5000]") 
+        datasetnew = load_dataset('emozilla/pg19', split = "train[:1000]") 
         # datasetnew = load_dataset('emozilla/pg19', split = "train[:1000]") 
         
         datasetnew = datasetnew.map(encode_with_truncationspecialized, num_proc = 8) 
