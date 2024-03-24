@@ -4632,10 +4632,10 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         self.lm_head = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias = False) 
         # self.addonsmallmodel = None 
         small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m") 
-        self.sliding_window_length = 7 
+        # self.sliding_window_length = 7 
         # self.sliding_window_length = 2 
         # self.sliding_window_length = 1 
-        self.addonsmallmodel = SimpleSmallModel(small_config, sliding_window_length = self.sliding_window_length, target_model_dim = self.config.hidden_size) 
+        self.addonsmallmodel = SimpleSmallModel(small_config, target_model_dim = self.config.hidden_size) # sliding_window_length is set elsewhere 
         self.small_model_dtype = torch.bfloat16 
         self.use_mse_loss = False 
         self.ce_loss_only = False 
@@ -4649,6 +4649,10 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         self.tokenizer_pad_id = 2 
         
         self.post_init() 
+    
+    def set_sliding_window_length(self, sliding_window_length): 
+        self.sliding_window_length = sliding_window_length 
+        self.addonmodel_start.set_sliding_window_length(self.sliding_window_length) 
 
     def get_input_embeddings(self):
         return self.model.embed_tokens 
@@ -7625,6 +7629,9 @@ class SimpleSmallModel(LlamaPreTrainedModel):
 
         # if self.criticalpath is None or hostname is None: 
             # raise ValueError("critical path is not set") 
+    
+    def set_sliding_window_length(self, sliding_window_length): 
+        self.sliding_window_length = sliding_window_length 
     
     # input embeddings 
     def get_input_embeddings(self):
