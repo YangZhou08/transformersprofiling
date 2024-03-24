@@ -616,6 +616,12 @@ def get_dataset(datasetname = None, tokenizer = None, max_length = None):
         
         datasetnew = datasetnew.map(encode_with_truncationspecialized, num_proc = 8) 
         datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
+    elif datasetname == "openwebtext": 
+        # datasetnew = load_dataset("Skylion007/openwebtext", split = "train[:10000]") 
+        datasetnew = load_dataset("Skylion007/openwebtext", split = "train[:1000]") 
+        
+        datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
+        datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
     
     return datasetnew 
 
@@ -664,8 +670,8 @@ if __name__ == "__main__":
     if args.use_small_draft and args.loading_from_checkpoint is not None: 
         small_model = LlamaForCausalLM.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device) 
     elif args.use_small_draft: 
-        # small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
-        small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-68m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+        small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+        # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-68m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     
     acceptanceratelist = [] 
     
