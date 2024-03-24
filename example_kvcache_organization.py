@@ -673,7 +673,7 @@ if __name__ == "__main__":
     
     for i in range(iterationscounts): # we need a forloop 
         if args.use_small_draft: 
-            datasetnew = get_dataset(datasetname = args.dataset_name, tokenizer = tokenizer, max_length = 128) 
+            datasetnew = get_dataset(datasetname = args.dataset_name, tokenizer = tokenizer, max_length = 64) 
         else: 
             datasetnew = get_dataset(datasetname = args.dataset_name, tokenizer = tokenizer, max_length = max_length_table[args.kernel_size] + i) # i 0 means the first position, i 1 means the second position, etc. 
         
