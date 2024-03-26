@@ -5215,7 +5215,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
             
             if output_large_model_last_hidden_states: 
-                last_hidden_states = hidden_states[:, -1, :].clone().detach() 
+                last_hidden_states = hidden_states[:, -1, :].unsqueeze(dim = 1).clone().detach() 
             hidden_states = hidden_states[:, selected_seq_indices, :] 
             hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
             self.generate_model_hidden_states = hidden_states.clone().detach() 

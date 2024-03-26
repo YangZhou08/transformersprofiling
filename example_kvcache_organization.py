@@ -253,7 +253,123 @@ def Vanilla_Spec_cache(tokenizer, target, target_cache, draft, draft_cache, inpu
     return acceptance_rate 
 
 @torch.inference_mode()
-def Vanilla_specu_dectesting2(tokenizer, target_lmhead, model, input_ids, attention_mask, gamma=4, max_len=256, top_k=-1, top_p=0.9, temperature=0.6, verbose=False, file_path=None): 
+def Vanilla_specu_dectesting2(tokenizer, train_dataloader, target_lmhead, model, gamma=4, max_len=256, top_k=-1, top_p=0.9, temperature=0.6, verbose=False, file_path=None): 
+    previous_addone = None 
+    
+    for batch in train_dataloader: 
+        input_ids = batch["input_ids"].to(model.device) 
+        attention_mask = batch["attention_mask"].to(model.device) 
+        input_ids = torch.cat([torch.tensor([[tokenizer.eos_token_id]]).to(model.device), input_ids], dim = 1) # pad one more extra 
+        attention_mask = torch.cat([torch.zeros([1, 1]).to(model.device), attention_mask], dim = 1) # pad one more extra 
+        
+        # now the input_ids is (batch_size, seq_len + 1) and attention_mask is (batch_size, seq_len + 1) 
+        # reset cache 
+        
+        resample_count = 0
+        accepted_count = 0
+        target_sample_count = 0
+        draft_count = 0
+
+        n = 0
+        time1 = time.time()
+        
+        ############ Spec Decoding ############ 
+
+        speculation_probs = []
+        generated_ids = [] 
+        original_large_model_hidden_states = None 
+
+        for _ in range(gamma): 
+            model_inputs = model.prepare_inputs_for_generation(input_ids, past_key_values = None, input_embeds = None, attention_mask = attention_mask) 
+            print("model_inputs[large_input_ids]: {}".format(model_inputs["large_input_ids"].shape)) 
+            print("model_inputs[attention_mask]: {}".format(model_inputs["attention_mask"].shape)) 
+            outputs = model.forward_generate(
+                **model_inputs, 
+                return_dict = True, 
+                output_attentions = False, 
+                output_hidden_states = False, 
+                output_large_model_last_hidden_states = True, 
+            ) 
+            
+            # print("outputs.logits.shape: {}".format(outputs.logits.shape)) 
+
+            probs = norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)
+            pred_token_idx = sample(probs)
+            speculation_probs.append(probs[0]) 
+            original_large_model_hidden_states = outputs.last_hidden_states 
+            assert original_large_model_hidden_states is not None 
+            
+            generated_ids.append(pred_token_idx.item())
+            draft_count += 1 
+
+        # verification
+        verify_tokens = torch.cat([input_ids, torch.LongTensor([generated_ids]).to(model.device)], dim = 1) 
+        large_model_start_verifying_index = input_ids.shape[1] - 1 
+
+        with torch.no_grad():
+            # outputs = target(
+            #     input_ids=verify_tokens,
+            #     past_key_values = None, 
+            #     use_cache = False, 
+            # ) 
+            target_output_logits = target_lmhead(original_large_model_hidden_states) 
+
+        count = 0
+        verify_probs = []
+
+        for i in range(gamma + 1):
+            # assert outputs.logits.shape[1] == gamma + 1 
+            idx = i + large_model_start_verifying_index 
+            verify_probs.append(norm_logits(outputs.logits[:, idx, :], temperature=temperature ,top_k=top_k, top_p=top_p)[0]) 
+
+        for i, speculation_prob, verify_prob in zip(generated_ids, speculation_probs, verify_probs[:-1]):
+            r = torch.rand(1, device = model.device) 
+
+            if r < torch.min(torch.tensor([1], device=r.device), (verify_prob[i] / speculation_prob[i])):
+                count += 1
+                accepted_count += 1
+                n += 1
+                pred_token_idx = torch.tensor([[i]]).to(model.device) 
+                if verbose:
+                    # spec_stream(i, tokenizer, 'green') 
+                    spec_stream(pred_token_idx, tokenizer, "green") 
+
+                # if eos
+                if tokenizer.eos_token_id == i:
+                    draft_count -= gamma - count
+                    break
+
+            else:
+                resample_count += 1
+                n += 1 
+                verify_prob = verify_prob.unsqueeze(0) 
+                speculation_prob = speculation_prob.unsqueeze(0) 
+                pred_token_idx = sample(max_fn(verify_prob-speculation_prob))
+                if verbose:
+                    spec_stream(pred_token_idx, tokenizer, 'red')
+                break 
+            
+            # print("speculation_probs: {}, verify_probs: {}".format(speculation_prob.shape, verify_prob.shape)) 
+
+        if count == len(generated_ids):
+            target_sample_count += 1
+            n += 1
+            pred_token_idx = sample(verify_probs[-1])
+            if verbose:
+                spec_stream(pred_token_idx, tokenizer, 'blue') 
+
+
+        time2 = time.time()
+        acceptance_rate = accepted_count / draft_count
+        avg_tokens = accepted_count / draft_count * gamma
+        if verbose:
+            # print(f"Use {time2 - time1} sec to generate {n} tokens (now {target_cache.seq_len} tokens), Tokens/s: {n / (time2 - time1)}", flush=True) 
+            print(f"accepted rate {acceptance_rate}, avg generated tokens {avg_tokens}")
+
+    return acceptance_rate, draft_count 
+
+@torch.inference_mode()
+def Vanilla_specu_dectesting3(tokenizer, target_lmhead, model, input_ids, attention_mask, gamma=4, max_len=256, top_k=-1, top_p=0.9, temperature=0.6, verbose=False, file_path=None): 
     # reset cache 
     '''
     ############ Iterative Pre-fill ############
@@ -282,9 +398,9 @@ def Vanilla_specu_dectesting2(tokenizer, target_lmhead, model, input_ids, attent
     ############ Spec Decoding ############ 
 
     speculation_probs = []
-    generated_ids = [] 
-    original_large_model_hidden_states = None 
+    generated_ids = []
 
+    target_model_last_hidden_states = None 
     for _ in range(gamma): 
         model_inputs = model.prepare_inputs_for_generation(input_ids, past_key_values = None, input_embeds = None, attention_mask = attention_mask) 
         print("model_inputs[large_input_ids]: {}".format(model_inputs["large_input_ids"].shape)) 
@@ -296,37 +412,29 @@ def Vanilla_specu_dectesting2(tokenizer, target_lmhead, model, input_ids, attent
             output_hidden_states = False, 
             output_large_model_last_hidden_states = True, 
         ) 
-        
         # print("outputs.logits.shape: {}".format(outputs.logits.shape)) 
 
         probs = norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)
         pred_token_idx = sample(probs)
         speculation_probs.append(probs[0]) 
-        original_large_model_hidden_states = outputs.last_hidden_states 
-        assert original_large_model_hidden_states is not None 
+        target_model_last_hidden_states = outputs.last_hidden_states # target_model_last_hidden_states is in shape (batch_size, 1, hidden_size) 
+        assert target_model_last_hidden_states is not None 
         
         generated_ids.append(pred_token_idx.item())
         draft_count += 1 
 
     # verification
-    verify_tokens = torch.cat([input_ids, torch.LongTensor([generated_ids]).to(model.device)], dim = 1) 
+    verify_tokens = torch.cat([input_ids, torch.LongTensor([generated_ids]).to(model.device)], dim = 1) # shape (batch_size, seq_len + gamma) 
     large_model_start_verifying_index = input_ids.shape[1] - 1 
 
     with torch.no_grad():
-        # outputs = target(
-        #     input_ids=verify_tokens,
-        #     past_key_values = None, 
-        #     use_cache = False, 
-        # ) 
-        target_output_logits = target_lmhead(original_large_model_hidden_states) 
+        target_model_logits = target_lmhead(outputs.last_hidden_states) # shape (batch_size, 1, vocab_size) 
+        target_model_logits = target_model_logits.squeeze(1) # shape (batch_size, vocab_size) 
 
     count = 0
     verify_probs = []
 
-    for i in range(gamma + 1):
-        # assert outputs.logits.shape[1] == gamma + 1 
-        idx = i + large_model_start_verifying_index 
-        verify_probs.append(norm_logits(outputs.logits[:, idx, :], temperature=temperature ,top_k=top_k, top_p=top_p)[0]) 
+    verify_probs.append(norm_logits(target_model_logits, temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
 
     for i, speculation_prob, verify_prob in zip(generated_ids, speculation_probs, verify_probs[:-1]):
         r = torch.rand(1, device = model.device) 
@@ -356,14 +464,6 @@ def Vanilla_specu_dectesting2(tokenizer, target_lmhead, model, input_ids, attent
             break 
         
         # print("speculation_probs: {}, verify_probs: {}".format(speculation_prob.shape, verify_prob.shape)) 
-
-    if count == len(generated_ids):
-        target_sample_count += 1
-        n += 1
-        pred_token_idx = sample(verify_probs[-1])
-        if verbose:
-            spec_stream(pred_token_idx, tokenizer, 'blue') 
-
 
     time2 = time.time()
     acceptance_rate = accepted_count / draft_count
@@ -772,9 +872,9 @@ if __name__ == "__main__":
     
     # large model 
     target_largemodel = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
-    # target_largemodellmhead = LargeModelLMHeadModel(target_largemodel.lm_head) 
-    # del target_largemodel 
-    # gc.collect() 
+    target_largemodellmhead = LargeModelLMHeadModel(target_largemodel.lm_head) 
+    del target_largemodel 
+    gc.collect() 
     # target_largemodel = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     if not args.use_small_draft: 
         large_model = LlamaWeirdLargeTest.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device) 
@@ -831,16 +931,28 @@ if __name__ == "__main__":
                                     verbose = True, 
                                     ) 
             else: 
-                large_model.resetgenerationcount() 
-                acceptancer, draftcount = Vanilla_spec_dectesting(tokenizer, 
-                                    target_largemodel, 
-                                    large_model, 
-                                    input_ids, 
-                                    attention_mask, 
-                                    gamma = 1, 
-                                    max_len = 1, 
-                                    verbose = True, 
-                                    ) 
+                if not args.double_decking: 
+                    large_model.resetgenerationcount() 
+                    acceptancer, draftcount = Vanilla_spec_dectesting(tokenizer, 
+                                        target_largemodel, 
+                                        large_model, 
+                                        input_ids, 
+                                        attention_mask, 
+                                        gamma = 1, 
+                                        max_len = 1, 
+                                        verbose = True, 
+                                        ) 
+                else: 
+                    large_model.resetgenerationcount() 
+                    acceptancer, draftcount = Vanilla_specu_dectesting3(tokenizer, 
+                                        target_largemodellmhead, 
+                                        large_model, 
+                                        input_ids, 
+                                        attention_mask, 
+                                        gamma = 1, 
+                                        max_len = 1, 
+                                        verbose = True 
+                                        ) 
                                 
             globalacceptancerate += (acceptancer * draftcount) 
             globaldraftcount += draftcount 
