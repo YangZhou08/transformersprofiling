@@ -466,6 +466,8 @@ def Vanilla_specu_dectesting3(tokenizer,
         # print("outputs.logits alternative: {}".format(outputs.logits[:, -2, :].view(-1)[: 100])) 
         dif = torch.abs(target_model_logits - outputs2.logits[:, -1, :].to(torch.float16)) 
         print(dif) 
+        print("max difference: {}".format(torch.max(dif))) 
+        print(dif[dif != 0]) 
         # assert torch.allclose(target_model_logits, outputs2.logits[:, -1, :].to(torch.bfloat16))  # check if the two logits are the same 
         
         expected_lmhead_logits = target_model.lm_head(outputs2.hidden_states[-1]) 
