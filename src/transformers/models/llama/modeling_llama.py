@@ -5244,8 +5244,6 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         # logits = addonmodeloutput.logits 
         logits = torch.zeros((small_input_ids.shape[0], small_input_ids.shape[1], self.config.vocab_size)).to(small_input_ids.device).to(torch.float32) 
         
-        seq_length = small_input_ids.shape[1] + self.generate_model_hidden_states.shape[1] 
-        assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
         loss = None 
         
         if not return_dict: 
