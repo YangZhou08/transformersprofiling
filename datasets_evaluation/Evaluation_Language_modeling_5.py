@@ -1043,7 +1043,7 @@ wandblogconfigs["git_commit"] = commit_hash
 wandblogconfigs["time_hash"] = hash_of_time 
 wandb.init(project = "chunkedlargefinetuning", config = wandblogconfigs, name = "large_small_ce{}_{}".format(today, "unmasked")) 
 
-def get_dataset(datasetname): 
+def get_dataset(datasetname, max_length): 
     if datasetname == "c4llm_synthesized": 
         # datasetnew = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
         dfiles = [] 
@@ -1141,7 +1141,8 @@ ce_loss_list = []
 ppl_list = [] 
 
 for datasetname in dataset_list: 
-    eval_dataset = get_dataset(datasetname) 
+    listmaxl = {2 : 259, 3 : 259, 4 : 257, 5 : 256, 7 : 260, 10 : 261} 
+    eval_dataset = get_dataset(datasetname, listmaxl[args.kernel_size]) 
     results = trainer.evaluate(eval_dataset = eval_dataset) 
     ce_loss_list.append(results["eval_loss"]) 
     ppl_list.append(results["eval_perplexity"]) 
