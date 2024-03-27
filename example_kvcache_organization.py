@@ -850,21 +850,21 @@ def get_dataset(datasetname = None, tokenizer = None, max_length = None):
         dfiles = [] 
         filename = "c4_file1.json" 
         dfiles.append(dir_c4 + filename) 
-        datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
+        datasetnew = load_dataset("json", data_files = dfiles, split = "train[:1000]") 
         
         datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
         datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
     elif datasetname == "pg19": 
         # TODO: loading another dataset 
         # datasetnew = load_dataset('emozilla/pg19', split = "test") 
-        datasetnew = load_dataset('emozilla/pg19', split = "train[:10000]") 
+        datasetnew = load_dataset('emozilla/pg19', split = "train[:1000]") 
         # datasetnew = load_dataset('emozilla/pg19', split = "train[:1000]") 
         
         datasetnew = datasetnew.map(encode_with_truncationspecialized, num_proc = 8) 
         datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
     elif datasetname == "openwebtext": 
         # datasetnew = load_dataset("Skylion007/openwebtext", split = "train[:10000]") 
-        datasetnew = load_dataset("Skylion007/openwebtext", split = "train[:10000]") 
+        datasetnew = load_dataset("Skylion007/openwebtext", split = "train[:1000]") 
         
         datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
         datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
