@@ -444,7 +444,7 @@ def Vanilla_specu_dectesting3(tokenizer,
     large_model_start_verifying_index = input_ids.shape[1] - 1 
 
     with torch.no_grad(): 
-        target_model_logits = target_lmhead(outputs.last_hidden_states) # shape (batch_size, 1, vocab_size) 
+        target_model_logits = target_lmhead(target_model_last_hidden_states) # shape (batch_size, 1, vocab_size) 
         target_model_logits = target_model_logits.squeeze(1) # shape (batch_size, vocab_size) 
         
         outputs2 = target_model( 

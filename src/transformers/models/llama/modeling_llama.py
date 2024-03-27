@@ -5202,6 +5202,8 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             ) 
             
             hidden_states = outputs[0] # we don't need the lm_head 
+            if output_large_model_last_hidden_states: 
+                last_hidden_states = hidden_states.unsqueeze(dim = 1).clone().detach() 
             seq_len = hidden_states.shape[1] 
             print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
             if self.small_model_dtype == torch.float32: 
@@ -5214,8 +5216,6 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
             print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
             
-            if output_large_model_last_hidden_states: 
-                last_hidden_states = hidden_states[:, -1, :].unsqueeze(dim = 1).clone().detach() 
             hidden_states = hidden_states[:, selected_seq_indices, :] 
             hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
             self.generate_model_hidden_states = hidden_states.clone().detach() 
