@@ -932,7 +932,8 @@ if __name__ == "__main__":
     
     iterationscounts = args.kernel_size if not args.use_small_draft else 1 
     
-    datasetlist = ["c4", "pg19", "openwebtext"] 
+    # datasetlist = ["c4", "pg19", "openwebtext"] 
+    datasetlist = ["pg19", "openwebtext"] 
     for datasetname in datasetlist: 
         for i in range(iterationscounts): # we need a forloop 
             if args.use_small_draft: 
@@ -991,7 +992,8 @@ if __name__ == "__main__":
             print("position {} acceptancerate: {}".format(i + 1, globalacceptancerate / globaldraftcount)) 
             acceptanceratelist[datasetname].append(globalacceptancerate / globaldraftcount) 
         
-for datasetname in acceptanceratelist.keys(): 
+# for datasetname in acceptanceratelist.keys(): 
+for datasetname in datasetlist: 
     print("datasetname: {}".format(datasetname)) 
     for i in range(iterationscounts): 
         print("position {} acceptance rate: {}".format(i + 1, acceptanceratelist[datasetname][i])) 
