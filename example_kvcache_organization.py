@@ -497,7 +497,6 @@ def Vanilla_specu_dectesting3(tokenizer,
     acceptance_rate = accepted_count / draft_count
     avg_tokens = accepted_count / draft_count * gamma 
     
-    exit(0) 
     if verbose:
         # print(f"Use {time2 - time1} sec to generate {n} tokens (now {target_cache.seq_len} tokens), Tokens/s: {n / (time2 - time1)}", flush=True) 
         print(f"accepted rate {acceptance_rate}, avg generated tokens {avg_tokens}")
