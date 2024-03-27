@@ -442,7 +442,7 @@ def Vanilla_specu_dectesting3(tokenizer,
     large_model_start_verifying_index = input_ids.shape[1] - 1 
 
     with torch.no_grad(): 
-        outputs = target_largemodel( 
+        outputs = target_model( 
             input_ids = input_ids, 
             past_key_values = None, 
             use_cache = False, 
