@@ -464,6 +464,7 @@ def Vanilla_specu_dectesting3(tokenizer,
     assert torch.allclose(verify_probs[0], norm_logits(outputs2.logits[:, -1, :].to(torch.bfloat16), temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
 
     for i, speculation_prob, verify_prob in zip(generated_ids, speculation_probs, verify_probs): 
+        print("first iteration {}".format(i)) 
         r = torch.rand(1, device = model.device) 
 
         if r < torch.min(torch.tensor([1], device=r.device), (verify_prob[i] / speculation_prob[i])):
