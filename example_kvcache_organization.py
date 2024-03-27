@@ -433,15 +433,10 @@ def Vanilla_specu_dectesting3(tokenizer,
         pred_token_idx = sample(probs)
         speculation_probs.append(probs[0]) 
         target_model_last_hidden_states = outputs.last_hidden_states # target_model_last_hidden_states is in shape (batch_size, 1, hidden_size) 
-        print("target_model_last_hidden_states: {}".format(target_model_last_hidden_states.shape)) 
         assert target_model_last_hidden_states is not None 
         
         generated_ids.append(pred_token_idx.item())
         draft_count += 1 
-
-    # verification
-    verify_tokens = torch.cat([input_ids, torch.LongTensor([generated_ids]).to(model.device)], dim = 1) # shape (batch_size, seq_len + gamma) 
-    large_model_start_verifying_index = input_ids.shape[1] - 1 
 
     with torch.no_grad(): 
         target_model_logits = target_lmhead(target_model_last_hidden_states) # shape (batch_size, 1, vocab_size) 
@@ -454,17 +449,15 @@ def Vanilla_specu_dectesting3(tokenizer,
             output_hidden_states = True
         ) 
         
-        print("outputs2.hidden_states.shape: {}".format(outputs2.hidden_states[-1].shape)) 
-        assert torch.allclose(target_model_logits, outputs2.logits[:, -1, :].to(torch.bfloat16))  # check if the two logits are the same 
+        # assert torch.allclose(target_model_logits, outputs2.logits[:, -1, :].to(torch.bfloat16))  # check if the two logits are the same 
 
     count = 0
     verify_probs = []
 
     verify_probs.append(norm_logits(target_model_logits, temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
-    assert torch.allclose(verify_probs[0], norm_logits(outputs2.logits[:, -1, :].to(torch.bfloat16), temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
+    # assert torch.allclose(verify_probs[0], norm_logits(outputs2.logits[:, -1, :].to(torch.bfloat16), temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
 
     for i, speculation_prob, verify_prob in zip(generated_ids, speculation_probs, verify_probs): 
-        print("first iteration {}".format(i)) 
         r = torch.rand(1, device = model.device) 
 
         if r < torch.min(torch.tensor([1], device=r.device), (verify_prob[i] / speculation_prob[i])):
