@@ -5008,7 +5008,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             return_dict = True, 
             start_idx = self.addonmodel_start, # NOTE this is very important 
             eval_mode = False, 
-            iteration_count = 1, 
+            iteration_count = None, 
             # condensed_fashion = "projection_mode", 
             # experiment_setting = "setting3", 
             experiment_setting = self.inference_setting, 
