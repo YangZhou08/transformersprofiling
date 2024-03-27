@@ -456,13 +456,15 @@ def Vanilla_specu_dectesting3(tokenizer,
         assert torch.allclose(outputs2.hidden_states[-1][:, -1, :], outputs.last_hidden_states) 
         
         print("target_model_logits dtype: {}".format(target_model_logits.dtype)) 
+        print("target_model_logits shape: {}".format(target_model_logits.shape)) 
         print("outputs.logits dtype: {}".format(outputs2.logits.dtype)) 
+        print("outputs.logits shape: {}".format(outputs2.logits[:, -1, :].shape)) 
         print("target_model_logits first 100 elements: {}".format(target_model_logits.view(-1)[: 100])) 
         print("outputs.logits first 100 elements: {}".format(outputs2.logits[:, -1, :].view(-1)[: 100])) 
         # print("outputs.logits alternative: {}".format(outputs.logits[:, -2, :].view(-1)[: 100])) 
-        # assert torch.allclose(target_model_logits, outputs2.logits[:, -1, :].to(torch.bfloat16))  # check if the two logits are the same 
+        assert torch.allclose(target_model_logits, outputs2.logits[:, -1, :].to(torch.bfloat16))  # check if the two logits are the same 
         
-        expected_lmhead_logits = target_model.lm_head(outputs2.hidden_states[-1][:, -1, :]) 
+        expected_lmhead_logits = target_model.lm_head(outputs2.hidden_states[-1][:, -1, :]).to(torch.bfloat16) 
         assert torch.allclose(target_model_logits, expected_lmhead_logits) 
 
     count = 0
