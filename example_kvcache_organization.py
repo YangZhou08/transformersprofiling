@@ -455,31 +455,13 @@ def Vanilla_specu_dectesting3(tokenizer,
         ) 
         
         print("outputs2.hidden_states.shape: {}".format(outputs2.hidden_states[-1].shape)) 
-        assert torch.allclose(outputs2.hidden_states[-1][:, -1, :], outputs.last_hidden_states[:, -1, :]) 
-        
-        print("target_model_logits dtype: {}".format(target_model_logits.dtype)) 
-        print("target_model_logits shape: {}".format(target_model_logits.shape)) 
-        print("outputs.logits dtype: {}".format(outputs2.logits.dtype)) 
-        print("outputs.logits shape: {}".format(outputs2.logits[:, -1, :].shape)) 
-        print("target_model_logits first 100 elements: {}".format(target_model_logits.view(-1)[: 100])) 
-        print("outputs.logits first 100 elements: {}".format(outputs2.logits[:, -1, :].view(-1)[: 100])) 
-        # print("outputs.logits alternative: {}".format(outputs.logits[:, -2, :].view(-1)[: 100])) 
-        dif = torch.abs(target_model_logits - outputs2.logits[:, -1, :].to(torch.float16)) 
-        print(dif) 
-        print("max difference: {}".format(torch.max(dif))) 
-        print(dif[dif != 0]) 
-        print("number of non-zero elements: {}".format(torch.sum(dif != 0))) 
         assert torch.allclose(target_model_logits, outputs2.logits[:, -1, :].to(torch.bfloat16))  # check if the two logits are the same 
-        
-        expected_lmhead_logits = target_model.lm_head(outputs2.hidden_states[-1]) 
-        # assert torch.allclose(target_model_logits, expected_lmhead_logits) 
-        
-        assert torch.allclose(outputs2.logits[:, -1, :], expected_lmhead_logits[:, -1, :].to(torch.bfloat16)) 
 
     count = 0
     verify_probs = []
 
     verify_probs.append(norm_logits(target_model_logits, temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
+    assert torch.allclose(verify_probs[0], norm_logits(outputs2.logits[:, -1, :], temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
 
     for i, speculation_prob, verify_prob in zip(generated_ids, speculation_probs, verify_probs[:-1]):
         r = torch.rand(1, device = model.device) 
