@@ -442,14 +442,14 @@ def Vanilla_specu_dectesting3(tokenizer,
     large_model_start_verifying_index = input_ids.shape[1] - 1 
 
     with torch.no_grad(): 
+        target_model_logits = target_lmhead(outputs.last_hidden_states) # shape (batch_size, 1, vocab_size) 
+        target_model_logits = target_model_logits.squeeze(1) # shape (batch_size, vocab_size) 
+        
         outputs = target_model( 
             input_ids = input_ids, 
             past_key_values = None, 
             use_cache = False, 
         ) 
-        
-        target_model_logits = target_lmhead(outputs.last_hidden_states) # shape (batch_size, 1, vocab_size) 
-        target_model_logits = target_model_logits.squeeze(1) # shape (batch_size, vocab_size) 
         
         torch.allclose(target_model_logits, outputs.logits[:, -1, :]) # check if the two logits are the same 
 
