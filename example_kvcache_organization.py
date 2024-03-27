@@ -445,11 +445,15 @@ def Vanilla_specu_dectesting3(tokenizer,
         target_model_logits = target_lmhead(outputs.last_hidden_states) # shape (batch_size, 1, vocab_size) 
         target_model_logits = target_model_logits.squeeze(1) # shape (batch_size, vocab_size) 
         
-        outputs = target_model( 
+        outputs2 = target_model( 
             input_ids = input_ids, 
             past_key_values = None, 
             use_cache = False, 
+            output_hidden_states = True
         ) 
+        
+        print("outputs2.hidden_states.shape: {}".format(outputs2.hidden_states.shape)) 
+        assert torch.allclose(outputs2.hidden_states[:, -1, :], outputs.last_hidden_states) 
         
         print("target_model_logits dtype: {}".format(target_model_logits.dtype)) 
         print("outputs.logits dtype: {}".format(outputs.logits.dtype)) 
