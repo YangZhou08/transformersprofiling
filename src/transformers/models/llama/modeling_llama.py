@@ -5220,8 +5220,8 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
             self.generate_model_hidden_states = hidden_states.clone().detach() 
         self.generate_iteration_count += 1 
-        '''
-        addonmodeloutput = self.addonsmallmodel(
+        
+        addonmodeloutput = self.addonsmallmodel.generate_forward(
             input_ids = small_input_ids, 
             attention_mask = original_attention_mask, 
             position_ids = None, 
@@ -5239,10 +5239,9 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             generate_flag = True, 
             condensed_fashion = "projection_mode", 
         ) 
-        ''' 
         
-        # logits = addonmodeloutput.logits 
-        logits = torch.zeros((small_input_ids.shape[0], small_input_ids.shape[1], self.config.vocab_size)).to(small_input_ids.device).to(torch.float32) 
+        logits = addonmodeloutput.logits 
+        # logits = torch.zeros((small_input_ids.shape[0], small_input_ids.shape[1], self.config.vocab_size)).to(small_input_ids.device).to(torch.float32) 
         
         loss = None 
         
@@ -7919,7 +7918,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
     ''' 
     
     def interleaving_embeddings_inputs2(self, input_embeds, condensed_embeds, kernel_size = 4, start_idx = 64, generate_flag = False): 
-        print("start_idx is {}".format(start_idx)) # debug this is 2 
+        # print("start_idx is {}".format(start_idx)) # debug this is 2 
         if not generate_flag: 
             assert (input_embeds.shape[1] - start_idx)/kernel_size == condensed_embeds.shape[1] 
             # assert (input_embeds.shape[1] - start_idx)//kernel_size == condensed_embeds.shape[1] 
@@ -8317,6 +8316,245 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         if iteration_count is not None and iteration_count == 1: 
             working_dir = self.criticalpath 
             self.visualize_attention_mask(seq_length, attention_mask[0][0], working_dir + "attention_mask_after_modification.jpg") 
+        
+        hidden_states = input_embeds 
+        print("hidden_states shape {}".format(hidden_states.shape)) 
+        
+        if self.gradient_checkpointing and self.training:
+            if use_cache:
+                logger.warning_once(
+                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
+                )
+                use_cache = False 
+        
+        # decoder layers
+        all_hidden_states = () if output_hidden_states else None
+        all_self_attns = () if output_attentions else None
+        next_decoder_cache = () if use_cache else None 
+        
+        for idx, decoder_layer in enumerate(self.layers):
+            if output_hidden_states:
+                all_hidden_states += (hidden_states,)
+
+            past_key_value = past_key_values[idx] if past_key_values is not None else None
+
+            if self.gradient_checkpointing and self.training:
+
+                def create_custom_forward(module):
+                    def custom_forward(*inputs):
+                        # None for past_key_value
+                        return module(*inputs, past_key_value, output_attentions, padding_mask=padding_mask)
+
+                    return custom_forward
+
+                layer_outputs = torch.utils.checkpoint.checkpoint(
+                    create_custom_forward(decoder_layer), hidden_states, attention_mask, position_ids
+                )
+            else:
+                # horizontal_bar_enabled = False 
+                horizontal_bar_enabled = True 
+                layer_outputs = decoder_layer(
+                    hidden_states,
+                    attention_mask=attention_mask,
+                    position_ids=position_ids,
+                    past_key_value=past_key_value,
+                    output_attentions=output_attentions,
+                    use_cache=use_cache,
+                    padding_mask=padding_mask, 
+                    mask_list_pos = mask_list_pos, 
+                    horizontal_bar_enabled = horizontal_bar_enabled, 
+                ) 
+
+            hidden_states = layer_outputs[0]
+
+            if use_cache:
+                next_decoder_cache += (layer_outputs[2 if output_attentions else 1],)
+
+            if output_attentions:
+                all_self_attns += (layer_outputs[1],)
+
+        hidden_states = self.norm(hidden_states)
+
+        # add hidden states from the last decoder layer
+        if output_hidden_states:
+            all_hidden_states += (hidden_states,)
+
+        next_cache = next_decoder_cache if use_cache else None
+        
+        if self.config.pretraining_tp > 1: 
+            lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
+            logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]
+            logits = torch.cat(logits, dim=-1) 
+        else: 
+            logits = self.lm_head(hidden_states) 
+        logits = logits.float() 
+
+        mask_list_pos22 = [x - 1 for x in mask_list_pos] # just trying 
+        loss = None 
+        if labels is not None: 
+            # Shift so that tokens < n predict n 
+            # selected_indices = list(range(start_idx)) 
+            selected_indices = list(range(start_idx - 1)) 
+            # for i in range(start_idx, seq_length): 
+            for i in range(start_idx - 1, seq_length): 
+                # if i not in mask_list_pos: 
+                if i not in mask_list_pos22: 
+                    selected_indices.append(i) 
+            # shift_logits = shift_logits[:, selected_indices, :] 
+            logits = logits[:, selected_indices, :] 
+            # print("selected indices are : {}".format(selected_indices)) 
+            shift_logits = logits[..., :-1, :].contiguous()
+            shift_labels = labels[..., 1:].contiguous()
+            # expecting 143 sequence length 
+            # print("shift_logits have sequence length to be {}".format(shift_logits.shape)) 
+            # expecting 127 sequence length 
+            # print("shift_labels have sequence length to be {}".format(shift_labels.shape)) 
+            # Flatten the tokens
+            loss_fct = CrossEntropyLoss()
+            shift_logits = shift_logits.view(-1, self.config.vocab_size)
+            shift_labels = shift_labels.view(-1) 
+            # print("shift_logits {}".format(shift_logits)) 
+            # Enable model parallelism
+            shift_labels = shift_labels.to(shift_logits.device)
+            loss = loss_fct(shift_logits, shift_labels) 
+            # print(loss) 
+        
+        # self.iter_count += 1 
+        
+        if not return_dict: 
+            # output = (logits,) + outputs[1:] 
+            output = (logits,) + tuple(v for v in [next_cache, all_hidden_states, all_self_attns] if v is not None) 
+            return (loss,) + output if loss is not None else output 
+
+        return CausalLMOutputWithPast( 
+            loss = loss, 
+            logits = logits, 
+            past_key_values = next_cache, 
+            hidden_states = all_hidden_states, 
+            attentions = all_self_attns 
+        ) 
+    
+    def generate_forward( 
+        self,
+        input_ids: torch.LongTensor = None, 
+        attention_mask: Optional[torch.Tensor] = None,
+        position_ids: Optional[torch.LongTensor] = None,
+        past_key_values: Optional[List[torch.FloatTensor]] = None,
+        # inputs_embeds: Optional[torch.FloatTensor] = None, 
+        condensed_embeds: Optional[torch.FloatTensor] = None, 
+        # later_input_ids: torch.LongTensor = None, 
+        labels: Optional[torch.LongTensor] = None,
+        use_cache: Optional[bool] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        return_dict: Optional[bool] = None, 
+        start_idx = 64, 
+        eval_mode = False, 
+        iteration_count = None, 
+        experiment_setting = "setting0", 
+        generate_flag = None, 
+    ) -> Union[Tuple, CausalLMOutputWithPast]: 
+
+        self.experiment_setting = experiment_setting 
+
+        self.eval_mode = eval_mode 
+        output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
+        output_hidden_states = (
+            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
+        )
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict 
+        
+        # assert input_ids.shape[0] == inputs_embeds.shape[0] 
+        
+        batch_size = input_ids.shape[0] 
+        seq_length = input_ids.shape[1] 
+        
+        # dimension matching 
+        assert input_ids.shape[0] == condensed_embeds.shape[0] # batch size has to match 
+        
+        # assert ((input_ids.shape[1] - start_idx)//self.sliding_window_length) + 1 == condensed_embeds.shape[1] 
+        assert math.ceil((input_ids.shape[1] - (start_idx - 1))/self.sliding_window_length) == condensed_embeds.shape[1] 
+        # assert math.ceil((input_ids.shape[1] - start_idx)/self.sliding_window_length) == condensed_embeds.shape[1] 
+                
+        
+        seq_length += condensed_embeds.shape[1] 
+        seq_length_with_past = seq_length 
+        past_key_values_length = 0 
+        
+        if past_key_values is not None: 
+            past_key_values_length = past_key_values[0][0].shape[2] 
+            seq_length_with_past = seq_length_with_past + past_key_values_length 
+        
+        # self.mask_list_pos = [self.start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - self.start_idx) // (self.sliding_window_length + 1))] 
+        # mask_list_pos = [self.start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - self.start_idx) // (self.sliding_window_length + 1))] 
+        # mask_list_pos = [start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - start_idx) // (self.sliding_window_length + 1))] 
+        
+        mask_list_pos = [start_idx - 1 + i * (self.sliding_window_length + 1) for i in range(int(math.ceil((seq_length - start_idx) / (self.sliding_window_length + 1))))] 
+        if position_ids is None: # TODO: currently the position_ids isn't adaptive to attention_mask, which needs to be improved 
+            device = input_ids.device 
+            position_list = [] 
+            pos_count = past_key_values_length 
+            following_flag = False 
+            for i in range(seq_length): 
+                # if i in self.mask_list_pos: 
+                if i in mask_list_pos: 
+                    pos_count += 1 
+                    position_list.append(pos_count) 
+                    following_flag = True 
+                else: 
+                    if following_flag: 
+                        following_flag = False 
+                        position_list.append(pos_count) 
+                    else: 
+                        pos_count += 1 
+                        position_list.append(pos_count) 
+            position_ids = torch.tensor(position_list, dtype = torch.long, device = device) 
+            position_ids = position_ids.unsqueeze(0) 
+            
+            print("position ids found is {}".format(position_ids.shape)) 
+            print("position ids found is {}".format(position_ids)) 
+        
+        # the important part 
+        # input_embeds should not be None 
+        input_embeds = None 
+        condensed_embeds = self.embed_projection(condensed_embeds) 
+        input_embeds = self.embed_tokens(input_ids) 
+        input_embeds = self.interleaving_embeddings_inputs2(input_embeds, condensed_embeds, kernel_size = self.sliding_window_length, start_idx = start_idx, generate_flag = generate_flag) 
+        
+        if attention_mask is None:
+            attention_mask = torch.ones(
+                (batch_size, seq_length_with_past), dtype=torch.bool, device = input_embeds.device 
+            ) 
+            padding_mask = None
+        else:
+            if 0 in attention_mask:
+                padding_mask = attention_mask
+            else:
+                padding_mask = None 
+        
+        attention_mask = self._prepare_decoder_attention_mask(
+            attention_mask, (batch_size, seq_length), input_embeds, past_key_values_length 
+        ) 
+        
+        if self.eval_mode: 
+            # the attention_mask ignores the condensed tokens 
+            self._convert_to_normal_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+        else: 
+            if self.experiment_setting == "setting0": 
+                self._modify_decoder_attention_mask_neo(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            elif self.experiment_setting == "setting1": 
+                self._modify_decoder_attention_mask_for_harder(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            elif self.experiment_setting == "setting2": 
+                self._modify_decoder_attention_mask_for_harder2(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            elif self.experiment_setting == "setting3": 
+                self._modify_decoder_attention_mask_for_hardest_neo(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            elif self.experiment_setting == "setting4": 
+                self._modify_decoder_attention_mask_for_hardest_neo(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            elif self.experiment_setting == "setting5": 
+                # we make no change to the original attention mask 
+                pass 
+            else: 
+                raise ValueError("We do not have the experiment setting you are looking for") 
         
         hidden_states = input_embeds 
         print("hidden_states shape {}".format(hidden_states.shape)) 
