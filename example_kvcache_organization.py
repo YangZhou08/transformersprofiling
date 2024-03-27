@@ -418,6 +418,7 @@ def Vanilla_specu_dectesting3(tokenizer, target_lmhead, model, input_ids, attent
         pred_token_idx = sample(probs)
         speculation_probs.append(probs[0]) 
         target_model_last_hidden_states = outputs.last_hidden_states # target_model_last_hidden_states is in shape (batch_size, 1, hidden_size) 
+        print("target_model_last_hidden_states: {}".format(target_model_last_hidden_states.shape)) 
         assert target_model_last_hidden_states is not None 
         
         generated_ids.append(pred_token_idx.item())
@@ -467,7 +468,9 @@ def Vanilla_specu_dectesting3(tokenizer, target_lmhead, model, input_ids, attent
 
     time2 = time.time()
     acceptance_rate = accepted_count / draft_count
-    avg_tokens = accepted_count / draft_count * gamma
+    avg_tokens = accepted_count / draft_count * gamma 
+    
+    exit(0) 
     if verbose:
         # print(f"Use {time2 - time1} sec to generate {n} tokens (now {target_cache.seq_len} tokens), Tokens/s: {n / (time2 - time1)}", flush=True) 
         print(f"accepted rate {acceptance_rate}, avg generated tokens {avg_tokens}")
