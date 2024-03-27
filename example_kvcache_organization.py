@@ -19,6 +19,8 @@ from tqdm import tqdm
 import argparse 
 import gc 
 
+torch.set_printoptions(threshold=50000) 
+
 hostname = socket.gethostname() 
 print("Hostname:", hostname) 
 
@@ -899,8 +901,6 @@ if __name__ == "__main__":
     parser.add_argument("--dataset_name", type = str, default = None) 
     parser.add_argument("--use_small_draft", action = "store_true") 
     parser.add_argument("--double_decking", action = "store_true") 
-    
-    torch.set_printoptions(threshold=32000) 
     
     args = parser.parse_args() 
     
