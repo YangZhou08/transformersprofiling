@@ -5234,10 +5234,8 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             return_dict = True, 
             start_idx = self.sliding_window_length + 1, # NOTE this is very important 
             eval_mode = False, 
-            iteration_count = 1, 
             experiment_setting = self.inference_setting, 
             generate_flag = True, 
-            condensed_fashion = "projection_mode", 
         ) 
         
         logits = addonmodeloutput.logits 
@@ -8450,7 +8448,6 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         return_dict: Optional[bool] = None, 
         start_idx = 64, 
         eval_mode = False, 
-        iteration_count = None, 
         experiment_setting = "setting0", 
         generate_flag = None, 
     ) -> Union[Tuple, CausalLMOutputWithPast]: 
