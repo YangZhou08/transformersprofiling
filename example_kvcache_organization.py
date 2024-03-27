@@ -980,9 +980,9 @@ if __name__ == "__main__":
                                         attention_mask, 
                                         gamma = 1, 
                                         max_len = 1, 
-                                        verbose = True 
+                                        verbose = True, 
                                         target_model = target_largemodel, 
-                                        )  
+                                        ) 
                                 
             globalacceptancerate += (acceptancer * draftcount) 
             globaldraftcount += draftcount 
