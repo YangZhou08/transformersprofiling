@@ -5205,7 +5205,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             if output_large_model_last_hidden_states: 
                 last_hidden_states = hidden_states.clone().detach() 
             seq_len = hidden_states.shape[1] 
-            print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
+            
             if self.small_model_dtype == torch.float32: 
                 hidden_states = hidden_states.to(torch.float32) 
             elif self.small_model_dtype == torch.bfloat16: 
@@ -5219,11 +5219,8 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             hidden_states = hidden_states[:, selected_seq_indices, :] 
             hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
             self.generate_model_hidden_states = hidden_states.clone().detach() 
-            print("self.generate_model_hidden_states shape {}".format(self.generate_model_hidden_states.shape)) 
         self.generate_iteration_count += 1 
-        
-        print(colored("running the small model side", "green")) 
-        print("original_attention_mask shape {}".format(original_attention_mask.shape)) 
+        '''
         addonmodeloutput = self.addonsmallmodel(
             input_ids = small_input_ids, 
             attention_mask = original_attention_mask, 
@@ -5242,8 +5239,10 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             generate_flag = True, 
             condensed_fashion = "projection_mode", 
         ) 
+        ''' 
         
-        logits = addonmodeloutput.logits 
+        # logits = addonmodeloutput.logits 
+        logits = torch.zeros((small_input_ids.shape[0], small_input_ids.shape[1], self.config.vocab_size)).to(small_input_ids.device).to(torch.float32) 
         
         seq_length = small_input_ids.shape[1] + self.generate_model_hidden_states.shape[1] 
         assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
@@ -5257,8 +5256,8 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             loss = loss, 
             logits = logits, 
             past_key_values = past_key_values, 
-            hidden_states = self.generate_model_hidden_states, 
-            attentions = addonmodeloutput.attentions, 
+            hidden_states = None, 
+            attentions = None, 
             l2_distance = None, 
             ce_loss = None, 
             l2_distance_input = None, 
