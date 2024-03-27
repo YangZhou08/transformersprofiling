@@ -461,7 +461,7 @@ def Vanilla_specu_dectesting3(tokenizer,
     verify_probs = []
 
     verify_probs.append(norm_logits(target_model_logits, temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
-    assert torch.allclose(verify_probs[0], norm_logits(outputs2.logits[:, -1, :], temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
+    assert torch.allclose(verify_probs[0], norm_logits(outputs2.logits[:, -1, :].to(torch.bfloat16), temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
 
     for i, speculation_prob, verify_prob in zip(generated_ids, speculation_probs, verify_probs[:-1]):
         r = torch.rand(1, device = model.device) 
