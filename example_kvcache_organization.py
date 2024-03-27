@@ -464,10 +464,10 @@ def Vanilla_specu_dectesting3(tokenizer,
         # print("outputs.logits alternative: {}".format(outputs.logits[:, -2, :].view(-1)[: 100])) 
         # assert torch.allclose(target_model_logits, outputs2.logits[:, -1, :].to(torch.bfloat16))  # check if the two logits are the same 
         
-        expected_lmhead_logits = target_model.lm_head(outputs2.hidden_states[-1][:, -1, :]) 
+        expected_lmhead_logits = target_model.lm_head(outputs2.hidden_states[-1]).float() 
         assert torch.allclose(target_model_logits, expected_lmhead_logits) 
         
-        assert torch.allclose(outputs2.logits[:, -1, :], expected_lmhead_logits.float()) 
+        assert torch.all_close(outputs2.logits[:, -1, :], expected_lmhead_logits[:, -1, :]) 
 
     count = 0
     verify_probs = []
