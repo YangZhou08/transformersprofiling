@@ -900,6 +900,8 @@ if __name__ == "__main__":
     parser.add_argument("--use_small_draft", action = "store_true") 
     parser.add_argument("--double_decking", action = "store_true") 
     
+    torch.set_printoptions(threshold=32000) 
+    
     args = parser.parse_args() 
     
     max_length_table = {1 : 64, 2 : 63, 3 : 64, 4 : 65, 5 : 66, 6: 67, 7 : 64, 10 : 71} # the pattern is as follows: the first position is corresponding to the sequence_length that mod kernel_size by 1, for example, 63 % 2 = 1, etc. 
