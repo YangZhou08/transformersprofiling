@@ -467,7 +467,7 @@ def Vanilla_specu_dectesting3(tokenizer,
         expected_lmhead_logits = target_model.lm_head(outputs2.hidden_states[-1]).float() 
         # assert torch.allclose(target_model_logits, expected_lmhead_logits) 
         
-        assert torch.all_close(outputs2.logits[:, -1, :], expected_lmhead_logits[:, -1, :]) 
+        assert torch.allclose(outputs2.logits[:, -1, :], expected_lmhead_logits[:, -1, :]) 
 
     count = 0
     verify_probs = []
