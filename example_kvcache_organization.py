@@ -369,7 +369,20 @@ def Vanilla_specu_dectesting2(tokenizer, train_dataloader, target_lmhead, model,
     return acceptance_rate, draft_count 
 
 @torch.inference_mode()
-def Vanilla_specu_dectesting3(tokenizer, target_lmhead, model, input_ids, attention_mask, gamma=4, max_len=256, top_k=-1, top_p=0.9, temperature=0.6, verbose=False, file_path=None): 
+def Vanilla_specu_dectesting3(tokenizer, 
+                              target_lmhead, 
+                              model, 
+                              input_ids, 
+                              attention_mask, 
+                              gamma=4, 
+                              max_len=256, 
+                              top_k=-1, 
+                              top_p=0.9, 
+                              temperature=0.6, 
+                              verbose=False, 
+                              file_path=None, 
+                              target_model = None, 
+): 
     # reset cache 
     '''
     ############ Iterative Pre-fill ############
@@ -428,9 +441,17 @@ def Vanilla_specu_dectesting3(tokenizer, target_lmhead, model, input_ids, attent
     verify_tokens = torch.cat([input_ids, torch.LongTensor([generated_ids]).to(model.device)], dim = 1) # shape (batch_size, seq_len + gamma) 
     large_model_start_verifying_index = input_ids.shape[1] - 1 
 
-    with torch.no_grad():
+    with torch.no_grad(): 
+        outputs = target_largemodel( 
+            input_ids = input_ids, 
+            past_key_values = None, 
+            use_cache = False, 
+        ) 
+        
         target_model_logits = target_lmhead(outputs.last_hidden_states) # shape (batch_size, 1, vocab_size) 
         target_model_logits = target_model_logits.squeeze(1) # shape (batch_size, vocab_size) 
+        
+        torch.allclose(target_model_logits, outputs.logits[:, -1, :]) # check if the two logits are the same 
 
     count = 0
     verify_probs = []
@@ -880,8 +901,8 @@ if __name__ == "__main__":
     else: 
         target_largemodel = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
         target_largemodellmhead = LargeModelLMHeadModel(target_largemodel.lm_head) 
-        del target_largemodel 
-        gc.collect() 
+        # del target_largemodel 
+        # gc.collect() 
     # target_largemodel = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     if not args.use_small_draft: 
         large_model = LlamaWeirdLargeTest.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device) 
@@ -960,7 +981,8 @@ if __name__ == "__main__":
                                         gamma = 1, 
                                         max_len = 1, 
                                         verbose = True 
-                                        ) 
+                                        target_model = target_largemodel, 
+                                        )  
                                 
             globalacceptancerate += (acceptancer * draftcount) 
             globaldraftcount += draftcount 
