@@ -452,8 +452,8 @@ def Vanilla_specu_dectesting3(tokenizer,
             output_hidden_states = True
         ) 
         
-        print("outputs2.hidden_states.shape: {}".format(outputs2.hidden_states.shape)) 
-        assert torch.allclose(outputs2.hidden_states[:, -1, :], outputs.last_hidden_states) 
+        print("outputs2.hidden_states.shape: {}".format(outputs2.hidden_states[-1].shape)) 
+        assert torch.allclose(outputs2.hidden_states[-1][:, -1, :], outputs.last_hidden_states) 
         
         print("target_model_logits dtype: {}".format(target_model_logits.dtype)) 
         print("outputs.logits dtype: {}".format(outputs.logits.dtype)) 
