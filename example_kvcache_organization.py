@@ -445,7 +445,7 @@ def Vanilla_specu_dectesting3(tokenizer,
 
     with torch.no_grad(): 
         target_model_logits = target_lmhead(target_model_last_hidden_states) # shape (batch_size, 1, vocab_size) 
-        target_model_logits = target_model_logits.squeeze(1) # shape (batch_size, vocab_size) 
+        target_model_logits = target_model_logits[:, -1, :] # shape (batch_size, vocab_size) 
         
         outputs2 = target_model( 
             input_ids = input_ids, 
@@ -469,7 +469,7 @@ def Vanilla_specu_dectesting3(tokenizer,
         print("max difference: {}".format(torch.max(dif))) 
         print(dif[dif != 0]) 
         print("number of non-zero elements: {}".format(torch.sum(dif != 0))) 
-        # assert torch.allclose(target_model_logits, outputs2.logits[:, -1, :].to(torch.bfloat16))  # check if the two logits are the same 
+        assert torch.allclose(target_model_logits, outputs2.logits[:, -1, :].to(torch.bfloat16))  # check if the two logits are the same 
         
         expected_lmhead_logits = target_model.lm_head(outputs2.hidden_states[-1]) 
         # assert torch.allclose(target_model_logits, expected_lmhead_logits) 
