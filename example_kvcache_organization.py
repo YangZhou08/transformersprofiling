@@ -928,66 +928,71 @@ if __name__ == "__main__":
         small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
         # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-68m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     
-    acceptanceratelist = [] 
+    acceptanceratelist = {"c4": [], "pg19": [], "openwebtext": []} 
     
     iterationscounts = args.kernel_size if not args.use_small_draft else 1 
     
-    for i in range(iterationscounts): # we need a forloop 
-        if args.use_small_draft: 
-            datasetnew = get_dataset(datasetname = args.dataset_name, tokenizer = tokenizer, max_length = 64) 
-        else: 
-            datasetnew = get_dataset(datasetname = args.dataset_name, tokenizer = tokenizer, max_length = max_length_table[args.kernel_size] + i) # i 0 means the first position, i 1 means the second position, etc. 
-        
-        # dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 32, shuffle = False) 
-        dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 1, shuffle = False) 
-        
-        globalacceptancerate = 0 
-        globaldraftcount = 0 
-        
-        for batch in tqdm(dataloader): 
-            input_ids = batch["input_ids"].to(torch_device) 
-            attention_mask = batch["attention_mask"].to(torch_device) 
+    datasetlist = ["c4", "pg19", "openwebtext"] 
+    for datasetname in datasetlist: 
+        for i in range(iterationscounts): # we need a forloop 
             if args.use_small_draft: 
-                acceptancer, draftcount = Vanilla_Spec_nokvcache(tokenizer, 
-                                    target_largemodel, 
-                                    small_model, 
-                                    input_ids, 
-                                    gamma = 1, 
-                                    max_len = 1, 
-                                    verbose = True, 
-                                    ) 
+                datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = 64) 
             else: 
-                if not args.double_decking: 
-                    large_model.resetgenerationcount() 
-                    acceptancer, draftcount = Vanilla_spec_dectesting(tokenizer, 
+                datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = max_length_table[args.kernel_size] + i) # i 0 means the first position, i 1 means the second position, etc. 
+            
+            # dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 32, shuffle = False) 
+            dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 1, shuffle = False) 
+            
+            globalacceptancerate = 0 
+            globaldraftcount = 0 
+            
+            for batch in tqdm(dataloader): 
+                input_ids = batch["input_ids"].to(torch_device) 
+                attention_mask = batch["attention_mask"].to(torch_device) 
+                if args.use_small_draft: 
+                    acceptancer, draftcount = Vanilla_Spec_nokvcache(tokenizer, 
                                         target_largemodel, 
-                                        large_model, 
+                                        small_model, 
                                         input_ids, 
-                                        attention_mask, 
                                         gamma = 1, 
                                         max_len = 1, 
                                         verbose = True, 
                                         ) 
                 else: 
-                    # print("using specudectesting version3") 
-                    large_model.resetgenerationcount() 
-                    acceptancer, draftcount = Vanilla_specu_dectesting3(tokenizer, 
-                                        target_largemodellmhead, 
-                                        large_model, 
-                                        input_ids, 
-                                        attention_mask, 
-                                        gamma = 1, 
-                                        max_len = 1, 
-                                        verbose = True, 
-                                        target_model = target_largemodel, 
-                                        ) 
-                                
-            globalacceptancerate += (acceptancer * draftcount) 
-            globaldraftcount += draftcount 
+                    if not args.double_decking: 
+                        large_model.resetgenerationcount() 
+                        acceptancer, draftcount = Vanilla_spec_dectesting(tokenizer, 
+                                            target_largemodel, 
+                                            large_model, 
+                                            input_ids, 
+                                            attention_mask, 
+                                            gamma = 1, 
+                                            max_len = 1, 
+                                            verbose = True, 
+                                            ) 
+                    else: 
+                        # print("using specudectesting version3") 
+                        large_model.resetgenerationcount() 
+                        acceptancer, draftcount = Vanilla_specu_dectesting3(tokenizer, 
+                                            target_largemodellmhead, 
+                                            large_model, 
+                                            input_ids, 
+                                            attention_mask, 
+                                            gamma = 1, 
+                                            max_len = 1, 
+                                            verbose = True, 
+                                            target_model = target_largemodel, 
+                                            ) 
+                                    
+                globalacceptancerate += (acceptancer * draftcount) 
+                globaldraftcount += draftcount 
+            
+            # print("global acceptance rate: ", globalacceptancerate / globaldraftcount) 
+            print("position {} acceptancerate: {}".format(i + 1, globalacceptancerate / globaldraftcount)) 
+            acceptanceratelist[datasetname].append(globalacceptancerate / globaldraftcount) 
         
-        # print("global acceptance rate: ", globalacceptancerate / globaldraftcount) 
-        print("position {} acceptancerate: {}".format(i + 1, globalacceptancerate / globaldraftcount)) 
-        acceptanceratelist.append(globalacceptancerate / globaldraftcount) 
-    
+for datasetname in acceptanceratelist.keys(): 
+    print("datasetname: {}".format(datasetname)) 
     for i in range(iterationscounts): 
-        print("position {} acceptance rate: {}".format(i + 1, acceptanceratelist[i])) 
+        print("position {} acceptance rate: {}".format(i + 1, acceptanceratelist[datasetname][i])) 
+    print() 
