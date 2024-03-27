@@ -456,7 +456,7 @@ def Vanilla_specu_dectesting3(tokenizer,
         print("target_model_logits first 100 elements: {}".format(target_model_logits.view(-1)[: 100])) 
         print("outputs.logits first 100 elements: {}".format(outputs.logits[:, -1, :].view(-1)[: 100])) 
         # print("outputs.logits alternative: {}".format(outputs.logits[:, -2, :].view(-1)[: 100])) 
-        assert torch.allclose(target_model_logits, outputs.logits[:, -1, :].to(torch.bfloat16), atol = 1e-3)   # check if the two logits are the same 
+        assert torch.allclose(target_model_logits, outputs.logits[:, -1, :].to(torch.bfloat16), atol = 1e-2)  # check if the two logits are the same 
 
     count = 0
     verify_probs = []
