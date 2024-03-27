@@ -1072,7 +1072,7 @@ def get_dataset(datasetname, max_length):
         raise ValueError("dataset_name is not recognized") 
 
     def encode_with_truncationspecialized(examples): 
-        tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
+        tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = max_length, 
                         return_attention_mask = True, return_tensors = "pt", truncation = True, 
                         add_special_tokens = True) 
         # tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 260, 
@@ -1087,7 +1087,7 @@ def get_dataset(datasetname, max_length):
         # tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
         #                  return_attention_mask = True, return_tensors = "pt", truncation = True, 
         #                  add_special_tokens = True) 
-        tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
+        tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = max_length, 
                                 return_attention_mask = True, return_tensors = "pt", truncation = True, 
                                 add_special_tokens = True) 
         newdictionary = {} 
@@ -1096,7 +1096,7 @@ def get_dataset(datasetname, max_length):
         return newdictionary 
     
     def encode_text_summary(examples): # cnn_dailymail uses "article" 
-        tokdictionary = tokenizer(examples['article'], padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
+        tokdictionary = tokenizer(examples['article'], padding = "max_length", max_length = max_length, 
                                 return_attention_mask = True, return_tensors = "pt", truncation = True, 
                                 add_special_tokens = True) 
         newdictionary = {} 
@@ -1105,7 +1105,7 @@ def get_dataset(datasetname, max_length):
         return newdictionary 
     
     def encode_text_summary_xsum(examples): # xsum uses "document" 
-        tokdictionary = tokenizer(examples["document"], padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
+        tokdictionary = tokenizer(examples["document"], padding = "max_length", max_length = max_length, 
                                 return_attention_mask = True, return_tensors = "pt", truncation = True, 
                                 add_special_tokens = True) 
         newdictionary = {} 
