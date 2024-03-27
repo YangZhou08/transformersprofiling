@@ -870,7 +870,7 @@ if __name__ == "__main__":
         print("We now use eos_token as pad token") 
     tokenizer.padding_side = "left" 
     
-    if args.use_small_draft: 
+    if not args.double_decking: 
         # large model 
         target_largemodel = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
         # target_largemodel = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
@@ -947,7 +947,7 @@ if __name__ == "__main__":
                                         verbose = True, 
                                         ) 
                 else: 
-                    print("using specudectesting version3") 
+                    # print("using specudectesting version3") 
                     large_model.resetgenerationcount() 
                     acceptancer, draftcount = Vanilla_specu_dectesting3(tokenizer, 
                                         target_largemodellmhead, 
