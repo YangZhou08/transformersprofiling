@@ -770,6 +770,8 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
                 spec_stream(pred_token_idx, tokenizer, 'blue') 
         
         next_token = torch.cat([next_token, pred_token_idx], dim = 1) 
+        
+        exit(0) 
 
     time2 = time.time()
     acceptance_rate = accepted_count / draft_count
