@@ -703,7 +703,7 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
         # verify_tokens = torch.cat([next_token, torch.LongTensor([generated_ids]).to(draft.device)], dim=1) 
         # verify_tokens = torch.cat([pred_token_idx, torch.LongTensor([generated_ids]).to(draft.device)], dim = 1) 
         verify_tokens = torch.cat([small_model_input_full_context, torch.LongTensor([generated_ids]).to(draft.device)], dim = 1) 
-        target_attention = torch.cat([attention_mask_for_small_model, torch.ones([1, len(generated_ids)].to(draft.device))], dim = 1) 
+        target_attention = torch.cat([attention_mask_for_small_model, torch.ones((1, len(generated_ids).to(draft.device))).to(draft.device)], dim = 1) 
         large_model_start_verifying_index = small_model_input_full_context.shape[1] - 1 
         # print("verify_tokens: {}".format(verify_tokens.shape[1])) 
         # print("large_model_start_verifying_index: {}".format(large_model_start_verifying_index)) 
