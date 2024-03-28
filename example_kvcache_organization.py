@@ -1288,7 +1288,8 @@ if __name__ == "__main__":
                                                 max_len = 128, 
                                                 verbose = True, 
                                                 temperature = 0.6, 
-                                                ) 
+                                                attention_mask = attention_mask, 
+                                                )  
                     print("input_ids: ", input_ids) 
                 else: 
                     if not args.double_decking: 
