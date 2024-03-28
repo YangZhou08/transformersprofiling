@@ -655,8 +655,6 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
         input_ids = torch.cat([input_ids, next_token], dim = 1) 
         attention_mask = torch.cat([attention_mask, torch.ones([1, 1]).to(draft.device)], dim = 1) 
     
-    exit(0) 
-    
     if verbose: 
         print("\n") 
         spec_stream(input_ids, tokenizer, "black") 
@@ -805,6 +803,7 @@ def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len
         use_cache = False, 
         attention_mask = attention_mask, 
     ) 
+    attention_mask = torch.cat([attention_mask, torch.ones([1, 1]).to(draft.device)], dim = 1) 
 
     resample_count = 0
     accepted_count = 0
@@ -865,6 +864,7 @@ def Vanilla_Spec_nokvcache(tokenizer, target, draft, input_ids, gamma=4, max_len
                 input_ids=verify_tokens,
                 past_key_values = None, 
                 use_cache = False, 
+                attention_mask = torch.cat([attention_mask, torch.ones([1, len(generated_ids)]).to(draft.device)], dim = 1), 
             ) 
 
         count = 0
@@ -1257,7 +1257,7 @@ if __name__ == "__main__":
     for datasetname in datasetlist: 
         for i in range(iterationscounts): # we need a forloop 
             if args.use_small_draft: 
-                datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = 128, limit = 100) 
+                datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = 64, limit = 10000) 
             else: 
                 datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = max_length_table[args.kernel_size] + i, limit = 10000) # i 0 means the first position, i 1 means the second position, etc. 
             
@@ -1271,16 +1271,16 @@ if __name__ == "__main__":
                 input_ids = batch["input_ids"].to(torch_device) 
                 attention_mask = batch["attention_mask"].to(torch_device) 
                 if args.use_small_draft: 
-                    '''
                     acceptancer, draftcount = Vanilla_Spec_nokvcache(tokenizer, 
                                         target_largemodel, 
                                         small_model, 
                                         input_ids, 
-                                        gamma = 3, 
-                                        max_len = 64, 
+                                        gamma = 1, 
+                                        max_len = 1, 
                                         verbose = True, 
-                                        ) 
-                    ''' 
+                                        attention_mask = attention_mask, 
+                    ) 
+                    '''
                     acceptancer, draftcount = Vanilla_spec_decnokv22(tokenizer, 
                                                 target_largemodel, 
                                                 small_model, 
@@ -1292,6 +1292,7 @@ if __name__ == "__main__":
                                                 attention_mask = attention_mask, 
                                                 )  
                     print("input_ids: ", input_ids) 
+                    ''' 
                 else: 
                     if not args.double_decking: 
                         large_model.resetgenerationcount() 
