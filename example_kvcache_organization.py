@@ -774,8 +774,6 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
             if len(pred_token_idx.shape) == 1: 
                 pred_token_idx = pred_token_idx.unsqueeze(0) 
             next_token = torch.cat([next_token, pred_token_idx], dim = 1) 
-        
-        sleep(1) 
 
     time2 = time.time()
     acceptance_rate = accepted_count / draft_count
@@ -1294,12 +1292,11 @@ if __name__ == "__main__":
                                                 small_model, 
                                                 input_ids, 
                                                 gamma = 1, 
-                                                max_len = 128, 
+                                                max_len = 64, 
                                                 verbose = True, 
-                                                temperature = 0.6, 
                                                 attention_mask = attention_mask, 
-                                                )  
-                    print("input_ids: ", input_ids) 
+                    ) 
+                    # print("input_ids: ", input_ids) 
                 else: 
                     if not args.double_decking: 
                         large_model.resetgenerationcount() 
