@@ -1274,10 +1274,10 @@ if __name__ == "__main__":
                                                 target_largemodel, 
                                                 small_model, 
                                                 input_ids, 
-                                                gamma = 3, 
+                                                gamma = 1, 
                                                 max_len = 128, 
                                                 verbose = True, 
-                                                ) 
+                                                )  
                 else: 
                     if not args.double_decking: 
                         large_model.resetgenerationcount() 
