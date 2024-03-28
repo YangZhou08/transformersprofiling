@@ -666,6 +666,7 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
             next_token = next_token.unsqueeze(0)
         
         small_model_input_full_context = torch.cat([small_model_input_full_context, next_token], dim = 1).to(draft.device) 
+        attention_mask_for_small_model = torch.cat([attention_mask_for_small_model, torch.ones([1, 1]).to(draft.device)], dim = 1) 
         # print("pred_token_idx: {}".format(pred_token_idx.shape)) 
 
         speculation_probs = []
@@ -680,7 +681,7 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
                     # use_cache=True, 
                     past_key_values = None, 
                     use_cache = False, 
-                    attention_mask = attention_mask_for_small_model, 
+                    attention_mask = torch.cat([attention_mask_for_small_model, torch.ones([1, 1]).to(draft.device)], dim = 1), 
                 ) 
             else: 
                 outputs = draft(
@@ -696,7 +697,6 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
             # print("pred_token_idx: {} speculation_probs: {}".format(pred_token_idx, speculation_probs[0].shape)) 
             
             generated_ids.append(pred_token_idx.item()) 
-            attention_mask_for_small_model = torch.cat([attention_mask_for_small_model, torch.ones([1, 1]).to(draft.device)], dim = 1) 
             draft_count += 1 
 
             exit(0) 
@@ -704,13 +704,15 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
         # verify_tokens = torch.cat([next_token, torch.LongTensor([generated_ids]).to(draft.device)], dim=1) 
         # verify_tokens = torch.cat([pred_token_idx, torch.LongTensor([generated_ids]).to(draft.device)], dim = 1) 
         verify_tokens = torch.cat([small_model_input_full_context, torch.LongTensor([generated_ids]).to(draft.device)], dim = 1) 
+        target_attention = torch.cat([attention_mask_for_small_model, torch.ones([1, len(generated_ids)].to(draft.device))], dim = 1) 
         large_model_start_verifying_index = small_model_input_full_context.shape[1] - 1 
         # print("verify_tokens: {}".format(verify_tokens.shape[1])) 
         # print("large_model_start_verifying_index: {}".format(large_model_start_verifying_index)) 
 
         with torch.no_grad():
             outputs = target(
-                input_ids=verify_tokens,
+                input_ids=verify_tokens, 
+                attention_mask = target_attention, 
                 past_key_values = None, 
                 use_cache = False, 
             ) 
@@ -752,7 +754,9 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
                 pred_token_idx = sample(max_fn(verify_prob-speculation_prob)) 
                 if verbose:
                     spec_stream(pred_token_idx, tokenizer, 'red')
-                break
+                break 
+        
+        next_token = pred_token_idx 
         
         # if eos
         if tokenizer.eos_token_id == pred_token_idx:
@@ -765,8 +769,7 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
             if verbose:
                 spec_stream(pred_token_idx, tokenizer, 'blue') 
         
-
-        next_token = pred_token_idx
+        next_token = torch.cat([next_token, pred_token_idx], dim = 1) 
 
     time2 = time.time()
     acceptance_rate = accepted_count / draft_count
