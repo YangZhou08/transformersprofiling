@@ -632,28 +632,22 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
         )
     ''' 
     
-    print("input_ids shape", input_ids.shape) 
-    spec_stream(input_ids, tokenizer, 'black') 
-    for k in range(max_len): 
-        outputs = target(
-            input_ids = input_ids, 
-            past_key_values = None, 
-            use_cache = False, 
-            attention_mask = attention_mask, 
-        ) 
+    outputs = target(
+        input_ids = input_ids, 
+        past_key_values = None, 
+        use_cache = False, 
+        attention_mask = attention_mask, 
+    ) 
 
-        resample_count = 0
-        accepted_count = 0
-        target_sample_count = 0
-        draft_count = 0 
+    resample_count = 0
+    accepted_count = 0
+    target_sample_count = 0
+    draft_count = 0 
 
-        next_token = sample(norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)) # predicting for the next token 
-        # next_token = torch.argmax(outputs.logits[:, -1, :], dim = -1).unsqueeze(0) 
-        # print(next_token) 
-        # print("next_token shape: ", next_token.shape) 
-        spec_stream(next_token[0], tokenizer, 'cyan') 
-        input_ids = torch.cat([input_ids, next_token], dim = 1) 
-        attention_mask = torch.cat([attention_mask, torch.ones([1, 1]).to(draft.device)], dim = 1) 
+    next_token = sample(norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)) # predicting for the next token 
+    # next_token = torch.argmax(outputs.logits[:, -1, :], dim = -1).unsqueeze(0) 
+    # print(next_token) 
+    # print("next_token shape: ", next_token.shape) 
     
     if verbose: 
         print("\n") 
@@ -664,6 +658,7 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
     n = 0
     time1 = time.time() 
     small_model_input_full_context = input_ids 
+    attention_mask_for_small_model = attention_mask 
     
     ############ Spec Decoding ############
     while n < max_len:
@@ -685,13 +680,14 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
                     # use_cache=True, 
                     past_key_values = None, 
                     use_cache = False, 
-                    # attention_mask = torch.cat([attention_mask, torch.ones([1, len(generated_ids)]).to(draft.device)], dim = 1), 
+                    attention_mask = attention_mask_for_small_model, 
                 ) 
             else: 
                 outputs = draft(
                     input_ids = small_model_input_full_context, 
                     past_key_values = None, 
                     use_cache = False, 
+                    attention_mask = attention_mask_for_small_model, 
                 ) 
             
             probs = norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)
@@ -699,9 +695,11 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
             speculation_probs.append(probs[0]) 
             # print("pred_token_idx: {} speculation_probs: {}".format(pred_token_idx, speculation_probs[0].shape)) 
             
-            generated_ids.append(pred_token_idx.item())
+            generated_ids.append(pred_token_idx.item()) 
+            attention_mask_for_small_model = torch.cat([attention_mask_for_small_model, torch.ones([1, 1]).to(draft.device)], dim = 1) 
             draft_count += 1 
 
+            exit(0) 
         # verification
         # verify_tokens = torch.cat([next_token, torch.LongTensor([generated_ids]).to(draft.device)], dim=1) 
         # verify_tokens = torch.cat([pred_token_idx, torch.LongTensor([generated_ids]).to(draft.device)], dim = 1) 
@@ -1213,8 +1211,8 @@ if __name__ == "__main__":
     
     if not args.double_decking: 
         # large model 
-        # target_largemodel = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
-        target_largemodel = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+        target_largemodel = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+        # target_largemodel = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     else: 
         target_largemodel = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
         target_largemodellmhead = LargeModelLMHeadModel(target_largemodel.lm_head).to(torch.bfloat16).to(torch_device) 
@@ -1271,6 +1269,7 @@ if __name__ == "__main__":
                 input_ids = batch["input_ids"].to(torch_device) 
                 attention_mask = batch["attention_mask"].to(torch_device) 
                 if args.use_small_draft: 
+                    '''
                     acceptancer, draftcount = Vanilla_Spec_nokvcache(tokenizer, 
                                         target_largemodel, 
                                         small_model, 
@@ -1280,7 +1279,7 @@ if __name__ == "__main__":
                                         verbose = True, 
                                         attention_mask = attention_mask, 
                     ) 
-                    '''
+                    ''' 
                     acceptancer, draftcount = Vanilla_spec_decnokv22(tokenizer, 
                                                 target_largemodel, 
                                                 small_model, 
@@ -1292,7 +1291,6 @@ if __name__ == "__main__":
                                                 attention_mask = attention_mask, 
                                                 )  
                     print("input_ids: ", input_ids) 
-                    ''' 
                 else: 
                     if not args.double_decking: 
                         large_model.resetgenerationcount() 
