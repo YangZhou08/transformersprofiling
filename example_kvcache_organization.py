@@ -633,21 +633,28 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
     ''' 
     
     print("input_ids shape", input_ids.shape) 
+    k = 0 
+    gnerated = [] 
+    for k in range(max_len): 
+        outputs = target(
+            input_ids = input_ids, 
+            past_key_values = None, 
+            use_cache = False, 
+            # attention_mask = attention_mask, 
+        ) 
+
+        resample_count = 0
+        accepted_count = 0
+        target_sample_count = 0
+        draft_count = 0 
+
+        next_token = sample(norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)) # predicting for the next token 
+        # print("next_token shape: ", next_token.shape) 
+        spec_stream(next_token[0], tokenizer, 'cyan') 
+        gnerated.append(next_token[0]) 
+        input_ids = torch.cat([input_ids, next_token], dim = 1) 
     
-    outputs = target(
-        input_ids = input_ids, 
-        past_key_values = None, 
-        use_cache = False, 
-        attention_mask = attention_mask, 
-    ) 
-
-    resample_count = 0
-    accepted_count = 0
-    target_sample_count = 0
-    draft_count = 0 
-
-    next_token = sample(norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)) # predicting for the next token 
-    print("next_token shape: ", next_token.shape) 
+    exit(0) 
     
     if verbose: 
         print("\n") 
