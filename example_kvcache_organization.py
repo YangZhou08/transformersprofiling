@@ -1156,8 +1156,8 @@ def get_dataset(datasetname = None, tokenizer = None, max_length = None, limit =
     
     if datasetname == "c4": 
         dfiles = [] 
-        # filename = "c4_file1.json" 
-        filename = "c4_file15.json" 
+        filename = "c4_file1.json" 
+        # filename = "c4_file15.json" 
         dfiles.append(dir_c4 + filename) 
         datasetnew = load_dataset("json", data_files = dfiles, split = "train[:{}]".format(limit)) 
         # datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
@@ -1279,7 +1279,8 @@ if __name__ == "__main__":
                                                 gamma = 1, 
                                                 max_len = 128, 
                                                 verbose = True, 
-                    ) 
+                                                temperature = 0 
+                                                ) 
                 else: 
                     if not args.double_decking: 
                         large_model.resetgenerationcount() 
