@@ -653,6 +653,7 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
         # print("next_token shape: ", next_token.shape) 
         spec_stream(next_token[0], tokenizer, 'cyan') 
         input_ids = torch.cat([input_ids, next_token], dim = 1) 
+        attention_mask = torch.cat([attention_mask, torch.ones([1, 1]).to(draft.device)], dim = 1) 
     
     exit(0) 
     
