@@ -646,6 +646,7 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
     draft_count = 0 
 
     next_token = sample(norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)) # predicting for the next token 
+    print("next_token shape: ", next_token.shape) 
     
     if verbose: 
         print("\n") 
@@ -757,7 +758,8 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
             n += 1
             pred_token_idx = sample(verify_probs[-1])
             if verbose:
-                spec_stream(pred_token_idx, tokenizer, 'blue')
+                spec_stream(pred_token_idx, tokenizer, 'blue') 
+    exit(0) 
 
         next_token = pred_token_idx
 
