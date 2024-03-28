@@ -1233,8 +1233,8 @@ if __name__ == "__main__":
     if args.use_small_draft and args.loading_from_checkpoint is not None: 
         small_model = LlamaForCausalLM.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device) 
     elif args.use_small_draft: 
-        small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
-        # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-68m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+        # small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+        small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-68m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     
     acceptanceratelist = {"c4": [], "pg19": [], "openwebtext": []} 
     
@@ -1246,7 +1246,7 @@ if __name__ == "__main__":
     for datasetname in datasetlist: 
         for i in range(iterationscounts): # we need a forloop 
             if args.use_small_draft: 
-                datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = 128, limit = 20) 
+                datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = 128, limit = 40) 
             else: 
                 datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = max_length_table[args.kernel_size] + i, limit = 10000) # i 0 means the first position, i 1 means the second position, etc. 
             
