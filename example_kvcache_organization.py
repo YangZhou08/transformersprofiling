@@ -633,8 +633,7 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
     ''' 
     
     print("input_ids shape", input_ids.shape) 
-    k = 0 
-    gnerated = [] 
+    spec_stream(input_ids, tokenizer, 'black') 
     for k in range(max_len): 
         outputs = target(
             input_ids = input_ids, 
@@ -648,10 +647,10 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
         target_sample_count = 0
         draft_count = 0 
 
-        next_token = sample(norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)) # predicting for the next token 
+        # next_token = sample(norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)) # predicting for the next token 
+        next_token = torch.argmax(outputs.logits[:, -1, :], dim = -1) 
         # print("next_token shape: ", next_token.shape) 
         spec_stream(next_token[0], tokenizer, 'cyan') 
-        gnerated.append(next_token[0]) 
         input_ids = torch.cat([input_ids, next_token], dim = 1) 
     
     exit(0) 
