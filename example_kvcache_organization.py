@@ -51,7 +51,8 @@ def spec_stream(pred_token_idx, tokenizer, color='blue'):
     pred_token_idx = pred_token_idx.squeeze(0) 
     decoded_token = tokenizer.decode(
             pred_token_idx,
-            skip_special_tokens=True,
+            # skip_special_tokens=True,
+            skip_special_tokens = False, 
             clean_up_tokenization_spaces=True,
             # spaces_between_special_tokens=False,
         ) 
@@ -1281,7 +1282,7 @@ if __name__ == "__main__":
                                                 verbose = True, 
                                                 temperature = 0.1, 
                                                 ) 
-                    print("input_ids: ", input_ids.shape) 
+                    print("input_ids: ", input_ids) 
                 else: 
                     if not args.double_decking: 
                         large_model.resetgenerationcount() 
