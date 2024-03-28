@@ -639,7 +639,7 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
             input_ids = input_ids, 
             past_key_values = None, 
             use_cache = False, 
-            # attention_mask = attention_mask, 
+            attention_mask = attention_mask, 
         ) 
 
         resample_count = 0
