@@ -1279,7 +1279,7 @@ if __name__ == "__main__":
                                                 gamma = 1, 
                                                 max_len = 128, 
                                                 verbose = True, 
-                                                temperature = 0 
+                                                temperature = 0.1, 
                                                 ) 
                 else: 
                     if not args.double_decking: 
