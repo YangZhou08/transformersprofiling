@@ -1275,7 +1275,7 @@ if __name__ == "__main__":
                                                 small_model, 
                                                 input_ids, 
                                                 gamma = 1, 
-                                                max_len = 256, 
+                                                max_len = 64, 
                                                 verbose = True, 
                                                 ) 
                 else: 
