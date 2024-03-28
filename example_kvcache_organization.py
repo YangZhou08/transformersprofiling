@@ -1213,8 +1213,8 @@ if __name__ == "__main__":
     
     if not args.double_decking: 
         # large model 
-        target_largemodel = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
-        # target_largemodel = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+        # target_largemodel = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+        target_largemodel = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     else: 
         target_largemodel = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
         target_largemodellmhead = LargeModelLMHeadModel(target_largemodel.lm_head).to(torch.bfloat16).to(torch_device) 
@@ -1251,8 +1251,8 @@ if __name__ == "__main__":
     
     iterationscounts = args.kernel_size if not args.use_small_draft else 1 
     
-    # datasetlist = ["c4", "pg19", "openwebtext"] 
-    datasetlist = ["pg19", "openwebtext"] 
+    datasetlist = ["c4", "pg19", "openwebtext"] 
+    # datasetlist = ["pg19", "openwebtext"] 
     # datasetlist = ["c4"] 
     for datasetname in datasetlist: 
         for i in range(iterationscounts): # we need a forloop 
