@@ -770,7 +770,8 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
         
         print("next_token shape {}".format(next_token.shape)) 
         print("pred_token_idx shape {}".format(pred_token_idx.shape)) 
-        pred_token_idx = pred_token_idx.unsqueeze(0) 
+        if len(pred_token_idx.shape) == 1: 
+            pred_token_idx = pred_token_idx.unsqueeze(0) 
         next_token = torch.cat([next_token, pred_token_idx], dim = 1) 
         
         exit(0) 
