@@ -666,16 +666,26 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
         speculation_probs = []
         generated_ids = []
 
-        for _ in range(gamma):
-            outputs = draft(
-                input_ids = small_model_input_full_context, 
-                # past_key_values=draft_cache, 
-                # use_cache=True, 
-                past_key_values = None, 
-                use_cache = False, 
-                attention_mask = attention_mask, 
-            ) 
-
+        for _ in range(gamma): 
+            if len(generated_ids) > 0: 
+                outputs = draft(
+                    # input_ids = small_model_input_full_context, 
+                    input_ids = torch.cat([small_model_input_full_context, torch.LongTensor([generated_ids]).to(draft.device)], dim = 1), 
+                    # past_key_values=draft_cache, 
+                    # use_cache=True, 
+                    past_key_values = None, 
+                    use_cache = False, 
+                    # attention_mask = attention_mask, 
+                    attention_mask = torch.cat([attention_mask, torch.ones([1, len(generated_ids)]).to(draft.device)], dim = 1), 
+                ) 
+            else: 
+                outputs = draft(
+                    input_ids = small_model_input_full_context, 
+                    past_key_values = None, 
+                    use_cache = False, 
+                    attention_mask = attention_mask, 
+                ) 
+            
             probs = norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)
             pred_token_idx = sample(probs)
             speculation_probs.append(probs[0]) 
