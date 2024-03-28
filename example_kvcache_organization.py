@@ -759,7 +759,8 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
             pred_token_idx = sample(verify_probs[-1])
             if verbose:
                 spec_stream(pred_token_idx, tokenizer, 'blue') 
-    exit(0) 
+        
+        exit(0) 
 
         next_token = pred_token_idx
 
