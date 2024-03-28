@@ -1281,6 +1281,7 @@ if __name__ == "__main__":
                                                 verbose = True, 
                                                 temperature = 0.1, 
                                                 ) 
+                    print("input_ids: ", input_ids.shape) 
                 else: 
                     if not args.double_decking: 
                         large_model.resetgenerationcount() 
