@@ -667,7 +667,7 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
             next_token = next_token.unsqueeze(0)
         
         small_model_input_full_context = torch.cat([small_model_input_full_context, next_token], dim = 1).to(draft.device) 
-        attention_mask_for_small_model = torch.cat([attention_mask_for_small_model, torch.ones([1, 1]).to(draft.device)], dim = 1) 
+        attention_mask_for_small_model = torch.cat([attention_mask_for_small_model, torch.ones_like(next_token).to(draft.device)], dim = 1).to(draft.device) 
         # print("pred_token_idx: {}".format(pred_token_idx.shape)) 
 
         speculation_probs = []
