@@ -717,7 +717,7 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
             idx = i + large_model_start_verifying_index 
             verify_probs.append(norm_logits(outputs.logits[:, idx, :], temperature=temperature ,top_k=top_k, top_p=top_p)[0]) 
         # verify_probs.append(norm_logits(outputs.logits[:, -2, :], temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
-        # print("length of speculation_probs: {} length of verify_probs: {}".format(len(speculation_probs), len(verify_probs))) 
+        print("length of speculation_probs: {} length of verify_probs: {}".format(len(speculation_probs), len(verify_probs))) 
         
         # print("verify_probs: {}".format(verify_probs[0].shape)) 
         for i, speculation_prob, verify_prob in zip(generated_ids, speculation_probs, verify_probs[:-1]):
