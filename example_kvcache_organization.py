@@ -649,7 +649,7 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
 
         # next_token = sample(norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)) # predicting for the next token 
         next_token = torch.argmax(outputs.logits[:, -1, :], dim = -1).unsqueeze(0) 
-        print(next_token) 
+        # print(next_token) 
         # print("next_token shape: ", next_token.shape) 
         spec_stream(next_token[0], tokenizer, 'cyan') 
         input_ids = torch.cat([input_ids, next_token], dim = 1) 
