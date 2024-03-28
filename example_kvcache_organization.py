@@ -822,7 +822,7 @@ def Vanilla_Spec_cache(tokenizer, target, target_cache, draft, draft_cache, inpu
     # reset cache
     target_cache.reset()
     draft_cache.reset()
-    
+    '''
     ############ Iterative Pre-fill ############
     iter_prefill = math.ceil(input_ids.shape[1] / 100)
     for i in (range(iter_prefill)):
@@ -837,7 +837,19 @@ def Vanilla_Spec_cache(tokenizer, target, target_cache, draft, draft_cache, inpu
             past_key_values=draft_cache,
             use_cache=True,
         )
-
+    ''' 
+    outputs = target( 
+        input_ids = input_ids, 
+        past_key_values = target_cache, 
+        use_cache = True, 
+    ) 
+    
+    outputs_draft = draft(
+        input_ids = input_ids, 
+        past_key_values = draft_cache, 
+        use_cache = True, 
+    ) 
+    
     resample_count = 0
     accepted_count = 0
     target_sample_count = 0
@@ -1094,8 +1106,8 @@ if __name__ == "__main__":
                                         target_largemodel, 
                                         small_model, 
                                         input_ids, 
-                                        gamma = 1, 
-                                        max_len = 1, 
+                                        gamma = 3, 
+                                        max_len = 64, 
                                         verbose = True, 
                                         ) 
                 else: 
