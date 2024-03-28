@@ -760,7 +760,6 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
             if verbose:
                 spec_stream(pred_token_idx, tokenizer, 'blue') 
         
-        exit(0) 
 
         next_token = pred_token_idx
 
@@ -1249,7 +1248,7 @@ if __name__ == "__main__":
     for datasetname in datasetlist: 
         for i in range(iterationscounts): # we need a forloop 
             if args.use_small_draft: 
-                datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = 128, limit = 40) 
+                datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = 128, limit = 100) 
             else: 
                 datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = max_length_table[args.kernel_size] + i, limit = 10000) # i 0 means the first position, i 1 means the second position, etc. 
             
