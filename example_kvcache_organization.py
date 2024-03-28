@@ -1250,6 +1250,7 @@ if __name__ == "__main__":
                 input_ids = batch["input_ids"].to(torch_device) 
                 attention_mask = batch["attention_mask"].to(torch_device) 
                 if args.use_small_draft: 
+                    '''
                     acceptancer, draftcount = Vanilla_Spec_nokvcache(tokenizer, 
                                         target_largemodel, 
                                         small_model, 
@@ -1258,6 +1259,15 @@ if __name__ == "__main__":
                                         max_len = 64, 
                                         verbose = True, 
                                         ) 
+                    ''' 
+                    acceptancer, draftcount = Vanilla_spec_decnokv22(tokenizer, 
+                                                target_largemodel, 
+                                                small_model, 
+                                                input_ids, 
+                                                gamma = 3, 
+                                                max_len = 64, 
+                                                verbose = True, 
+                                                ) 
                 else: 
                     if not args.double_decking: 
                         large_model.resetgenerationcount() 
