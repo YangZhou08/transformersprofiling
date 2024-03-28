@@ -1280,7 +1280,7 @@ if __name__ == "__main__":
                                                 gamma = 1, 
                                                 max_len = 128, 
                                                 verbose = True, 
-                                                temperature = 0.1, 
+                                                temperature = 0.6, 
                                                 ) 
                     print("input_ids: ", input_ids) 
                 else: 
