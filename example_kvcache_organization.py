@@ -741,6 +741,8 @@ def Vanilla_spec_decnokv3(tokenizer,
         # assert torch.allclose(verify_probs[0], norm_logits(outputs2.logits[:, -1, :].to(torch.bfloat16), temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
         accepted_tokens = [] 
 
+        print("speculation_probs shape {}".format(len(speculation_probs))) 
+        print("verify_probs length {}".format(len(verify_probs))) 
         for i, speculation_prob, verify_prob in zip(generated_ids, speculation_probs, verify_probs[:-1]): 
             r = torch.rand(1, device = model.device) 
 
