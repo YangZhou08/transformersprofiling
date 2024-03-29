@@ -615,6 +615,133 @@ def Vanilla_spec_dectesting(tokenizer, target, model, input_ids, attention_mask,
     return acceptance_rate, draft_count 
 
 @torch.inference_mode()
+def Vanilla_spec_decnokv3(tokenizer, 
+                              target_lmhead, 
+                              model, 
+                              input_ids, 
+                              attention_mask, 
+                              gamma=4, 
+                              max_len=256, 
+                              top_k=-1, 
+                              top_p=0.9, 
+                              temperature=0.6, 
+                              verbose=False, 
+                              file_path=None, 
+                              target_model = None, 
+): 
+    # reset cache 
+    '''
+    ############ Iterative Pre-fill ############
+    iter_prefill = math.ceil(input_ids.shape[1] / 100)
+    for i in (range(iter_prefill)):
+        outputs = target(
+            input_ids=input_ids[:, i*100:(i+1)*100],
+            past_key_values=target_cache,
+            use_cache=True,
+        )
+
+        outputs_draft = draft(
+            input_ids=input_ids[:, i*100:(i+1)*100],
+            past_key_values=draft_cache,
+            use_cache=True,
+        )
+    ''' 
+    resample_count = 0
+    accepted_count = 0
+    target_sample_count = 0
+    draft_count = 0
+
+    n = 0
+    time1 = time.time()
+    
+    ############ Spec Decoding ############ 
+
+    speculation_probs = []
+    generated_ids = []
+
+    target_model_last_hidden_states = None 
+    spec_stream(input_ids, tokenizer, "black") 
+    for _ in range(gamma): 
+        model_inputs = model.prepare_inputs_for_generation(input_ids, past_key_values = None, input_embeds = None, attention_mask = attention_mask) 
+        print("model_inputs[large_input_ids]: {}".format(model_inputs["large_input_ids"].shape)) 
+        print("model_inputs[attention_mask]: {}".format(model_inputs["attention_mask"].shape)) 
+        outputs = model.forward_generate(
+            **model_inputs, 
+            return_dict = True, 
+            output_attentions = False, 
+            output_hidden_states = False, 
+            output_large_model_last_hidden_states = True, 
+        ) 
+        # print("outputs.logits.shape: {}".format(outputs.logits.shape)) 
+
+        probs = norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)
+        pred_token_idx = sample(probs)
+        speculation_probs.append(probs[0]) 
+        target_model_last_hidden_states = outputs.last_hidden_states # target_model_last_hidden_states is in shape (batch_size, 1, hidden_size) 
+        assert target_model_last_hidden_states is not None 
+        
+        generated_ids.append(pred_token_idx.item())
+        draft_count += 1 
+
+    with torch.no_grad(): 
+        target_model_logits = target_lmhead(target_model_last_hidden_states) # shape (batch_size, 1, vocab_size) 
+        target_model_logits = target_model_logits[:, -1, :] # shape (batch_size, vocab_size) 
+        
+        outputs2 = target_model( 
+            input_ids = input_ids, 
+            past_key_values = None, 
+            use_cache = False, 
+            output_hidden_states = True
+        ) 
+        
+        # assert torch.allclose(target_model_logits, outputs2.logits[:, -1, :].to(torch.bfloat16))  # check if the two logits are the same 
+
+    count = 0
+    verify_probs = []
+
+    verify_probs.append(norm_logits(target_model_logits, temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
+    # assert torch.allclose(verify_probs[0], norm_logits(outputs2.logits[:, -1, :].to(torch.bfloat16), temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
+
+    for i, speculation_prob, verify_prob in zip(generated_ids, speculation_probs, verify_probs): 
+        r = torch.rand(1, device = model.device) 
+
+        if r < torch.min(torch.tensor([1], device=r.device), (verify_prob[i] / speculation_prob[i])):
+            count += 1
+            accepted_count += 1
+            n += 1
+            pred_token_idx = torch.tensor([[i]]).to(model.device) 
+            if verbose:
+                # spec_stream(i, tokenizer, 'green') 
+                spec_stream(pred_token_idx, tokenizer, "green") 
+
+            # if eos
+            if tokenizer.eos_token_id == i:
+                draft_count -= gamma - count
+                break
+
+        else:
+            resample_count += 1
+            n += 1 
+            verify_prob = verify_prob.unsqueeze(0) 
+            speculation_prob = speculation_prob.unsqueeze(0) 
+            pred_token_idx = sample(max_fn(verify_prob-speculation_prob))
+            if verbose:
+                spec_stream(pred_token_idx, tokenizer, 'red')
+            break 
+        
+        # print("speculation_probs: {}, verify_probs: {}".format(speculation_prob.shape, verify_prob.shape)) 
+
+    time2 = time.time()
+    acceptance_rate = accepted_count / draft_count
+    avg_tokens = accepted_count / draft_count * gamma 
+    
+    if verbose:
+        # print(f"Use {time2 - time1} sec to generate {n} tokens (now {target_cache.seq_len} tokens), Tokens/s: {n / (time2 - time1)}", flush=True) 
+        print(f"accepted rate {acceptance_rate}, avg generated tokens {avg_tokens}")
+
+    return acceptance_rate, draft_count 
+
+@torch.inference_mode()
 def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len=256, top_k=-1, top_p=0.9, temperature=0.6, verbose=False, file_path=None, attention_mask = None): 
     '''
     ############ Iterative Pre-fill ############
@@ -726,6 +853,7 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
             verify_probs.append(norm_logits(outputs.logits[:, idx, :], temperature=temperature ,top_k=top_k, top_p=top_p)[0]) 
         # verify_probs.append(norm_logits(outputs.logits[:, -2, :], temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
         # print("length of speculation_probs: {} length of verify_probs: {}".format(len(speculation_probs), len(verify_probs))) 
+        accepted_tokens = [] 
         
         # print("verify_probs: {}".format(verify_probs[0].shape)) 
         for i, speculation_prob, verify_prob in zip(generated_ids, speculation_probs, verify_probs[:-1]):
@@ -738,6 +866,7 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
                 pred_token_idx = torch.tensor([[i]]).to(draft.device)
                 if verbose:
                     spec_stream(pred_token_idx, tokenizer, 'green') 
+                accepted_tokens.append(pred_token_idx if len(pred_token_idx.shape) == 2 else pred_token_idx.unsqueeze(0)) # append the tokens that are accepted 
 
                 # if eos
                 if tokenizer.eos_token_id == i:
@@ -753,10 +882,15 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
                 speculation_prob = speculation_prob.unsqueeze(0) 
                 pred_token_idx = sample(max_fn(verify_prob-speculation_prob)) 
                 if verbose:
-                    spec_stream(pred_token_idx, tokenizer, 'red')
+                    spec_stream(pred_token_idx, tokenizer, 'red') 
+                accepted_tokens.append(pred_token_idx if len(pred_token_idx.shape) == 2 else pred_token_idx.unsqueeze(0)) 
                 break 
         
-        next_token = pred_token_idx 
+        # next_token = pred_token_idx 
+        if len(accepted_tokens) > 1: 
+            next_token = torch.cat(accepted_tokens, dim = 1) 
+        else: 
+            next_token = pred_token_idx 
         
         # if eos
         if tokenizer.eos_token_id == pred_token_idx:
@@ -1291,7 +1425,7 @@ if __name__ == "__main__":
                                                 target_largemodel, 
                                                 small_model, 
                                                 input_ids, 
-                                                gamma = 1, 
+                                                gamma = 2, 
                                                 max_len = 64, 
                                                 verbose = True, 
                                                 attention_mask = attention_mask, 
