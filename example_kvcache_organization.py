@@ -1545,7 +1545,7 @@ if __name__ == "__main__":
                                             input_ids, 
                                             attention_mask, 
                                             gamma = args.speculation_length, 
-                                            max_len = 1, 
+                                            max_len = 64, 
                                             verbose = True, 
                                             target_model = target_largemodel, 
                         ) 

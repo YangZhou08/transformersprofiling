@@ -8579,8 +8579,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             position_ids = torch.tensor(position_list, dtype = torch.long, device = device) 
             position_ids = position_ids.unsqueeze(0) 
             
-            print("position ids found is {}".format(position_ids.shape)) 
-            print("position ids found is {}".format(position_ids)) 
+            # print("position ids found is {}".format(position_ids.shape)) 
+            # print("position ids found is {}".format(position_ids)) 
         
         # the important part 
         # input_embeds should not be None 
@@ -8625,7 +8625,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 raise ValueError("We do not have the experiment setting you are looking for") 
         
         hidden_states = input_embeds 
-        print("hidden_states shape {}".format(hidden_states.shape)) 
+        # print("hidden_states shape {}".format(hidden_states.shape)) 
         
         if self.gradient_checkpointing and self.training:
             if use_cache:
