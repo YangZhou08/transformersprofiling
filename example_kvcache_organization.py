@@ -771,8 +771,6 @@ def Vanilla_spec_decnokv3(tokenizer,
                 accepted_tokens.append(pred_token_idx if len(pred_token_idx.shape) == 2 else pred_token_idx.unsqueeze(0)) 
                 break 
         
-        exit(0) 
-        
         total_accepted_count_per_lsiteration += count 
         num_large_model_verification_step += 1 
         
@@ -784,6 +782,9 @@ def Vanilla_spec_decnokv3(tokenizer,
         # if eos
         if tokenizer.eos_token_id == pred_token_idx:
             break # the large model sampling again is proposefully removed 
+        
+        print("len(accepted_tokens) {}".format(len(accepted_tokens))) 
+        exit(0) 
         
         for i in range(gamma - len(accepted_tokens)): # target compensate positions 
             with torch.no_grad(): 
