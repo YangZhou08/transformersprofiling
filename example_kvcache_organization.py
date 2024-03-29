@@ -1525,7 +1525,19 @@ if __name__ == "__main__":
                     else: 
                         # print("using specudectesting version3") 
                         large_model.resetgenerationcount() 
+                        '''
                         acceptancer, draftcount = Vanilla_specu_dectesting3(tokenizer, 
+                                            target_largemodellmhead, 
+                                            large_model, 
+                                            input_ids, 
+                                            attention_mask, 
+                                            gamma = args.speculation_length, 
+                                            max_len = 1, 
+                                            verbose = True, 
+                                            target_model = target_largemodel, 
+                        ) 
+                        ''' 
+                        acceptancer, draftcount, total_accepted_tokens, num_verifications, expected_tokens = Vanilla_spec_decnokv3(tokenizer, 
                                             target_largemodellmhead, 
                                             large_model, 
                                             input_ids, 
