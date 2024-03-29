@@ -707,6 +707,7 @@ def Vanilla_spec_decnokv3(tokenizer,
                 attention_mask = torch.cat([attention_mask, torch.ones_like(start).to(model.device)], dim = 1) 
                 small_model_input = torch.cat([small_model_input, start], dim = 1) 
                 attention_mask_for_small_model = torch.cat([attention_mask_for_small_model, torch.ones_like(start).to(model.device)], dim = 1) 
+                spec_stream(start, tokenizer, "cyan") 
             probs = norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)
             pred_token_idx = sample(probs)
             speculation_probs.append(probs[0]) 
@@ -784,7 +785,6 @@ def Vanilla_spec_decnokv3(tokenizer,
             break # the large model sampling again is proposefully removed 
         
         print("len(accepted_tokens) {}".format(len(accepted_tokens))) 
-        exit(0) 
         
         for i in range(gamma - len(accepted_tokens)): # target compensate positions 
             with torch.no_grad(): 
@@ -798,6 +798,7 @@ def Vanilla_spec_decnokv3(tokenizer,
                 if len(onemoretoken.shape) == 1: 
                     onemoretoken = onemoretoken.unsqueeze(0) 
                 next_token = torch.cat([next_token, onemoretoken], dim = 1) 
+                spec_stream(onemoretoken, tokenizer, "cyan") 
             
         # print("speculation_probs: {}, verify_probs: {}".format(speculation_prob.shape, verify_prob.shape)) 
 
