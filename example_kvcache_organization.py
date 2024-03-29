@@ -1399,9 +1399,9 @@ if __name__ == "__main__":
     
     iterationscounts = args.kernel_size if not args.use_small_draft else 1 
     
-    datasetlist = ["c4", "pg19", "openwebtext"] 
+    # datasetlist = ["c4", "pg19", "openwebtext"] 
     # datasetlist = ["pg19", "openwebtext"] 
-    # datasetlist = ["c4"] 
+    datasetlist = ["c4"] 
     for datasetname in datasetlist: 
         for i in range(iterationscounts): # we need a forloop 
             if args.use_small_draft: 
