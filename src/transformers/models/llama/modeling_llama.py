@@ -5276,6 +5276,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             self.generate_model_hidden_states = hidden_states.clone().detach() 
         self.generate_iteration_count += 1 
         
+        print(colored("running the small model side", "green")) 
         addonmodeloutput = self.addonsmallmodel.generate_forward(
             input_ids = small_input_ids, 
             attention_mask = original_attention_mask, 

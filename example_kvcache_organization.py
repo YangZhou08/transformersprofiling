@@ -713,6 +713,7 @@ def Vanilla_spec_decnokv3(tokenizer,
             small_model_input = torch.cat([small_model_input, pred_token_idx], dim = 1) 
             attention_mask_for_small_model = torch.cat([attention_mask_for_small_model, torch.ones_like(pred_token_idx).to(model.device)], dim = 1) 
             draft_count += 1 
+        exit(0) 
         
         verify_tokens = torch.cat([input_ids, torch.LongTensor([generated_ids]).to(model.device)], dim = 1) 
         target_attention = torch.cat([attention_mask, torch.ones((1, len(generated_ids))).to(model.device)], dim = 1) 
