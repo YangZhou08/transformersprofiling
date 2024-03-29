@@ -5176,6 +5176,14 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         probs = F.softmax(logits, dim=1)
         return probs 
     
+    def sample2(self, probs : torch.Tensor, num_samples: int = 1, random_seed = None): 
+        if random_seed:
+            torch.manual_seed(random_seed)
+        idx_next = torch.multinomial(probs, num_samples=num_samples)
+        # if (idx_next.item() == 0):
+            # raise RuntimeError 
+        return idx_next 
+    
     def forward_generate(
         self,
         # input_ids: torch.LongTensor = None, 
@@ -5254,7 +5262,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             if inmiddlesample: 
                 outputdist = target_lmhead(hidden_states) 
                 probs = self.norm_logits(outputdist[:, -1, :], temperature = temperature, top_k = top_k, top_p = top_p) 
-                start = self.sample(probs) 
+                start = self.sample2(probs) 
                 if len(start.shape) == 1: 
                     start = start.unsqueeze(0) 
                 small_input_ids = torch.cat([small_input_ids, start], dim = 1) 
