@@ -714,12 +714,9 @@ def Vanilla_spec_decnokv3(tokenizer,
             generated_ids.append(pred_token_idx.item()) 
             if len(pred_token_idx.shape) == 1: 
                 pred_token_idx = pred_token_idx.unsqueeze(0) 
-            print("before concatenation small_model_input {}".format(small_model_input.shape)) 
             small_model_input = torch.cat([small_model_input, pred_token_idx], dim = 1) 
-            print("after concatenation small_model_input {}".format(small_model_input.shape)) 
             attention_mask_for_small_model = torch.cat([attention_mask_for_small_model, torch.ones_like(pred_token_idx).to(model.device)], dim = 1) 
             draft_count += 1 
-            print("iteration {}".format(i)) 
         
         verify_tokens = torch.cat([input_ids, torch.LongTensor([generated_ids]).to(model.device)], dim = 1) 
         target_attention = torch.cat([attention_mask, torch.ones((1, len(generated_ids))).to(model.device)], dim = 1) 
@@ -1530,7 +1527,7 @@ if __name__ == "__main__":
                                             verbose = True, 
                         ) 
                     else: 
-                        print("using specudectesting version3") 
+                        # print("using specudectesting version3") 
                         large_model.resetgenerationcount() 
                         '''
                         acceptancer, draftcount = Vanilla_specu_dectesting3(tokenizer, 

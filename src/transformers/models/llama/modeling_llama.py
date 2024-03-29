@@ -5241,6 +5241,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         last_hidden_states = None 
+        start = None 
         if self.generate_iteration_count % self.sliding_window_length == 0: 
             # NOTE for this case, we use the pass-in attention mask 
             print(colored("running the large model side", "green")) 
