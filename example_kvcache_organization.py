@@ -651,97 +651,158 @@ def Vanilla_spec_decnokv3(tokenizer,
     resample_count = 0
     accepted_count = 0
     target_sample_count = 0
-    draft_count = 0
+    draft_count = 0 
+    total_accepted_count_per_lsiteration = 0 
+    num_large_model_verification_step = 0 
 
     n = 0
     time1 = time.time()
     
     ############ Spec Decoding ############ 
-
-    speculation_probs = []
-    generated_ids = []
-
-    target_model_last_hidden_states = None 
     spec_stream(input_ids, tokenizer, "black") 
-    for _ in range(gamma): 
-        model_inputs = model.prepare_inputs_for_generation(input_ids, past_key_values = None, input_embeds = None, attention_mask = attention_mask) 
-        print("model_inputs[large_input_ids]: {}".format(model_inputs["large_input_ids"].shape)) 
-        print("model_inputs[attention_mask]: {}".format(model_inputs["attention_mask"].shape)) 
-        outputs = model.forward_generate(
-            **model_inputs, 
-            return_dict = True, 
-            output_attentions = False, 
-            output_hidden_states = False, 
-            output_large_model_last_hidden_states = True, 
-        ) 
-        # print("outputs.logits.shape: {}".format(outputs.logits.shape)) 
-
-        probs = norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)
-        pred_token_idx = sample(probs)
-        speculation_probs.append(probs[0]) 
-        target_model_last_hidden_states = outputs.last_hidden_states # target_model_last_hidden_states is in shape (batch_size, 1, hidden_size) 
-        assert target_model_last_hidden_states is not None 
+    
+    next_token = None 
+    
+    while n < max_len: 
+        model.resetgenerationcount() 
+        if next_token.shape == torch.Size([1]) and next_token is not None: 
+            next_token = next_token.unsqueeze(0) 
         
-        generated_ids.append(pred_token_idx.item())
-        draft_count += 1 
-
-    with torch.no_grad(): 
-        target_model_logits = target_lmhead(target_model_last_hidden_states) # shape (batch_size, 1, vocab_size) 
-        target_model_logits = target_model_logits[:, -1, :] # shape (batch_size, vocab_size) 
+        if next_token is not None: 
+            input_ids = torch.cat([input_ids, next_token], dim = 1).to(model.device) 
+            attention_mask = torch.cat([attention_mask, torch.ones_like(next_token)], dim = 1).to(model.device) 
+            
+        small_model_input = input_ids 
+        attention_mask_for_small_model = attention_mask 
         
-        outputs2 = target_model( 
-            input_ids = input_ids, 
-            past_key_values = None, 
-            use_cache = False, 
-            output_hidden_states = True
-        ) 
+        speculation_probs = []
+        generated_ids = [] 
         
-        # assert torch.allclose(target_model_logits, outputs2.logits[:, -1, :].to(torch.bfloat16))  # check if the two logits are the same 
-
-    count = 0
-    verify_probs = []
-
-    verify_probs.append(norm_logits(target_model_logits, temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
-    # assert torch.allclose(verify_probs[0], norm_logits(outputs2.logits[:, -1, :].to(torch.bfloat16), temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
-
-    for i, speculation_prob, verify_prob in zip(generated_ids, speculation_probs, verify_probs): 
-        r = torch.rand(1, device = model.device) 
-
-        if r < torch.min(torch.tensor([1], device=r.device), (verify_prob[i] / speculation_prob[i])):
-            count += 1
-            accepted_count += 1
-            n += 1
-            pred_token_idx = torch.tensor([[i]]).to(model.device) 
-            if verbose:
-                # spec_stream(i, tokenizer, 'green') 
-                spec_stream(pred_token_idx, tokenizer, "green") 
-
-            # if eos
-            if tokenizer.eos_token_id == i:
-                draft_count -= gamma - count
-                break
-
-        else:
-            resample_count += 1
-            n += 1 
-            verify_prob = verify_prob.unsqueeze(0) 
-            speculation_prob = speculation_prob.unsqueeze(0) 
-            pred_token_idx = sample(max_fn(verify_prob-speculation_prob))
-            if verbose:
-                spec_stream(pred_token_idx, tokenizer, 'red')
-            break 
+        # for _ in range(gamma): 
+        for i in range(gamma): 
+            # model_inputs = model.prepare_inputs_for_generation(input_ids, past_key_values = None, input_embeds = None, attention_mask = attention_mask) 
+            model_inputs = model.prepare_inputs_for_generation(small_model_input, past_key_values = None, input_embeds = None, attention_mask = attention_mask_for_small_model) 
+            print("model_inputs[large_input_ids]: {}".format(model_inputs["large_input_ids"].shape)) 
+            print("model_inputs[attention_mask]: {}".format(model_inputs["attention_mask"].shape)) 
+            outputs = model.forward_generate(
+                **model_inputs, 
+                return_dict = True, 
+                output_attentions = False, 
+                output_hidden_states = False, 
+                output_large_model_last_hidden_states = False, 
+                inmiddlesample = True, 
+                target_lmhead = target_lmhead, 
+                top_k = top_k, 
+                top_p = top_p, 
+                temperature = temperature, 
+            ) 
+            # print("outputs.logits.shape: {}".format(outputs.logits.shape)) 
+            if i == 0: 
+                start = outputs.start 
+                input_ids = torch.cat([input_ids, start], dim = 1) 
+                attention_mask = torch.cat([attention_mask, torch.ones_like(start).to(model.device)], dim = 1) 
+                small_model_input = torch.cat([small_model_input, start], dim = 1) 
+                attention_mask_for_small_model = torch.cat([attention_mask_for_small_model, torch.ones_like(start).to(model.device)], dim = 1) 
+            probs = norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)
+            pred_token_idx = sample(probs)
+            speculation_probs.append(probs[0]) 
+            
+            generated_ids.append(pred_token_idx.item()) 
+            if len(pred_token_idx.shape) == 1: 
+                pred_token_idx = pred_token_idx.unsqueeze(0) 
+            small_model_input = torch.cat([small_model_input, pred_token_idx], dim = 1) 
+            attention_mask_for_small_model = torch.cat([attention_mask_for_small_model, torch.ones_like(pred_token_idx).to(model.device)], dim = 1) 
+            draft_count += 1 
         
+        verify_tokens = torch.cat([input_ids, torch.LongTensor([generated_ids]).to(model.device)], dim = 1) 
+        target_attention = torch.cat([attention_mask, torch.ones((1, len(generated_ids))).to(model.device)], dim = 1) 
+        large_model_start_verifying_index = input_ids.shape[1] - 1 
+
+        with torch.no_grad(): 
+            outputs2 = target_model( 
+                input_ids = verify_tokens, 
+                past_key_values = None, 
+                use_cache = False, 
+                attention_mask = target_attention, 
+            ) 
+            
+            # assert torch.allclose(target_model_logits, outputs2.logits[:, -1, :].to(torch.bfloat16))  # check if the two logits are the same 
+
+        count = 0
+        verify_probs = []
+
+        for i in range(gamma + 1): 
+            idx = i + large_model_start_verifying_index 
+            verify_probs.append(norm_logits(outputs2.logits[:, idx, :], temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
+        # assert torch.allclose(verify_probs[0], norm_logits(outputs2.logits[:, -1, :].to(torch.bfloat16), temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
+        accepted_tokens = [] 
+
+        for i, speculation_prob, verify_prob in zip(generated_ids, speculation_probs, verify_probs[:-1]): 
+            r = torch.rand(1, device = model.device) 
+
+            if r < torch.min(torch.tensor([1], device=r.device), (verify_prob[i] / speculation_prob[i])):
+                count += 1
+                accepted_count += 1
+                n += 1
+                pred_token_idx = torch.tensor([[i]]).to(model.device) 
+                if verbose:
+                    # spec_stream(i, tokenizer, 'green') 
+                    spec_stream(pred_token_idx, tokenizer, "green") 
+                accepted_tokens.append(pred_token_idx if len(pred_token_idx.shape) == 2 else pred_token_idx.unsqueeze(0)) 
+                # if eos
+                if tokenizer.eos_token_id == i:
+                    draft_count -= gamma - count
+                    break
+
+            else:
+                resample_count += 1
+                n += 1 
+                verify_prob = verify_prob.unsqueeze(0) 
+                speculation_prob = speculation_prob.unsqueeze(0) 
+                pred_token_idx = sample(max_fn(verify_prob-speculation_prob))
+                if verbose:
+                    spec_stream(pred_token_idx, tokenizer, 'red') 
+                accepted_tokens.append(pred_token_idx if len(pred_token_idx.shape) == 2 else pred_token_idx.unsqueeze(0)) 
+                break 
+        
+        total_accepted_count_per_lsiteration += count 
+        num_large_model_verification_step += 1 
+        
+        if len(accepted_tokens) > 1: 
+            next_token = torch.cat(accepted_tokens, dim = 1) 
+        else: 
+            next_token = pred_token_idx 
+        
+        # if eos
+        if tokenizer.eos_token_id == pred_token_idx:
+            break # the large model sampling again is proposefully removed 
+        
+        for i in range(gamma - len(accepted_count)): # target compensate positions 
+            with torch.no_grad(): 
+                outputs = target_model(
+                    input_ids = torch.tensor([input_ids, next_token]).to(model.device), 
+                    past_key_values = None, 
+                    use_cache = False, 
+                    attention_mask = torch.cat([attention_mask, torch.ones_like(next_token).to(model.device)], dim = 1), 
+                ) 
+                onemoretoken = sample(norm_logits(outputs.logits[:, -1, :], temperature = temperature, top_k = top_k, top_p = top_p)) 
+                if len(onemoretoken.shape) == 1: 
+                    onemoretoken = onemoretoken.unsqueeze(0) 
+                next_token = torch.cat([next_token, onemoretoken], dim = 1) 
+            
         # print("speculation_probs: {}, verify_probs: {}".format(speculation_prob.shape, verify_prob.shape)) 
 
     time2 = time.time()
     acceptance_rate = accepted_count / draft_count
     avg_tokens = accepted_count / draft_count * gamma 
+    expected_tokens = total_accepted_count_per_lsiteration / num_large_model_verification_step 
     
     if verbose:
         # print(f"Use {time2 - time1} sec to generate {n} tokens (now {target_cache.seq_len} tokens), Tokens/s: {n / (time2 - time1)}", flush=True) 
-        print(f"accepted rate {acceptance_rate}, avg generated tokens {avg_tokens}")
+        print(f"accepted rate {acceptance_rate}, avg generated tokens {avg_tokens}") 
+        print(f"expected_tokens: {expected_tokens}") 
 
-    return acceptance_rate, draft_count 
+    return acceptance_rate, draft_count, total_accepted_count_per_lsiteration, num_large_model_verification_step, expected_tokens 
 
 @torch.inference_mode()
 def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len=256, top_k=-1, top_p=0.9, temperature=0.6, verbose=False, file_path=None, attention_mask = None): 
