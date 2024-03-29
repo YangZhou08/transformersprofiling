@@ -665,8 +665,9 @@ def Vanilla_spec_decnokv3(tokenizer,
     
     while n < max_len: 
         model.resetgenerationcount() 
-        if next_token.shape == torch.Size([1]) and next_token is not None: 
-            next_token = next_token.unsqueeze(0) 
+        if next_token is not None: 
+            if next_token.shape == torch.Size([1]): 
+                next_token = next_token.unsqueeze(0) 
         
         if next_token is not None: 
             input_ids = torch.cat([input_ids, next_token], dim = 1).to(model.device) 
