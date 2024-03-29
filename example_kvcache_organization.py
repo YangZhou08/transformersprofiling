@@ -789,7 +789,8 @@ def Vanilla_spec_decnokv3(tokenizer,
         for i in range(gamma - len(accepted_tokens)): # target compensate positions 
             with torch.no_grad(): 
                 outputs = target_model(
-                    input_ids = torch.tensor([input_ids, next_token]).to(model.device), 
+                    # input_ids = torch.tensor([input_ids, next_token]).to(model.device), 
+                    input_ids = torch.cat([input_ids, next_token], dim = 1), 
                     past_key_values = None, 
                     use_cache = False, 
                     attention_mask = torch.cat([attention_mask, torch.ones_like(next_token).to(model.device)], dim = 1), 
