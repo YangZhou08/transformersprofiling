@@ -675,6 +675,7 @@ def Vanilla_spec_decnokv3(tokenizer,
             
         small_model_input = input_ids 
         attention_mask_for_small_model = attention_mask 
+        print("attention_mask_for_small_model: {}".format(attention_mask_for_small_model.shape)) 
         
         speculation_probs = []
         generated_ids = [] 
