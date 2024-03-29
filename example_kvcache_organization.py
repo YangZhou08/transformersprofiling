@@ -1530,7 +1530,7 @@ if __name__ == "__main__":
                                             verbose = True, 
                         ) 
                     else: 
-                        # print("using specudectesting version3") 
+                        print("using specudectesting version3") 
                         large_model.resetgenerationcount() 
                         '''
                         acceptancer, draftcount = Vanilla_specu_dectesting3(tokenizer, 
