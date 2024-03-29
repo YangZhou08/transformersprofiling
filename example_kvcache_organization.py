@@ -1550,6 +1550,7 @@ if __name__ == "__main__":
                                             verbose = True, 
                                             target_model = target_largemodel, 
                         ) 
+                        exit(0) 
                                     
                 globalacceptancerate += (acceptancer * draftcount) 
                 globaldraftcount += draftcount 
