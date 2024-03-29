@@ -768,6 +768,8 @@ def Vanilla_spec_decnokv3(tokenizer,
                 accepted_tokens.append(pred_token_idx if len(pred_token_idx.shape) == 2 else pred_token_idx.unsqueeze(0)) 
                 break 
         
+        exit(0) 
+        
         total_accepted_count_per_lsiteration += count 
         num_large_model_verification_step += 1 
         
