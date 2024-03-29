@@ -687,6 +687,7 @@ def Vanilla_spec_decnokv3(tokenizer,
             model_inputs = model.prepare_inputs_for_generation(small_model_input, past_key_values = None, input_embeds = None, attention_mask = attention_mask_for_small_model) 
             print("model_inputs[large_input_ids]: {}".format(model_inputs["large_input_ids"].shape)) 
             print("model_inputs[attention_mask]: {}".format(model_inputs["attention_mask"].shape)) 
+            print("iteration {}".format(i)) 
             outputs = model.forward_generate(
                 **model_inputs, 
                 return_dict = True, 
@@ -718,6 +719,7 @@ def Vanilla_spec_decnokv3(tokenizer,
             print("after concatenation small_model_input {}".format(small_model_input.shape)) 
             attention_mask_for_small_model = torch.cat([attention_mask_for_small_model, torch.ones_like(pred_token_idx).to(model.device)], dim = 1) 
             draft_count += 1 
+            print("iteration {}".format(i)) 
         
         verify_tokens = torch.cat([input_ids, torch.LongTensor([generated_ids]).to(model.device)], dim = 1) 
         target_attention = torch.cat([attention_mask, torch.ones((1, len(generated_ids))).to(model.device)], dim = 1) 
