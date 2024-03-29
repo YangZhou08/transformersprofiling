@@ -25,6 +25,8 @@ torch.set_printoptions(threshold=50000)
 hostname = socket.gethostname() 
 print("Hostname:", hostname) 
 
+from scipy.optimize import fsolve 
+
 if "lovelace" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_models = "/home/yangzho6/model_checkpoints/" 
@@ -1279,6 +1281,9 @@ def Vanilla_Spec_cache(tokenizer, target, target_cache, draft, draft_cache, inpu
         print(f"accepted rate {acceptance_rate}, avg generated tokens {avg_tokens}")
 
     return acceptance_rate 
+
+def equation(a, length, gamma): 
+    return (1 - a ** (gamma + 1)) / (1 - a) * length 
     
 def get_dataset(datasetname = None, tokenizer = None, max_length = None, limit = None): 
     
@@ -1484,4 +1489,5 @@ for datasetname in datasetlist:
     for i in range(iterationscounts): 
         print("position {} acceptance rate: {}".format(i + 1, acceptanceratelist[datasetname][i])) 
         print("gamma of the experiment is {} expected tokens accepted: {}".format(args.speculation_length, expectedtokensaccepted[datasetname][i])) 
+        solution_acceptance_rate = fsolve(equation, 0.5, args = (expectedtokensaccepted[datasetname][i], args.speculation_length)) 
     print() 
