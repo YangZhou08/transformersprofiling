@@ -1491,4 +1491,5 @@ for datasetname in datasetlist:
         print("position {} acceptance rate: {}".format(i + 1, acceptanceratelist[datasetname][i])) 
         print("gamma of the experiment is {} expected tokens accepted: {}".format(args.speculation_length, expectedtokensaccepted[datasetname][i])) 
         solution_acceptance_rate = fsolve(equation, 0.5, args = (expectedtokensaccepted[datasetname][i], args.speculation_length)) 
+        print("solution_acceptance_rate {}".format(solution_acceptance_rate)) 
     print() 
