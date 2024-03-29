@@ -685,8 +685,8 @@ def Vanilla_spec_decnokv3(tokenizer,
         for i in range(gamma): 
             # model_inputs = model.prepare_inputs_for_generation(input_ids, past_key_values = None, input_embeds = None, attention_mask = attention_mask) 
             model_inputs = model.prepare_inputs_for_generation(small_model_input, past_key_values = None, input_embeds = None, attention_mask = attention_mask_for_small_model) 
-            # print("model_inputs[large_input_ids]: {}".format(model_inputs["large_input_ids"].shape)) 
-            # print("model_inputs[attention_mask]: {}".format(model_inputs["attention_mask"].shape)) 
+            print("model_inputs[large_input_ids]: {}".format(model_inputs["large_input_ids"].shape)) 
+            print("model_inputs[attention_mask]: {}".format(model_inputs["attention_mask"].shape)) 
             outputs = model.forward_generate(
                 **model_inputs, 
                 return_dict = True, 
