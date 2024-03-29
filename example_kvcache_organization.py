@@ -780,7 +780,7 @@ def Vanilla_spec_decnokv3(tokenizer,
         if tokenizer.eos_token_id == pred_token_idx:
             break # the large model sampling again is proposefully removed 
         
-        for i in range(gamma - len(accepted_count)): # target compensate positions 
+        for i in range(gamma - len(accepted_tokens)): # target compensate positions 
             with torch.no_grad(): 
                 outputs = target_model(
                     input_ids = torch.tensor([input_ids, next_token]).to(model.device), 
