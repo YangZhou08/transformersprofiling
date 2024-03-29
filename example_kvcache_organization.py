@@ -814,7 +814,7 @@ def Vanilla_spec_decnokv22(tokenizer, target, draft, input_ids, gamma=4, max_len
                     # use_cache=True, 
                     past_key_values = None, 
                     use_cache = False, 
-                    attention_mask = torch.cat([attention_mask_for_small_model, torch.ones([1, 1]).to(draft.device)], dim = 1), 
+                    attention_mask = torch.cat([attention_mask_for_small_model, torch.ones((1, len(generated_ids))).to(draft.device)], dim = 1), 
                 ) 
             else: 
                 outputs = draft(
