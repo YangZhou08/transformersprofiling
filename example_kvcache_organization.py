@@ -1475,7 +1475,7 @@ if __name__ == "__main__":
             if args.use_small_draft: 
                 datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = 64, limit = 200) 
             else: 
-                datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = max_length_table[args.kernel_size] + i, limit = 10000) # i 0 means the first position, i 1 means the second position, etc. 
+                datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = max_length_table[args.kernel_size] + i, limit = 200) # i 0 means the first position, i 1 means the second position, etc. 
             
             # dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 32, shuffle = False) 
             dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 1, shuffle = False) 
