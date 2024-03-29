@@ -5243,7 +5243,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         last_hidden_states = None 
         if self.generate_iteration_count % self.sliding_window_length == 0: 
             # NOTE for this case, we use the pass-in attention mask 
-            print(colored("running the large model side", "green")) 
+            # print(colored("running the large model side", "green")) 
             outputs = self.model(
                 input_ids = large_input_ids, 
                 attention_mask = attention_mask, 
@@ -5277,14 +5277,14 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 selected_seq_indices = [i * self.sliding_window_length for i in range(0, math.ceil(seq_len / self.sliding_window_length))]  # adding the last one to get future tokens 
             else: 
                 selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
-            print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
+            # print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
             
             hidden_states = hidden_states[:, selected_seq_indices, :] 
             hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
             self.generate_model_hidden_states = hidden_states.clone().detach() 
         self.generate_iteration_count += 1 
         
-        print(colored("running the small model side", "green")) 
+        # print(colored("running the small model side", "green")) 
         addonmodeloutput = self.addonsmallmodel.generate_forward(
             input_ids = small_input_ids, 
             attention_mask = original_attention_mask, 
