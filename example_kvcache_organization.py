@@ -685,9 +685,8 @@ def Vanilla_spec_decnokv3(tokenizer,
         for i in range(gamma): 
             # model_inputs = model.prepare_inputs_for_generation(input_ids, past_key_values = None, input_embeds = None, attention_mask = attention_mask) 
             model_inputs = model.prepare_inputs_for_generation(small_model_input, past_key_values = None, input_embeds = None, attention_mask = attention_mask_for_small_model) 
-            print("model_inputs[large_input_ids]: {}".format(model_inputs["large_input_ids"].shape)) 
-            print("model_inputs[attention_mask]: {}".format(model_inputs["attention_mask"].shape)) 
-            print("iteration {}".format(i)) 
+            # print("model_inputs[large_input_ids]: {}".format(model_inputs["large_input_ids"].shape)) 
+            # print("model_inputs[attention_mask]: {}".format(model_inputs["attention_mask"].shape)) 
             outputs = model.forward_generate(
                 **model_inputs, 
                 return_dict = True, 
@@ -742,8 +741,8 @@ def Vanilla_spec_decnokv3(tokenizer,
         # assert torch.allclose(verify_probs[0], norm_logits(outputs2.logits[:, -1, :].to(torch.bfloat16), temperature = temperature, top_k = top_k, top_p = top_p)[0]) 
         accepted_tokens = [] 
 
-        print("speculation_probs shape {}".format(len(speculation_probs))) 
-        print("verify_probs length {}".format(len(verify_probs))) 
+        # print("speculation_probs shape {}".format(len(speculation_probs))) 
+        # print("verify_probs length {}".format(len(verify_probs))) 
         for i, speculation_prob, verify_prob in zip(generated_ids, speculation_probs, verify_probs[:-1]): 
             r = torch.rand(1, device = model.device) 
 
@@ -784,8 +783,6 @@ def Vanilla_spec_decnokv3(tokenizer,
         if tokenizer.eos_token_id == pred_token_idx:
             break # the large model sampling again is proposefully removed 
         
-        print("len(accepted_tokens) {}".format(len(accepted_tokens))) 
-        
         for i in range(gamma - len(accepted_tokens)): # target compensate positions 
             with torch.no_grad(): 
                 outputs = target_model(
@@ -801,7 +798,6 @@ def Vanilla_spec_decnokv3(tokenizer,
                 next_token = torch.cat([next_token, onemoretoken], dim = 1) 
                 spec_stream(onemoretoken, tokenizer, "magenta") 
         
-        sleep(1) 
         # print("speculation_probs: {}, verify_probs: {}".format(speculation_prob.shape, verify_prob.shape)) 
 
     time2 = time.time()
