@@ -1478,8 +1478,8 @@ if __name__ == "__main__":
     else: 
         iterationscounts = 1 
     
-    # datasetlist = ["c4", "pg19", "openwebtext"] 
-    datasetlist = ["openwebtext"] 
+    datasetlist = ["c4", "pg19", "openwebtext"] 
+    # datasetlist = ["openwebtext"] 
     for datasetname in datasetlist: 
         for i in range(iterationscounts): # we need a forloop 
             if args.use_small_draft: 
