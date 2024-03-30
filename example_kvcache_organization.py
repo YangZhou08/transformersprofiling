@@ -1420,6 +1420,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_small_draft", action = "store_true") 
     parser.add_argument("--double_decking", action = "store_true") 
     parser.add_argument("--speculation_length", type = int, default = None) 
+    parser.add_argument("--perpositionali", action = "store_true") 
     
     args = parser.parse_args() 
     
@@ -1472,7 +1473,10 @@ if __name__ == "__main__":
     acceptanceratelist = {"c4": [], "pg19": [], "openwebtext": []} 
     expectedtokensaccepted = {"c4": [], "pg19": [], "openwebtext": []} 
     
-    iterationscounts = args.kernel_size if not args.use_small_draft else 1 
+    if args.perpositionali: 
+        iterationscounts = args.kernel_size if not args.use_small_draft else 1 
+    else: 
+        iterationscounts = 1 
     
     # datasetlist = ["c4", "pg19", "openwebtext"] 
     datasetlist = ["openwebtext"] 
@@ -1561,6 +1565,7 @@ if __name__ == "__main__":
             
             # print("global acceptance rate: ", globalacceptancerate / globaldraftcount) 
             print("position {} acceptancerate: {}".format(i + 1, globalacceptancerate / globaldraftcount)) 
+            print("position {} average token accepted: {}".format(i + 1, globalacceptedtokenscount / globalnumverifications)) 
             acceptanceratelist[datasetname].append(globalacceptancerate / globaldraftcount) 
             expectedtokensaccepted[datasetname].append(globalacceptedtokenscount / globalnumverifications) 
         
