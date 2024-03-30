@@ -799,7 +799,7 @@ def Vanilla_spec_decnokv3(tokenizer,
                 if len(onemoretoken.shape) == 1: 
                     onemoretoken = onemoretoken.unsqueeze(0) 
                 next_token = torch.cat([next_token, onemoretoken], dim = 1) 
-                spec_stream(onemoretoken, tokenizer, "paleturquoise") 
+                spec_stream(onemoretoken, tokenizer, "magenta") 
         
         exit(0) 
         # print("speculation_probs: {}, verify_probs: {}".format(speculation_prob.shape, verify_prob.shape)) 
