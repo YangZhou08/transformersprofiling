@@ -801,7 +801,7 @@ def Vanilla_spec_decnokv3(tokenizer,
                 next_token = torch.cat([next_token, onemoretoken], dim = 1) 
                 spec_stream(onemoretoken, tokenizer, "magenta") 
         
-        exit(0) 
+        sleep(1) 
         # print("speculation_probs: {}, verify_probs: {}".format(speculation_prob.shape, verify_prob.shape)) 
 
     time2 = time.time()
