@@ -48,6 +48,7 @@ parser.add_argument("--batch_size", type = int, default = 64)
 parser.add_argument("--debug", action = "store_true") 
 # parser.add_argument("--datasetsubname", type = str, default = None) 
 parser.add_argument("--task_id", type = int, default = 0) 
+parser.add_argument("--num_workers", type = int, default = 8) 
 parser.add_argument("--saving_condensed", action = "store_true") 
 
 args = parser.parse_args() 
@@ -110,12 +111,13 @@ print("path_d: {}, the line count is {}".format(args.path_d, line_count))
 # we hardcode the following, the total number of tasks is 12, each task uses 1 node with 8 GPUs (no longer used) 
 # args.path_d = args.task_id * 8 + args.path_d 
 # each_gpu_line_count_ref = (line_count + 6) // 7 
-each_gpu_line_count_ref = (line_count + 7) // 8 
-if args.path_d < 7: 
+# each_gpu_line_count_ref = (line_count + 7) // 8 
+each_gpu_line_count_ref = (line_count + args.num_workers - 1) // args.num_workers 
+if args.path_d < args.num_workers - 1: 
     each_gpu_line_count = each_gpu_line_count_ref 
-else: # 6 
+else: # numworkers - 1 
     # each_gpu_line_count = line_count - (6 * each_gpu_line_count_ref) 
-    each_gpu_line_count = line_count - (7 * each_gpu_line_count_ref) 
+    each_gpu_line_count = line_count - ((args.num_workers - 1) * each_gpu_line_count_ref) 
 print(colored("the global proc id is {} start_idx {} end_idx {}".format(args.path_d, args.path_d * each_gpu_line_count_ref, args.path_d * each_gpu_line_count_ref + each_gpu_line_count), "blue")) 
 
 # print(colored("path_d: {}, the processing files are {}".format(args.path_d, d_files), "yellow")) 
