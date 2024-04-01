@@ -332,6 +332,7 @@ for step, inputs in enumerate(train_dataloader):
             example = large_outputs.sequences[i] 
             print(tokenizer.decode(example[: max_length])) 
             print(colored(tokenizer.decode(example[max_length : ]), "blue")) 
+            print("attention_mask is {}".format(attention_mask[i])) 
             print() 
         exit(0) 
     # if step > 1: 
