@@ -292,12 +292,6 @@ json_file1 = open(synthesized_dir_path + json_file_name, "a")
 
 train_dataloader = trainer.get_train_dataloader() 
 print("path_d: {}, the length of the train dataloader is {}".format(args.path_d, len(train_dataloader))) 
-dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
-# kernel_size = 4 
-if args.kernel_size not in dict_kernel_maxlength: 
-    raise ValueError("kernel size should be one of 3, 4, 5, 6, 7") 
-else: 
-    kernel_size = int(args.kernel_size) 
 
 for step, inputs in enumerate(train_dataloader): 
     inputs = trainer._prepare_inputs(inputs) 
@@ -313,9 +307,24 @@ for step, inputs in enumerate(train_dataloader):
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = max_length + dict_kernel_maxlength[kernel_size], do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     if args.topk is not None: 
-        large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = True, top_k = top_k, output_hidden_states = False, return_dict_in_generate = True) 
+        large_outputs = large_model.generate(
+            input_ids = input_ids, 
+            attention_mask = attention_mask, 
+            max_length = 260, 
+            do_sample = True, 
+            top_k = top_k, 
+            output_hidden_states = False, 
+            return_dict_in_generate = True 
+        ) 
     else: 
-        large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = True, output_hidden_states = False, return_dict_in_generate = True) 
+        large_outputs = large_model.generate(
+            input_ids = input_ids, 
+            attention_mask = attention_mask, 
+            max_length = 260, 
+            do_sample = True, 
+            output_hidden_states = False, 
+            return_dict_in_generate = True 
+        ) 
     
     if args.debug: 
         for i in range(input_ids.shape[0]): 
@@ -331,7 +340,7 @@ for step, inputs in enumerate(train_dataloader):
         print("path_d: {}, step is {} and the text first synthesized is {}".format(args.path_d, step, textsynthesized[0])) 
     
     for i in range(large_outputs.sequences.shape[0]): 
-        example_synthesized = textsynthesized[i] 
+        example_synthesized = textsynthesized[i] # I don't think this line is used 
         
         outputs = large_outputs.sequences[i] 
         
