@@ -322,7 +322,8 @@ for step, inputs in enumerate(train_dataloader):
             input_ids = input_ids, 
             attention_mask = attention_mask, 
             max_length = 260, 
-            do_sample = True, 
+            # do_sample = True, 
+            do_sample = False, 
             output_hidden_states = False, 
             return_dict_in_generate = True 
         ) 
@@ -334,7 +335,7 @@ for step, inputs in enumerate(train_dataloader):
             print(colored(tokenizer.decode(example[max_length : ]), "blue")) 
             print("attention_mask is {}".format(attention_mask[i])) 
             print() 
-        # exit(0) 
+        exit(0) 
     # if step > 1: 
     
     textsynthesized = tokenizer.batch_decode(large_outputs.sequences) 
