@@ -37,6 +37,7 @@ import socket
 
 hostname = socket.gethostname()
 print("Hostname:", hostname) 
+start_time = time.time() 
 
 parser = argparse.ArgumentParser() 
 parser.add_argument("--kernel_size", type = int, default = 4) 
@@ -48,6 +49,7 @@ parser.add_argument("--batch_size", type = int, default = 64)
 parser.add_argument("--debug", action = "store_true") 
 # parser.add_argument("--datasetsubname", type = str, default = None) 
 parser.add_argument("--task_id", type = int, default = 0) 
+parser.add_argument("--saving_condensed", action = "store_true") 
 
 args = parser.parse_args() 
 # if args.datasetsubname is None: 
@@ -74,11 +76,11 @@ elif "ada" in hostname:
     synthesized_data_path = "/home/beidic/yangzho6/c4llm_synthesized/{}_topk{}/tensor_dir2/".format(model_name, args.topk if args.topk is not None else "na") 
 else: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
-    datasetsrc = "/data/home/beidic/yang/c4/en/c4_file2.json" 
-    datasetparent = "/data/home/beidic/yang/c4_parts/downloads/" 
-    dir_models = "/data/home/beidic/yang/model_checkpoints" 
-    synthesized_dir_path = "/data/home/beidic/yang/c4llm_synthesized/{}_topk{}/".format(model_name, args.topk if args.topk is not None else "na") 
-    synthesized_data_path = "/data/home/beidic/yang/c4llm_synthesized/{}_topk{}/tensor_dir/".format(model_name, args.topk if args.topk is not None else "na") 
+    datasetsrc = "/fsx-storygen/beidic/yang/c4/en/c4_file2.json" 
+    datasetparent = "/fsx-storygen/beidic/yang/c4_parts/downloads/" 
+    dir_models = "/fsx-storygen/beidic/yang/model_checkpoints" 
+    synthesized_dir_path = "/fsx-storygen/beidic/yang/c4llm_synthesized/{}_topk{}/".format(model_name, args.topk if args.topk is not None else "na") 
+    synthesized_data_path = "/fsx-storygen/beidic/yang/c4llm_synthesized/{}_topk{}/tensor_dir/".format(model_name, args.topk if args.topk is not None else "na") 
 
 from termcolor import colored 
 
@@ -92,7 +94,8 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # say I want to use 96 GPUs 
 
 #step1 I need to know how large the number of lines in the datasetfile is 
-d_files = [datasetparent + "c4_file{}.json".format(i) for i in range(0, 3)] # number of files is 3 
+d_files = [datasetparent + "c4_file{}.json".format(args.task_id)] # number of files is 3 
+print(colored("path_d: {}, the dataset file is {}".format(args.path_d, d_files), "yellow")) 
 line_count = 0 
 for file in d_files: 
     result = subprocess.run(["wc", "-l", file], capture_output = True, text = True) 
@@ -101,26 +104,26 @@ for file in d_files:
         # print("path_d: {}, the line count is {}".format(args.path_d, line_count)) 
     else: 
         raise Exception(f"Error counting lines: {result.stderr}") 
-
 print("path_d: {}, the line count is {}".format(args.path_d, line_count)) 
 # task_id is which task is in, while path_d is which GPU is on 
 
 #step2 I need to know how many lines each GPU should process 
-# we hardcode the following, the total number of tasks is 12, each task uses 1 node with 8 GPUs 
-global_proc_id = args.task_id * 8 + args.path_d 
-each_gpu_line_count_ref = (line_count + 95) // 96 
-if global_proc_id < 95: 
-    each_gpu_line_count = (line_count + 95) // 96 
-else: 
-    each_gpu_line_count = line_count - (95 * each_gpu_line_count_ref) 
-print(colored("the global proc id is {} start_idx {} end_idx {}".format(global_proc_id, global_proc_id * each_gpu_line_count_ref, global_proc_id * each_gpu_line_count_ref + each_gpu_line_count), "blue")) 
+# we hardcode the following, the total number of tasks is 12, each task uses 1 node with 8 GPUs (no longer used) 
+# args.path_d = args.task_id * 8 + args.path_d 
+each_gpu_line_count_ref = (line_count + 6) // 7 
+if args.path_d < 6: 
+    each_gpu_line_count = each_gpu_line_count_ref 
+else: # 6 
+    each_gpu_line_count = line_count - (6 * each_gpu_line_count_ref) 
+print(colored("the global proc id is {} start_idx {} end_idx {}".format(args.path_d, args.path_d * each_gpu_line_count_ref, args.path_d * each_gpu_line_count_ref + each_gpu_line_count), "blue")) 
 
 # print(colored("path_d: {}, the processing files are {}".format(args.path_d, d_files), "yellow")) 
 print(colored("path_d: {}, Using model name {} for synthesized data".format(args.path_d, model_name), "yellow")) 
 print(colored("path_d: {}, Using topk {} and debug is {}".format(args.path_d, args.topk, args.debug), "yellow")) 
 
 if not args.debug: 
-    onedataset = load_dataset("json", data_files = d_files, split = "train[{}:{}]".format(global_proc_id * each_gpu_line_count_ref, global_proc_id * each_gpu_line_count_ref + each_gpu_line_count)) 
+    onedataset = load_dataset("json", data_files = d_files, split = "train[{}:{}]".format(args.path_d * each_gpu_line_count_ref, args.path_d * each_gpu_line_count_ref + each_gpu_line_count)) 
+    # onedataset = load_dataset("json", data_files = d_files, split = "train") 
 else: 
     onedataset = load_dataset("json", data_files = d_files, split = "train[:2000]") 
 
@@ -200,28 +203,18 @@ class CustomTrainer(Trainer):
 small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = dir_models).to(torch_device) 
 small_model.eval() 
 
-# train_dataset = onedataset["train"] 
-# validation_dataset = onedataset["validation"] 
-
-# for i in range(10): 
-#     print(onedataset[i]) 
-
-# d = onedataset.train_test_split(test_size = 0.1) 
-# print(d["train"], d["test"]) 
-# print(d["train"]) 
-
-print() 
-
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
 if model_name == "shearedllama2_7b": 
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 elif model_name == "openllama3b": 
     tokenizer = LlamaTokenizer.from_pretrained("openlm-research/open_llama_3b_v2", cache_dir = dir_models) 
 elif model_name == "tinyllama": 
-    # tokenizer = LlamaTokenizer.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models) 
-    tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
+    tokenizer = LlamaTokenizer.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models) 
+    # tokenizer2 = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 elif model_name == "phi-2": 
     tokenizer = AutoTokenizer.from_pretrained("microsoft/phi-2", cache_dir = dir_models) 
+elif model_name == "llama-2-7b": 
+    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 else: 
     raise ValueError("model name should be one of shearedllama2_7b, openllama3b") 
 # tokenizer.add_special_tokens({"pad_token":"<pad>"}) 
@@ -229,6 +222,8 @@ else:
 # tokenizer.pad_token = "[PAD]" 
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "left" 
+# tokenizer2.pad_token = tokenizer2.eos_token 
+# tokenizer2.padding_side = "left" 
 
 if model_name == "openllama3b": 
     # large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) # pad_id = 2 
@@ -239,25 +234,23 @@ elif model_name == "shearedllama2_7b":
     large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) # pad_id = 2 
 elif model_name == "phi-2": 
     large_model = AutoModelForCausalLM.from_pretrained("microsoft/phi-2", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+elif model_name == "llama-2-7b": 
+    large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 else: 
     raise ValueError("model name should be one of shearedllama2_7b, openllama3b") 
 large_model.eval() 
 
-# max_length = small_model.config.max_position_embeddings 
 max_length = 64 
-# def encode_with_truncation(examples): 
-    # return tokenizer(examples["text"], truncation=True, padding="max_length",
-                #    max_length=max_length, return_special_tokens_mask=True) 
+
 def encode_with_truncation(examples): 
     return tokenizer(examples["text"], truncation = True, padding = "max_length", 
                      max_length = max_length, return_special_tokens_mask = True) 
 
 # train_dataset = onedataset["train"].map(encode_with_truncation, batched = True, num_proc = 4) 
+
 train_dataset = onedataset.map(encode_with_truncation, batched = True, num_proc = 16) 
 # train_dataset = d['train'].map(encode_with_truncation, batched = True, num_proc = 4) 
 # test_dataset = d['test'].map(encode_with_truncation, batched = True, num_proc = 4) 
-
-print("path_d: {}, The model max length is {}".format(args.path_d, small_model.config.max_position_embeddings)) 
 
 train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 # test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
@@ -290,17 +283,15 @@ trainer = CustomTrainer(
     data_collator = data_collator, 
 ) 
 
-synthesized_data_path = synthesized_data_path[: -1] + "_kernel_{}_{}/".format(args.kernel_size, global_proc_id) 
-json_file_name = "c4synthesized_file1_kernel{}_{}.json".format(args.kernel_size, global_proc_id) 
+synthesized_data_path = synthesized_data_path[: -1] + "_kernel_{}_{}_{}/".format(args.kernel_size, args.task_id, args.path_d) 
+json_file_name = "c4synthesized_file1_kernel{}_{}_{}.json".format(args.kernel_size, args.task_id, args.path_d) 
 
 os.makedirs(synthesized_data_path, exist_ok = True) 
-# json_file_name = "c4synthesized_file1.json" 
-# json_file_name = "c4synthesized_file2.json" 
+
 json_file1 = open(synthesized_dir_path + json_file_name, "a") 
 
 train_dataloader = trainer.get_train_dataloader() 
 print("path_d: {}, the length of the train dataloader is {}".format(args.path_d, len(train_dataloader))) 
-# dict_kernel_maxlength = {3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70} 
 dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
 # kernel_size = 4 
 if args.kernel_size not in dict_kernel_maxlength: 
@@ -322,14 +313,10 @@ for step, inputs in enumerate(train_dataloader):
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = max_length + dict_kernel_maxlength[kernel_size], do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     if args.topk is not None: 
-        large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = True, top_k = top_k, output_hidden_states = True, return_dict_in_generate = True) 
+        large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = True, top_k = top_k, output_hidden_states = False, return_dict_in_generate = True) 
     else: 
-        large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = True, output_hidden_states = True, return_dict_in_generate = True) 
-    # large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
-    # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
-    # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
-    # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = True, top_k = top_k, top_p = top_p, temperature = temperature, output_hidden_states = True, return_dict_in_generate = True) 
-    # tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step)) 
+        large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = True, output_hidden_states = False, return_dict_in_generate = True) 
+    
     if args.debug: 
         for i in range(input_ids.shape[0]): 
             example = large_outputs.sequences[i] 
@@ -339,68 +326,29 @@ for step, inputs in enumerate(train_dataloader):
         exit(0) 
     # if step > 1: 
     
-    list_of_last_hidden_states = [token_hidden_states[-1][:, -1, :] for token_hidden_states in large_outputs.hidden_states] 
-    downsampled_vectors = trainer.downsample_vectors(list_of_last_hidden_states, kernel_size = kernel_size) 
-    # break 
-    if step % 100 == 0 and args.path_d == 0: 
-        print("length of last hidden states list is {} and the shape of element is {}".format(len(list_of_last_hidden_states), list_of_last_hidden_states[0].shape)) 
-        print("length of downsampled vectors is {} and the shape of element is {}".format(len(downsampled_vectors), downsampled_vectors[0].shape)) 
-        print("downampled_vector has shape {}".format(len(downsampled_vectors))) 
-        for i in range(len(downsampled_vectors)): 
-            print("the {}th element".format(i)) 
-            print(colored("the last hidden states: ", "yellow")) 
-            for j in range(kernel_size): 
-                print("shape of selected last hidden states is {}".format(list_of_last_hidden_states[i * kernel_size + j].shape)) 
-                print(list_of_last_hidden_states[i * kernel_size + j][0 : 5][0 : 10]) 
-            print(colored("the downsampled vectors: ", "blue")) 
-            print(downsampled_vectors[i][0 : 5][0 : 10]) 
-            print() 
-
-    downsampled_vectors = torch.stack(downsampled_vectors, dim = 1) 
-    print("downampled_vector has shape {}".format(downsampled_vectors.shape)) 
     textsynthesized = tokenizer.batch_decode(large_outputs.sequences) 
-    print("shape of condensed_token shape is {}".format(downsampled_vectors[0].shape)) 
     if step % 100 == 0: 
-        # print(colored("the text synthesized is {}".format(textsynthesized[49]), "yellow")) 
         print("path_d: {}, step is {} and the text first synthesized is {}".format(args.path_d, step, textsynthesized[0])) 
     
-    for i in range(downsampled_vectors.shape[0]): 
-        # print(i) 
-        example_downsampled_vector = downsampled_vectors[i].clone() 
-        tensor_file_path = os.path.join(synthesized_data_path, "ct_{}.pt".format(step * args.batch_size + i)) 
-        
-        torch.save(example_downsampled_vector, tensor_file_path) 
-        
+    for i in range(large_outputs.sequences.shape[0]): 
         example_synthesized = textsynthesized[i] 
-        # print("the text synthesized is {}".format(example_synthesized)) 
-        # print input sequences 
-        # print(tokenizer.decode(input_ids[i])) 
-        # print("raw output in text") 
-        # print(colored("the text synthesized is {}".format(textsynthesized[i]), "green")) 
-        # outputs = tokenizer.encode(textsynthesized[i], add_special_tokens = False, padding = False) 
+        
         outputs = large_outputs.sequences[i] 
-        # print("length of the input_ids is {}".format(outputs.shape)) 
-        # print("the input_ids after the tokenizer is {}".format(outputs)) 
+        
         seq_len = len(outputs) 
         for j in range(seq_len): 
             if outputs[j] == 1: 
                 outputs = outputs[(j + 1) :] 
                 break 
-        # print("the input_ids that should be adjusted is {}".format(outputs)) 
-        # what should be stored in the dataset 
+        
         new_output = tokenizer.decode(outputs) 
-        # print("the input setence is {}".format(new_output)) 
-
-        # what should be loaded in from the dataset after tokenizer 
-        # new_output = tokenizer.encode_plus(new_output, add_special_tokens = True, padding = "max_length", max_length = 128, return_attention_mask = True, return_tensors = "pt") 
-        # print("the input_ids that is corrected is {}".format(new_output["input_ids"])) 
-        # print("the length of the input_ids is {}".format(new_output["input_ids"].shape)) 
-        # print("the attention mask we got is {}".format(new_output["attention_mask"])) 
         
         example_data = {
             "text": new_output, 
-            "condensed_token_path": tensor_file_path, 
         } 
         json_file1.write(json.dumps(example_data) + "\n") 
     
 json_file1.close() 
+torch.cuda.synchronize() 
+end_time = time.time() 
+print("path_d: {}, the time elasped is {}".format(args.path_d, end_time - start_time)) 

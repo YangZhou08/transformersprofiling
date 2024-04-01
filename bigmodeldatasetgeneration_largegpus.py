@@ -49,6 +49,7 @@ parser.add_argument("--batch_size", type = int, default = 64)
 parser.add_argument("--debug", action = "store_true") 
 # parser.add_argument("--datasetsubname", type = str, default = None) 
 parser.add_argument("--task_id", type = int, default = 0) 
+parser.add_argument("--saving_condensed", action = "store_true") 
 
 args = parser.parse_args() 
 # if args.datasetsubname is None: 
@@ -222,6 +223,8 @@ elif model_name == "tinyllama":
     # tokenizer2 = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 elif model_name == "phi-2": 
     tokenizer = AutoTokenizer.from_pretrained("microsoft/phi-2", cache_dir = dir_models) 
+elif model_name == "llama-2-7b": 
+    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 else: 
     raise ValueError("model name should be one of shearedllama2_7b, openllama3b") 
 # tokenizer.add_special_tokens({"pad_token":"<pad>"}) 
@@ -241,6 +244,8 @@ elif model_name == "shearedllama2_7b":
     large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) # pad_id = 2 
 elif model_name == "phi-2": 
     large_model = AutoModelForCausalLM.from_pretrained("microsoft/phi-2", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+elif model_name == "llama-2-7b": 
+    large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 else: 
     raise ValueError("model name should be one of shearedllama2_7b, openllama3b") 
 large_model.eval() 
@@ -321,6 +326,8 @@ for step, inputs in enumerate(train_dataloader):
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = max_length + dict_kernel_maxlength[kernel_size], do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     if args.topk is not None: 
         large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = True, top_k = top_k, output_hidden_states = True, return_dict_in_generate = True) 
+    elif args.saving_condensed: 
+        large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = True, output_hidden_states = False, return_dict_in_generate = True) 
     else: 
         large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = True, output_hidden_states = True, return_dict_in_generate = True) 
     # large_outputs = large_model.generate(input_ids = input_ids, max_length = 260, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
