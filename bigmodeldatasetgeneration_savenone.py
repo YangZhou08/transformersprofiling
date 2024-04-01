@@ -40,7 +40,6 @@ print("Hostname:", hostname)
 start_time = time.time() 
 
 parser = argparse.ArgumentParser() 
-parser.add_argument("--kernel_size", type = int, default = 4) 
 parser.add_argument("--advanced_data_layout", type = bool, default = False) 
 parser.add_argument("--path_d", type = int, default = 0) 
 parser.add_argument("--model_name", type = str, default = "openllama3b") 
@@ -110,11 +109,13 @@ print("path_d: {}, the line count is {}".format(args.path_d, line_count))
 #step2 I need to know how many lines each GPU should process 
 # we hardcode the following, the total number of tasks is 12, each task uses 1 node with 8 GPUs (no longer used) 
 # args.path_d = args.task_id * 8 + args.path_d 
-each_gpu_line_count_ref = (line_count + 6) // 7 
-if args.path_d < 6: 
+# each_gpu_line_count_ref = (line_count + 6) // 7 
+each_gpu_line_count_ref = (line_count + 7) // 8 
+if args.path_d < 7: 
     each_gpu_line_count = each_gpu_line_count_ref 
 else: # 6 
-    each_gpu_line_count = line_count - (6 * each_gpu_line_count_ref) 
+    # each_gpu_line_count = line_count - (6 * each_gpu_line_count_ref) 
+    each_gpu_line_count = line_count - (7 * each_gpu_line_count_ref) 
 print(colored("the global proc id is {} start_idx {} end_idx {}".format(args.path_d, args.path_d * each_gpu_line_count_ref, args.path_d * each_gpu_line_count_ref + each_gpu_line_count), "blue")) 
 
 # print(colored("path_d: {}, the processing files are {}".format(args.path_d, d_files), "yellow")) 
