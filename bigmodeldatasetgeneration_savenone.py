@@ -213,7 +213,7 @@ elif model_name == "tinyllama":
     # tokenizer2 = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 elif model_name == "phi-2": 
     tokenizer = AutoTokenizer.from_pretrained("microsoft/phi-2", cache_dir = dir_models) 
-elif model_name == "llama-2-7b": 
+elif model_name == "llama2_7b": 
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 else: 
     raise ValueError("model name should be one of shearedllama2_7b, openllama3b") 
@@ -234,7 +234,7 @@ elif model_name == "shearedllama2_7b":
     large_model = LlamaForCausalLM.from_pretrained("princeton-nlp/Sheared-LLaMA-2.7B", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) # pad_id = 2 
 elif model_name == "phi-2": 
     large_model = AutoModelForCausalLM.from_pretrained("microsoft/phi-2", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
-elif model_name == "llama-2-7b": 
+elif model_name == "llama2_7b": 
     large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 else: 
     raise ValueError("model name should be one of shearedllama2_7b, openllama3b") 
