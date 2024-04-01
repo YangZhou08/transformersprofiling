@@ -283,8 +283,10 @@ trainer = CustomTrainer(
     data_collator = data_collator, 
 ) 
 
-synthesized_data_path = synthesized_data_path[: -1] + "_kernel_{}_{}_{}/".format(args.kernel_size, args.task_id, args.path_d) 
-json_file_name = "c4synthesized_file1_kernel{}_{}_{}.json".format(args.kernel_size, args.task_id, args.path_d) 
+# synthesized_data_path = synthesized_data_path[: -1] + "_kernel_{}_{}_{}/".format(args.kernel_size, args.task_id, args.path_d) 
+synthesized_data_path = synthesized_data_path[:, -1] + "_{}_{}/".format(args.task_id, args.path_d) 
+# json_file_name = "c4synthesized_file1_kernel{}_{}_{}.json".format(args.kernel_size, args.task_id, args.path_d) 
+json_file_name = "c4synthesized_file1_{}_{}.json".format(args.task_id, args.path_d) 
 
 os.makedirs(synthesized_data_path, exist_ok = True) 
 
@@ -304,8 +306,6 @@ for step, inputs in enumerate(train_dataloader):
 
     temperature = 1 
 
-    # large_outputs = large_model.generate(input_ids = input_ids, max_length = 128, do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
-    # large_outputs = large_model.generate(input_ids = input_ids, max_length = max_length + dict_kernel_maxlength[kernel_size], do_sample = False, output_hidden_states = True, return_dict_in_generate = True) 
     if args.topk is not None: 
         large_outputs = large_model.generate(
             input_ids = input_ids, 
