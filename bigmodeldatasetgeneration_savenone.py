@@ -285,7 +285,7 @@ trainer = CustomTrainer(
 ) 
 
 # synthesized_data_path = synthesized_data_path[: -1] + "_kernel_{}_{}_{}/".format(args.kernel_size, args.task_id, args.path_d) 
-synthesized_data_path = synthesized_data_path[: -1] + + "_{}_{}/".format(args.task_id, args.path_d) 
+synthesized_data_path = synthesized_data_path[: -1] + "_{}_{}/".format(args.task_id, args.path_d) 
 # json_file_name = "c4synthesized_file1_kernel{}_{}_{}.json".format(args.kernel_size, args.task_id, args.path_d) 
 json_file_name = "c4synthesized_file1_{}_{}.json".format(args.task_id, args.path_d) 
 
