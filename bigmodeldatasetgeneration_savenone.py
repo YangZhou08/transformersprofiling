@@ -322,8 +322,8 @@ for step, inputs in enumerate(train_dataloader):
             input_ids = input_ids, 
             attention_mask = attention_mask, 
             max_length = 260, 
-            # do_sample = True, 
-            do_sample = False, 
+            do_sample = True, 
+            # do_sample = False, 
             output_hidden_states = False, 
             return_dict_in_generate = True 
         ) 
