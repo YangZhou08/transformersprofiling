@@ -5654,7 +5654,7 @@ class LargeModelLMHeadModel(nn.Module):
     def forward(self, x): 
         return self.target_lm_head(x) 
 
-class LlamaWeirdLargeTest2(LlamaPreTrainedModel): 
+class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel): 
     """ 
     We call this autoregressive Medusa model 
     """ 
@@ -5675,6 +5675,7 @@ class LlamaWeirdLargeTest2(LlamaPreTrainedModel):
         # self.small_model_dtype = self.addonsmallmodel.embed_projection.weight.dtype 
         self.small_model_dtype = torch.bfloat16 
         print(colored("small_model_dtype {}".format(self.small_model_dtype), "red")) 
+        
         self.use_mse_loss = use_mse_loss 
         self.alpha = 0.5 
 
@@ -5689,14 +5690,13 @@ class LlamaWeirdLargeTest2(LlamaPreTrainedModel):
         # self.addonsmallmodel = None 
         small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m") 
         # self.sliding_window_length = 7 
-        self.sliding_window_length = 2 
+        # self.sliding_window_length = 2 
         # self.sliding_window_length = 1 
-        self.addonsmallmodel = SimpleSmallModel(small_config, sliding_window_length = self.sliding_window_length, target_model_dim = self.config.hidden_size) 
+        self.addonsmallmodel = SimpleSmallModel(small_config, target_model_dim = self.config.hidden_size) # sliding_window_length is set elsewhere 
         self.small_model_dtype = torch.bfloat16 
         self.use_mse_loss = False 
         self.ce_loss_only = False 
         self.alpha = 0.5 
-        self.addonmodel_start = self.sliding_window_length + 1 
         self.inference_setting = "setting0" 
         self.use_cosinesimilarity = False 
         self.generate_iteration_count = 0 
@@ -5705,6 +5705,11 @@ class LlamaWeirdLargeTest2(LlamaPreTrainedModel):
         self.tokenizer_pad_id = 2 
         
         self.post_init() 
+    
+    def set_sliding_window_length(self, sliding_window_length): 
+        self.sliding_window_length = sliding_window_length 
+        self.addonmodel_start = self.sliding_window_length + 1 
+        self.addonsmallmodel.set_sliding_window_length(self.sliding_window_length) 
 
     def get_input_embeddings(self):
         return self.model.embed_tokens 
@@ -5980,25 +5985,59 @@ class LlamaWeirdLargeTest2(LlamaPreTrainedModel):
         # selected_seq_indices = [i * self.sliding_window_length for i in range(1, (seq_len - 1) // self.sliding_window_length)] 
         # print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
         # hidden_states = self.avgpool(hidden_states) 
-        # selected_seq_indices = [i * self.sliding_window_length for i in range(0, (seq_len - 1) // self.sliding_window_length)] 
-        selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
-        print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
-        print("using autoregressive_baseline") 
-        hidden_states = hidden_states[:, selected_seq_indices, :] 
-        print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
-        removelast = (hidden_states.shape[1] % self.sliding_window_length == 0) 
-        if removelast: 
-            hidden_states = hidden_states[:, :-1, :] 
-        
+        if autoregressive_first_element: 
+            # selected_seq_indices = [i * self.sliding_window_length for i in range(0, (seq_len - 1) // self.sliding_window_length)] 
+            selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
+            print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
+            print("using autoregressive_baseline") 
+            hidden_states = hidden_states[:, selected_seq_indices, :] 
+            print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
+            removelast = (seq_len % self.sliding_window_length == 0) 
+            if removelast: 
+                hidden_states = hidden_states[:, :-1, :] 
+        else: 
+            removelast = (hidden_states.shape[1] % self.sliding_window_length == 0) 
+            hidden_states = self.avgpool(hidden_states) 
+            if removelast: 
+                hidden_states = hidden_states[:, :-1, :] 
+                # hidden_states = hidden_states[:, :-2, :] 
         hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
+        print("hidden_states shape {}".format(hidden_states.shape)) 
         # hidden_states = hidden_states[:, 2 :, :] # works with 1 as the start of the sampling index 
         # hidden_states = hidden_states[:, 3:, :] 
         # print("some hidden states numbers: ", hidden_states.reshape(-1)[: 100]) 
         # hidden_states = hidden_states[:, -28 :, :] 
         
         mse_loss = torch.tensor(0) 
-        cossim_input = torch.tensor(0) 
-        intermediate_l2_dist = torch.tensor(0) 
+        cossim_loss = torch.tensor(0) 
+        
+        # mse_loss = 0.5 * mse_loss + 0.5 * cossim_loss 
+        # intermediate_l2_dist = mse_loss.clone().detach() 
+        intermediate_l2_dist = mse_loss.clone().detach() 
+        if self.use_cosinesimilarity: 
+            mse_loss = cossim_loss 
+        cossim_input = cossim_loss.clone().detach() 
+        # print(colored("mse_loss {}".format(mse_loss), "red")) 
+        
+        if self.use_mse_loss: 
+            print(colored("mse_loss {}".format(mse_loss), "red")) 
+            # still use the small model and get ce 
+            hidden_states = hidden_states.detach().clone() 
+            # hidden_states = torch.zeros_like(hidden_states).detach() 
+            # hidden_states = condensed_embed_labels 
+            '''
+            return CausalLMOutputWithPastLargeDistance2(
+                loss = mse_loss, 
+                logits = None, 
+                past_key_values = outputs.past_key_values, 
+                hidden_states=outputs.hidden_states,
+                attentions = outputs.attentions, 
+                l2_distance = intermediate_l2_dist, 
+                ce_loss = torch.tensor(0), 
+            ) 
+            ''' 
+        # hidden_states has shape (batch_size, seq_length // 7, hidden states) 
+        # hidden_states = hidden_states[:, :-1, :] 
         
         # interleave the hidden_states and the input_ids 
         # assert hidden_states.shape[1] == small_input_ids.shape[1] // 7 - 1 
@@ -6025,7 +6064,7 @@ class LlamaWeirdLargeTest2(LlamaPreTrainedModel):
             return_dict = True, 
             start_idx = self.addonmodel_start, # NOTE this is very important 
             eval_mode = False, 
-            iteration_count = 1, 
+            iteration_count = None, 
             # condensed_fashion = "projection_mode", 
             # experiment_setting = "setting3", 
             experiment_setting = self.inference_setting, 
@@ -6151,6 +6190,56 @@ class LlamaWeirdLargeTest2(LlamaPreTrainedModel):
             cossim_input = cossim_input, 
         ) 
     
+    def top_k_top_p_filter(self, logits: torch.Tensor, top_k: int = 0, top_p: float = 0.0): 
+        """
+        Args:
+            logits (torch.Tensorpe_): 2D tensor with shape (batch, vocab)
+            top_k (int, optional): top_k. Defaults to 0.
+            top_p (float, optional): top_p. Defaults to 0.0.
+
+        Returns:
+            torch.Tensor: a renormalized logits
+        """
+        if top_k > 0:
+            filter = torch.topk(logits, min(top_k, logits.size(-1)))[0]
+            logits[logits < filter[:, [-1]]] = float('-inf')
+        if top_p > 0.0:
+            sorted_logits, sorted_indices = torch.sort(logits, descending=True)
+            cumulative_probs = torch.cumsum(
+                F.softmax(sorted_logits, dim=-1), dim=-1)
+            filter = cumulative_probs > top_p
+            filter[..., 1:] = filter[..., :-1].clone()
+            filter[..., 0] = 0
+            indices_to_remove = filter.scatter(1, sorted_indices, filter)
+            logits[indices_to_remove] = float('-inf')
+        return logits 
+    
+    def norm_logits(self, logits : torch.Tensor, temperature : float, top_k : float, top_p : float) -> torch.Tensor: 
+        """
+        Args:
+            logits (torch.Tensor): shape (1, vocab)
+            temperature (float): temperature
+            top_k (float): top_k
+            top_p (float): top_p
+
+        Returns:
+            torch.Tensor: next token with shape as (batch,  1)
+        """
+        assert logits.dim() == 2
+        logits = logits / temperature
+        # logits = self.top_k_top_p_filter(logits, top_k=top_k, top_p=top_p) 
+        logits = self.top_k_top_p_filter(logits, top_k=top_k, top_p=top_p) 
+        probs = F.softmax(logits, dim=1)
+        return probs 
+    
+    def sample2(self, probs : torch.Tensor, num_samples: int = 1, random_seed = None): 
+        if random_seed:
+            torch.manual_seed(random_seed)
+        idx_next = torch.multinomial(probs, num_samples=num_samples)
+        # if (idx_next.item() == 0):
+            # raise RuntimeError 
+        return idx_next 
+    
     def forward_generate(
         self,
         # input_ids: torch.LongTensor = None, 
@@ -6158,9 +6247,7 @@ class LlamaWeirdLargeTest2(LlamaPreTrainedModel):
         small_input_ids: torch.LongTensor = None, 
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
-        # past_key_values: Optional[List[torch.FloatTensor]] = None, 
-        large_model_past_key_values: Optional[List[torch.FloatTensor]] = None, 
-        small_model_past_key_values: Optional[List[torch.FloatTensor]] = None, 
+        past_key_values: Optional[List[torch.FloatTensor]] = None,
         input_embeds: Optional[torch.FloatTensor] = None, 
         labels: Optional[torch.LongTensor] = None,
         use_cache: Optional[bool] = None,
@@ -6170,6 +6257,12 @@ class LlamaWeirdLargeTest2(LlamaPreTrainedModel):
         original_attention_mask = None, 
         condensed_embed_labels = None, 
         autoregressive_first_element = False, 
+        output_large_model_last_hidden_states = False, 
+        inmiddlesample = False, 
+        target_lmhead = None, 
+        temperature = 0.6, 
+        top_k = -1, 
+        top_p = 0.9, 
     ) -> Union[Tuple, CausalLMOutputWithPastLargeDistance2]: 
         r"""
         Args:
@@ -6203,15 +6296,16 @@ class LlamaWeirdLargeTest2(LlamaPreTrainedModel):
         )
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
+        last_hidden_states = None 
+        start = None 
         if self.generate_iteration_count % self.sliding_window_length == 0: 
             # NOTE for this case, we use the pass-in attention mask 
-            print(colored("running the large model side", "green")) 
+            # print(colored("running the large model side", "green")) 
             outputs = self.model(
                 input_ids = large_input_ids, 
                 attention_mask = attention_mask, 
                 position_ids = position_ids, 
-                # past_key_values = past_key_values, 
-                past_key_values = large_model_past_key_values, 
+                past_key_values = past_key_values, 
                 inputs_embeds = input_embeds, 
                 use_cache = use_cache, 
                 output_attentions = output_attentions, 
@@ -6220,8 +6314,18 @@ class LlamaWeirdLargeTest2(LlamaPreTrainedModel):
             ) 
             
             hidden_states = outputs[0] # we don't need the lm_head 
+            if output_large_model_last_hidden_states: 
+                last_hidden_states = hidden_states.clone().detach() 
+            if inmiddlesample: 
+                outputdist = target_lmhead(hidden_states) 
+                probs = self.norm_logits(outputdist[:, -1, :], temperature = temperature, top_k = top_k, top_p = top_p) 
+                start = self.sample2(probs) 
+                if len(start.shape) == 1: 
+                    start = start.unsqueeze(0) 
+                small_input_ids = torch.cat([small_input_ids, start], dim = 1) 
+                original_attention_mask = torch.cat([original_attention_mask, torch.ones_like(start)], dim = 1) 
             seq_len = hidden_states.shape[1] 
-            print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
+            
             if self.small_model_dtype == torch.float32: 
                 hidden_states = hidden_states.to(torch.float32) 
             elif self.small_model_dtype == torch.bfloat16: 
@@ -6230,21 +6334,19 @@ class LlamaWeirdLargeTest2(LlamaPreTrainedModel):
                 selected_seq_indices = [i * self.sliding_window_length for i in range(0, math.ceil(seq_len / self.sliding_window_length))]  # adding the last one to get future tokens 
             else: 
                 selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
-            print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
+            # print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
+            
             hidden_states = hidden_states[:, selected_seq_indices, :] 
             hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
             self.generate_model_hidden_states = hidden_states.clone().detach() 
-            print("self.generate_model_hidden_states shape {}".format(self.generate_model_hidden_states.shape)) 
         self.generate_iteration_count += 1 
         
-        print(colored("running the small model side", "green")) 
-        print("original_attention_mask shape {}".format(original_attention_mask.shape)) 
-        addonmodeloutput = self.addonsmallmodel(
+        # print(colored("running the small model side", "green")) 
+        addonmodeloutput = self.addonsmallmodel.generate_forward(
             input_ids = small_input_ids, 
             attention_mask = original_attention_mask, 
             position_ids = None, 
-            # past_key_values = None, 
-            past_key_values = small_model_past_key_values, 
+            past_key_values = None, 
             condensed_embeds = self.generate_model_hidden_states, 
             labels = None, 
             use_cache = None, 
@@ -6253,32 +6355,31 @@ class LlamaWeirdLargeTest2(LlamaPreTrainedModel):
             return_dict = True, 
             start_idx = self.sliding_window_length + 1, # NOTE this is very important 
             eval_mode = False, 
-            iteration_count = 1, 
             experiment_setting = self.inference_setting, 
             generate_flag = True, 
-            condensed_fashion = "projection_mode", 
         ) 
         
         logits = addonmodeloutput.logits 
+        # logits = torch.zeros((small_input_ids.shape[0], small_input_ids.shape[1], self.config.vocab_size)).to(small_input_ids.device).to(torch.float32) 
         
-        seq_length = small_input_ids.shape[1] + self.generate_model_hidden_states.shape[1] 
-        assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
         loss = None 
         
         if not return_dict: 
             output = (logits,) + outputs[1:] 
             return (loss,) + output if loss is not None else output 
         
-        return CausalLMOutputWithPastLargeDistance2(
+        return CausalLMOutputWithPastLargeDistance3(
             loss = loss, 
             logits = logits, 
             past_key_values = past_key_values, 
-            hidden_states = self.generate_model_hidden_states, 
-            attentions = addonmodeloutput.attentions, 
+            hidden_states = None, 
+            attentions = None, 
             l2_distance = None, 
             ce_loss = None, 
             l2_distance_input = None, 
             cossim_input = None, 
+            last_hidden_states = last_hidden_states, 
+            start = start if inmiddlesample else None, 
         ) 
     
     def sample( 
@@ -6574,6 +6675,8 @@ class LlamaWeirdLargeTest2(LlamaPreTrainedModel):
             model_inputs = {"large_input_ids": input_ids, 
                             "small_input_ids": input_ids,} 
         
+        # print("attention_mask", attention_mask.shape) 
+        # print("input_ids", input_ids.shape) 
         if attention_mask.shape[1] == input_ids.shape[1] - 1: 
             torch.cat([attention_mask, torch.ones(attention_mask.shape[0], 1, device = attention_mask.device)], dim = 1) 
         assert attention_mask.shape[1] == input_ids.shape[1], "attention_mask is not compatible with input_ids" 
