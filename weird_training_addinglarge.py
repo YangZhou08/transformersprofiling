@@ -811,10 +811,8 @@ class CustomTrainer(Trainer):
             print(colored("the length of input_ids is {}".format(input_ids.shape[1]), "green")) 
             outputs = model(
                 large_input_ids = input_ids, 
-                small_input_ids = input_ids, 
                 attention_mask = attention_mask, 
                 original_attention_mask = original_attention_mask, 
-                labels = label2, 
                 condensed_embed_labels = condensed_embeds, 
                 output_hidden_states = True, 
                 output_attentions = True, 
@@ -1402,7 +1400,8 @@ elif args.use_plain_model and not args.use_past:
 elif args.use_large_model: 
     print(colored("we use large model", "cyan")) 
     # set up a large model that supports the condensed token inputs 
-    large_model = LlamaWeirdLargeTest.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
+    # large_model = LlamaWeirdLargeTest.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
+    large_model = LlamaWeirdLargeTestmixedb.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
     large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True) 
     # loading in the small model inside the larger one properly 
     small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 

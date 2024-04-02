@@ -5916,7 +5916,7 @@ class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel):
         position_ids: Optional[torch.LongTensor] = None,
         past_key_values: Optional[List[torch.FloatTensor]] = None,
         input_embeds: Optional[torch.FloatTensor] = None, 
-        labels: Optional[torch.LongTensor] = None,
+        # labels: Optional[torch.LongTensor] = None,
         use_cache: Optional[bool] = None,
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
@@ -5925,7 +5925,7 @@ class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel):
         condensed_embed_labels = None, 
         autoregressive_first_element = False, 
         label_adjustment = False, 
-     ) -> Union[Tuple, CausalLMOutputWithPastLargeDistance2]: 
+    ) -> Union[Tuple, CausalLMOutputWithPastLargeDistance2]: 
         r"""
         Args:
             labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
@@ -5976,59 +5976,57 @@ class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel):
             hidden_states = hidden_states.to(torch.float32) 
         elif self.small_model_dtype == torch.bfloat16: 
             hidden_states = hidden_states.to(torch.bfloat16) 
-        # print(colored("small_model_type: {}".format(self.small_model_dtype), "red")) 
-        # intermediate_l2_dist = self.l2distancecompute(inputs_embeds, hidden_states) 
         seq_len = hidden_states.shape[1] 
-        catenhidden = torch.zeros((hidden_states.shape[0] * self.sliding_window_length, hidden_states.shape[1], hidden_states.shape[2])).to(hidden_states.device).to(hidden_states.dtype) 
+        # catenhidden = torch.zeros((hidden_states.shape[0] * self.sliding_window_length, hidden_states.shape[1], hidden_states.shape[2])).to(hidden_states.device).to(hidden_states.dtype) 
+        catenhidden = None 
         
-        for i in range(self.sliding_window_length): 
-            # selected_seq_indices = [i * self.sliding_window_length for i in range(0, (seq_len - 1) // self.sliding_window_length)] 
-            selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
+        for j in range(self.sliding_window_length): 
+            # selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
+            selected_seq_indices = [i * self.sliding_window_length + j for i in range(0, seq_len // self.sliding_window_length)] 
             print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
-            print("using autoregressive_baseline") 
-            hidden_states = hidden_states[:, selected_seq_indices, :] 
+            selected_hidden = hidden_states[:, selected_seq_indices, :][:, 1 :, :].clone() 
             print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
+            if catenhidden is None: 
+                catenhidden = selected_hidden 
+            else: 
+                catenhidden = torch.cat([catenhidden, selected_hidden], dim = 0) # we modify the batch_size dimension 
         
-        hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
-        print("hidden_states shape {}".format(hidden_states.shape)) 
-        # hidden_states = hidden_states[:, 2 :, :] # works with 1 as the start of the sampling index 
-        # hidden_states = hidden_states[:, 3:, :] 
-        # print("some hidden states numbers: ", hidden_states.reshape(-1)[: 100]) 
-        # hidden_states = hidden_states[:, -28 :, :] 
+        # hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
+        # print("hidden_states shape {}".format(hidden_states.shape)) 
+        print("catenhidden shape {}".format(catenhidden.shape)) 
+        
+        small_input_ids = None 
+        practical_attention_mask = None 
+        # making small_input_ids 
+        # together with the small attention mask 
+        for j in range(self.sliding_window_length): 
+            nummagic = self.sliding_window_length - 1 - j # from 6 to 0 inclusive 
+            if nummagic != 0: 
+                stageinputids = torch.cat([torch.full((large_input_ids.shape[0], nummagic), self.tokenizer_pad_id, dtype = large_input_ids.dtype).to(large_input_ids.device), large_input_ids[:, : -nummagic].clone()], dim = 1) # sequence length dimension and unchanged 
+                stageattentionmask = torch.cat([torch.zeros((large_input_ids.shape[0], nummagic), dtype = attention_mask.dtype).to(attention_mask.device), original_attention_mask[:, : -nummagic].clone()], dim = 1) 
+            else: 
+                stageinputids = large_input_ids.clone() 
+                stageattentionmask = attention_mask.clone() 
+            if small_input_ids is None: 
+                small_input_ids = stageinputids 
+                practical_attention_mask = stageattentionmask 
+            else: 
+                small_input_ids = torch.cat([small_input_ids, stageinputids], dim = 0) 
+                practical_attention_mask = torch.cat([practical_attention_mask, stageattentionmask], dim = 0) 
+                
+        # making label 
+        labels = small_input_ids.clone() 
+        labels[labels == self.tokenizer_pad_id] = -100 
         
         mse_loss = torch.tensor(0) 
         cossim_loss = torch.tensor(0) 
         
-        # mse_loss = 0.5 * mse_loss + 0.5 * cossim_loss 
-        # intermediate_l2_dist = mse_loss.clone().detach() 
         intermediate_l2_dist = mse_loss.clone().detach() 
         if self.use_cosinesimilarity: 
             mse_loss = cossim_loss 
         cossim_input = cossim_loss.clone().detach() 
         # print(colored("mse_loss {}".format(mse_loss), "red")) 
         
-        if self.use_mse_loss: 
-            print(colored("mse_loss {}".format(mse_loss), "red")) 
-            # still use the small model and get ce 
-            hidden_states = hidden_states.detach().clone() 
-            # hidden_states = torch.zeros_like(hidden_states).detach() 
-            # hidden_states = condensed_embed_labels 
-            '''
-            return CausalLMOutputWithPastLargeDistance2(
-                loss = mse_loss, 
-                logits = None, 
-                past_key_values = outputs.past_key_values, 
-                hidden_states=outputs.hidden_states,
-                attentions = outputs.attentions, 
-                l2_distance = intermediate_l2_dist, 
-                ce_loss = torch.tensor(0), 
-            ) 
-            ''' 
-        # hidden_states has shape (batch_size, seq_length // 7, hidden states) 
-        # hidden_states = hidden_states[:, :-1, :] 
-        
-        # interleave the hidden_states and the input_ids 
-        # assert hidden_states.shape[1] == small_input_ids.shape[1] // 7 - 1 
         print("expected {}".format(small_input_ids.shape[1] // self.sliding_window_length - 1)) 
         print("small_input_ids: {}".format(small_input_ids[0])) 
         print("self.addonmodel_start {}".format(self.addonmodel_start)) 
@@ -6039,10 +6037,12 @@ class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel):
         addonmodeloutput = self.addonsmallmodel( 
             # input_ids = input_ids, 
             input_ids = small_input_ids, 
-            attention_mask = original_attention_mask, 
+            # attention_mask = original_attention_mask, 
+            attention_mask = practical_attention_mask, 
             # position_ids = None, 
             past_key_values = None, 
-            condensed_embeds = hidden_states, 
+            # condensed_embeds = hidden_states, 
+            condensed_embeds = catenhidden, 
             # condensed_embeds = condensed_embed_labels, 
             labels = None, 
             # labels = labels, 
