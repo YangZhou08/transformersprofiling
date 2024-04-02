@@ -6075,7 +6075,8 @@ class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel):
         logits = logits.float()
         ''' 
         # seq_length = input_ids.shape[1] + hidden_states.shape[1] 
-        seq_length = small_input_ids.shape[1] + hidden_states.shape[1] 
+        # seq_length = small_input_ids.shape[1] + hidden_states.shape[1] 
+        seq_length = small_input_ids.shape[1] + catenhidden.shape[1] 
         assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
         # mask_list_pos = [i * (self.sliding_window_length + 1) for i in range(seq_length // (self.sliding_window_length + 1))] 
         # mask_list_pos = [7 + i * (self.sliding_window_length + 1) for i in range((seq_length - 7) // (self.sliding_window_length + 1))] 
@@ -6088,7 +6089,8 @@ class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel):
         
         if label_adjustment: # we adjust the labels to be completely information loss free 
             print("got inside") 
-            copy_idx = [self.addonmodel_start + (self.sliding_window_length * i) for i in range(hidden_states.shape[1])] 
+            # copy_idx = [self.addonmodel_start + (self.sliding_window_length * i) for i in range(hidden_states.shape[1])] 
+            copy_idx = [self.addonmodel_start + (self.sliding_window_length * i) for i in range(catenhidden.shape[1])] 
             labels_addition = labels[:, copy_idx] 
             newlabels = labels[:, : self.addonmodel_start] 
             old_label_count = self.addonmodel_start 
