@@ -6006,7 +6006,7 @@ class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel):
                 stageattentionmask = torch.cat([torch.zeros((large_input_ids.shape[0], nummagic), dtype = attention_mask.dtype).to(attention_mask.device), original_attention_mask[:, : -nummagic].clone()], dim = 1) 
             else: 
                 stageinputids = large_input_ids.clone() 
-                stageattentionmask = attention_mask.clone() 
+                stageattentionmask = original_attention_mask.clone() 
             if small_input_ids is None: 
                 small_input_ids = stageinputids 
                 practical_attention_mask = stageattentionmask 
