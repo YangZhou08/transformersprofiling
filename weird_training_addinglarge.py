@@ -28,6 +28,7 @@ from src.transformers.models.llama.modeling_llama import LlamaCausalLMWeirdTwo
 from src.transformers.models.llama.modeling_llama import LlamaWeirdLarge3 
 from src.transformers.models.llama.modeling_llama import SimpleSmallModel2 
 from src.transformers.models.llama.modeling_llama import LlamaWeirdLargeTest 
+from src.transformers.models.llama.modeling_llama import LlamaWeirdLargeTestmixedb 
 from src.transformers.modeling_utils import PreTrainedModel, load_sharded_checkpoint, unwrap_model 
 import time 
 from torch.utils.data import random_split 
@@ -790,6 +791,11 @@ class CustomTrainer(Trainer):
                 autoregressive_first_element = self.autoregressive_first_element, 
                 label_adjustment = False 
             ) 
+        elif isinstance(getattr(model, "module", model), LlamaWeirdLargeTestmixedb) or isinstance(model, LlamaWeirdLargeTestmixedb): 
+            if self.input_condensed: 
+                condensed_embeds = self.naive_grouping(input_ids[:, 64:]).to(self.dtype) 
+            else: 
+                condensed_embeds = inputs["condensed_embeds"].to(self.dtype) 
         else: 
             outputs = model(
                 input_ids = input_ids, 
