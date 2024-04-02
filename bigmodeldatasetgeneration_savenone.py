@@ -52,6 +52,7 @@ parser.add_argument("--num_workers", type = int, default = 8)
 parser.add_argument("--saving_condensed", action = "store_true") 
 
 args = parser.parse_args() 
+print("the args are {}".format(args)) 
 # if args.datasetsubname is None: 
     # raise ValueError("datasetsubname should be specified") 
 
