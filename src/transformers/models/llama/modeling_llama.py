@@ -9615,6 +9615,7 @@ class SimpleSmallModelmixedb(LlamaPreTrainedModel):
             for i in range(seq_length): 
                 # if i in self.mask_list_pos: 
                 if i in mask_list_pos: 
+                    print("i is {}".format(i)) 
                     pos_count += 1 
                     position_list.append(pos_count) 
                     following_flag = True 
