@@ -5925,7 +5925,7 @@ class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel):
         condensed_embed_labels = None, 
         autoregressive_first_element = False, 
         label_adjustment = False, 
-    ) -> Union[Tuple, CausalLMOutputWithPastLargeDistance2]: 
+     ) -> Union[Tuple, CausalLMOutputWithPastLargeDistance2]: 
         r"""
         Args:
             labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
@@ -5979,27 +5979,16 @@ class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel):
         # print(colored("small_model_type: {}".format(self.small_model_dtype), "red")) 
         # intermediate_l2_dist = self.l2distancecompute(inputs_embeds, hidden_states) 
         seq_len = hidden_states.shape[1] 
+        catenhidden = torch.zeros((hidden_states.shape[0] * self.sliding_window_length, hidden_states.shape[1], hidden_states.shape[2])).to(hidden_states.device).to(hidden_states.dtype) 
         
-        
-        # selected_seq_indices = [i * self.sliding_window_length for i in range(1, (seq_len - 1) // self.sliding_window_length)] 
-        # print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
-        # hidden_states = self.avgpool(hidden_states) 
-        if autoregressive_first_element: 
+        for i in range(self.sliding_window_length): 
             # selected_seq_indices = [i * self.sliding_window_length for i in range(0, (seq_len - 1) // self.sliding_window_length)] 
             selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
             print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
             print("using autoregressive_baseline") 
             hidden_states = hidden_states[:, selected_seq_indices, :] 
             print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
-            removelast = (seq_len % self.sliding_window_length == 0) 
-            if removelast: 
-                hidden_states = hidden_states[:, :-1, :] 
-        else: 
-            removelast = (hidden_states.shape[1] % self.sliding_window_length == 0) 
-            hidden_states = self.avgpool(hidden_states) 
-            if removelast: 
-                hidden_states = hidden_states[:, :-1, :] 
-                # hidden_states = hidden_states[:, :-2, :] 
+        
         hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
         print("hidden_states shape {}".format(hidden_states.shape)) 
         # hidden_states = hidden_states[:, 2 :, :] # works with 1 as the start of the sampling index 
