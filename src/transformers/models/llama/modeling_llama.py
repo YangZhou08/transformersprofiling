@@ -5692,7 +5692,7 @@ class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel):
         # self.sliding_window_length = 7 
         # self.sliding_window_length = 2 
         # self.sliding_window_length = 1 
-        self.addonsmallmodel = SimpleSmallModel(small_config, target_model_dim = self.config.hidden_size) # sliding_window_length is set elsewhere 
+        self.addonsmallmodel = SimpleSmallModelmixedb(small_config, target_model_dim = self.config.hidden_size) # sliding_window_length is set elsewhere 
         self.small_model_dtype = torch.bfloat16 
         self.use_mse_loss = False 
         self.ce_loss_only = False 
@@ -6086,36 +6086,12 @@ class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel):
         # seq_length = small_input_ids.shape[1] + hidden_states.shape[1] 
         seq_length = small_input_ids.shape[1] + catenhidden.shape[1] 
         assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
-        # mask_list_pos = [i * (self.sliding_window_length + 1) for i in range(seq_length // (self.sliding_window_length + 1))] 
-        # mask_list_pos = [7 + i * (self.sliding_window_length + 1) for i in range((seq_length - 7) // (self.sliding_window_length + 1))] 
-        mask_list_pos = [self.addonmodel_start + i * (self.sliding_window_length + 1) for i in range((seq_length - self.addonmodel_start) // (self.sliding_window_length + 1))] 
+        # mask_list_pos = [self.addonmodel_start + i * (self.sliding_window_length + 1) for i in range((seq_length - self.addonmodel_start) // (self.sliding_window_length + 1))] 
+        mask_list_pos = [self.addonmodel_start + self.sliding_window_length - 1 + i * (self.sliding_window_length + 1) for i in range((seq_length - self.addonmodel_start) // (self.sliding_window_length + 1))] 
         mask_list_pos22 = [x - 1 for x in mask_list_pos] 
         print("mask list pos22: {}".format(mask_list_pos22)) 
         print("length of mask list pos22: {}".format(len(mask_list_pos22))) 
-        # print(colored("mask_list_pos {}".format(mask_list_pos), "red")) 
         loss = None 
-        
-        if label_adjustment: # we adjust the labels to be completely information loss free 
-            print("got inside") 
-            # copy_idx = [self.addonmodel_start + (self.sliding_window_length * i) for i in range(hidden_states.shape[1])] 
-            copy_idx = [self.addonmodel_start + (self.sliding_window_length * i) for i in range(catenhidden.shape[1])] 
-            labels_addition = labels[:, copy_idx] 
-            newlabels = labels[:, : self.addonmodel_start] 
-            old_label_count = self.addonmodel_start 
-            for i in range(labels_addition.shape[1]): 
-                newlabels = torch.cat([newlabels, labels_addition[:, i].unsqueeze(1)], dim = 1) 
-                if old_label_count < labels.shape[1]: 
-                    newlabels = torch.cat([newlabels, labels[:, old_label_count : min(old_label_count + self.sliding_window_length, labels.shape[1])]], dim = 1) 
-                old_label_count += self.sliding_window_length 
-            assert newlabels.shape[1] == seq_length 
-            
-            # some visual check, printing index and values together 
-            # for i in range(newlabelsone.shape[0]): 
-                # if i < labels.shape[0]: 
-                    # print("index {} labels value {} newlabels value {}".format(i, labels[0, i], newlabels[0, i])) 
-                # else: 
-                    # print("index {} labels values {} new labels value {}".format(i, "None", newlabels[0, i])) 
-            labels = newlabels 
         
         if labels is not None: 
             # selected_indices = list(range(7)) 
@@ -8409,6 +8385,1224 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         # mask_list_pos = [start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - start_idx) // (self.sliding_window_length + 1))] 
         if not generate_flag: 
             mask_list_pos = [start_idx - 1 + i * (self.sliding_window_length + 1) for i in range((seq_length - start_idx) // (self.sliding_window_length + 1))] 
+        else: 
+            print((seq_length - start_idx) / (self.sliding_window_length + 1)) 
+            mask_list_pos = [start_idx - 1 + i * (self.sliding_window_length + 1) for i in range(int(math.ceil((seq_length - start_idx) / (self.sliding_window_length + 1))))] 
+        if position_ids is None: 
+            device = input_ids.device 
+            position_list = [] 
+            pos_count = past_key_values_length 
+            following_flag = False 
+            for i in range(seq_length): 
+                # if i in self.mask_list_pos: 
+                if i in mask_list_pos: 
+                    pos_count += 1 
+                    position_list.append(pos_count) 
+                    following_flag = True 
+                else: 
+                    if following_flag: 
+                        following_flag = False 
+                        position_list.append(pos_count) 
+                    else: 
+                        pos_count += 1 
+                        position_list.append(pos_count) 
+            position_ids = torch.tensor(position_list, dtype = torch.long, device = device) 
+            position_ids = position_ids.unsqueeze(0) 
+            
+            print("position ids found is {}".format(position_ids.shape)) 
+            print("position ids found is {}".format(position_ids)) 
+        
+        # the important part 
+        # input_embeds should not be None 
+        torch.set_printoptions(threshold = 500) 
+        input_embeds = None 
+        if condensed_embeds is not None: 
+            print(colored("condensed_embeds dtype: {} input_ids dtype: {}".format(condensed_embeds.dtype, input_ids.dtype), "yellow")) 
+            print("embed_projection dtype: {}".format(self.embed_projection.weight.dtype)) 
+            if self.condensed_fashion == "projection_mode": 
+                print(colored("condensed_embeds dtype: {}".format(condensed_embeds.dtype), "red")) 
+                condensed_embeds = self.embed_projection(condensed_embeds) 
+            input_embeds = self.embed_tokens(input_ids) 
+            input_embeds = self.interleaving_embeddings_inputs2(input_embeds, condensed_embeds, kernel_size = self.sliding_window_length, start_idx = start_idx, generate_flag = generate_flag) 
+        else: 
+            raise ValueError("We cannot have an inference or any forward propagation without the inputs_embeds") 
+        
+        if attention_mask is None:
+            attention_mask = torch.ones(
+                (batch_size, seq_length_with_past), dtype=torch.bool, device = input_embeds.device 
+            ) 
+            padding_mask = None
+        else:
+            if 0 in attention_mask:
+                padding_mask = attention_mask
+            else:
+                padding_mask = None 
+        
+        attention_mask = self._prepare_decoder_attention_mask(
+            attention_mask, (batch_size, seq_length), input_embeds, past_key_values_length 
+        ) 
+        
+        if self.eval_mode: 
+            # the attention_mask ignores the condensed tokens 
+            self._convert_to_normal_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+        else: 
+            if self.experiment_setting == "setting0": 
+                self._modify_decoder_attention_mask_neo(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            elif self.experiment_setting == "setting1": 
+                self._modify_decoder_attention_mask_for_harder(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            elif self.experiment_setting == "setting2": 
+                self._modify_decoder_attention_mask_for_harder2(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            elif self.experiment_setting == "setting3": 
+                self._modify_decoder_attention_mask_for_hardest_neo(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            elif self.experiment_setting == "setting4": 
+                self._modify_decoder_attention_mask_for_hardest_neo(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            elif self.experiment_setting == "setting5": 
+                # we make no change to the original attention mask 
+                pass 
+            else: 
+                raise ValueError("We do not have the experiment setting you are looking for") 
+            
+        if iteration_count is not None and iteration_count == 1: 
+            working_dir = self.criticalpath 
+            self.visualize_attention_mask(seq_length, attention_mask[0][0], working_dir + "attention_mask_after_modification.jpg") 
+        
+        hidden_states = input_embeds 
+        print("hidden_states shape {}".format(hidden_states.shape)) 
+        
+        if self.gradient_checkpointing and self.training:
+            if use_cache:
+                logger.warning_once(
+                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
+                )
+                use_cache = False 
+        
+        # decoder layers
+        all_hidden_states = () if output_hidden_states else None
+        all_self_attns = () if output_attentions else None
+        next_decoder_cache = () if use_cache else None 
+        
+        for idx, decoder_layer in enumerate(self.layers):
+            if output_hidden_states:
+                all_hidden_states += (hidden_states,)
+
+            past_key_value = past_key_values[idx] if past_key_values is not None else None
+
+            if self.gradient_checkpointing and self.training:
+
+                def create_custom_forward(module):
+                    def custom_forward(*inputs):
+                        # None for past_key_value
+                        return module(*inputs, past_key_value, output_attentions, padding_mask=padding_mask)
+
+                    return custom_forward
+
+                layer_outputs = torch.utils.checkpoint.checkpoint(
+                    create_custom_forward(decoder_layer), hidden_states, attention_mask, position_ids
+                )
+            else:
+                # horizontal_bar_enabled = False 
+                horizontal_bar_enabled = True 
+                layer_outputs = decoder_layer(
+                    hidden_states,
+                    attention_mask=attention_mask,
+                    position_ids=position_ids,
+                    past_key_value=past_key_value,
+                    output_attentions=output_attentions,
+                    use_cache=use_cache,
+                    padding_mask=padding_mask, 
+                    mask_list_pos = mask_list_pos, 
+                    horizontal_bar_enabled = horizontal_bar_enabled, 
+                ) 
+
+            hidden_states = layer_outputs[0]
+
+            if use_cache:
+                next_decoder_cache += (layer_outputs[2 if output_attentions else 1],)
+
+            if output_attentions:
+                all_self_attns += (layer_outputs[1],)
+
+        hidden_states = self.norm(hidden_states)
+
+        # add hidden states from the last decoder layer
+        if output_hidden_states:
+            all_hidden_states += (hidden_states,)
+
+        next_cache = next_decoder_cache if use_cache else None
+        
+        if self.config.pretraining_tp > 1: 
+            lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
+            logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]
+            logits = torch.cat(logits, dim=-1) 
+        else: 
+            logits = self.lm_head(hidden_states) 
+        logits = logits.float() 
+
+        mask_list_pos22 = [x - 1 for x in mask_list_pos] # just trying 
+        loss = None 
+        if labels is not None: 
+            # Shift so that tokens < n predict n 
+            # selected_indices = list(range(start_idx)) 
+            selected_indices = list(range(start_idx - 1)) 
+            # for i in range(start_idx, seq_length): 
+            for i in range(start_idx - 1, seq_length): 
+                # if i not in mask_list_pos: 
+                if i not in mask_list_pos22: 
+                    selected_indices.append(i) 
+            # shift_logits = shift_logits[:, selected_indices, :] 
+            logits = logits[:, selected_indices, :] 
+            # print("selected indices are : {}".format(selected_indices)) 
+            shift_logits = logits[..., :-1, :].contiguous()
+            shift_labels = labels[..., 1:].contiguous()
+            # expecting 143 sequence length 
+            # print("shift_logits have sequence length to be {}".format(shift_logits.shape)) 
+            # expecting 127 sequence length 
+            # print("shift_labels have sequence length to be {}".format(shift_labels.shape)) 
+            # Flatten the tokens
+            loss_fct = CrossEntropyLoss()
+            shift_logits = shift_logits.view(-1, self.config.vocab_size)
+            shift_labels = shift_labels.view(-1) 
+            # print("shift_logits {}".format(shift_logits)) 
+            # Enable model parallelism
+            shift_labels = shift_labels.to(shift_logits.device)
+            loss = loss_fct(shift_logits, shift_labels) 
+            # print(loss) 
+        
+        # self.iter_count += 1 
+        
+        if not return_dict: 
+            # output = (logits,) + outputs[1:] 
+            output = (logits,) + tuple(v for v in [next_cache, all_hidden_states, all_self_attns] if v is not None) 
+            return (loss,) + output if loss is not None else output 
+
+        return CausalLMOutputWithPast( 
+            loss = loss, 
+            logits = logits, 
+            past_key_values = next_cache, 
+            hidden_states = all_hidden_states, 
+            attentions = all_self_attns 
+        ) 
+    
+    def generate_forward( 
+        self,
+        input_ids: torch.LongTensor = None, 
+        attention_mask: Optional[torch.Tensor] = None,
+        position_ids: Optional[torch.LongTensor] = None,
+        past_key_values: Optional[List[torch.FloatTensor]] = None,
+        # inputs_embeds: Optional[torch.FloatTensor] = None, 
+        condensed_embeds: Optional[torch.FloatTensor] = None, 
+        # later_input_ids: torch.LongTensor = None, 
+        labels: Optional[torch.LongTensor] = None,
+        use_cache: Optional[bool] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        return_dict: Optional[bool] = None, 
+        start_idx = 64, 
+        eval_mode = False, 
+        experiment_setting = "setting0", 
+        generate_flag = None, 
+    ) -> Union[Tuple, CausalLMOutputWithPast]: 
+
+        self.experiment_setting = experiment_setting 
+
+        self.eval_mode = eval_mode 
+        output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
+        output_hidden_states = (
+            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
+        )
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict 
+        
+        # assert input_ids.shape[0] == inputs_embeds.shape[0] 
+        
+        batch_size = input_ids.shape[0] 
+        seq_length = input_ids.shape[1] 
+        
+        # dimension matching 
+        assert input_ids.shape[0] == condensed_embeds.shape[0] # batch size has to match 
+        
+        # assert ((input_ids.shape[1] - start_idx)//self.sliding_window_length) + 1 == condensed_embeds.shape[1] 
+        assert math.ceil((input_ids.shape[1] - (start_idx - 1))/self.sliding_window_length) == condensed_embeds.shape[1] 
+        # assert math.ceil((input_ids.shape[1] - start_idx)/self.sliding_window_length) == condensed_embeds.shape[1] 
+                
+        
+        seq_length += condensed_embeds.shape[1] 
+        seq_length_with_past = seq_length 
+        past_key_values_length = 0 
+        
+        if past_key_values is not None: 
+            past_key_values_length = past_key_values[0][0].shape[2] 
+            seq_length_with_past = seq_length_with_past + past_key_values_length 
+        
+        # self.mask_list_pos = [self.start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - self.start_idx) // (self.sliding_window_length + 1))] 
+        # mask_list_pos = [self.start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - self.start_idx) // (self.sliding_window_length + 1))] 
+        # mask_list_pos = [start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - start_idx) // (self.sliding_window_length + 1))] 
+        
+        mask_list_pos = [start_idx - 1 + i * (self.sliding_window_length + 1) for i in range(int(math.ceil((seq_length - start_idx) / (self.sliding_window_length + 1))))] 
+        if position_ids is None: # TODO: currently the position_ids isn't adaptive to attention_mask, which needs to be improved 
+            device = input_ids.device 
+            position_list = [] 
+            pos_count = past_key_values_length 
+            following_flag = False 
+            for i in range(seq_length): 
+                # if i in self.mask_list_pos: 
+                if i in mask_list_pos: 
+                    pos_count += 1 
+                    position_list.append(pos_count) 
+                    following_flag = True 
+                else: 
+                    if following_flag: 
+                        following_flag = False 
+                        position_list.append(pos_count) 
+                    else: 
+                        pos_count += 1 
+                        position_list.append(pos_count) 
+            position_ids = torch.tensor(position_list, dtype = torch.long, device = device) 
+            position_ids = position_ids.unsqueeze(0) 
+            
+            # print("position ids found is {}".format(position_ids.shape)) 
+            # print("position ids found is {}".format(position_ids)) 
+        
+        # the important part 
+        # input_embeds should not be None 
+        input_embeds = None 
+        condensed_embeds = self.embed_projection(condensed_embeds) 
+        input_embeds = self.embed_tokens(input_ids) 
+        input_embeds = self.interleaving_embeddings_inputs2(input_embeds, condensed_embeds, kernel_size = self.sliding_window_length, start_idx = start_idx, generate_flag = generate_flag) 
+        
+        if attention_mask is None:
+            attention_mask = torch.ones(
+                (batch_size, seq_length_with_past), dtype=torch.bool, device = input_embeds.device 
+            ) 
+            padding_mask = None
+        else:
+            if 0 in attention_mask:
+                padding_mask = attention_mask
+            else:
+                padding_mask = None 
+        
+        attention_mask = self._prepare_decoder_attention_mask(
+            attention_mask, (batch_size, seq_length), input_embeds, past_key_values_length 
+        ) 
+        
+        if self.eval_mode: 
+            # the attention_mask ignores the condensed tokens 
+            self._convert_to_normal_attention_mask(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+        else: 
+            if self.experiment_setting == "setting0": 
+                self._modify_decoder_attention_mask_neo(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            elif self.experiment_setting == "setting1": 
+                self._modify_decoder_attention_mask_for_harder(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            elif self.experiment_setting == "setting2": 
+                self._modify_decoder_attention_mask_for_harder2(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            elif self.experiment_setting == "setting3": 
+                self._modify_decoder_attention_mask_for_hardest_neo(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            elif self.experiment_setting == "setting4": 
+                self._modify_decoder_attention_mask_for_hardest_neo(attention_mask, dtype = input_embeds.dtype, mask_list_pos = mask_list_pos, start_idx = start_idx, kernel_size = self.sliding_window_length) 
+            elif self.experiment_setting == "setting5": 
+                # we make no change to the original attention mask 
+                pass 
+            else: 
+                raise ValueError("We do not have the experiment setting you are looking for") 
+        
+        hidden_states = input_embeds 
+        # print("hidden_states shape {}".format(hidden_states.shape)) 
+        
+        if self.gradient_checkpointing and self.training:
+            if use_cache:
+                logger.warning_once(
+                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
+                )
+                use_cache = False 
+        
+        # decoder layers
+        all_hidden_states = () if output_hidden_states else None
+        all_self_attns = () if output_attentions else None
+        next_decoder_cache = () if use_cache else None 
+        
+        for idx, decoder_layer in enumerate(self.layers):
+            if output_hidden_states:
+                all_hidden_states += (hidden_states,)
+
+            past_key_value = past_key_values[idx] if past_key_values is not None else None
+
+            if self.gradient_checkpointing and self.training:
+
+                def create_custom_forward(module):
+                    def custom_forward(*inputs):
+                        # None for past_key_value
+                        return module(*inputs, past_key_value, output_attentions, padding_mask=padding_mask)
+
+                    return custom_forward
+
+                layer_outputs = torch.utils.checkpoint.checkpoint(
+                    create_custom_forward(decoder_layer), hidden_states, attention_mask, position_ids
+                )
+            else:
+                # horizontal_bar_enabled = False 
+                horizontal_bar_enabled = True 
+                layer_outputs = decoder_layer(
+                    hidden_states,
+                    attention_mask=attention_mask,
+                    position_ids=position_ids,
+                    past_key_value=past_key_value,
+                    output_attentions=output_attentions,
+                    use_cache=use_cache,
+                    padding_mask=padding_mask, 
+                    mask_list_pos = mask_list_pos, 
+                    horizontal_bar_enabled = horizontal_bar_enabled, 
+                ) 
+
+            hidden_states = layer_outputs[0]
+
+            if use_cache:
+                next_decoder_cache += (layer_outputs[2 if output_attentions else 1],)
+
+            if output_attentions:
+                all_self_attns += (layer_outputs[1],)
+
+        hidden_states = self.norm(hidden_states)
+
+        # add hidden states from the last decoder layer
+        if output_hidden_states:
+            all_hidden_states += (hidden_states,)
+
+        next_cache = next_decoder_cache if use_cache else None
+        
+        if self.config.pretraining_tp > 1: 
+            lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
+            logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]
+            logits = torch.cat(logits, dim=-1) 
+        else: 
+            logits = self.lm_head(hidden_states) 
+        logits = logits.float() 
+
+        mask_list_pos22 = [x - 1 for x in mask_list_pos] # just trying 
+        loss = None 
+        if labels is not None: 
+            # Shift so that tokens < n predict n 
+            # selected_indices = list(range(start_idx)) 
+            selected_indices = list(range(start_idx - 1)) 
+            # for i in range(start_idx, seq_length): 
+            for i in range(start_idx - 1, seq_length): 
+                # if i not in mask_list_pos: 
+                if i not in mask_list_pos22: 
+                    selected_indices.append(i) 
+            # shift_logits = shift_logits[:, selected_indices, :] 
+            logits = logits[:, selected_indices, :] 
+            # print("selected indices are : {}".format(selected_indices)) 
+            shift_logits = logits[..., :-1, :].contiguous()
+            shift_labels = labels[..., 1:].contiguous()
+            # expecting 143 sequence length 
+            # print("shift_logits have sequence length to be {}".format(shift_logits.shape)) 
+            # expecting 127 sequence length 
+            # print("shift_labels have sequence length to be {}".format(shift_labels.shape)) 
+            # Flatten the tokens
+            loss_fct = CrossEntropyLoss()
+            shift_logits = shift_logits.view(-1, self.config.vocab_size)
+            shift_labels = shift_labels.view(-1) 
+            # print("shift_logits {}".format(shift_logits)) 
+            # Enable model parallelism
+            shift_labels = shift_labels.to(shift_logits.device)
+            loss = loss_fct(shift_logits, shift_labels) 
+            # print(loss) 
+        
+        # self.iter_count += 1 
+        
+        if not return_dict: 
+            # output = (logits,) + outputs[1:] 
+            output = (logits,) + tuple(v for v in [next_cache, all_hidden_states, all_self_attns] if v is not None) 
+            return (loss,) + output if loss is not None else output 
+
+        return CausalLMOutputWithPast( 
+            loss = loss, 
+            logits = logits, 
+            past_key_values = next_cache, 
+            hidden_states = all_hidden_states, 
+            attentions = all_self_attns 
+        ) 
+    
+    @staticmethod 
+    # copy from https://github.com/LeeSinLiang/microGPT/blob/ed40cf9780dbeb180adfe94c227d4aa97e69250e/gpt.py
+    def top_k_top_p_filter(logits: torch.Tensor, top_k: int = 0, top_p: float = 0.0):
+        """
+        Args:
+            logits (torch.Tensorpe_): 2D tensor with shape (batch, vocab)
+            top_k (int, optional): top_k. Defaults to 0.
+            top_p (float, optional): top_p. Defaults to 0.0.
+
+        Returns:
+            torch.Tensor: a renormalized logits
+        """
+        if top_k > 0:
+            filter = torch.topk(logits, min(top_k, logits.size(-1)))[0]
+            logits[logits < filter[:, [-1]]] = float('-inf')
+        if top_p > 0.0:
+            sorted_logits, sorted_indices = torch.sort(logits, descending=True)
+            cumulative_probs = torch.cumsum(
+                F.softmax(sorted_logits, dim=-1), dim=-1)
+            filter = cumulative_probs > top_p
+            filter[..., 1:] = filter[..., :-1].clone()
+            filter[..., 0] = 0
+            indices_to_remove = filter.scatter(1, sorted_indices, filter)
+            logits[indices_to_remove] = float('-inf')
+        return logits 
+    
+    @staticmethod 
+    def norm_logits(logits : torch.Tensor, temperature : float, top_k : float, top_p : float) -> torch.Tensor:
+        """
+        Args:
+            logits (torch.Tensor): shape (1, vocab)
+            temperature (float): temperature
+            top_k (float): top_k
+            top_p (float): top_p
+
+        Returns:
+            torch.Tensor: next token with shape as (batch,  1)
+        """
+        assert logits.dim() == 2
+        logits = logits / temperature
+        # logits = self.top_k_top_p_filter(logits, top_k=top_k, top_p=top_p) 
+        logits = SimpleSmallModel.top_k_top_p_filter(logits, top_k=top_k, top_p=top_p) 
+        probs = F.softmax(logits, dim=1)
+        return probs 
+
+    @staticmethod 
+    def sample(probs : torch.Tensor, num_samples: int = 1, random_seed = None):
+        if random_seed:
+            torch.manual_seed(random_seed)
+        idx_next = torch.multinomial(probs, num_samples=num_samples)
+        if (idx_next.item() == 0):
+            raise RuntimeError
+        return idx_next 
+
+    @staticmethod 
+    def logitsToText(logits, topk, topp, temperature, tokenizer, use_sample = True): 
+        # this function goes from logits to the actual decoded text 
+        seq_len = logits.shape[-2] 
+        print("sequence length is {}".format(seq_len)) 
+        decoded_index = [] 
+        for n in range(seq_len): 
+            if use_sample: 
+                probs = SimpleSmallModel.norm_logits(logits[:, n, :], temperature, topk, topp) 
+                idx_next = SimpleSmallModel.sample(probs) 
+            else: 
+                idx_next = torch.argmax(logits[:, n, :], dim = -1) 
+                # dimension of idx_next is (batch_size, 1) 
+        decoded_index.append(idx_next) 
+        output = torch.cat(decoded_index, dim = -1) 
+        text = tokenizer.batch_decode(output) 
+        return text 
+    
+    def prepare_inputs_for_generation(
+        self, input_ids, past_key_values=None, attention_mask=None, inputs_embeds=None, **kwargs
+    ):
+        if past_key_values is not None: 
+            # NOTE this problem is not a concern during training (kvcache isn't used) 
+            # inference would be fine because condensed token k v are also in the past_key_values 
+            past_length = past_key_values[0][0].shape[2]
+
+            # Some generation methods already pass only the last input ID
+            if input_ids.shape[1] > past_length:
+                remove_prefix_length = past_length
+            else:
+                # Default to old behavior: keep only final ID
+                remove_prefix_length = input_ids.shape[1] - 1
+
+            input_ids = input_ids[:, remove_prefix_length:]
+
+        position_ids = kwargs.get("position_ids", None)
+        if attention_mask is not None and position_ids is None:
+            # create position_ids on the fly for batch generation
+            position_ids = attention_mask.long().cumsum(-1) - 1
+            position_ids.masked_fill_(attention_mask == 0, 1)
+            if past_key_values:
+                position_ids = position_ids[:, -input_ids.shape[1] :]
+
+        # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
+        '''
+        if inputs_embeds is not None and past_key_values is None:
+            model_inputs = {"inputs_embeds": inputs_embeds}
+        else:
+            model_inputs = {"input_ids": input_ids}
+        ''' 
+        model_inputs = {"input_embeds": inputs_embeds} 
+        model_inputs.update({"input_ids": input_ids}) 
+        model_inputs.update(
+            {
+                "position_ids": position_ids,
+                "past_key_values": past_key_values,
+                "use_cache": kwargs.get("use_cache"),
+                "attention_mask": attention_mask,
+            }
+        )
+        return model_inputs 
+    
+    def update_cache_for_new(self, past_key_values): 
+        if self.iter_count < self.decipher_threshold: 
+            raise ValueError("Note expected to roll back just yet") 
+        elif self.iter_count == self.decipher_threshold: 
+            new_past_key_values = [] 
+            for i in range(len(past_key_values)): 
+                new_layer_past = [] 
+                for j in range(len(past_key_values[i])): 
+                    new_layer_past.append(past_key_values[i][j][:, :, : -(self.decipher_threshold + 1), :]) # remove the generated one 
+                new_past_key_values.append(tuple(new_layer_past)) 
+            return new_past_key_values 
+        else: 
+            raise ValueError("We detected an error") 
+
+    @staticmethod
+    def _reorder_cache(past_key_values, beam_idx):
+        reordered_past = ()
+        for layer_past in past_key_values:
+            reordered_past += (
+                tuple(past_state.index_select(0, beam_idx.to(past_state.device)) for past_state in layer_past),
+            )
+        return reordered_past 
+
+class SimpleSmallModelmixedb(LlamaPreTrainedModel): 
+    _tied_weights_keys = ["lm_head.weight"] 
+    
+    def __init__(self, *args, sliding_window_length = 4, hostname = None, target_model_dim = 4096, **kwargs): 
+        super().__init__(*args, **kwargs) 
+        # copied from LlamaModel 
+        config = self.config 
+        self.padding_idx = config.pad_token_id 
+        self.vocab_size = config.vocab_size 
+        
+        # cross model projection of the hidden states dimension 
+        self.target_model_dim = target_model_dim 
+        self.embed_projection = nn.Linear(self.target_model_dim, config.hidden_size, bias = False) 
+        self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx) 
+        self.layers = nn.ModuleList([LlamaDecoderLayer(config) for _ in range(config.num_hidden_layers)])
+        self.norm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps) 
+        
+        self.gradient_checkpointing = False 
+        
+        # copied from LlamaForCausalLM 
+        self.vocab_size = config.vocab_size 
+        self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False) 
+
+        # needed to be used for the interleaving embeddings 
+        # self.sliding_window_length = sliding_window_length 
+        
+        # Initialize weights and apply final processing
+        self.post_init() 
+
+        # add an evaluation mode 
+        self.eval_mode = False 
+        self.condensed_fashion = "projection_mode" 
+        self.all_list_condensed = ["projection_mode", "ground_truth"] 
+
+        self.criticalpath = None 
+        # determine something 
+        if hostname is not None: 
+            if "lovelace" in hostname: 
+                self.criticalpath = "/home/yangzho6/" 
+            elif "ada" in hostname: 
+                self.criticalpath = "/home/beidic/yangzho6/" 
+            else: 
+                self.criticalpath = "/fsx-storygen/beidic/yang/" 
+
+        # if self.criticalpath is None or hostname is None: 
+            # raise ValueError("critical path is not set") 
+    
+    def set_sliding_window_length(self, sliding_window_length): 
+        self.sliding_window_length = sliding_window_length 
+    
+    # input embeddings 
+    def get_input_embeddings(self):
+        # return self.model.embed_tokens 
+        return self.embed_tokens 
+
+    def set_input_embeddings(self, value):
+        # self.model.embed_tokens = value 
+        self.embed_tokens = value 
+
+    # output embeddings 
+    def get_output_embeddings(self):
+        return self.lm_head
+
+    def set_output_embeddings(self, new_embeddings):
+        self.lm_head = new_embeddings 
+    
+    def set_criticalpath(self, hostname): 
+        if hostname is not None: 
+            if "lovelace" in hostname: 
+                self.criticalpath = "/home/yangzho6/" 
+            elif "ada" in hostname: 
+                self.criticalpath = "/home/beidic/yangzho6/" 
+            else: 
+                self.criticalpath = "/fsx-storygen/beidic/yang/" 
+
+    # this function happens after inputs_embeds has been made, so there shouldn't be problem related to condensed tokens 
+    def _prepare_decoder_attention_mask(self, attention_mask, input_shape, inputs_embeds, past_key_values_length): 
+        combined_attention_mask = None 
+        if input_shape[-1] > 1: 
+            combined_attention_mask = _make_causal_mask(
+                input_shape, 
+                inputs_embeds.dtype, 
+                device = inputs_embeds.device, 
+                past_key_values_length = past_key_values_length, 
+            ) 
+        
+        if attention_mask is not None: 
+
+            expanded_attn_mask = _expand_mask(attention_mask, inputs_embeds.dtype, tgt_len = input_shape[-1]).to( #008000 
+                inputs_embeds.device 
+            ) 
+            combined_attention_mask = (
+                expanded_attn_mask if combined_attention_mask is None else expanded_attn_mask + combined_attention_mask 
+            ) 
+        
+        return combined_attention_mask 
+
+    def _convert_to_normal_attention_mask(self, combined_attention_mask, dtype, mask_list_pos, start_idx = None, kernel_size = None): 
+        mask_shape = combined_attention_mask.shape # (batch_size, 1, tgt_seq_len, src_seq_len) 
+        seq_len = mask_shape[-1] 
+        start_idx = start_idx if start_idx is not None else self.start_idx 
+        kernel_size = kernel_size if kernel_size is not None else self.sliding_window_length 
+        
+        # row dimensional masking 
+        # row_idx_masked_out = [start_idx + i * (kernel_size + 1) for i in range((seq_len - start_idx) / (kernel_size + 1))] 
+        row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) # NOTE currently, this line only works for training 
+        # row_mask[row_idx_masked_out] = 1 
+        row_mask[mask_list_pos] = 1 
+
+        condensed_token_idx_list = mask_list_pos 
+        for i in range(len(condensed_token_idx_list)): 
+            row_mask[condensed_token_idx_list[i]: , condensed_token_idx_list[i]] = 1 
+        row_mask = row_mask[None, None, :, :].expand(mask_shape).to(torch.bool) 
+        row_mask = row_mask.to(device = combined_attention_mask.device) 
+
+        combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
+
+    # def _modify_decoder_attention_mask(self, combined_attention_mask, dtype, start_idx = None, kernel_size = None): 
+    def _modify_decoder_attention_mask(self, combined_attention_mask, dtype, mask_list_pos, start_idx = None, kernel_size = None): 
+        mask_shape = combined_attention_mask.shape # (batch_size, 1, tgt_seq_len, src_seq_len) 
+        seq_len = mask_shape[-1] 
+        start_idx = start_idx if start_idx is not None else self.start_idx 
+        kernel_size = kernel_size if kernel_size is not None else self.sliding_window_length 
+        
+        # row dimensional masking 
+        # row_idx_masked_out = [start_idx + i * (kernel_size + 1) for i in range((seq_len - start_idx) / (kernel_size + 1))] 
+        row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) # NOTE currently, this line only works for training 
+        # row_mask[row_idx_masked_out] = 1 
+        # row_mask[mask_list_pos] = 1 
+        row_mask[mask_list_pos, :] = 1 
+
+        # column dimensional masking 
+        # condensed_token_idx_list = row_idx_masked_out 
+        condensed_token_idx_list = mask_list_pos 
+        for i in range(len(condensed_token_idx_list) - 1): 
+            # row_mask[:, :, condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
+            row_mask[condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
+        # print("row mask shape {}".format(row_mask.shape)) 
+        row_mask = row_mask[None, None, :, :].expand(mask_shape).to(torch.bool) 
+        row_mask = row_mask.to(device = combined_attention_mask.device) 
+
+        combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
+    
+    def _modify_decoder_attention_mask_neo(self, combined_attention_mask, dtype, mask_list_pos, start_idx = None, kernel_size = None): 
+        mask_shape = combined_attention_mask.shape # (batch_size, 1, tgt_seq_len, src_seq_len) 
+        seq_len = mask_shape[-1] 
+        start_idx = start_idx if start_idx is not None else self.start_idx 
+        kernel_size = kernel_size if kernel_size is not None else self.sliding_window_length 
+        
+        # row dimensional masking 
+        # row_idx_masked_out = [start_idx + i * (kernel_size + 1) for i in range((seq_len - start_idx) / (kernel_size + 1))] 
+        row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) # NOTE currently, this line only works for training 
+        # row_mask[row_idx_masked_out] = 1 
+        # row_mask[mask_list_pos] = 1 
+        # row_mask[mask_list_pos, :] = 1 
+
+        # column dimensional masking 
+        # condensed_token_idx_list = row_idx_masked_out 
+        condensed_token_idx_list = mask_list_pos 
+        for i in range(len(condensed_token_idx_list) - 1): 
+            # row_mask[:, :, condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
+            row_mask[condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
+        # print("row mask shape {}".format(row_mask.shape)) 
+        row_mask = row_mask[None, None, :, :].expand(mask_shape).to(torch.bool) 
+        row_mask = row_mask.to(device = combined_attention_mask.device) 
+
+        combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
+    
+    def _modify_decoder_attention_mask_for_large_model_addon(self, combined_attention_mask, dtype, mask_list_pos, kernel_size = None): 
+        # in this setting, we assume the starting idx to be 0 
+        mask_shape = combined_attention_mask.shape # (batch_size, 1, tgt_seq_len, src_seq_len) 
+        seq_len = mask_shape[-1] 
+        start_idx = 0 
+        kernel_size = kernel_size if kernel_size is not None else self.sliding_window_length 
+        
+        # row dimensional masking 
+        # row_idx_masked_out = [start_idx + i * (kernel_size + 1) for i in range((seq_len - start_idx) / (kernel_size + 1))] 
+        row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) # NOTE currently, this line only works for training 
+        # row_mask[row_idx_masked_out] = 1 
+        # row_mask[mask_list_pos] = 1 
+        row_mask[mask_list_pos, :] = 1 
+
+        # column dimensional masking 
+        # condensed_token_idx_list = row_idx_masked_out 
+        condensed_token_idx_list = mask_list_pos 
+        print("condensed token idx list {}".format(condensed_token_idx_list)) 
+        for i in range(len(condensed_token_idx_list) - 1): 
+            # row_mask[:, :, condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
+            row_mask[condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
+        # print("row mask shape {}".format(row_mask.shape)) 
+        row_mask = row_mask[None, None, :, :].expand(mask_shape).to(torch.bool) 
+        row_mask = row_mask.to(device = combined_attention_mask.device) 
+
+        combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
+    
+    def _modify_decoder_attention_mask_for_harder(self, combined_attention_mask, dtype, mask_list_pos, start_idx = None, kernel_size = None): 
+        mask_shape = combined_attention_mask.shape # (batch_size, 1, tgt_seq_len, src_seq_len) 
+        seq_len = mask_shape[-1] 
+        start_idx = start_idx if start_idx is not None else self.start_idx 
+        kernel_size = kernel_size if kernel_size is not None else self.sliding_window_length 
+        
+        # row dimensional masking 
+        # row_idx_masked_out = [start_idx + i * (kernel_size + 1) for i in range((seq_len - start_idx) / (kernel_size + 1))] 
+        row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) # NOTE currently, this line only works for training 
+        # row_mask[row_idx_masked_out] = 1 
+        row_mask[mask_list_pos] = 1 
+
+        # column dimensional masking 
+        # condensed_token_idx_list = row_idx_masked_out 
+        condensed_token_idx_list = mask_list_pos 
+        for i in range(len(condensed_token_idx_list) - 2): 
+            # row_mask[:, :, condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
+            row_mask[condensed_token_idx_list[i + 2] :, condensed_token_idx_list[i]] = 1 
+        
+        # adding blocking to force attention 
+        for i in range(len(condensed_token_idx_list) - 1): 
+            if i < len(condensed_token_idx_list) - 2: 
+                row_mask[condensed_token_idx_list[i + 1] + 1: condensed_token_idx_list[i + 2], condensed_token_idx_list[i] + 1 : condensed_token_idx_list[i + 1]] = 1 
+            else: 
+                row_mask[condensed_token_idx_list[i + 1] + 1 :, condensed_token_idx_list[i] + 1 : condensed_token_idx_list[i + 1]] = 1 
+
+        # print("row mask shape {}".format(row_mask.shape)) 
+        row_mask = row_mask[None, None, :, :].expand(mask_shape).to(torch.bool) 
+        row_mask = row_mask.to(device = combined_attention_mask.device) 
+
+        combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
+    
+    def _modify_decoder_attention_mask_for_harder2(self, combined_attention_mask, dtype, mask_list_pos, start_idx = None, kernel_size = None): 
+        mask_shape = combined_attention_mask.shape # (batch_size, 1, tgt_seq_len, src_seq_len) 
+        seq_len = mask_shape[-1] 
+        start_idx = start_idx if start_idx is not None else self.start_idx 
+        kernel_size = kernel_size if kernel_size is not None else self.sliding_window_length 
+        
+        # row dimensional masking 
+        # row_idx_masked_out = [start_idx + i * (kernel_size + 1) for i in range((seq_len - start_idx) / (kernel_size + 1))] 
+        row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) # NOTE currently, this line only works for training 
+        # row_mask[row_idx_masked_out] = 1 
+        row_mask[mask_list_pos] = 1 
+
+        # column dimensional masking 
+        # condensed_token_idx_list = row_idx_masked_out 
+        condensed_token_idx_list = mask_list_pos 
+        for i in range(len(condensed_token_idx_list) - 2): 
+            # row_mask[:, :, condensed_token_idx_list[i + 1] :, condensed_token_idx_list[i]] = 1 
+            row_mask[condensed_token_idx_list[i + 2] :, condensed_token_idx_list[i]] = 1 
+        
+        # adding blocking to force attention 
+        for i in range(len(condensed_token_idx_list) - 1): 
+            if i < len(condensed_token_idx_list) - 2: 
+                row_mask[condensed_token_idx_list[i + 1] + 1: condensed_token_idx_list[i + 2], condensed_token_idx_list[i] + 1 : condensed_token_idx_list[i + 1] + 1] = 1 
+            else: 
+                row_mask[condensed_token_idx_list[i + 1] + 1 :, condensed_token_idx_list[i] + 1 : condensed_token_idx_list[i + 1] + 1] = 1 
+
+        # print("row mask shape {}".format(row_mask.shape)) 
+        row_mask = row_mask[None, None, :, :].expand(mask_shape).to(torch.bool) 
+        row_mask = row_mask.to(device = combined_attention_mask.device) 
+
+        combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
+    
+    def _modify_decoder_attention_mask_for_hardest(self, combined_attention_mask, dtype, mask_list_pos, start_idx = None, kernel_size = None): 
+        mask_shape = combined_attention_mask.shape # (batch_size, 1, tgt_seq_len, src_seq_len) 
+        seq_len = mask_shape[-1] 
+        start_idx = start_idx if start_idx is not None else self.start_idx 
+        kernel_size = kernel_size if kernel_size is not None else self.sliding_window_length 
+        
+        # row dimensional masking 
+        # row_idx_masked_out = [start_idx + i * (kernel_size + 1) for i in range((seq_len - start_idx) / (kernel_size + 1))] 
+        row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) # NOTE currently, this line only works for training 
+        # row_mask[row_idx_masked_out] = 1 
+        row_mask[mask_list_pos] = 1 
+
+        condensed_token_idx_list = mask_list_pos 
+        for i in range(len(condensed_token_idx_list)): 
+            if i == 0: 
+                row_mask[condensed_token_idx_list[i] : , : condensed_token_idx_list[i]] = 1 
+            else: 
+                row_mask[condensed_token_idx_list[i] : , condensed_token_idx_list[i - 1] : condensed_token_idx_list[i]] = 1 
+        
+        # print("row mask shape {}".format(row_mask.shape)) 
+        row_mask = row_mask[None, None, :, :].expand(mask_shape).to(torch.bool) 
+        row_mask = row_mask.to(device = combined_attention_mask.device) 
+
+        combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
+    
+    def _modify_decoder_attention_mask_for_hardest_neo(self, combined_attention_mask, dtype, mask_list_pos, start_idx = None, kernel_size = None): 
+        mask_shape = combined_attention_mask.shape # (batch_size, 1, tgt_seq_len, src_seq_len) 
+        seq_len = mask_shape[-1] 
+        start_idx = start_idx if start_idx is not None else self.start_idx 
+        kernel_size = kernel_size if kernel_size is not None else self.sliding_window_length 
+        
+        # row dimensional masking 
+        # row_idx_masked_out = [start_idx + i * (kernel_size + 1) for i in range((seq_len - start_idx) / (kernel_size + 1))] 
+        row_mask = torch.zeros(mask_shape[-2], mask_shape[-1], device = combined_attention_mask.device) # NOTE currently, this line only works for training 
+        # row_mask[row_idx_masked_out] = 1 
+        # row_mask[mask_list_pos] = 1 
+
+        condensed_token_idx_list = mask_list_pos 
+        for i in range(len(condensed_token_idx_list)): 
+            if i == 0: 
+                row_mask[condensed_token_idx_list[i] : , : condensed_token_idx_list[i]] = 1 
+            else: 
+                row_mask[condensed_token_idx_list[i] : , condensed_token_idx_list[i - 1] : condensed_token_idx_list[i]] = 1 
+        
+        # print("row mask shape {}".format(row_mask.shape)) 
+        row_mask = row_mask[None, None, :, :].expand(mask_shape).to(torch.bool) 
+        row_mask = row_mask.to(device = combined_attention_mask.device) 
+
+        combined_attention_mask.masked_fill_(row_mask, torch.finfo(dtype).min) 
+    '''
+    def interleaving_embeddings_inputs(self, input_embeds, condensed_embeds, kernel_size = 4, start_idx = 64): 
+        assert (input_embeds.shape[1] - start_idx)/kernel_size == condensed_embeds.shape[1] 
+        combined_embeds = input_embeds[:, : start_idx, :] 
+        input_embeds_count = start_idx 
+        # print("combined embeds shape {}".format(combined_embeds.shape)) 
+        for i in range(condensed_embeds.shape[1]): 
+            # print("i is {}".format(i)) 
+            combined_embeds = torch.cat([combined_embeds, condensed_embeds[:, i, :].unsqueeze(1)], dim = 1) 
+            combined_embeds = torch.cat([combined_embeds, input_embeds[:, input_embeds_count : input_embeds_count + kernel_size, :]], dim = 1) 
+            input_embeds_count += kernel_size 
+            # print("combined embeds shape {}".format(combined_embeds.shape)) 
+        return combined_embeds 
+    ''' 
+    
+    def interleaving_embeddings_inputs2(self, input_embeds, condensed_embeds, kernel_size = 4, start_idx = 64, generate_flag = False): 
+        # print("start_idx is {}".format(start_idx)) # debug this is 2 
+        if not generate_flag: 
+            assert (input_embeds.shape[1] - start_idx)/kernel_size == condensed_embeds.shape[1] 
+            # combined_embeds = input_embeds[:, : start_idx - 1, :] 
+            combined_embeds = input_embeds[:, : start_idx - 1 + self.sliding_window_length - 1, :] 
+            # input_embeds_count = start_idx - 1 
+            input_embeds_count = start_idx - 1 + self.sliding_window_length - 1 
+        else: 
+            assert (input_embeds.shape[1] - start_idx)//kernel_size + 1 == condensed_embeds.shape[1] 
+            # combined_embeds = input_embeds[:, : start_idx, :] 
+            combined_embeds = input_embeds[:, : start_idx - 1, :] 
+            # input_embeds_count = start_idx 
+            input_embeds_count = start_idx - 1 
+        for i in range(condensed_embeds.shape[1]): 
+            # print("i is {} length of combined_embeds is {}".format(i, combined_embeds.shape[1])) 
+            combined_embeds = torch.cat([combined_embeds, condensed_embeds[:, i, :].unsqueeze(1)], dim = 1) 
+            if (input_embeds_count < input_embeds.shape[1]): 
+                combined_embeds = torch.cat([combined_embeds, input_embeds[:, input_embeds_count : min(input_embeds_count + kernel_size, input_embeds.shape[1]), :]], dim = 1) 
+            input_embeds_count += kernel_size 
+        if input_embeds_count < input_embeds.shape[1]: 
+            print(colored("inside input_interleaving encunter leftover wordtokens", "green")) 
+            combined_embeds = torch.cat([combined_embeds, input_embeds[:, input_embeds_count :, :]], dim = 1) 
+        
+        return combined_embeds 
+    
+    def interleaving_embeddings_inputs(self, input_embeds, condensed_embeds, kernel_size = 4, start_idx = 64, generate_flag = False): 
+        if not generate_flag: 
+            # assert (input_embeds.shape[1] - start_idx)/kernel_size == condensed_embeds.shape[1] 
+            assert (input_embeds.shape[1] - start_idx)//kernel_size == condensed_embeds.shape[1] 
+            combined_embeds = input_embeds[:, : start_idx, :] 
+            input_embeds_count = start_idx 
+        else: 
+            assert (input_embeds.shape[1] - start_idx)//kernel_size + 1 == condensed_embeds.shape[1] 
+            combined_embeds = input_embeds[:, : start_idx, :] 
+            input_embeds_count = start_idx 
+        for i in range(condensed_embeds.shape[1]): 
+            # print("i is {} length of combined_embeds is {}".format(i, combined_embeds.shape[1])) 
+            combined_embeds = torch.cat([combined_embeds, condensed_embeds[:, i, :].unsqueeze(1)], dim = 1) 
+            if (input_embeds_count < input_embeds.shape[1]): 
+                combined_embeds = torch.cat([combined_embeds, input_embeds[:, input_embeds_count : min(input_embeds_count + kernel_size, input_embeds.shape[1]), :]], dim = 1) 
+            input_embeds_count += kernel_size 
+        
+        return combined_embeds 
+    
+    def visualize_position_ids(self, position_ids, mask_idx): 
+        # for debugging purposes 
+        position_ids = position_ids.squeeze(0) 
+        outputline = "" 
+        for i in range(position_ids.shape[0]): 
+            if i in mask_idx: 
+                outputline += colored(str(position_ids[i].item()), "red") + " "
+            else: 
+                outputline += str(position_ids[i].item()) + " " 
+        return outputline 
+    
+    def visualize_attention_mask(self, sequence_length, tensor, filename): 
+        # code generated by GPT-4 
+        '''
+        # Create a tensor for demonstration purposes
+        # In your case, replace this with the actual tensor
+        tensor = torch.full((sequence_length, sequence_length), float('-inf'))
+        mask = torch.rand(sequence_length, sequence_length) > 0.5  # Random mask for demo
+        tensor[mask] = 0.0
+        ''' 
+        # Convert to numpy for visualization 
+        tensordtype = tensor.dtype 
+        if tensordtype == torch.bfloat16: 
+            tensor_np = tensor.cpu().clone().to(torch.float32).numpy() 
+        else: 
+            tensor_np = tensor.cpu().clone().numpy() 
+
+        # Replace -inf with 1 and 0 with 0 for visualization purposes
+        # visual_tensor = np.where(tensor_np == float('-inf'), 1, 0) 
+        visual_tensor = np.where(tensor_np < 0, 1, 0) 
+        # print(visual_tensor) 
+
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(30, 30)) 
+        cmap = plt.cm.colors.ListedColormap(['black', 'lightblue'])
+        bounds = [-0.5, 0.5, 1.5]
+        norm = plt.cm.colors.BoundaryNorm(bounds, cmap.N)
+
+        # Display the data
+        cbar = ax.imshow(visual_tensor, cmap=cmap, norm=norm)
+
+        # Set the background color to white
+        fig.patch.set_facecolor('white')
+        ax.set_facecolor('white')
+
+        # Add gridlines
+        ax.grid(which='major', axis='both', linestyle='-', color='k', linewidth=2)
+        # ax.set_xticks(np.arange(-0.5, sequence_length, 1)) 
+        # ax.set_yticks(np.arange(-0.5, sequence_length, 1)) 
+        tick_positions = np.arange(0, sequence_length, 1)
+        ax.set_xticks(tick_positions - 0.5)  # Shift the tick positions to be centered between the gridlines
+        ax.set_yticks(tick_positions - 0.5)  # Same shift for y-ticks
+
+        # Label the axes
+        ax.set_xticklabels(np.arange(0, sequence_length))
+        ax.set_yticklabels(np.arange(0, sequence_length))
+
+        # Set the tick labels for both axes
+        plt.xticks(rotation=90)
+        ax.tick_params(axis=u'both', which=u'both',length=0)
+
+        # Set axis limits to make the grid fit the image correctly
+        ax.set_xlim(-0.5, sequence_length-0.5)
+        ax.set_ylim(sequence_length-0.5, -0.5)
+
+        # Show the color bar
+        plt.colorbar(cbar, ticks=[0, 1], orientation='vertical', shrink=0.8, aspect=20)
+
+        # Save the plot
+        plt.savefig(filename, format='jpg', bbox_inches='tight') 
+        # print("we got here") 
+        plt.close() 
+    
+    def downsample_vectors(self, listoflasthiddenstates, kernel_size = 4): 
+        downsampled_vectors = [] 
+        shape = listoflasthiddenstates[0].shape 
+        device = listoflasthiddenstates[0].device 
+        for i in range(len(listoflasthiddenstates)): 
+            sum = torch.zeros(shape, device = device) 
+            if i % kernel_size == kernel_size - 1: 
+                sum += listoflasthiddenstates[i] 
+                downsampled_vectors.append(sum/kernel_size) 
+                sum.mul_(0.) 
+            else: 
+                sum += listoflasthiddenstates[i] 
+        return downsampled_vectors 
+
+    def downsample_vectors2(self, cat_tokens, kernel_size = 4): 
+        # downsampled_vectors = [] 
+        device = cat_tokens.device 
+        assert cat_tokens.shape[1] == kernel_size 
+        sum = torch.zeros((cat_tokens.shape[0], cat_tokens.shape[-1]), device = device) 
+        for i in range(cat_tokens.shape[1]): 
+            sum += cat_tokens[:, i, :] 
+        sum /= kernel_size 
+        return sum 
+
+    @staticmethod 
+    def plot_attention_map(attention_maps, layer_num, head_num, seq_length, filename):
+        """
+        Plots the attention map for a specific layer and head and saves it to a file.
+
+        :param attention_maps: A nested list or array of attention maps from the transformer model.
+        :param layer_num: The layer number to visualize.
+        :param head_num: The head number to visualize.
+        :param seq_length: The sequence length of the model.
+        :param filename: The filename to save the plot.
+        """
+
+        import matplotlib.colors as mcolors
+
+        # Extract the specific attention map
+        # attention_map = attention_maps[layer_num][head_num] 
+        attention_map = attention_maps[layer_num][0][head_num].to(torch.float32).cpu().detach().numpy() 
+        
+        # Create a mask for exact zeros
+        zero_mask = attention_map == 0
+        '''
+        # Create a custom colormap
+        colors = [(plt.cm.bwr(i)) for i in range(256)]
+        # midpoint = np.where(np.linspace(-1, 1, 256) == 0)[0][0] 
+        midpoint = np.abs(np.linspace(-1, 1, 256)).argmin() 
+        colors[midpoint] = (0, 0, 0, 1)
+        new_colormap = mcolors.LinearSegmentedColormap.from_list('custom_colormap', colors, N=256)
+        ''' 
+        # Define a new color dictionary
+        cdict = {
+            'red':   ((0.0, 0.0, 0.0),   # Black
+                    (0.25, 1.0, 1.0),  # Red
+                    (0.5, 1.0, 1.0),   # Yellow (1.0, 1.0, 0.0) -> Red + Green
+                    (0.75, 0.0, 0.0),  # Green
+                    (1.0, 0.0, 0.0)),  # Blue
+
+            'green': ((0.0, 0.0, 0.0),
+                    (0.25, 0.0, 0.0),
+                    (0.5, 1.0, 1.0),   # Yellow
+                    (0.75, 1.0, 1.0),  # Green
+                    (1.0, 0.0, 0.0)),
+
+            'blue':  ((0.0, 0.0, 0.0),
+                    (0.25, 0.0, 0.0),
+                    (0.5, 0.0, 0.0),   # Yellow has no blue component
+                    (0.75, 0.0, 0.0),  # Green
+                    (1.0, 1.0, 1.0))   # Blue
+        }
+
+        custom_cmap = mcolors.LinearSegmentedColormap('custom_colormap', cdict)
+        new_colormap = custom_cmap 
+
+        # Normalization
+        max_val = np.max(attention_map)
+        norm = mcolors.Normalize(vmin=0, vmax=max_val)
+        '''
+        # Normalization
+        max_val = np.max(np.abs(attention_map))
+        norm = mcolors.TwoSlopeNorm(vmin=-max_val, vcenter=0, vmax=max_val)
+        ''' 
+        # Create a custom colormap
+        fig, ax = plt.subplots(figsize=(100, 60)) 
+        '''
+        colors = [(0, 0, 0)] + [(plt.cm.bwr(i)) for i in range(256)]
+        new_colormap = mcolors.LinearSegmentedColormap.from_list('custom_colormap', colors, N=257)
+        new_colormap.set_under('black')  # for values under the min value
+        
+        # Replace -inf with a value smaller than the minimum of the colormap
+        attention_map = np.where(attention_map == -np.inf, -np.finfo(np.float32).max, attention_map)
+        ''' 
+        # Plotting
+        # cbar = ax.imshow(attention_map, norm = norm, cmap=new_colormap, aspect='auto', interpolation='nearest', vmin=-1, vmax=1) 
+        cbar = ax.imshow(attention_map, cmap=new_colormap, norm=norm, aspect='auto', interpolation='nearest') 
+        ax.imshow(zero_mask, cmap=mcolors.ListedColormap(['none', 'gold']), aspect='auto', interpolation='nearest', alpha=0.5) 
+        ax.set_title(f'Attention Map: Layer {layer_num}, Head {head_num}')
+        ax.set_xlabel('Sequence Position')
+        ax.set_ylabel('Sequence Position')
+        ax.set_xticks(range(seq_length))
+        ax.set_yticks(range(seq_length)) 
+        ax.set_xticklabels(ax.get_xticklabels(), rotation = 90, ha = "right") 
+
+        plt.colorbar(cbar, orientation = "vertical") 
+
+        # Save to file
+        plt.savefig(filename, bbox_inches='tight')
+        plt.close() 
+
+# Example usage
+# plot_attention_map(attention_maps, layer_num=0, head_num=0, seq_length=128, filename='attention_map.png')
+
+    def forward( 
+        self,
+        input_ids: torch.LongTensor = None, 
+        attention_mask: Optional[torch.Tensor] = None,
+        position_ids: Optional[torch.LongTensor] = None,
+        past_key_values: Optional[List[torch.FloatTensor]] = None,
+        # inputs_embeds: Optional[torch.FloatTensor] = None, 
+        condensed_embeds: Optional[torch.FloatTensor] = None, 
+        # later_input_ids: torch.LongTensor = None, 
+        labels: Optional[torch.LongTensor] = None,
+        use_cache: Optional[bool] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        return_dict: Optional[bool] = None, 
+        start_idx = 64, 
+        eval_mode = False, 
+        iteration_count = None, 
+        condensed_fashion = "projection_mode", 
+        experiment_setting = "setting0", 
+        generate_flag = False, 
+    ) -> Union[Tuple, CausalLMOutputWithPast]: 
+        
+        assert condensed_fashion in self.all_list_condensed 
+        self.condensed_fashion = condensed_fashion 
+
+        self.experiment_setting = experiment_setting 
+
+        self.eval_mode = eval_mode 
+        output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
+        output_hidden_states = (
+            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
+        )
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict 
+        
+        # assert input_ids.shape[0] == inputs_embeds.shape[0] 
+        
+        batch_size = input_ids.shape[0] 
+        seq_length = input_ids.shape[1] 
+        if not self.eval_mode: 
+            # dimension matching 
+            print("input_ids shape {}".format(input_ids.shape)) 
+            print("condensed_embeds shape {}".format(condensed_embeds.shape)) 
+            assert input_ids.shape[0] == condensed_embeds.shape[0] # batch size has to match 
+            print("input_ids shape {} condensed_embeds shape {}".format(input_ids.shape, condensed_embeds.shape)) 
+            print("sliding window length {}".format(self.sliding_window_length)) 
+            if not generate_flag: 
+                print("input_ids.shape[1]: {}".format(input_ids.shape[1])) 
+                print("start_idx: {}".format(start_idx)) 
+                print("self.sliding_window_length: {}".format(self.sliding_window_length)) 
+                print("condensed_embeds.shape[1]: {}".format(condensed_embeds.shape[1])) 
+                assert (input_ids.shape[1] - start_idx)//self.sliding_window_length == condensed_embeds.shape[1] # number of condensed tokens should have desired mapping with sequence length 
+            else: 
+                print("start_idx: {}".format(start_idx)) 
+                # print(math.ceil((input_ids.shape[1] - start_idx)/self.sliding_window_length)) 
+                print(math.ceil((input_ids.shape[1] - (start_idx - 1))/self.sliding_window_length)) 
+                print(condensed_embeds.shape[1]) 
+                # assert ((input_ids.shape[1] - start_idx)//self.sliding_window_length) + 1 == condensed_embeds.shape[1] 
+                assert math.ceil((input_ids.shape[1] - (start_idx - 1))/self.sliding_window_length) == condensed_embeds.shape[1] 
+                # assert math.ceil((input_ids.shape[1] - start_idx)/self.sliding_window_length) == condensed_embeds.shape[1] 
+
+            if self.condensed_fashion == "ground_truth": 
+                with torch.no_grad(): 
+                    condensed_embeds = [self.embed_tokens(input_ids[:, start_idx + i * self.sliding_window_length : start_idx + (i + 1) * self.sliding_window_length]) for i in range((seq_length - start_idx)//self.sliding_window_length)] 
+                    # print("shape of every entry of the condensed tokens: {}".format(condensed_embeds[0].shape)) 
+                    condensed_embeds = [self.downsample_vectors2(condensed_embeds[i]) for i in range(len(condensed_embeds))] 
+                    condensed_embeds = torch.stack(condensed_embeds, dim = 1) 
+                    # print("shape of condensed_embeds: {}".format(condensed_embeds.shape)) 
+                # exit(0) 
+                assert (condensed_embeds.shape[0] == batch_size) and (condensed_embeds.shape[-1] == self.config.hidden_size) 
+        else: 
+            # for the eval mode we simply ignore the condensed_embeds 
+            condensed_length = int((input_ids.shape[1] - start_idx)/self.sliding_window_length) 
+            condensed_embeds = torch.zeros((batch_size, condensed_length, self.target_model_dim)).to(input_ids.device) 
+        
+        seq_length += condensed_embeds.shape[1] 
+        seq_length_with_past = seq_length 
+        past_key_values_length = 0 
+        
+        if past_key_values is not None: 
+            past_key_values_length = past_key_values[0][0].shape[2] 
+            seq_length_with_past = seq_length_with_past + past_key_values_length 
+        
+        # self.mask_list_pos = [self.start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - self.start_idx) // (self.sliding_window_length + 1))] 
+        # mask_list_pos = [self.start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - self.start_idx) // (self.sliding_window_length + 1))] 
+        # mask_list_pos = [start_idx + i * (self.sliding_window_length + 1) for i in range((seq_length - start_idx) // (self.sliding_window_length + 1))] 
+        if not generate_flag: 
+            # mask_list_pos = [start_idx - 1 + i * (self.sliding_window_length + 1) for i in range((seq_length - start_idx) // (self.sliding_window_length + 1))] 
+            mask_list_pos = [start_idx - 1 + self.sliding_window_length - 1 + i * (self.sliding_window_length + 1) for i in range((seq_length - start_idx) // (self.sliding_window_length + 1))] 
         else: 
             print((seq_length - start_idx) / (self.sliding_window_length + 1)) 
             mask_list_pos = [start_idx - 1 + i * (self.sliding_window_length + 1) for i in range(int(math.ceil((seq_length - start_idx) / (self.sliding_window_length + 1))))] 
