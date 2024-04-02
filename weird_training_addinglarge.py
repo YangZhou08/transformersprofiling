@@ -1403,6 +1403,7 @@ elif args.use_large_model:
     # large_model = LlamaWeirdLargeTest.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
     large_model = LlamaWeirdLargeTestmixedb.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
     large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True) 
+    large_model.set_sliding_window_length(args.kernel_size) 
     # loading in the small model inside the larger one properly 
     small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
     large_model.set_addonsmallmodel_statedict(small_state_dict_for_model) 
