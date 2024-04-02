@@ -796,6 +796,32 @@ class CustomTrainer(Trainer):
                 condensed_embeds = self.naive_grouping(input_ids[:, 64:]).to(self.dtype) 
             else: 
                 condensed_embeds = inputs["condensed_embeds"].to(self.dtype) 
+            print(colored("the shape of condensed_embeds is {}".format(condensed_embeds.shape), "yellow")) 
+            batch_size, seq_len = attention_mask.shape 
+            # addedon_length = condensed_embeds.shape[1] 
+            if not isinstance(model, LlamaWeirdLargeTestmixedb): 
+                addedon_length = (seq_len - model.module.addonmodel_start) // self.sliding_window_length 
+            else: 
+                addedon_length = (seq_len - model.addonmodel_start) // self.sliding_window_length 
+            # print("get the input sentence: {}".format(tokenizer.decode(input_ids[0]))) 
+            original_attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
+            if self.accelerator.is_main_process: 
+                print("printing out the experiment_setting: {} eval_mode: {}".format(self.experiment_setting, self.eval_mode)) 
+            print(colored("the length of input_ids is {}".format(input_ids.shape[1]), "green")) 
+            outputs = model(
+                large_input_ids = input_ids, 
+                small_input_ids = input_ids, 
+                attention_mask = attention_mask, 
+                original_attention_mask = original_attention_mask, 
+                labels = label2, 
+                condensed_embed_labels = condensed_embeds, 
+                output_hidden_states = True, 
+                output_attentions = True, 
+                return_dict = True, 
+                autoregressive_first_element = self.autoregressive_first_element, 
+                label_adjustment = False 
+            ) 
+            exit(0) 
         else: 
             outputs = model(
                 input_ids = input_ids, 

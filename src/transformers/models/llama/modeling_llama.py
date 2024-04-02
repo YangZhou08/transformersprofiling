@@ -5912,7 +5912,6 @@ class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel):
         self,
         # input_ids: torch.LongTensor = None, 
         large_input_ids: torch.LongTensor = None, 
-        small_input_ids: torch.LongTensor = None, 
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
         past_key_values: Optional[List[torch.FloatTensor]] = None,
