@@ -303,7 +303,8 @@ for step, inputs in enumerate(train_dataloader):
     inputs = trainer._prepare_inputs(inputs) 
     input_ids = inputs["input_ids"] 
     attention_mask = inputs["attention_mask"] 
-    print("input_ids.shape[0] {}".format(input_ids.shape[0])) 
+    if step % 1000 == 0: 
+        print("input_ids.shape[0] {}".format(input_ids.shape[0])) 
     labels = inputs["labels"] 
     if args.topk is not None: 
         top_k = args.topk 
