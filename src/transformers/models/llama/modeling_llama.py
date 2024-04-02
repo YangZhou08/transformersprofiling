@@ -9621,6 +9621,7 @@ class SimpleSmallModelmixedb(LlamaPreTrainedModel):
                     following_flag = True 
                 else: 
                     if following_flag: 
+                        print("following flag is {}".format(following_flag)) 
                         following_flag = False 
                         position_list.append(pos_count) 
                     else: 
