@@ -6029,14 +6029,14 @@ class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel):
         
         print("expected {}".format(small_input_ids.shape[1] // self.sliding_window_length - 1)) 
         print("small_input_ids[0] {}".format(small_input_ids[0])) 
-        print("small_input_ids[large_input_ids.shape[0]] {}".format(small_input_ids[large_input_ids.shape[0]])) 
-        print("small_input_ids[2 * large_input_ids.shape[0]] {}".format(small_input_ids[2 * large_input_ids.shape[0]])) 
-        print("practical_attention_mask[0] {}".format(practical_attention_mask[0])) 
-        print("practical_attention_mask[large_input_ids.shape[0]] {}".format(practical_attention_mask[large_input_ids.shape[0]])) 
-        print("practical_attention_mask[2 * large_input_ids.shape[0]] {}".format(practical_attention_mask[2 * large_input_ids.shape[0]])) 
-        print("labels[0] {}".format(labels[0])) 
-        print("labels[large_input_ids.shape[0]] {}".format(labels[large_input_ids.shape[0]]) if large_input_ids.shape[0] < labels.shape[0] else "labels[large_input_ids.shape[0]] is None") 
-        print("labels[2 * large_input_ids.shape[0]] {}".format(labels[2 * large_input_ids.shape[0]]) if 2 * large_input_ids.shape[0] < labels.shape[0] else "labels[2 * large_input_ids.shape[0]] is None") 
+        # print("small_input_ids[large_input_ids.shape[0]] {}".format(small_input_ids[large_input_ids.shape[0]])) 
+        # print("small_input_ids[2 * large_input_ids.shape[0]] {}".format(small_input_ids[2 * large_input_ids.shape[0]])) 
+        # print("practical_attention_mask[0] {}".format(practical_attention_mask[0])) 
+        # print("practical_attention_mask[large_input_ids.shape[0]] {}".format(practical_attention_mask[large_input_ids.shape[0]])) 
+        # print("practical_attention_mask[2 * large_input_ids.shape[0]] {}".format(practical_attention_mask[2 * large_input_ids.shape[0]])) 
+        # print("labels[0] {}".format(labels[0])) 
+        # print("labels[large_input_ids.shape[0]] {}".format(labels[large_input_ids.shape[0]]) if large_input_ids.shape[0] < labels.shape[0] else "labels[large_input_ids.shape[0]] is None") 
+        # print("labels[2 * large_input_ids.shape[0]] {}".format(labels[2 * large_input_ids.shape[0]]) if 2 * large_input_ids.shape[0] < labels.shape[0] else "labels[2 * large_input_ids.shape[0]] is None") 
         print("self.addonmodel_start {}".format(self.addonmodel_start)) 
         print("sliding_window_length {}".format(self.sliding_window_length)) 
         # print("hidden_states.shape[1] {}".format(hidden_states.shape[1])) 
@@ -8209,7 +8209,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         return sum 
 
     @staticmethod 
-    def plot_attention_map(attention_maps, layer_num, head_num, seq_length, filename):
+    def plot_attention_map(attention_maps, layer_num, head_num, seq_length, filename, batch_idx = 0): 
         """
         Plots the attention map for a specific layer and head and saves it to a file.
 
@@ -8224,7 +8224,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
 
         # Extract the specific attention map
         # attention_map = attention_maps[layer_num][head_num] 
-        attention_map = attention_maps[layer_num][0][head_num].to(torch.float32).cpu().detach().numpy() 
+        # attention_map = attention_maps[layer_num][0][head_num].to(torch.float32).cpu().detach().numpy() 
+        attention_map = attention_maps[layer_num][batch_idx][head_num].to(torch.float32).cpu().detach().numpy() 
         
         # Create a mask for exact zeros
         zero_mask = attention_map == 0
