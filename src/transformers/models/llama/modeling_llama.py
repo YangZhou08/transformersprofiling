@@ -5981,7 +5981,7 @@ class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel):
         catenhidden = None 
         
         # for j in range(self.sliding_window_length): 
-        for j in range(self.sliding_window_length): 
+        for j in range(1): 
             # selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
             selected_seq_indices = [i * self.sliding_window_length + j for i in range(0, seq_len // self.sliding_window_length)] 
             print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
