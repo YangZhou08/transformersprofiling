@@ -5981,7 +5981,7 @@ class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel):
         catenhidden = None 
         
         # for j in range(self.sliding_window_length): 
-        for j in range(self.sliding_window_length): 
+        for j in range(6): 
             # selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
             selected_seq_indices = [i * self.sliding_window_length + j for i in range(0, seq_len // self.sliding_window_length)] 
             print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
@@ -6001,7 +6001,7 @@ class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel):
         # making small_input_ids 
         # together with the small attention mask 
         # for j in range(self.sliding_window_length): 
-        for j in range(self.sliding_window_length): # debugging using the setting we are familiar with 
+        for j in range(6): # debugging using the setting we are familiar with 
             nummagic = self.sliding_window_length - 1 - j # from 6 to 0 inclusive 
             if nummagic != 0: 
                 stageinputids = torch.cat([torch.full((large_input_ids.shape[0], nummagic), self.tokenizer_pad_id, dtype = large_input_ids.dtype).to(large_input_ids.device), large_input_ids[:, : -nummagic].clone()], dim = 1) # sequence length dimension and unchanged 
