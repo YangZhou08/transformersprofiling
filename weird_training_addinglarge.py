@@ -906,8 +906,8 @@ class CustomTrainer(Trainer):
                         #     try_count += 1 
             for batch_idx in range(0, outputs.attentions[0].shape[0], input_ids.shape[0]): 
                 plot_name = "testing_attention_mapbatch{}_{}_{}_{}.jpg".format(batch_idx, self.commit_hash, self.time_hash, self.experiment_setting) 
-                SimpleSmallModel.plot_attention_map(outputs.attentions, 6, 6, input_ids.shape[1] + addedon_length, plot_name, batch_idx = batch_idx) 
-                field_name = "layer{}_head{}_batch{}".format(6, 6, batch_idx) 
+                SimpleSmallModel.plot_attention_map(outputs.attentions, 6, 11, input_ids.shape[1] + addedon_length, plot_name, batch_idx = batch_idx) 
+                field_name = "layer{}_head{}_batch{}".format(6, 11, batch_idx) 
                 try: 
                     wandb.log({field_name: wandb.Image(plot_name)}) 
                 except Exception as e: 
