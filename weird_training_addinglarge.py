@@ -820,7 +820,6 @@ class CustomTrainer(Trainer):
                 autoregressive_first_element = self.autoregressive_first_element, 
                 label_adjustment = False 
             ) 
-            exit(0) 
         else: 
             outputs = model(
                 input_ids = input_ids, 

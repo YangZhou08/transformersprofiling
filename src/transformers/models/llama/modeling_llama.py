@@ -9603,7 +9603,6 @@ class SimpleSmallModelmixedb(LlamaPreTrainedModel):
         if not generate_flag: 
             # mask_list_pos = [start_idx - 1 + i * (self.sliding_window_length + 1) for i in range((seq_length - start_idx) // (self.sliding_window_length + 1))] 
             mask_list_pos = [start_idx - 1 + self.sliding_window_length - 1 + i * (self.sliding_window_length + 1) for i in range((seq_length - start_idx) // (self.sliding_window_length + 1))] 
-            print("mixedbsmall mask_list_pos {}".format(mask_list_pos)) 
         else: 
             print((seq_length - start_idx) / (self.sliding_window_length + 1)) 
             mask_list_pos = [start_idx - 1 + i * (self.sliding_window_length + 1) for i in range(int(math.ceil((seq_length - start_idx) / (self.sliding_window_length + 1))))] 
