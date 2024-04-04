@@ -1028,7 +1028,8 @@ class CustomDataset:
                     filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
                     dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
             elif "lovelace" in hostname: 
-                filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
+                # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
+                filename = "c4synthesized_file1_{}_0.json".format(1) 
                 dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
             else: 
                 for i in range(0, 8): 
