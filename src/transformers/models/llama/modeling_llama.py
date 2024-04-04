@@ -5925,6 +5925,7 @@ class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel):
         condensed_embed_labels = None, 
         autoregressive_first_element = False, 
         label_adjustment = False, 
+        first_n_rows = None, 
     ) -> Union[Tuple, CausalLMOutputWithPastLargeDistance2]: 
         r"""
         Args:
@@ -5980,7 +5981,7 @@ class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel):
         # catenhidden = torch.zeros((hidden_states.shape[0] * self.sliding_window_length, hidden_states.shape[1], hidden_states.shape[2])).to(hidden_states.device).to(hidden_states.dtype) 
         catenhidden = None 
         
-        for j in range(self.sliding_window_length): 
+        for j in range(self.sliding_window_length if first_n_rows is None else first_n_rows): 
         # for j in range(6): 
             # selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
             selected_seq_indices = [i * self.sliding_window_length + j for i in range(0, seq_len // self.sliding_window_length)] 
@@ -6001,7 +6002,7 @@ class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel):
         practical_attention_mask = None 
         # making small_input_ids 
         # together with the small attention mask 
-        for j in range(self.sliding_window_length): 
+        for j in range(self.sliding_window_length if first_n_rows is None else first_n_rows): 
         # for j in range(6): # debugging using the setting we are familiar with 
             nummagic = self.sliding_window_length - 1 - j # from 6 to 0 inclusive 
             if nummagic != 0: 

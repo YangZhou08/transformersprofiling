@@ -239,6 +239,7 @@ parser.add_argument("--autoregressive_first_element", action = "store_true")
 parser.add_argument("--debug", action = "store_true") 
 parser.add_argument("--batch_size", type = int, default = 32) 
 parser.add_argument("--data_compensation", action = "store_true") 
+parser.add_argument("--first_n_rows", type = int, default = None) 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
@@ -819,6 +820,7 @@ class CustomTrainer(Trainer):
                 return_dict = True, 
                 autoregressive_first_element = self.autoregressive_first_element, 
                 label_adjustment = False 
+                first_n_rows = args.first_n_rows, 
             ) 
         else: 
             outputs = model(
