@@ -1033,7 +1033,8 @@ class CustomDataset:
             else: 
                 for i in range(0, 8): 
                     # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
-                    filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
+                    # filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
+                    filename = "c4synthesized_file1_{}_combined.json".format(i) 
                     dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
         else: 
             filename = "c4synthesized_file1.json" 
@@ -1206,13 +1207,13 @@ else:
     # small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
     # small_model = AutoModelForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
     # small_model = LlamaCausalLMWeirdTwo.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
-    # small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
-    small_model = GPTNeoXForCausalLM.from_pretrained(
-        # "EleutherAI/pythia-70m-deduped", 
-        "EleutherAI/pythia-160m-deduped", 
-        revision="step3000",
-        cache_dir="./pythia-70m-deduped/step3000",
-    ) 
+    small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
+    # small_model = GPTNeoXForCausalLM.from_pretrained(
+    #     # "EleutherAI/pythia-70m-deduped", 
+    #     "EleutherAI/pythia-160m-deduped", 
+    #     revision="step3000",
+    #     cache_dir="./pythia-70m-deduped/step3000",
+    # ) 
     # small_model = LlamaCausalLMWeirdTwo.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
     small_model.train() 
 
