@@ -663,7 +663,7 @@ class CustomTrainer(Trainer):
             ''' 
             
         else: 
-            print("the plain small model is traiing:") 
+            # print("the plain small model is traiing:") 
             addedon_length = 0 
             outputs = model(
                 input_ids = input_ids, 
