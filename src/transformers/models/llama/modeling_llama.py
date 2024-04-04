@@ -1093,6 +1093,7 @@ class LlamaModel(LlamaPreTrainedModel):
         else:
             # 4d mask is passed through the layers
             print("seq_length: {}".format(seq_length)) 
+            print("inputs_embeds.dtype: {}".format(inputs_embeds.dtype)) 
             randomtensor = torch.full((seq_length, seq_length), torch.finfo(inputs_embeds.dtype).min, device = inputs_embeds.device) 
             print("we pass through a tensor making process") 
             attention_mask = _prepare_4d_causal_attention_mask(
