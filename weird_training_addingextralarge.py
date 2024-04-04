@@ -522,13 +522,13 @@ class CustomTrainer(Trainer):
         attention_mask = inputs["attention_mask"] 
         label2 = inputs["labels"] 
         print("input condensed: {}".format(self.input_condensed)) 
-        condensed_embeds = inputs["condensed_embeds"] 
         # print("the optimizer parameter group list 0 is {} learning rate is {}".format(len(self.optimizer.param_groups[0]['params']), self.optimizer.param_groups[0]['lr'])) 
         # print("the optimizer parameter group list 1 is {} learning rate is {}".format(len(self.optimizer.param_groups[1]['params']), self.optimizer.param_groups[1]['lr'])) 
         # print("the input ids are {}".format(input_ids[0])) 
         # print("labels are {}".format(labels[0])) 
         print("type of the model is {}".format(type(model))) 
         if isinstance(getattr(model, "module", model), SimpleSmallModel) or isinstance(model, SimpleSmallModel) == True and not self.use_past: 
+            condensed_embeds = inputs["condensed_embeds"] 
             if self.input_condensed: 
                 condensed_embeds = self.naive_grouping(input_ids[:, 64:]).to(self.dtype) # condensed_embeds shape is (28, d_model) 
             else: 
@@ -565,6 +565,7 @@ class CustomTrainer(Trainer):
             # print("the input ids are {}".format(input_ids))
             
         elif isinstance(getattr(model, "module", model), SimpleSmallModel2) or isinstance(model, SimpleSmallModel2) and self.use_past: 
+            condensed_embeds = inputs["condensed_embeds"] 
             if self.input_condensed: 
                 condensed_embeds = self.naive_grouping(input_ids[:, 64:]).to(self.dtype) # condensed_embeds shape is (28, d_model) 
             else: 
@@ -624,6 +625,7 @@ class CustomTrainer(Trainer):
                 label_adjustment = False 
             ) 
         elif isinstance(getattr(model, "module", model), LlamaWeirdLargeTestmixedb) or isinstance(model, LlamaWeirdLargeTestmixedb): 
+            condensed_embeds = inputs["condensed_embeds"] 
             if self.input_condensed: 
                 condensed_embeds = self.naive_grouping(input_ids[:, 64:]).to(self.dtype) 
             else: 
