@@ -952,7 +952,7 @@ class CustomTrainer(Trainer):
         input_attention_mask = input_attention_mask[:, 1:] 
         labels = labels[:, 1:] 
         preds = torch.argmax(logits, dim = -1) 
-        if self.accelerator.is_main_process and outside_step == 0: 
+        if self.accelerator.is_main_process and outside_step == 0 and not (isinstance(getattr(model, "module", model), LlamaWeirdLargeTestmixedb) or isinstance(model, LlamaWeirdLargeTestmixedb)): 
             print("*** evaluating at step {} ***".format(self.iteration_count)) 
             # f = open("key_notes{}.md".format(self.commit_hash), "a") 
             # f.write("writing key notes at step {}".format(self.iteration_count)) 
@@ -1010,10 +1010,14 @@ class CustomTrainer(Trainer):
         # print("shape of indices_to_keep: {}".format(indices_to_keep.shape)) 
         interest_token_count = torch.sum(indices_to_keep[:, 63 :].reshape(-1), dim = 0).item() # check whether 63 makes sense and make it more general if it is correct or not 
         # accuracy = accuracy_score(labels[indices_to_keep], preds[indices_to_keep]) 
-        correct_words = torch.sum((preds[indices_to_keep] == labels[indices_to_keep]).view(-1), dim = 0).item() 
-        # print("shape of indices_to_keep: {}".format(indices_to_keep.shape)) 
-        # interest_correct_count = torch.sum((preds[indices_to_keep][:, 63 :] == labels[indices_to_keep][:, 63 :]).view(-1), dim = 0).item() 
-        interest_correct_count = torch.sum(((preds * indices_to_keep)[:, 63: ] == (labels * indices_to_keep)[:, 63: ]).view(-1), dim = 0).item() 
+        if isinstance(getattr(model, "module", model), LlamaWeirdLargeTestmixedb) or isinstance(model, LlamaWeirdLargeTestmixedb): 
+            correct_words = torch.sum((preds[indices_to_keep] == labels[indices_to_keep]).view(-1), dim = 0).item() 
+            # print("shape of indices_to_keep: {}".format(indices_to_keep.shape)) 
+            # interest_correct_count = torch.sum((preds[indices_to_keep][:, 63 :] == labels[indices_to_keep][:, 63 :]).view(-1), dim = 0).item() 
+            interest_correct_count = torch.sum(((preds * indices_to_keep)[:, 63: ] == (labels * indices_to_keep)[:, 63: ]).view(-1), dim = 0).item() 
+        else: 
+            correct_words = 0 
+            interest_correct_count = 0 
         print("correct words: {} and total words: {}".format(correct_words, total_valid_tokens)) 
         print("interest correct words: {} and interest total words: {}".format(interest_correct_count, interest_token_count)) 
         # use preds to compute f1 score 
