@@ -644,26 +644,13 @@ class CustomTrainer(Trainer):
             ) 
             
             # visualize attention map 
-            # print("the input ids are {}".format(input_ids))
-            '''
-            if isinstance(outputs.attentions, tuple): 
-                print("the attention mask have shape {}".format(len(outputs.attentions))) 
-                print("the attention mask first element has shape {}".format(outputs.attentions[0].shape)) 
-            else: 
-                print("the attention mask has shape {}".format(outputs.attentions.shape)) 
-            SimpleSmallModel.plot_attention_map(outputs.attentions, 0, 0, 144, "testing_attention_map.jpg") 
-            print(outputs.attentions[0][0][0][64]) 
-            
-            if isinstance(outputs.hidden_states, tuple): 
-                print("the hidden states have shape {}".format(len(outputs.hidden_states))) 
-                print("the hidden states first element has shape {}".format(outputs.hidden_states[0].shape)) 
-            for i in range(len(outputs.hidden_states)): 
-                print(outputs.hidden_states[i][0][64][: 10]) 
-            exit(0) 
-            ''' 
+            # print("the input ids are {}".format(input_ids)) 
             
         else: 
             # print("the plain small model is traiing:") 
+            print("the input ids shape is {}".format(input_ids.shape)) 
+            print("the attention mask shape is {}".format(attention_mask.shape)) 
+            print("the label2 shape is {}".format(label2.shape)) 
             addedon_length = 0 
             outputs = model(
                 input_ids = input_ids, 
