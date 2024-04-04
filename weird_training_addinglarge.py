@@ -876,8 +876,8 @@ class CustomTrainer(Trainer):
                         "group1.lr": self.optimizer.param_groups[0]["lr"], 
                         "iteration_count": self.iteration_count 
                 }) 
-        # if self.accelerator.is_main_process and self.iteration_count % 1000 == 0 and evaluation_mode is False and has_wandb: 
-        if self.accelerator.is_main_process and self.iteration_count % 500 == 0 and evaluation_mode is False and has_wandb: 
+        if self.accelerator.is_main_process and self.iteration_count % 1000 == 0 and evaluation_mode is False and has_wandb: 
+        # if self.accelerator.is_main_process and self.iteration_count % 500 == 0 and evaluation_mode is False and has_wandb: 
             print(colored("generating images ... at iteration {}".format(self.iteration_count), "yellow")) 
             for layer in [0, 6, 11]: 
                 for head in [0, 6, 11]: 
@@ -1524,10 +1524,10 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=args.batch_size, # evaluation batch size 
     # logging_steps=1, 
-    logging_steps = 5000 if not args.debug else 1,            # evaluate, log and save model checkpoints every 1000 step
+    logging_steps=500 if not args.debug else 1,            # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    save_steps = 5000 if not args.debug else 1, 
+    save_steps = 500 if not args.debug else 1, 
     # save_steps = 1, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
