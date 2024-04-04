@@ -263,7 +263,6 @@ else:
 
 # has_wandb = False # disable for debugging 
 # model_name = "openllama3b" 
-# model_name = "shearedllama2_7b" 
 model_name = args.model_name 
 text_eval = "evaluation_printout_{}_{}_{}.txt".format(commit_hash, hash_of_time, model_name) 
 
@@ -316,9 +315,7 @@ class CustomTrainer(Trainer):
             self.large_model_embeds = self.large_model.get_input_embeddings().to(torch_device) 
     
     def naive_grouping(self, input_ids): 
-        # embedding_searched = self.model.embed_tokens(input_ids) 
         embedding_searched = self.large_model_embeds(input_ids) 
-        # print("embedding_searched shape {} {}".format(embedding_searched.shape, embedding_searched.dtype)) 
         seq_length = embedding_searched.shape[1] 
         
         # assert seq_length % 7 == 0, "seq_length is not divisible by 7" 
@@ -336,7 +333,6 @@ class CustomTrainer(Trainer):
                 sum /= float(self.sliding_window_length) 
                 # print("sum dtype {}".format(sum.dtype)) 
             added_tensor[:, i, :] = sum 
-        # print("added_tensor shape {}".format(added_tensor.shape)) 
         
         return added_tensor 
     
@@ -464,145 +460,10 @@ class CustomTrainer(Trainer):
         # self._signature_columns += ["small_input_ids"] 
         self._signature_columns += ["input_ids"] 
     
-    '''
-    def _save_checkpoint(self, model, trial, metrics = None): 
-        # In all cases, including ddp/dp/deepspeed, self.model is always a reference to the model we
-        # want to save except FullyShardedDDP.
-        # assert unwrap_model(model) is self.model, "internal model should be a reference to self.model"
-        
-        print(colored("running updated save checkpoint, now with more identifiable names", "cyan")) 
-        # Save model checkpoint
-        changed_checkpoint_prefix = "{}largemodel{}kernelsize{}date{}".format("SimpleSmallModel" if isinstance(self.model, SimpleSmallModel) else "LlamaModel", model_name, self.model.sliding_window_length, hash_of_time) 
-        # checkpoint_folder = f"{PREFIX_CHECKPOINT_DIR}-{self.state.global_step}" 
-        checkpoint_folder = changed_checkpoint_prefix + "-{}".format(self.state.global_step) 
-
-        if self.hp_search_backend is None and trial is None:
-            self.store_flos()
-
-        run_dir = self._get_output_dir(trial=trial)
-        output_dir = os.path.join(run_dir, checkpoint_folder)
-        self.save_model(output_dir, _internal_call=True)
-        if self.is_deepspeed_enabled:
-            # under zero3 model file itself doesn't get saved since it's bogus! Unless deepspeed
-            # config `stage3_gather_16bit_weights_on_model_save` is True
-            self.model_wrapped.save_checkpoint(output_dir)
-
-        # Save optimizer and scheduler
-        if self.fsdp or self.is_fsdp_enabled:
-            if self.is_fsdp_enabled:
-                save_fsdp_optimizer(
-                    self.accelerator.state.fsdp_plugin, self.accelerator, self.optimizer, self.model, output_dir
-                )
-            else:
-                # FSDP has a different interface for saving optimizer states.
-                # Needs to be called on all ranks to gather all states.
-                # full_optim_state_dict will be deprecated after Pytorch 2.2!
-                full_osd = self.model.__class__.full_optim_state_dict(self.model, self.optimizer)
-                torch.save(full_osd, os.path.join(output_dir, OPTIMIZER_NAME))
-
-        if is_torch_tpu_available():
-            xm.rendezvous("saving_optimizer_states")
-            xm.save(self.optimizer.state_dict(), os.path.join(output_dir, OPTIMIZER_NAME))
-            with warnings.catch_warnings(record=True) as caught_warnings:
-                xm.save(self.lr_scheduler.state_dict(), os.path.join(output_dir, SCHEDULER_NAME))
-                reissue_pt_warnings(caught_warnings)
-        elif is_sagemaker_mp_enabled():
-            opt_state_dict = self.optimizer.local_state_dict(gather_if_shard=False)
-            smp.barrier()
-            if smp.rdp_rank() == 0 or smp.state.cfg.shard_optimizer_state:
-                smp.save(
-                    opt_state_dict,
-                    os.path.join(output_dir, OPTIMIZER_NAME),
-                    partial=True,
-                    v3=smp.state.cfg.shard_optimizer_state,
-                )
-        elif self.args.should_save and not self.is_deepspeed_enabled and not (self.fsdp or self.is_fsdp_enabled):
-            # deepspeed.save_checkpoint above saves model/optim/sched
-            torch.save(self.optimizer.state_dict(), os.path.join(output_dir, OPTIMIZER_NAME))
-
-        # Save SCHEDULER & SCALER
-        is_deepspeed_custom_scheduler = self.is_deepspeed_enabled and not isinstance(
-            self.lr_scheduler, DeepSpeedSchedulerWrapper
-        )
-        if (
-            self.args.should_save
-            and (not self.is_deepspeed_enabled or is_deepspeed_custom_scheduler)
-            and not is_torch_tpu_available()
-        ):
-            with warnings.catch_warnings(record=True) as caught_warnings:
-                torch.save(self.lr_scheduler.state_dict(), os.path.join(output_dir, SCHEDULER_NAME))
-            reissue_pt_warnings(caught_warnings)
-
-        # Determine the new best metric / best model checkpoint
-        if metrics is not None and self.args.metric_for_best_model is not None:
-            metric_to_check = self.args.metric_for_best_model
-            if not metric_to_check.startswith("eval_"):
-                metric_to_check = f"eval_{metric_to_check}"
-            metric_value = metrics[metric_to_check]
-
-            operator = np.greater if self.args.greater_is_better else np.less
-            if (
-                self.state.best_metric is None
-                or self.state.best_model_checkpoint is None
-                or operator(metric_value, self.state.best_metric)
-            ):
-                self.state.best_metric = metric_value
-                self.state.best_model_checkpoint = output_dir
-
-        # Save the Trainer state
-        if self.args.should_save:
-            self.state.save_to_json(os.path.join(output_dir, TRAINER_STATE_NAME))
-
-        # Save RNG state in non-distributed training
-        rng_states = {
-            "python": random.getstate(),
-            "numpy": np.random.get_state(),
-            "cpu": torch.random.get_rng_state(),
-        }
-        if torch.cuda.is_available():
-            if self.args.parallel_mode == ParallelMode.DISTRIBUTED:
-                # In non distributed, we save the global CUDA RNG state (will take care of DataParallel)
-                rng_states["cuda"] = torch.cuda.random.get_rng_state_all()
-            else:
-                rng_states["cuda"] = torch.cuda.random.get_rng_state()
-
-        if is_torch_tpu_available():
-            rng_states["xla"] = xm.get_rng_state()
-
-        if is_torch_npu_available():
-            if self.args.parallel_mode == ParallelMode.DISTRIBUTED:
-                rng_states["npu"] = torch.npu.random.get_rng_state_all()
-            else:
-                rng_states["npu"] = torch.npu.random.get_rng_state()
-
-        # A process can arrive here before the process 0 has a chance to save the model, in which case output_dir may
-        # not yet exist.
-        os.makedirs(output_dir, exist_ok=True)
-
-        if self.args.world_size <= 1:
-            torch.save(rng_states, os.path.join(output_dir, "rng_state.pth"))
-        else:
-            torch.save(rng_states, os.path.join(output_dir, f"rng_state_{self.args.process_index}.pth"))
-
-        if self.args.push_to_hub:
-            self._push_from_checkpoint(output_dir)
-
-        # Maybe delete some older checkpoints.
-        if self.args.should_save:
-            self._rotate_checkpoints(use_mtime=True, output_dir=run_dir)
-    ''' 
     def training_step(self, model, inputs): 
         model.train() 
         inputs = self._prepare_inputs(inputs) 
-        '''
-        for k, v in inputs.items(): 
-            if isinstance(v, tuple): 
-                print(k, len(v)) 
-            elif isinstance(v, torch.Tensor): 
-                print(k, v.shape) 
-            else: 
-                print(k, v) 
-        ''' 
+
         '''
         if is_sagemaker_mp_enabled():
             loss_mb = smp_forward_backward(model, inputs, self.args.gradient_accumulation_steps)
@@ -623,17 +484,7 @@ class CustomTrainer(Trainer):
                 scaled_loss.backward()
         else:
             self.accelerator.backward(loss) 
-        '''
-        for name, parameters in model.named_parameters(): 
-            if name == "embed_tokens.weight": 
-                # print(colored("{} has gradient {}".format(name, parameters.grad.data[1][: 100]), "light_magenta")) 
-                for i in range(parameters.grad.data.shape[0]): 
-                    if (parameters.grad.data[i] != 0).any(): 
-                        print(colored("row {} has gradient that is numerically not zero {}".format(i, parameters.grad.data[i][: 20]), "light_magenta")) 
-            else: 
-                print(colored("{} has gradient {}".format(name, parameters.grad.data.view(-1)[: 10]), "light_magenta")) 
-            print("the gradient of {} contains nan or not Ture or False: {}".format(name, torch.isnan(parameters.grad.data.view(-1).any()))) 
-        ''' 
+        
         self.iteration_count += 1 
         print(colored("the training iteration count is {}".format(self.iteration_count), "red")) 
         return loss.detach() / self.args.gradient_accumulation_steps 
@@ -712,22 +563,7 @@ class CustomTrainer(Trainer):
             
             # visualize attention map 
             # print("the input ids are {}".format(input_ids))
-            '''
-            if isinstance(outputs.attentions, tuple): 
-                print("the attention mask have shape {}".format(len(outputs.attentions))) 
-                print("the attention mask first element has shape {}".format(outputs.attentions[0].shape)) 
-            else: 
-                print("the attention mask has shape {}".format(outputs.attentions.shape)) 
-            SimpleSmallModel.plot_attention_map(outputs.attentions, 0, 0, 144, "testing_attention_map.jpg") 
-            print(outputs.attentions[0][0][0][64]) 
             
-            if isinstance(outputs.hidden_states, tuple): 
-                print("the hidden states have shape {}".format(len(outputs.hidden_states))) 
-                print("the hidden states first element has shape {}".format(outputs.hidden_states[0].shape)) 
-            for i in range(len(outputs.hidden_states)): 
-                print(outputs.hidden_states[i][0][64][: 10]) 
-            exit(0) 
-            ''' 
         elif isinstance(getattr(model, "module", model), SimpleSmallModel2) or isinstance(model, SimpleSmallModel2) and self.use_past: 
             if self.input_condensed: 
                 condensed_embeds = self.naive_grouping(input_ids[:, 64:]).to(self.dtype) # condensed_embeds shape is (28, d_model) 
@@ -877,13 +713,6 @@ class CustomTrainer(Trainer):
             print(colored("generating images ... at iteration {}".format(self.iteration_count), "yellow")) 
             for layer in [0, 6, 11]: 
                 for head in [0, 6, 11]: 
-                    '''
-                    if isinstance(outputs.attentions, tuple): 
-                        print("the attention mask have shape {}".format(len(outputs.attentions))) 
-                        print("the attention mask first element has shape {}".format(outputs.attentions[0].shape)) 
-                    else: 
-                        print("the attention mask has shape {}".format(outputs.attentions.shape)) 
-                    ''' 
                     # SimpleSmallModel.plot_attention_map(outputs.attentions, 0, 0, 144, "testing_attention_map.jpg") 
                     plot_name = "testing_attention_map_{}_{}_{}.jpg".format(self.commit_hash, self.time_hash, self.experiment_setting) 
                     SimpleSmallModel.plot_attention_map(outputs.attentions, layer, head, input_ids.shape[1] + addedon_length, plot_name) 
