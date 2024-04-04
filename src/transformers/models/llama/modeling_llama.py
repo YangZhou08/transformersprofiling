@@ -1096,8 +1096,8 @@ class LlamaModel(LlamaPreTrainedModel):
             print("inputs_embeds.dtype: {}".format(inputs_embeds.dtype)) # remove this line 
             # randomtensor = torch.full((seq_length, seq_length), torch.finfo(inputs_embeds.dtype).min, device = inputs_embeds.device) 
             # randomtensor = torch.full((seq_length, seq_length), torch.finfo(torch.bfloat16).min, device = inputs_embeds.device) # remove this line 
-            # randomtensor = torch.full((260, 260), torch.finfo(torch.bfloat16).min, device = inputs_embeds.device) 
-            randomtensor = torch.full((260, 260), torch.finfo(torch.float32).min) 
+            randomtensor = torch.full((260, 260), torch.finfo(torch.bfloat16).min, device = inputs_embeds.device) 
+            # randomtensor = torch.full((260, 260), torch.finfo(torch.float32).min) 
             print("we pass through a tensor making process") 
             exit(0) 
             attention_mask = _prepare_4d_causal_attention_mask(
