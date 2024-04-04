@@ -675,6 +675,7 @@ class CustomTrainer(Trainer):
                 return_dict = True, 
                 # eval_mode = True, 
             ) 
+            print("the plain small model is traiing:") 
         
         # print(outputs.hidden_states[0].shape) 
         # print(outputs.hidden_states[0][0][0][: 10]) 
