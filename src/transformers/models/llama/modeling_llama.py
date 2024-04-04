@@ -1092,6 +1092,7 @@ class LlamaModel(LlamaPreTrainedModel):
             attention_mask = attention_mask if (attention_mask is not None and 0 in attention_mask) else None
         else:
             # 4d mask is passed through the layers
+            print("seq_length: {}".format(seq_length)) 
             attention_mask = _prepare_4d_causal_attention_mask(
                 attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length
             )
@@ -5981,7 +5982,7 @@ class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel):
         # catenhidden = torch.zeros((hidden_states.shape[0] * self.sliding_window_length, hidden_states.shape[1], hidden_states.shape[2])).to(hidden_states.device).to(hidden_states.dtype) 
         catenhidden = None 
         
-        for j in range(self.sliding_window_length if first_n_rows is None else first_n_rows): 
+        for j in range(self.sliding_window_length if first_n_rows is None else first_n_rows):
         # for j in range(6): 
             # selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
             selected_seq_indices = [i * self.sliding_window_length + j for i in range(0, seq_len // self.sliding_window_length)] 
