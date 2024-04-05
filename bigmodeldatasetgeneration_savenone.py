@@ -309,8 +309,8 @@ for step, inputs in enumerate(train_dataloader):
     if args.topk is not None: 
         top_k = args.topk 
     top_p = 0.9 
-
-    temperature = 1 
+    temperature = 0.6 
+    top_k = -1 
 
     if args.topk is not None: 
         large_outputs = large_model.generate(
@@ -331,6 +331,9 @@ for step, inputs in enumerate(train_dataloader):
             # do_sample = False, 
             output_hidden_states = False, 
             return_dict_in_generate = True 
+            temperature = temperature, # added later 
+            top_p = top_p, # added later 
+            top_k = top_k, # added later 
         ) 
     
     if args.debug: 
