@@ -1431,7 +1431,6 @@ if args.requeuepassword is not None:
 else: 
     resumecheckpointpath = args.resume_from_checkpoint 
 print("the resumecheckpointpath is {}".format(resumecheckpointpath)) 
-exit(0) 
 
 trainer.train(resume_from_checkpoint = resumecheckpointpath) 
 
