@@ -324,6 +324,8 @@ for step, inputs in enumerate(train_dataloader):
             return_dict_in_generate = True 
         ) 
     else: 
+        print() 
+        print("sampling during generation") 
         large_outputs = large_model.generate(
             input_ids = input_ids, 
             attention_mask = attention_mask, 
