@@ -1690,7 +1690,9 @@ class GenerationMixin:
             model_kwargs=model_kwargs,
             negative_prompt_ids=negative_prompt_ids,
             negative_prompt_attention_mask=negative_prompt_attention_mask,
-        )
+        ) 
+        print("Found logits_processor: {}".format(logits_processor)) 
+        exit(0) 
 
         # 9. prepare stopping criteria
         stopping_criteria = self._get_stopping_criteria(
