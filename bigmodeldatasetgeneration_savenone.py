@@ -334,7 +334,6 @@ for step, inputs in enumerate(train_dataloader):
             return_dict_in_generate = True, 
             temperature = temperature, # added later 
             top_p = top_p, # added later 
-            top_k = top_k, # added later 
         ) 
     
     if args.debug: 
