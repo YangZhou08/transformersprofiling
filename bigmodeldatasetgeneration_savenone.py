@@ -310,7 +310,7 @@ for step, inputs in enumerate(train_dataloader):
     if args.topk is not None: 
         top_k = args.topk 
     top_p = 0.9 
-    temperature = 0.6 
+    temperature = 1.0 
     top_k = -1 
 
     if args.topk is not None: 
@@ -334,7 +334,7 @@ for step, inputs in enumerate(train_dataloader):
             # do_sample = False, 
             output_hidden_states = False, 
             return_dict_in_generate = True, 
-            # temperature = temperature, # added later 
+            temperature = 1, # added later 
             # top_p = top_p, # added later 
         ) 
     
