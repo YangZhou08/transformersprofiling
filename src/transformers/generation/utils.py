@@ -1787,7 +1787,10 @@ class GenerationMixin:
 
         elif generation_mode == GenerationMode.SAMPLE:
             # 11. prepare logits warper
-            logits_warper = self._get_logits_warper(generation_config)
+            logits_warper = self._get_logits_warper(generation_config) 
+            print("generation temperature: {}".format(generation_config.temperature)) 
+            print("generation top_k: {}".format(generation_config.top_k)) 
+            print("generation top_p: {}".format(generation_config.top_p)) 
 
             # 12. expand input_ids with `num_return_sequences` additional sequences per batch
             input_ids, model_kwargs = self._expand_inputs_for_generation(
@@ -2928,9 +2931,7 @@ class GenerationMixin:
             next_token_logits = outputs.logits[:, -1, :]
 
             # pre-process distribution
-            print("found logits_processor {}".format(logits_processor)) 
             next_token_scores = logits_processor(input_ids, next_token_logits) 
-            print("found logits_warper {}".format(logits_warper)) 
             next_token_scores = logits_warper(input_ids, next_token_scores)
 
             # Store scores, attentions and hidden_states when required
