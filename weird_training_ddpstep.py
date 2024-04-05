@@ -1388,6 +1388,26 @@ def check_folder_exists(folder_path): # this function is for checking whether pr
         print(f"The folder '{folder_path}' does not exist or is not a directory.") 
         return False 
 
+def does_checkpoint_folder_exist(directory_path):
+    # Check if the specified directory exists and is indeed a directory
+    if not os.path.isdir(directory_path):
+        print(f"The path {directory_path} does not exist or is not a directory.")
+        return False
+    
+    # List all items in the directory
+    try:
+        for item in os.listdir(directory_path):
+            # Construct the full path of the item
+            item_path = os.path.join(directory_path, item)
+            # Check if the item is a directory and starts with "checkpoint-"
+            if os.path.isdir(item_path) and item.startswith("checkpoint-"):
+                return True
+        # No matching folder found
+        return False
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return False 
+
 def find_latest_checkpoint(checkpoint_dir):
     # List all items in the checkpoint directory
     all_items = os.listdir(checkpoint_dir)
@@ -1399,7 +1419,7 @@ def find_latest_checkpoint(checkpoint_dir):
 
 resumecheckpointpath = None 
 if args.requeuepassword is not None: 
-    if check_folder_exists(model_path) != True: 
+    if does_checkpoint_folder_exist(model_path) != True: # the folder is always there but it might be empty with no checkpoint folders actually 
         # this is the first time to launch this job 
         print(colored("First time launching the job", "green")) 
         resumecheckpointpath = None 
