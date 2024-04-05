@@ -1691,8 +1691,6 @@ class GenerationMixin:
             negative_prompt_ids=negative_prompt_ids,
             negative_prompt_attention_mask=negative_prompt_attention_mask,
         ) 
-        print("Found logits_processor: {}".format(logits_processor)) 
-        exit(0) 
 
         # 9. prepare stopping criteria
         stopping_criteria = self._get_stopping_criteria(
@@ -2930,7 +2928,9 @@ class GenerationMixin:
             next_token_logits = outputs.logits[:, -1, :]
 
             # pre-process distribution
-            next_token_scores = logits_processor(input_ids, next_token_logits)
+            print("found logits_processor {}".format(logits_processor)) 
+            next_token_scores = logits_processor(input_ids, next_token_logits) 
+            print("found logits_warper {}".format(logits_warper)) 
             next_token_scores = logits_warper(input_ids, next_token_scores)
 
             # Store scores, attentions and hidden_states when required
