@@ -292,9 +292,10 @@ synthesized_data_path = synthesized_data_path[: -1] + "_{}_{}/".format(args.task
 # json_file_name = "c4synthesized_file1_kernel{}_{}_{}.json".format(args.kernel_size, args.task_id, args.path_d) 
 json_file_name = "c4synthesized_file1_{}_{}.json".format(args.task_id, args.path_d) 
 
-os.makedirs(synthesized_data_path, exist_ok = True) 
+if not args.debug: 
+    os.makedirs(synthesized_data_path, exist_ok = True) 
 
-json_file1 = open(synthesized_dir_path + json_file_name, "a") 
+    json_file1 = open(synthesized_dir_path + json_file_name, "a") 
 
 train_dataloader = trainer.get_train_dataloader() 
 print("path_d: {}, the length of the train dataloader is {}".format(args.path_d, len(train_dataloader))) 
@@ -330,7 +331,7 @@ for step, inputs in enumerate(train_dataloader):
             do_sample = True, 
             # do_sample = False, 
             output_hidden_states = False, 
-            return_dict_in_generate = True 
+            return_dict_in_generate = True, 
             temperature = temperature, # added later 
             top_p = top_p, # added later 
             top_k = top_k, # added later 
