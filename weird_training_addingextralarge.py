@@ -34,6 +34,7 @@ import time
 from torch.utils.data import random_split 
 from src.transformers import BitsAndBytesConfig 
 from packaging import version 
+from src.transformers import TrainerCallback 
 # import torch.nn.parallel.distributed.DistributedDataParallel as DDP 
 
 import datetime 
@@ -335,6 +336,12 @@ class CustomTrainer(Trainer):
             added_tensor[:, i, :] = sum 
         
         return added_tensor 
+    
+    def get_traindataset_currentidx(self): 
+        if isinstance(self.train_dataset, CustomDatasetDisconnected): 
+            return self.train_dataset.currentidx 
+        else: 
+            return None 
     
     def train(
         self,
@@ -1128,6 +1135,122 @@ class CustomDataset:
         eval_size = len(self) - train_size 
         return random_split(self, [train_size, eval_size]) 
 
+class CustomDatasetDisconnected: 
+    def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7, input_condensed = True): 
+        # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
+        self.synthesize_dir = data_dir 
+        # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json", split = "train") 
+        # self.dataset = load_dataset('json', data_files = [self.synthesize_dir + 'c4synthesized_file1.json', self.synthesize_dir + 'c4synthesized_file2.json'], split="train") 
+        dfiles = [] 
+        topk = None 
+        print(colored("hostname is {}".format(hostname), "yellow")) 
+        if "ada" in hostname: 
+            for i in range(0, 2): 
+                # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+                # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+                filename = "c4synthesized_file1_kernel7_{}.json".format(i) 
+                dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+        elif "lovelace" in hostname: 
+            # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
+            filename = "c4synthesized_file1_1_0.json" 
+            # dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+            dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
+        else: 
+            for i in range(0, 8): 
+                # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
+                # filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
+                filename = "c4synthesized_file1_{}_combined.json".format(i) 
+                dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
+        
+        self.dfiles = dfiles 
+        self.currentfileidx = -1 
+        # self.fileboundaries = [356317, 712635, 1068953, 1425270, 1781587, 2137904, 2494221, 2850538] 
+        self.fileboundaries = [(0, 356317), (356317, 712635), (1068952, 1068953), (2137905, 1425270), (3563175, 1781587), (5344762, 2137904), (7482666, 2494221), (9976887, 2850538)] 
+        self.datasettotallength = self.fileboundaries[-1][1] 
+        # self.dataset = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
+        self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
+        self.kernel_size = kernel_size 
+        self.input_condensed = input_condensed 
+        # self.dataset = self.dataset["train"][0: 5120] 
+
+        self.tokenizer = tokenizer 
+        self.max_length = max_length 
+        
+        self.resumeidx = 0 # for termination and resuming 
+        self.currentidx = 0 # for updating and saved for subsequent launch 
+    
+    def __len__(self): 
+        return self.datasettotallength 
+    
+    def preprocess_dataset(self): 
+        def encode_with_truncation(examples): 
+            # return tokenizer(examples["text"], truncation = True, padding = "max_length", 
+                            #  max_length = max_length, return_special_tokens_mask = True) 
+            return tokenizer(examples["text"], padding = "max_length", max_length = self.max_length, 
+                            return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                            add_special_tokens = True) 
+        
+        def loading_condensed_embeds(examples): 
+            # not used because it consumes too much memory 
+            return {"condensed_embeds": torch.load(examples["condensed_token_path"])} 
+        
+        self.dataset = self.dataset.map(encode_with_truncation, batched = True, num_proc = 4) 
+        # self.dataset = self.dataset.map(loading_condensed_embeds, batched = True, num_proc = 4) 
+        # self.dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+    
+    def __getitem__(self, idx): 
+        # offset is the resumeidx 
+        idx += self.resumeidx # we resume the training with previous record 
+        
+        shard_idx = None 
+        for i, (start, end) in enumerate(self.fileboundaries): 
+            if idx >= start and idx < end: 
+                shard_idx = i 
+        
+        if shard_idx == None: 
+            raise IndexError("the index is out of bound") 
+        
+        if shard_idx != self.currentfileidx: 
+            print("now processing file {}".format(self.dfiles[shard_idx])) 
+            self.currentfileidx = shard_idx 
+            self.currentidx = self.fileboundaries[shard_idx][0] # only taking the start index 
+            self.dataset = load_dataset('json', data_files = self.dfiles[shard_idx], split = "train") # reload the dataset 
+        # detects out of bound (both returns error) so this step is omitted 
+        
+        shard_start_idx = self.fileboundaries[shard_idx][0] 
+        adjusted_idx = idx - shard_start_idx 
+                
+        # item = self.dataset[idx] 
+        item = self.dataset[adjusted_idx] # using the adjusted idx 
+        
+        if self.tokenizer is not None: 
+            encoded_text = self.tokenizer( 
+                item["text"], 
+                # add_special_tokens = False, 
+                add_special_tokens = True, 
+                padding = "max_length", 
+                # max_length = 64 + self.dict_kernel_maxlength[self.kernel_size], 
+                max_length = self.max_length, 
+                return_attention_mask = True, 
+                return_tensors = "pt", 
+                truncation = True, 
+            ) 
+            
+            item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension
+            item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
+        
+        # print(colored("the shape of condensed_embeds is {}".format(tensor.shape), "yellow")) 
+        # item["input_ids"] = torch.tensor(item["input_ids"]) 
+        # item["attention_mask"] = torch.tensor(item["attention_mask"]) 
+
+        return item 
+
+    def split(self, train_size): 
+        if isinstance(train_size, float): 
+            train_size = int(train_size * len(self)) 
+        eval_size = len(self) - train_size 
+        return random_split(self, [train_size, eval_size]) 
+
 # defining tokenizer 
 # tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m-deduped", revision = "step3000", cache_dir = cache_dir) 
 # if args.resume_from_checkpoint is None: 
@@ -1172,7 +1295,7 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 # defining custom dataset 
 kernel_size = args.kernel_size 
 
-dictionary_max_length = {2 : 259, 3 : 259, 4 : 257, 5 : 256, 6 : 259, 7 : 260, 10 : 261} 
+dictionary_max_length = {1 : 259, 2 : 259, 3 : 259, 4 : 257, 5 : 256, 6 : 259, 7 : 260, 10 : 261} 
 
 # datasetnew = CustomDataset(max_length = 260 if args.kernel_size == 7 else 259, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed) 
 datasetnew = CustomDataset(max_length = dictionary_max_length[args.kernel_size], data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed) 
@@ -1238,7 +1361,7 @@ elif args.use_plain_model and not args.use_past:
 elif args.use_large_model: 
     print(colored("we use large model", "cyan")) 
     # set up a large model that supports the condensed token inputs 
-    large_model = LlamaWeirdLargeTest.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch_device).to(torch.bfloat16) 
+    large_model = LlamaWeirdLargeTest.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     # large_model = LlamaWeirdLargeTestmixedb.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
     large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True) 
     large_model.set_sliding_window_length(args.kernel_size) 
@@ -1341,7 +1464,7 @@ training_args = TrainingArguments(
     # resume_from_checkpoint = args.resume_from_checkpoint, 
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
-    num_train_epochs=1,            # number of training epochs, feel free to tweak
+    num_train_epochs=1,           # NOTE this requirement is a must for using disconnecteddataset 
     per_device_train_batch_size = args.batch_size,  # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=4,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=args.batch_size, # evaluation batch size 
@@ -1406,6 +1529,13 @@ def compute_metrics(p):
     } 
     print(colored(output, "red")) 
     return output 
+
+class CustomSaveCallback(TrainerCallback): 
+    def on_save(self, args, state, control, **kwargs): 
+        trainer = state.trainer 
+        if trainer is not None: 
+            datasetcurrentidx = trainer.get_traindataset_currentidx() 
+        pass # unfinished 
 
 trainer = CustomTrainer( 
     model = small_model if not args.use_large_model else large_model, 
