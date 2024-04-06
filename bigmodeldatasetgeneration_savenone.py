@@ -334,7 +334,7 @@ for step, inputs in enumerate(train_dataloader):
             # do_sample = False, 
             output_hidden_states = False, 
             return_dict_in_generate = True, 
-            temperature = 1, # added later 
+            # temperature = 1, # added later 
             # top_p = top_p, # added later 
         ) 
     
