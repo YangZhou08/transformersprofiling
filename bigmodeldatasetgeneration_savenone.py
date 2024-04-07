@@ -290,7 +290,8 @@ trainer = CustomTrainer(
 # synthesized_data_path = synthesized_data_path[: -1] + "_kernel_{}_{}_{}/".format(args.kernel_size, args.task_id, args.path_d) 
 synthesized_data_path = synthesized_data_path[: -1] + "_{}_{}/".format(args.task_id, args.path_d) 
 # json_file_name = "c4synthesized_file1_kernel{}_{}_{}.json".format(args.kernel_size, args.task_id, args.path_d) 
-json_file_name = "c4synthesized_file1_{}_{}.json".format(args.task_id, args.path_d) 
+# json_file_name = "c4synthesized_file1_{}_{}.json".format(args.task_id, args.path_d) 
+json_file_name = "c4synthesized_file11_{}_{}.json".format(args.task_id, args.path_d) 
 
 if not args.debug: 
     os.makedirs(synthesized_data_path, exist_ok = True) 
@@ -334,7 +335,7 @@ for step, inputs in enumerate(train_dataloader):
             # do_sample = False, 
             output_hidden_states = False, 
             return_dict_in_generate = True, 
-            # temperature = 1, # added later 
+            temperature = 1, 
             # top_p = top_p, # added later 
         ) 
     
