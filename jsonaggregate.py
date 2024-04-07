@@ -1,7 +1,8 @@
 import json 
 import glob 
 import argparse 
-import subprocess 
+# import subprocess 
+from subprocess import subprocess 
 
 parser = argparse.ArgumentParser() 
 parser.add_argument("--task_id", type = int, default = 0) 
