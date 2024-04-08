@@ -241,6 +241,7 @@ parser.add_argument("--debug", action = "store_true")
 parser.add_argument("--batch_size", type = int, default = 32) 
 parser.add_argument("--data_compensation", action = "store_true") 
 parser.add_argument("--first_n_rows", type = int, default = None) 
+parser.add_argument("--newdataset", action = "store_true") 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
@@ -1068,7 +1069,10 @@ class CustomDataset:
             for i in range(0, 8): 
                 # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
                 # filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
-                filename = "c4synthesized_file1_{}_combined.json".format(i) 
+                if not args.newdataset: 
+                    filename = "c4synthesized_file1_{}_combined.json".format(i) 
+                else: 
+                    filename = "c4synthesized_file11_{}_combined.json".format(i) 
                 dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
         
         if args.debug: 
