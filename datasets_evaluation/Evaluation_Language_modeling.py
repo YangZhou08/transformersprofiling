@@ -233,7 +233,8 @@ model_name = args.model_name
 if "lovelace" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_models = "/home/yangzho6/model_checkpoints/" 
-    dir_c4llmsynthesized = "/home/yangzho6/c4llm_synthesized/" 
+    # dir_c4llmsynthesized = "/home/yangzho6/c4llm_synthesized/" 
+    dir_c4llmsynthesized = "/home/yangzho6/c4llm_synthesized/llama2_7b_topkna/" 
     # dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
     dir_sdata = "/home/yangzho6/slimpajama/SlimPajama-627B/test/chunk1/" 
     dir_c4 = "/home/yangzho6/c4_parts/downloads/" 
@@ -1041,8 +1042,10 @@ def get_dataset(datasetname):
         # datasetnew = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
         dfiles = [] 
         if "lovelace" in hostname: 
-            filename = "c4synthesized_file1_kernel7_0.json" 
-            dfiles.append(dir_c4llmsynthesized + "{}/".format("tinyllama") + filename) 
+            # filename = "c4synthesized_file1_kernel7_0.json" 
+            filename = "c4synthesized_file1_1_0.json" 
+            # dfiles.append(dir_c4llmsynthesized + "{}/".format("tinyllama") + filename) 
+            dfiles.append(dir_c4llmsynthesized + filename) 
             datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
         else: 
             filename = "c4synthesized_file1_kernel7_{}_combined.json".format(7) 
