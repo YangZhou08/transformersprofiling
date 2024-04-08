@@ -1146,7 +1146,7 @@ ce_loss_list = []
 ppl_list = [] 
 
 for datasetname in dataset_list: 
-    listmaxl = {2 : 259, 3 : 259, 4 : 257, 5 : 256, 7 : 260, 10 : 261} 
+    listmaxl = {1 : 259, 2 : 259, 3 : 259, 4 : 257, 5 : 256, 7 : 260, 10 : 261} 
     eval_dataset = get_dataset(datasetname, listmaxl[args.kernel_size]) 
     results = trainer.evaluate(eval_dataset = eval_dataset) 
     ce_loss_list.append(results["eval_loss"]) 
