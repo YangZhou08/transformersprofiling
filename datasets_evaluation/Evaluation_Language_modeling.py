@@ -367,7 +367,7 @@ class CustomTrainer(Trainer):
             output_attentions = True, 
             return_dict = True, 
         ) 
-        for differentsampleidx in range(8): 
+        for differentsampleidx in range(1): 
             print("the input ids is {}".format(input_ids[differentsampleidx])) 
             print("the attention mask is {}".format(attention_mask[differentsampleidx])) 
             print("the input is {}".format(self.tokenizer.decode(input_ids[differentsampleidx]))) 
@@ -1035,7 +1035,7 @@ else:
 
 training_args = TrainingArguments(
     output_dir = dir_models, 
-    per_device_eval_batch_size = 8, 
+    per_device_eval_batch_size = 1, 
     do_train = False, 
     do_eval = True, 
     label_names = ["labels"], 
@@ -1155,8 +1155,8 @@ def get_dataset(datasetname):
     return datasetnew 
 
 # dataset_list = ["c4llm_synthesized", "c4", "pg19", "cnn_dailymail", "openwebtext", "xsum"] 
-# dataset_list = ["c4llm_synthesized"] 
-dataset_list = ["c4"] 
+dataset_list = ["c4llm_synthesized"] 
+# dataset_list = ["c4"] 
 # dataset_list = ["c4llm_synthesized", "c4", "pg19"] 
 # dataset_list = ["cnn_dailymail", "xsum", "openwebtext"] 
 ce_loss_list = [] 
