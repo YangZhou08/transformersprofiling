@@ -375,7 +375,7 @@ class CustomTrainer(Trainer):
         print("the prediction is {}".format(self.tokenizer.decode(prediction))) 
         wordspredicted = self.tokenizer.decode(prediction) 
         for i in range(input_ids.shape[1] - 1): 
-            if input_ids[differentsampleidx][i] == prediction[i]: 
+            if input_ids[differentsampleidx][i + 1] == prediction[i]: 
                 print(colored(wordspredicted[i], "green"), end = " ") 
             else: 
                 print(colored(wordspredicted[i], "red"), end = " ") 
