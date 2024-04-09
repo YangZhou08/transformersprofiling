@@ -367,7 +367,7 @@ class CustomTrainer(Trainer):
             output_attentions = True, 
             return_dict = True, 
         ) 
-        differentsampleidx = 12 
+        differentsampleidx = 5 
         print("the input ids is {}".format(input_ids[differentsampleidx])) 
         print("the attention mask is {}".format(attention_mask[differentsampleidx])) 
         print("the input is {}".format(self.tokenizer.decode(input_ids[differentsampleidx]))) 
