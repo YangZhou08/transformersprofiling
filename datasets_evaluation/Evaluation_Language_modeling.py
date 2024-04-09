@@ -1107,7 +1107,7 @@ def get_dataset(datasetname):
         #                  return_attention_mask = True, return_tensors = "pt", truncation = True, 
         #                  add_special_tokens = True) 
         tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
-                                return_attention_mask = True, return_tensors = "pt", truncation = True) 
+                                return_attention_mask = True, return_tensors = "pt", truncation = True, add_special_tokens = False) 
         newdictionary = {} 
         newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
         newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
