@@ -367,7 +367,7 @@ class CustomTrainer(Trainer):
             output_attentions = True, 
             return_dict = True, 
         ) 
-        for differentsampleidx in range(5): 
+        for differentsampleidx in range(1): 
             print("the input ids is {}".format(input_ids[differentsampleidx])) 
             print("the attention mask is {}".format(attention_mask[differentsampleidx])) 
             print("the input is {}".format(self.tokenizer.decode(input_ids[differentsampleidx]))) 
@@ -1107,8 +1107,7 @@ def get_dataset(datasetname):
         #                  return_attention_mask = True, return_tensors = "pt", truncation = True, 
         #                  add_special_tokens = True) 
         tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 260 if args.kernel_size == 7 else 259, 
-                                return_attention_mask = True, return_tensors = "pt", truncation = True, 
-                                add_special_tokens = True) 
+                                return_attention_mask = True, return_tensors = "pt", truncation = True) 
         newdictionary = {} 
         newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
         newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
