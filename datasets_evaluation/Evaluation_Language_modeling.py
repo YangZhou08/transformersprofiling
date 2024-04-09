@@ -383,7 +383,7 @@ class CustomTrainer(Trainer):
             print() 
         print("the loss of the batch is {}".format(outputs.loss)) 
         
-        exit(0) 
+        time.sleep(1) 
         
         if labels is not None: 
             unwrapped_model = unwrap_model(model)
