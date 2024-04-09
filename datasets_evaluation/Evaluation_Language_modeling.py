@@ -367,6 +367,18 @@ class CustomTrainer(Trainer):
             output_attentions = True, 
             return_dict = True, 
         ) 
+        print("the input ids is {}".format(input_ids[0])) 
+        print("the input is {}".format(self.tokenizer.decode(input_ids[0]))) 
+        prediction = outputs.logits.argmax(dim = -1)[0] 
+        print("the prediction is {}".format(self.tokenizer.decode(prediction))) 
+        wordspredicted = self.tokenizer.decode(prediction) 
+        for i in range(len(input_ids.shape[1] - 1)): 
+            if input_ids[0][i + 1] == prediction[i]: 
+                print(colored(wordspredicted[i], "green")) 
+            else: 
+                print(colored(wordspredicted[i], "red")) 
+        
+        exit(0) 
         
         if labels is not None: 
             unwrapped_model = unwrap_model(model)
