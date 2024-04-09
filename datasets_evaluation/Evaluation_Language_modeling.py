@@ -380,7 +380,7 @@ class CustomTrainer(Trainer):
                     print(colored(worddecoded, "green"), end = " ") 
                 else: 
                     print(colored(worddecoded, "red"), end = " ") 
-                print() 
+            print() 
         
         exit(0) 
         
