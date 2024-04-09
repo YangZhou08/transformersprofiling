@@ -367,7 +367,7 @@ class CustomTrainer(Trainer):
             output_attentions = True, 
             return_dict = True, 
         ) 
-        for differentsampleidx in range(1): 
+        for differentsampleidx in range(10): 
             print("the input ids is {}".format(input_ids[differentsampleidx])) 
             print("the attention mask is {}".format(attention_mask[differentsampleidx])) 
             print("the input is {}".format(self.tokenizer.decode(input_ids[differentsampleidx]))) 
@@ -381,6 +381,7 @@ class CustomTrainer(Trainer):
                 else: 
                     print(colored(worddecoded, "red"), end = " ") 
             print() 
+        print("the loss of the batch is {}".format(outputs.loss)) 
         
         exit(0) 
         
