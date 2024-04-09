@@ -367,18 +367,18 @@ class CustomTrainer(Trainer):
             output_attentions = True, 
             return_dict = True, 
         ) 
-        differentsampleidx = 0 
-        print("the input ids is {}".format(input_ids[differentsampleidx])) 
-        print("the attention mask is {}".format(attention_mask[differentsampleidx])) 
-        print("the input is {}".format(self.tokenizer.decode(input_ids[differentsampleidx]))) 
-        prediction = outputs.logits.argmax(dim = -1)[differentsampleidx] 
-        print("the prediction is {}".format(self.tokenizer.decode(prediction))) 
-        wordspredicted = self.tokenizer.decode(prediction) 
-        for i in range(input_ids.shape[1] - 1): 
-            if input_ids[differentsampleidx][i + 1] == prediction[i]: 
-                print(colored(wordspredicted[i], "green"), end = " ") 
-            else: 
-                print(colored(wordspredicted[i], "red"), end = " ") 
+        for differentsampleidx in range(5): 
+            print("the input ids is {}".format(input_ids[differentsampleidx])) 
+            print("the attention mask is {}".format(attention_mask[differentsampleidx])) 
+            print("the input is {}".format(self.tokenizer.decode(input_ids[differentsampleidx]))) 
+            prediction = outputs.logits.argmax(dim = -1)[differentsampleidx] 
+            print("the prediction is {}".format(self.tokenizer.decode(prediction))) 
+            wordspredicted = self.tokenizer.decode(prediction) 
+            for i in range(input_ids.shape[1] - 1): 
+                if input_ids[differentsampleidx][i + 1] == prediction[i]: 
+                    print(colored(wordspredicted[i], "green"), end = " ") 
+                else: 
+                    print(colored(wordspredicted[i], "red"), end = " ") 
         
         exit(0) 
         
