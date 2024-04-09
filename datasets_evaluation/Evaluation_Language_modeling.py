@@ -1045,7 +1045,8 @@ def get_dataset(datasetname):
         dfiles = [] 
         if "lovelace" in hostname: 
             # filename = "c4synthesized_file1_kernel7_0.json" 
-            filename = "c4synthesized_file1_1_0.json" 
+            # filename = "c4synthesized_file1_1_0.json" 
+            filename = "c4synthesized_file11_1_0.json" 
             # dfiles.append(dir_c4llmsynthesized + "{}/".format("tinyllama") + filename) 
             dfiles.append(dir_c4llmsynthesized + filename) 
             datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
