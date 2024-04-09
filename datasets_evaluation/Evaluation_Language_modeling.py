@@ -380,6 +380,7 @@ class CustomTrainer(Trainer):
                     print(colored(worddecoded, "green"), end = " ") 
                 else: 
                     print(colored(worddecoded, "red"), end = " ") 
+                print() 
         
         exit(0) 
         
@@ -981,6 +982,8 @@ else:
             model = LlamaForCausalLM.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device)
     elif model_name == "llama2_7b": 
         model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+        model.config.pad_token_id = tokenizer.pad_token_id 
+        model.eval() 
     elif model_name == "debugging": 
          # large_model = LlamaWeirdLarge3.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
         large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
