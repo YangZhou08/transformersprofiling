@@ -1157,8 +1157,8 @@ def get_dataset(datasetname):
     return datasetnew 
 
 # dataset_list = ["c4llm_synthesized", "c4", "pg19", "cnn_dailymail", "openwebtext", "xsum"] 
-# dataset_list = ["c4llm_synthesized"] 
-dataset_list = ["c4"] 
+dataset_list = ["c4llm_synthesized"] 
+# dataset_list = ["c4"] 
 # dataset_list = ["c4llm_synthesized", "c4", "pg19"] 
 # dataset_list = ["cnn_dailymail", "xsum", "openwebtext"] 
 ce_loss_list = [] 
