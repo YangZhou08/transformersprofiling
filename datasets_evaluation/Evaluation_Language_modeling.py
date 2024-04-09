@@ -367,7 +367,7 @@ class CustomTrainer(Trainer):
             output_attentions = True, 
             return_dict = True, 
         ) 
-        differentsampleidx = 0 
+        differentsampleidx = 12 
         print("the input ids is {}".format(input_ids[differentsampleidx])) 
         print("the attention mask is {}".format(attention_mask[differentsampleidx])) 
         print("the input is {}".format(self.tokenizer.decode(input_ids[differentsampleidx]))) 
@@ -979,7 +979,7 @@ else:
             print(colored("loading from checkpoint", "yellow")) 
             model = LlamaForCausalLM.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device)
     elif model_name == "llama2_7b": 
-        model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", force_download = True).to(torch.bfloat16).to(torch_device) 
+        model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     elif model_name == "debugging": 
          # large_model = LlamaWeirdLarge3.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
         large_model = LlamaWeirdLarge3.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
