@@ -368,6 +368,7 @@ class CustomTrainer(Trainer):
             return_dict = True, 
         ) 
         print("the input ids is {}".format(input_ids[0])) 
+        print("the attention mask is {}".format(attention_mask[0])) 
         print("the input is {}".format(self.tokenizer.decode(input_ids[0]))) 
         prediction = outputs.logits.argmax(dim = -1)[0] 
         print("the prediction is {}".format(self.tokenizer.decode(prediction))) 
