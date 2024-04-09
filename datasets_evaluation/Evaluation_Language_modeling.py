@@ -912,8 +912,8 @@ def unflatten_list_func(examples):
     # print("length of every example: {}".format(datasetnew[i]['input_ids'].shape)) 
     # print() 
 
-data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
-# data_collator = DataCollatorForLanguageModeling3(tokenizer = tokenizer, mlm = False) 
+# data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
+data_collator = DataCollatorForLanguageModeling3(tokenizer = tokenizer, mlm = False) 
 
 if model_type == "use_small_model": 
     if args.model_name == "small_finetuned": 
