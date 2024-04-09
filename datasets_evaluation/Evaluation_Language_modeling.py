@@ -368,6 +368,7 @@ class CustomTrainer(Trainer):
             output_attentions = True, 
             return_dict = True, 
         ) 
+        '''
         for differentsampleidx in range(1): 
             print("the input ids is {}".format(input_ids[differentsampleidx])) 
             print("the attention mask is {}".format(attention_mask[differentsampleidx])) 
@@ -385,7 +386,7 @@ class CustomTrainer(Trainer):
         print("the loss of the batch is {}".format(outputs.loss)) 
         
         time.sleep(1) 
-        
+        ''' 
         if labels is not None: 
             unwrapped_model = unwrap_model(model)
             if is_peft_available() and isinstance(unwrapped_model, PeftModel):
@@ -911,8 +912,8 @@ def unflatten_list_func(examples):
     # print("length of every example: {}".format(datasetnew[i]['input_ids'].shape)) 
     # print() 
 
-data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
-# data_collator = DataCollatorForLanguageModeling3(tokenizer = tokenizer, mlm = False) 
+# data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
+data_collator = DataCollatorForLanguageModeling3(tokenizer = tokenizer, mlm = False) 
 
 if model_type == "use_small_model": 
     if args.model_name == "small_finetuned": 
