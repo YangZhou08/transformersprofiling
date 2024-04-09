@@ -234,8 +234,8 @@ model_name = args.model_name
 if "lovelace" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_models = "/home/yangzho6/model_checkpoints/" 
-    # dir_c4llmsynthesized = "/home/yangzho6/c4llm_synthesized/" 
-    dir_c4llmsynthesized = "/home/yangzho6/c4llm_synthesized/llama2_7b_topkna/" 
+    dir_c4llmsynthesized = "/home/yangzho6/c4llm_synthesized/" 
+    # dir_c4llmsynthesized = "/home/yangzho6/c4llm_synthesized/llama2_7b_topkna/" 
     # dir_c4llmsynthesized = "/home/yangzho6/c4llm_synthesized/" 
     # dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
     dir_sdata = "/home/yangzho6/slimpajama/SlimPajama-627B/test/chunk1/" 
@@ -911,8 +911,8 @@ def unflatten_list_func(examples):
     # print("length of every example: {}".format(datasetnew[i]['input_ids'].shape)) 
     # print() 
 
-# data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
-data_collator = DataCollatorForLanguageModeling3(tokenizer = tokenizer, mlm = False) 
+data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
+# data_collator = DataCollatorForLanguageModeling3(tokenizer = tokenizer, mlm = False) 
 
 if model_type == "use_small_model": 
     if args.model_name == "small_finetuned": 
@@ -1068,8 +1068,8 @@ def get_dataset(datasetname):
         if "lovelace" in hostname: 
             # filename = "c4synthesized_file1_kernel7_0.json" 
             # filename = "c4synthesized_file1_1_0.json" 
-            filename = "c4synthesized_file11_1_0.json" 
-            # filename = "c4synthesized_file1_kernel7.json" 
+            # filename = "c4synthesized_file11_1_0.json" 
+            filename = "c4synthesized_file1_kernel7.json" 
             # dfiles.append(dir_c4llmsynthesized + "{}/".format("tinyllama") + filename) 
             dfiles.append(dir_c4llmsynthesized + filename) 
             datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
