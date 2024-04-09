@@ -31,6 +31,7 @@ from termcolor import colored
 from transformers import Trainer, TrainingArguments 
 from torch import nn 
 from transformers import DataCollatorForLanguageModeling 
+from transformers.data.data_collator import DataCollatorForLanguageModeling3 
 from transformers.generation.utils import GenerationConfig 
 from transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSmallModel 
 from transformers.models.llama.modeling_llama import LlamaCausalLMWeirdTwo 
@@ -910,7 +911,8 @@ def unflatten_list_func(examples):
     # print("length of every example: {}".format(datasetnew[i]['input_ids'].shape)) 
     # print() 
 
-data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
+# data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
+data_collator = DataCollatorForLanguageModeling3(tokenizer = tokenizer, mlm = False) 
 
 if model_type == "use_small_model": 
     if args.model_name == "small_finetuned": 
