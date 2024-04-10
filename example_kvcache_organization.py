@@ -1468,8 +1468,8 @@ if __name__ == "__main__":
     if args.use_small_draft and args.loading_from_checkpoint is not None: 
         small_model = LlamaForCausalLM.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device) 
     elif args.use_small_draft: 
-        small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
-        # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-68m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+        # small_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+        small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-68m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     
     acceptanceratelist = {"c4": [], "pg19": [], "openwebtext": []} 
     expectedtokensaccepted = {"c4": [], "pg19": [], "openwebtext": []} 
