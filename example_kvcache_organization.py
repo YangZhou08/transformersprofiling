@@ -1484,6 +1484,7 @@ if __name__ == "__main__":
     for datasetname in datasetlist: 
         for i in range(iterationscounts): # we need a forloop 
             if args.use_small_draft: 
+                # datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = 64, limit = 200) 
                 datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = 64, limit = 200) 
             else: 
                 datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = max_length_table[args.kernel_size] + i, limit = 200) # i 0 means the first position, i 1 means the second position, etc. 
@@ -1516,7 +1517,7 @@ if __name__ == "__main__":
                                                 small_model, 
                                                 input_ids, 
                                                 gamma = args.speculation_length, 
-                                                max_len = 64, 
+                                                max_len = 256, 
                                                 verbose = True, 
                                                 attention_mask = attention_mask, 
                     ) 
