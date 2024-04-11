@@ -1290,7 +1290,7 @@ class CustomDataset:
                 max_length = self.max_length, 
                 return_attention_mask = True, 
                 return_tensors = "pt", 
-                turncation = True, 
+                truncation = True, 
             ) 
             
             item['input_ids'] = encoded_text['input_ids'].squeeze(0) 
