@@ -793,11 +793,6 @@ class CustomTrainer(Trainer):
                 label_adjustment = False 
             ) 
         elif isinstance(getattr(model, "module", model), LlamaWeirdLargeTestmixedb) or isinstance(model, LlamaWeirdLargeTestmixedb): 
-            if self.input_condensed: 
-                condensed_embeds = self.naive_grouping(input_ids[:, 64:]).to(self.dtype) 
-            else: 
-                condensed_embeds = inputs["condensed_embeds"].to(self.dtype) 
-            print(colored("the shape of condensed_embeds is {}".format(condensed_embeds.shape), "yellow")) 
             batch_size, seq_len = attention_mask.shape 
             # addedon_length = condensed_embeds.shape[1] 
             if not isinstance(model, LlamaWeirdLargeTestmixedb): 
@@ -1453,8 +1448,8 @@ elif args.use_plain_model and not args.use_past:
 elif args.use_large_model: 
     print(colored("we use large model", "cyan")) 
     # set up a large model that supports the condensed token inputs 
-    # large_model = LlamaWeirdLargeTest.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
-    large_model = LlamaWeirdLargeTestmixedb.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
+    large_model = LlamaWeirdLargeTest.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
+    # large_model = LlamaWeirdLargeTestmixedb.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
     large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True) 
     large_model.set_sliding_window_length(args.kernel_size) 
     # loading in the small model inside the larger one properly 
