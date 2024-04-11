@@ -1140,6 +1140,7 @@ class CustomDataset:
         return random_split(self, [train_size, eval_size]) 
 
 class CustomDatasetDisconnected: 
+    # The dataset class is for intermitent training 
     def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7, input_condensed = True): 
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
         self.synthesize_dir = data_dir 

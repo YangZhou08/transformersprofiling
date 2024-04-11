@@ -238,6 +238,7 @@ parser.add_argument("--use_large_model", action = "store_true")
 parser.add_argument("--autoregressive_first_element", action = "store_true") 
 parser.add_argument("--debug", action = "store_true") 
 parser.add_argument("--batch_size", type = int, default = 32) 
+parser.add_argument("--usedatasettype", type = str, options = ["synthesized", "c4"], default = "synthesized") 
 parser.add_argument("--data_compensation", action = "store_true") 
 parser.add_argument("--first_n_rows", type = int, default = None) 
 
@@ -250,6 +251,7 @@ if "lovelace" in hostname:
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_models = "/home/yangzho6/model_checkpoints/" 
     dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+    datapath_c4 = "/home/yangzho6/c4_parts/downloads/" 
 elif "ada" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_models = "/home/beidic/yangzho6/model_checkpoints/" 
@@ -260,6 +262,7 @@ else:
     # dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
     dir_models = "/fsx-storygen/beidic/yang/model_checkpoints/" 
     dir_sdata = "/fsx-storygen/beidic/yang/c4llm_synthesized/" 
+    datapath_c4 = "/fsx-storygen/beidic/yang/c4_parts/downloads/" 
 
 # has_wandb = False # disable for debugging 
 # model_name = "openllama3b" 
@@ -671,13 +674,13 @@ class CustomTrainer(Trainer):
         attention_mask = inputs["attention_mask"] 
         label2 = inputs["labels"] 
         print("input condensed: {}".format(self.input_condensed)) 
-        condensed_embeds = inputs["condensed_embeds"] 
         # print("the optimizer parameter group list 0 is {} learning rate is {}".format(len(self.optimizer.param_groups[0]['params']), self.optimizer.param_groups[0]['lr'])) 
         # print("the optimizer parameter group list 1 is {} learning rate is {}".format(len(self.optimizer.param_groups[1]['params']), self.optimizer.param_groups[1]['lr'])) 
         # print("the input ids are {}".format(input_ids[0])) 
         # print("labels are {}".format(labels[0])) 
         print("type of the model is {}".format(type(model))) 
         if isinstance(getattr(model, "module", model), SimpleSmallModel) or isinstance(model, SimpleSmallModel) == True and not self.use_past: 
+            condensed_embeds = inputs["condensed_embeds"] 
             if self.input_condensed: 
                 condensed_embeds = self.naive_grouping(input_ids[:, 64:]).to(self.dtype) # condensed_embeds shape is (28, d_model) 
             else: 
@@ -729,6 +732,7 @@ class CustomTrainer(Trainer):
             exit(0) 
             ''' 
         elif isinstance(getattr(model, "module", model), SimpleSmallModel2) or isinstance(model, SimpleSmallModel2) and self.use_past: 
+            # condensed_embeds = inputs["condensed_embeds"]             
             if self.input_condensed: 
                 condensed_embeds = self.naive_grouping(input_ids[:, 64:]).to(self.dtype) # condensed_embeds shape is (28, d_model) 
             else: 
@@ -763,11 +767,6 @@ class CustomTrainer(Trainer):
                 eval_mode = self.eval_mode, 
             ) 
         elif isinstance(getattr(model, "module", model), LlamaWeirdLargeTest) or isinstance(model, LlamaWeirdLargeTest): 
-            if self.input_condensed: 
-                condensed_embeds = self.naive_grouping(input_ids[:, 64:]).to(self.dtype) # condensed_embeds shape is (28, d_model) 
-            else: 
-                condensed_embeds = inputs["condensed_embeds"].to(self.dtype) 
-            print(colored("the shape of condensed_embeds is {}".format(condensed_embeds.shape), "yellow")) 
             batch_size, seq_len = attention_mask.shape 
             # addedon_length = condensed_embeds.shape[1] 
             if not isinstance(model, LlamaWeirdLargeTest): 
@@ -1213,7 +1212,7 @@ class CustomTrainer(Trainer):
         return EvalLoopOutput(predictions=all_preds, label_ids=all_labels, metrics=metrics, num_samples=num_samples) 
         
 class CustomDataset: 
-    def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7, input_condensed = True): 
+    def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7, input_condensed = True, use_c4 = False): 
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
         self.synthesize_dir = data_dir 
         # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json", split = "train") 
@@ -1221,21 +1220,31 @@ class CustomDataset:
         dfiles = [] 
         topk = None 
         print(colored("hostname is {}".format(hostname), "yellow")) 
-        if "ada" in hostname: 
-            for i in range(0, 2): 
-                # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
-                # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
-                filename = "c4synthesized_file1_kernel7_{}.json".format(i) 
+        if not use_c4: 
+            if "ada" in hostname: 
+                for i in range(0, 2): 
+                    # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+                    # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
+                    filename = "c4synthesized_file1_kernel7_{}.json".format(i) 
+                    dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+            elif "lovelace" in hostname: 
+                # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
+                filename = "c4synthesized_file1_kernel7_0.json" 
                 dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
-        elif "lovelace" in hostname: 
-            # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
-            filename = "c4synthesized_file1_kernel7_0.json" 
-            dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+            else: 
+                for i in range(0, 8): 
+                    # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
+                    filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
+                    dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
         else: 
-            for i in range(0, 8): 
-                # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
-                filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
-                dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
+            if "lovelace" in hostname: 
+                for i in range(1, 9): 
+                    filename = "c4_file{}.json".format(i) 
+                    dfiles.append(self.synthesize_dir + filename) 
+            else: 
+                for i in range(0, 8): 
+                    filename = "c4_file{}.json".format(i) 
+                    dfiles.append(self.synthesize_dir + filename) 
         
         if args.debug: 
             self.dataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
@@ -1246,6 +1255,7 @@ class CustomDataset:
         self.kernel_size = kernel_size 
         self.input_condensed = input_condensed 
         # self.dataset = self.dataset["train"][0: 5120] 
+        self.use_c4 = use_c4 
 
         self.tokenizer = tokenizer 
         self.max_length = max_length 
@@ -1268,9 +1278,27 @@ class CustomDataset:
         self.dataset = self.dataset.map(encode_with_truncation, batched = True, num_proc = 4) 
         # self.dataset = self.dataset.map(loading_condensed_embeds, batched = True, num_proc = 4) 
         # self.dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
-        
     
     def __getitem__(self, idx): 
+        item = self.dataset[idx] 
+        
+        if self.tokenizer is not None: 
+            encoded_text = self.tokenizer(
+                item["text"], 
+                add_special_tokens = True, 
+                padding = "max_length", 
+                max_length = self.max_length, 
+                return_attention_mask = True, 
+                return_tensors = "pt", 
+                turncation = True, 
+            ) 
+            
+            item['input_ids'] = encoded_text['input_ids'].squeeze(0) 
+            item['attention_mask'] = encoded_text['attention_mask'].squeeze(0) 
+        
+        return item 
+    
+    def __getitem22__(self, idx): 
         item = self.dataset[idx] 
         try: 
             if not self.input_condensed: 
@@ -1359,7 +1387,10 @@ kernel_size = args.kernel_size
 dictionary_max_length = {2 : 259, 3 : 259, 4 : 257, 5 : 256, 6 : 259, 7 : 260, 10 : 261} 
 
 # datasetnew = CustomDataset(max_length = 260 if args.kernel_size == 7 else 259, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed) 
-datasetnew = CustomDataset(max_length = dictionary_max_length[args.kernel_size], data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed) 
+if args.usedatasettype == "synthesized": 
+    datasetnew = CustomDataset(max_length = dictionary_max_length[args.kernel_size], data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed) 
+else: 
+    datasetnew = CustomDataset(max_length = dictionary_max_length[args.kernel_size], data_dir = datapath_c4, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed, use_c4 = True) 
 print("input sequence length is {}".format(dictionary_max_length[args.kernel_size])) 
 # datasetnew.preprocess_dataset() 
 train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.05 = 36k 
