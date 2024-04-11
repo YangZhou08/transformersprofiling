@@ -238,7 +238,7 @@ parser.add_argument("--use_large_model", action = "store_true")
 parser.add_argument("--autoregressive_first_element", action = "store_true") 
 parser.add_argument("--debug", action = "store_true") 
 parser.add_argument("--batch_size", type = int, default = 32) 
-parser.add_argument("--usedatasettype", type = str, options = ["synthesized", "c4"], default = "synthesized") 
+parser.add_argument("--usedatasettype", type = str, choices = ["synthesized", "c4"], default = "synthesized") 
 parser.add_argument("--data_compensation", action = "store_true") 
 parser.add_argument("--first_n_rows", type = int, default = None) 
 
