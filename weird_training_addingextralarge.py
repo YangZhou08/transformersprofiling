@@ -1333,7 +1333,7 @@ dictionary_max_length = {1 : 259, 2 : 259, 3 : 259, 4 : 257, 5 : 256, 6 : 259, 7
 if args.usedatasettype == "synthesized": 
     datasetnew = CustomDataset(max_length = dictionary_max_length[args.kernel_size], data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed) 
 else: 
-    datasetnew = CustomDataset(max_length = dictionary_max_length[args.kernel_size], data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed, use_c4 = True) 
+    datasetnew = CustomDataset(max_length = dictionary_max_length[args.kernel_size], data_dir = datapath_c4, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed, use_c4 = True) 
 print("input sequence length is {}".format(dictionary_max_length[args.kernel_size])) 
 # datasetnew.preprocess_dataset() 
 train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.05 = 36k 
