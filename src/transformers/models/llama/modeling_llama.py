@@ -4870,6 +4870,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         condensed_embed_labels = None, 
         autoregressive_first_element = False, 
         label_adjustment = False, 
+        usingsecondtolastvectors = False, 
     ) -> Union[Tuple, CausalLMOutputWithPastLargeDistance2]: 
         r"""
         Args:
@@ -4915,7 +4916,12 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             return_dict = return_dict, 
         ) 
 
-        hidden_states = outputs[0] # we don't need the lm_head 
+        if not usingsecondtolastvectors: 
+            hidden_states = outputs[0] # we don't need the lm_head 
+        else: 
+            allhiddenstates = outputs.hidden_states 
+            hidden_states = allhiddenstates[len(allhiddenstates) - 2] # using second to last hidden states 
+            hidden_states = self.model.norm(hidden_states) 
         # print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
         if self.small_model_dtype == torch.float32: 
             hidden_states = hidden_states.to(torch.float32) 
