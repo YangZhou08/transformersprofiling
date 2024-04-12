@@ -4919,6 +4919,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         if not usingsecondtolastvectors: 
             hidden_states = outputs[0] # we don't need the lm_head 
         else: 
+            print(colored("using second last", "yellow")) 
             allhiddenstates = outputs.hidden_states 
             hidden_states = allhiddenstates[len(allhiddenstates) - 2] # using second to last hidden states 
             hidden_states = self.model.norm(hidden_states) 
