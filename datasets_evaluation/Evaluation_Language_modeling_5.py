@@ -235,7 +235,8 @@ model_name = args.model_name
 if "lovelace" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_models = "/home/yangzho6/model_checkpoints/" 
-    dir_c4llmsynthesized = "/home/yangzho6/c4llm_synthesized/" 
+    # dir_c4llmsynthesized = "/home/yangzho6/c4llm_synthesized/" 
+    dir_c4llmsynthesized = "/home/yangzho6/c4llm_synthesized/tinyllama/" 
     # dir_c4llmsynthesized = "/home/yangzho6/c4llm_synthesized/llama2_7b_topkna/" 
     # dir_c4llmsynthesized = "/home/beidic/yangzho6/c4llm_synthesized/" 
     dir_c4 = "/home/yangzho6/c4_parts/downloads/" 
