@@ -789,7 +789,8 @@ class CustomTrainer(Trainer):
                 return_dict = True, 
                 # condensed_fashion = "ground_truth", 
                 autoregressive_first_element = self.autoregressive_first_element, 
-                label_adjustment = False 
+                label_adjustment = False, 
+                usingsecondtolastvectors = True, 
             ) 
         elif isinstance(getattr(model, "module", model), LlamaWeirdLargeTestmixedb) or isinstance(model, LlamaWeirdLargeTestmixedb): 
             batch_size, seq_len = attention_mask.shape 
