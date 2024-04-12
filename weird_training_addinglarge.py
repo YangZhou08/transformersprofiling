@@ -241,6 +241,7 @@ parser.add_argument("--batch_size", type = int, default = 32)
 parser.add_argument("--usedatasettype", type = str, choices = ["synthesized", "c4"], default = "synthesized") 
 parser.add_argument("--data_compensation", action = "store_true") 
 parser.add_argument("--first_n_rows", type = int, default = None) 
+parser.add_argument("--usingsecondlast", action = "store_true") 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
@@ -790,7 +791,8 @@ class CustomTrainer(Trainer):
                 # condensed_fashion = "ground_truth", 
                 autoregressive_first_element = self.autoregressive_first_element, 
                 label_adjustment = False, 
-                usingsecondtolastvectors = True, 
+                # usingsecondtolastvectors = 
+                usingsecondtolastvectors = args.usingsecondlast, 
             ) 
         elif isinstance(getattr(model, "module", model), LlamaWeirdLargeTestmixedb) or isinstance(model, LlamaWeirdLargeTestmixedb): 
             batch_size, seq_len = attention_mask.shape 
