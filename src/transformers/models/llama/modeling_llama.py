@@ -5966,28 +5966,27 @@ class LlamaWeirdLargeTestmixedb(LlamaPreTrainedModel):
         )
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
-        with torch.no_grad(): 
-            outputs = self.model(
-                input_ids = large_input_ids, 
-                attention_mask = attention_mask, 
-                position_ids = position_ids, 
-                past_key_values = past_key_values, 
-                inputs_embeds = input_embeds, 
-                use_cache = use_cache, 
-                output_attentions = output_attentions, 
-                output_hidden_states = output_hidden_states, 
-                return_dict = return_dict, 
-            ) 
+        outputs = self.model(
+            input_ids = large_input_ids, 
+            attention_mask = attention_mask, 
+            position_ids = position_ids, 
+            past_key_values = past_key_values, 
+            inputs_embeds = input_embeds, 
+            use_cache = use_cache, 
+            output_attentions = output_attentions, 
+            output_hidden_states = output_hidden_states, 
+            return_dict = return_dict, 
+        ) 
 
-            hidden_states = outputs[0] # we don't need the lm_head 
-            # print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
-            if self.small_model_dtype == torch.float32: 
-                hidden_states = hidden_states.to(torch.float32) 
-            elif self.small_model_dtype == torch.bfloat16: 
-                hidden_states = hidden_states.to(torch.bfloat16) 
-            seq_len = hidden_states.shape[1] 
-            # catenhidden = torch.zeros((hidden_states.shape[0] * self.sliding_window_length, hidden_states.shape[1], hidden_states.shape[2])).to(hidden_states.device).to(hidden_states.dtype) 
-            catenhidden = None 
+        hidden_states = outputs[0] # we don't need the lm_head 
+        # print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
+        if self.small_model_dtype == torch.float32: 
+            hidden_states = hidden_states.to(torch.float32) 
+        elif self.small_model_dtype == torch.bfloat16: 
+            hidden_states = hidden_states.to(torch.bfloat16) 
+        seq_len = hidden_states.shape[1] 
+        # catenhidden = torch.zeros((hidden_states.shape[0] * self.sliding_window_length, hidden_states.shape[1], hidden_states.shape[2])).to(hidden_states.device).to(hidden_states.dtype) 
+        catenhidden = None 
         
         for j in range(self.sliding_window_length if first_n_rows is None else first_n_rows):
         # for j in range(6): 
