@@ -4843,7 +4843,7 @@ class LlamaWeirdLargeIterative(LlamaPreTrainedModel):
         seq_len = hidden_states.shape[1] 
         
         # dictionary_max_length = {2 : 259, 3 : 259, 4 : 257, 5 : 256, 6 : 259, 7 : 260} 
-        dictionary_max_length = {1 : 259, 2 : 259, 3 : 259, 4 : 257, 5 : 256, 6 : 259, 7 : 260} 
+        dictionary_max_length = {1 : 260, 2 : 259, 3 : 259, 4 : 257, 5 : 256, 6 : 259, 7 : 260} 
         loss = torch.tensor(0) 
         for effective_kernel_size in range(1, self.sliding_window_length + 1): 
             if autoregressive_first_element: 
@@ -4851,19 +4851,19 @@ class LlamaWeirdLargeIterative(LlamaPreTrainedModel):
                 selected_seq_indices = [i * effective_kernel_size for i in range(0, seq_len // effective_kernel_size)] 
                 print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
                 print("using autoregressive_baseline") 
-                hidden_states = hidden_states[:, selected_seq_indices, :] 
-                print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
+                temp_hidden_states = hidden_states[:, selected_seq_indices, :] 
+                # print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
+                print("temp_hidden_states shape {} dtype {}".format(temp_hidden_states.shape, temp_hidden_states.dtype)) 
                 # removelast = (seq_len % self.sliding_window_length == 0) 
                 removelast = (seq_len % effective_kernel_size == 0) 
                 if removelast: 
-                    hidden_states = hidden_states[:, :-1, :] 
+                    # hidden_states = hidden_states[:, :-1, :] 
+                    temp_hidden_states = temp_hidden_states[:, :-1, :] 
             else: 
                 # removelast = (hidden_states.shape[1] % self.sliding_window_length == 0) 
-                removelast = (hidden_states.shape[1] % effective_kernel_size == 0) 
-                hidden_states = self.avgpool(hidden_states) 
-                if removelast: 
-                    hidden_states = hidden_states[:, :-1, :] 
-            hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
+                raise ValueError("autoregressive_first_element is not True") 
+            # hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
+            temp_hidden_states = temp_hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
             print("hidden_states shape {}".format(hidden_states.shape)) 
             
             mse_loss = torch.tensor(0) 
@@ -4876,7 +4876,8 @@ class LlamaWeirdLargeIterative(LlamaPreTrainedModel):
             
             if self.use_mse_loss: 
                 print(colored("mse_loss {}".format(mse_loss), "red")) 
-                hidden_states = hidden_states.detach().clone() 
+                # hidden_states = hidden_states.detach().clone() 
+                temp_hidden_states = temp_hidden_states.detach().clone() 
             
             # interleave the hidden_states and the input_ids 
             # print("expected {}".format(small_input_ids.shape[1] // self.sliding_window_length - 1)) 
@@ -4884,13 +4885,15 @@ class LlamaWeirdLargeIterative(LlamaPreTrainedModel):
             print("expected {}".format(small_input_ids[:, : dictionary_max_length[effective_kernel_size]].shape[1] // effective_kernel_size - 1)) 
             # print("small_input_ids: {}".format(small_input_ids[0])) 
             print("small_input_ids: {}".format(small_input_ids[0, : dictionary_max_length[effective_kernel_size]])) 
-            print("self.addonmodel_start {}".format(self.addonmodel_start)) 
+            # print("self.addonmodel_start {}".format(self.addonmodel_start)) 
+            print("effective_kernel_size + 1 {}".format(effective_kernel_size + 1)) 
             # print("sliding_window_length {}".format(self.sliding_window_length)) 
             print("sliding_window_length {}".format(effective_kernel_size)) 
-            print("hidden_states.shape[1] {}".format(hidden_states.shape[1])) 
+            # print("hidden_states.shape[1] {}".format(hidden_states.shape[1])) 
+            print("hidden_states.shape[1] {}".format(temp_hidden_states.shape[1])) 
             # assert hidden_states.shape[1] == (small_input_ids.shape[1] - self.addonmodel_start) // self.sliding_window_length  # please add back 
             # assert hidden_states.shape[1] == (small_input_ids.shape[1] - self.addonmodel_start) // effective_kernel_size # please add back 
-            assert hidden_states.shape[1] == (small_input_ids[:, : dictionary_max_length[effective_kernel_size]].shape[1] - (effective_kernel_size + 1)) // effective_kernel_size # please add back 
+            assert temp_hidden_states.shape[1] == (small_input_ids[:, : dictionary_max_length[effective_kernel_size]].shape[1] - (effective_kernel_size + 1)) // effective_kernel_size # please add back 
             
             # the following line is setting the kernel_size of the small model 
             self.addonsmallmodel.set_sliding_window_length(effective_kernel_size) 
@@ -4900,7 +4903,8 @@ class LlamaWeirdLargeIterative(LlamaPreTrainedModel):
                 # attention_mask = original_attention_mask, 
                 attention_mask = original_attention_mask[:, : dictionary_max_length[effective_kernel_size]], 
                 past_key_values = None, 
-                condensed_embeds = hidden_states, 
+                # condensed_embeds = hidden_states, 
+                condensed_embeds = temp_hidden_states, 
                 labels = None, 
                 output_attentions = True, 
                 output_hidden_states = None, 
@@ -4914,7 +4918,8 @@ class LlamaWeirdLargeIterative(LlamaPreTrainedModel):
             
             logits = addonmodeloutput.logits 
             
-            seq_length = small_input_ids.shape[1] + hidden_states.shape[1] 
+            # seq_length = small_input_ids.shape[1] + hidden_states.shape[1] 
+            seq_length = small_input_ids[:, : dictionary_max_length[effective_kernel_size]].shape[1] + temp_hidden_states.shape[1] 
             assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
             # mask_list_pos = [self.addonmodel_start + i * (self.sliding_window_length + 1) for i in range((seq_length - self.addonmodel_start) // (self.sliding_window_length + 1))] 
             mask_list_pos = [self.addonmodel_start + i * (effective_kernel_size + 1) for i in range((seq_length - self.addonmodel_start) // (effective_kernel_size + 1))] 
@@ -4925,7 +4930,8 @@ class LlamaWeirdLargeIterative(LlamaPreTrainedModel):
             if label_adjustment: # we adjust the labels to be completely information loss free 
                 print("got inside") 
                 # copy_idx = [self.addonmodel_start + (self.sliding_window_length * i) for i in range(hidden_states.shape[1])] 
-                copy_idx = [self.addonmodel_start + (effective_kernel_size * i) for i in range(hidden_states.shape[1])] 
+                # copy_idx = [self.addonmodel_start + (effective_kernel_size * i) for i in range(hidden_states.shape[1])] 
+                copy_idx = [self.addonmodel_start + (effective_kernel_size * i) for i in range(temp_hidden_states.shape[1])] 
                 labels_addition = labels[:, copy_idx] 
                 newlabels = labels[:, : self.addonmodel_start] 
                 old_label_count = self.addonmodel_start 
