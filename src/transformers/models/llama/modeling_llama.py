@@ -8835,6 +8835,7 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             assert input_ids.shape[0] == condensed_embeds.shape[0] # batch size has to match 
             print("input_ids shape {} condensed_embeds shape {}".format(input_ids.shape, condensed_embeds.shape)) 
             print("sliding window length {}".format(self.sliding_window_length)) 
+            print("attention_mask shape {}".format(attention_mask.shape)) 
             if not generate_flag: 
                 print("input_ids.shape[1]: {}".format(input_ids.shape[1])) 
                 print("start_idx: {}".format(start_idx)) 
