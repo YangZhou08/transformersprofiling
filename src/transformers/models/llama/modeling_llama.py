@@ -4901,7 +4901,7 @@ class LlamaWeirdLargeIterative(LlamaPreTrainedModel):
                 # input_ids = small_input_ids, 
                 input_ids = small_input_ids[:, : dictionary_max_length[effective_kernel_size]], 
                 # attention_mask = original_attention_mask, 
-                attention_mask = original_attention_mask[:, : dictionary_max_length[effective_kernel_size]], 
+                attention_mask = original_attention_mask[:, : dictionary_max_length[effective_kernel_size] + temp_hidden_states.shape[1]], 
                 past_key_values = None, 
                 # condensed_embeds = hidden_states, 
                 condensed_embeds = temp_hidden_states, 
