@@ -247,6 +247,8 @@ parser.add_argument("--usedatasettype", type = str, choices = ["synthesized", "c
 parser.add_argument("--data_compensation", action = "store_true") 
 parser.add_argument("--first_n_rows", type = int, default = None) 
 parser.add_argument("--usingsecondlast", action = "store_true") 
+parser.add_argument("--use_weighted_loss", action = "store_true") 
+parser.add_argument("--weighted_type", type = str, choices = ["scalar", "linear"], default = None) 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
@@ -798,9 +800,10 @@ class CustomTrainer(Trainer):
                 label_adjustment = False, 
                 # usingsecondtolastvectors = 
                 usingsecondtolastvectors = args.usingsecondlast, 
-                weight_added = True, 
-                weight_type = "linear", 
+                weight_added = args.use_weighted_loss, 
+                weight_type = args.weighted_type, 
             ) 
+            
         elif isinstance(getattr(model, "module", model), LlamaWeirdLargeTestmixedb) or isinstance(model, LlamaWeirdLargeTestmixedb): 
             batch_size, seq_len = attention_mask.shape 
             # addedon_length = condensed_embeds.shape[1] 
