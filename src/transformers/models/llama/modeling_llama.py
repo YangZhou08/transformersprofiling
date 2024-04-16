@@ -4890,7 +4890,7 @@ class LlamaWeirdLargeIterative(LlamaPreTrainedModel):
             print("hidden_states.shape[1] {}".format(hidden_states.shape[1])) 
             # assert hidden_states.shape[1] == (small_input_ids.shape[1] - self.addonmodel_start) // self.sliding_window_length  # please add back 
             # assert hidden_states.shape[1] == (small_input_ids.shape[1] - self.addonmodel_start) // effective_kernel_size # please add back 
-            assert hidden_states.shape[1] == (small_input_ids[:, : dictionary_max_length[effective_kernel_size]].shape[1] - self.addonmodel_start) // effective_kernel_size # please add back 
+            assert hidden_states.shape[1] == (small_input_ids[:, : dictionary_max_length[effective_kernel_size]].shape[1] - (effective_kernel_size + 1)) // effective_kernel_size # please add back 
             
             # the following line is setting the kernel_size of the small model 
             self.addonsmallmodel.set_sliding_window_length(effective_kernel_size) 
@@ -4905,7 +4905,8 @@ class LlamaWeirdLargeIterative(LlamaPreTrainedModel):
                 output_attentions = True, 
                 output_hidden_states = None, 
                 return_dict = True, 
-                start_idx = self.addonmodel_start, # NOTE this is very important 
+                # start_idx = self.addonmodel_start, # NOTE this is very important 
+                start_idx = effective_kernel_size + 1, # NOTE this is very important 
                 eval_mode = False, 
                 iteration_count = None, 
                 experiment_setting = self.inference_setting, 
