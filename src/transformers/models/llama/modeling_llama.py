@@ -4891,6 +4891,7 @@ class LlamaWeirdLargeIterative(LlamaPreTrainedModel):
             print("sliding_window_length {}".format(effective_kernel_size)) 
             # print("hidden_states.shape[1] {}".format(hidden_states.shape[1])) 
             print("hidden_states.shape[1] {}".format(temp_hidden_states.shape[1])) 
+            print("original_attention_mask length {}".format(dictionary_max_length[effective_kernel_size] + temp_hidden_states.shape[1])) 
             # assert hidden_states.shape[1] == (small_input_ids.shape[1] - self.addonmodel_start) // self.sliding_window_length  # please add back 
             # assert hidden_states.shape[1] == (small_input_ids.shape[1] - self.addonmodel_start) // effective_kernel_size # please add back 
             assert temp_hidden_states.shape[1] == (small_input_ids[:, : dictionary_max_length[effective_kernel_size]].shape[1] - (effective_kernel_size + 1)) // effective_kernel_size # please add back 
