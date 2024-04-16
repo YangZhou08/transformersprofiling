@@ -4871,6 +4871,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         autoregressive_first_element = False, 
         label_adjustment = False, 
         usingsecondtolastvectors = False, 
+        weight_added = False, 
     ) -> Union[Tuple, CausalLMOutputWithPastLargeDistance2]: 
         r"""
         Args:
@@ -5087,6 +5088,22 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             logits = logits[:, selected_indices, :] 
             shift_logits = logits[..., :-1, :].contiguous() 
             shift_labels = labels[..., 1:].contiguous() # shape (batch_size, seq_length - 1) 
+            if weight_added: 
+                assert self.sliding_window_length == 7 
+                scaling_weight = torch.ones((logits.shape[0], 7), dtype = logits.dtype).to(logits.device) 
+                weights_assign = [] 
+                for i in range(1, 8): 
+                    for j in range(len(weights_assign)): 
+                        weights_assign[j] += 1/i  
+                    weights_assign.append(1/i) 
+                    # print(weights_assign) 
+                # print(weights_assign) 
+                weights_assign = [x/weights_assign[-1] for x in weights_assign] 
+                weights_assign = torch.tensor(weights_assign, dtype = logits.dtype).to(logits.device).unsqueeze(0).expand(logits.shape[0], -1) 
+                for i in range((logits.shape[1] - 7) // 8): 
+                    scaling_weight = torch.cat([scaling_weight, torch.ones((logits.shape[0], 1), dtype = logits.dtype).to(logits.device)], dim = 1) 
+                    scaling_weight = torch.cat([scaling_weight, weights_assign], dim = 1) 
+                
             # shift_labels = labels[..., 1:-1].contiguous() # shape (batch_size, seq_length - 1) 
             print("shift_logits shape {}; shift_labels shape {}".format(shift_logits.shape, shift_labels.shape)) 
             # Flatten the tokens 
