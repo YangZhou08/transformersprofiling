@@ -5100,10 +5100,14 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 # print(weights_assign) 
                 weights_assign = [x/weights_assign[-1] for x in weights_assign] 
                 weights_assign = torch.tensor(weights_assign, dtype = logits.dtype).to(logits.device).unsqueeze(0).expand(logits.shape[0], -1) 
+                print("weights_assign[0] {}".format(weights_assign[0])) 
+                print("weights_assign shape {}".format(weights_assign.shape)) 
                 for i in range((logits.shape[1] - 7) // 8): 
-                    scaling_weight = torch.cat([scaling_weight, torch.ones((logits.shape[0], 1), dtype = logits.dtype).to(logits.device)], dim = 1) 
                     scaling_weight = torch.cat([scaling_weight, weights_assign], dim = 1) 
-                
+                assert scaling_weight.shape == shift_logits.shape 
+            else: 
+                scaling_weight = None 
+            exit(0) 
             # shift_labels = labels[..., 1:-1].contiguous() # shape (batch_size, seq_length - 1) 
             print("shift_logits shape {}; shift_labels shape {}".format(shift_logits.shape, shift_labels.shape)) 
             # Flatten the tokens 
@@ -5124,7 +5128,12 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             
             # Enable model parallelism 
             shift_labels = shift_labels.to(shift_logits.device) 
-            ce_loss = loss_fct(shift_logits, shift_labels) 
+            if not weight_added: 
+                ce_loss = loss_fct(shift_logits, shift_labels) 
+            else: 
+                scaling_weight = scaling_weight.view(-1) 
+                ce_loss = loss_fct(shift_logits, shift_labels, reduction = "none") 
+                ce_loss = (ce_loss * scaling_weight).mean() 
             loss = ce_loss 
             # print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
         if loss is not None and not self.use_mse_loss: 
