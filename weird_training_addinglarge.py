@@ -778,7 +778,7 @@ class CustomTrainer(Trainer):
         elif isinstance(getattr(model, "module", model), LlamaWeirdLargeIterative) or isinstance(model, LlamaWeirdLargeIterative): 
             batch_size, seq_len = attention_mask.shape 
             # addedon_length = condensed_embeds.shape[1] 
-            if not isinstance(model, LlamaWeirdLargeTest): 
+            if not isinstance(model, LlamaWeirdLargeIterative): 
                 addedon_length = (seq_len - model.module.addonmodel_start) // self.sliding_window_length 
             else: 
                 addedon_length = (seq_len - model.addonmodel_start) // self.sliding_window_length 
