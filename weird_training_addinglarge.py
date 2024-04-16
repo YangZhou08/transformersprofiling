@@ -799,7 +799,7 @@ class CustomTrainer(Trainer):
                 # usingsecondtolastvectors = 
                 usingsecondtolastvectors = args.usingsecondlast, 
                 weight_added = True, 
-                weight_type = "scalar", 
+                weight_type = "linear", 
             ) 
         elif isinstance(getattr(model, "module", model), LlamaWeirdLargeTestmixedb) or isinstance(model, LlamaWeirdLargeTestmixedb): 
             batch_size, seq_len = attention_mask.shape 
