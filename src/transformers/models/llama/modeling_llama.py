@@ -4872,6 +4872,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         label_adjustment = False, 
         usingsecondtolastvectors = False, 
         weight_added = False, 
+        weight_type = "scalar", # linear or scalar 
     ) -> Union[Tuple, CausalLMOutputWithPastLargeDistance2]: 
         r"""
         Args:
@@ -5092,13 +5093,18 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 assert self.sliding_window_length == 7 
                 scaling_weight = torch.ones((logits.shape[0], 7), dtype = logits.dtype).to(logits.device) 
                 weights_assign = [] 
-                for i in range(1, 8): 
-                    for j in range(len(weights_assign)): 
-                        weights_assign[j] += 1/i  
-                    weights_assign.append(1/i) 
+                if weight_type == "scalar": 
+                    for i in range(1, 8): 
+                        for j in range(len(weights_assign)): 
+                            weights_assign[j] += 1/i  
+                        weights_assign.append(1/i) 
+                        # print(weights_assign) 
                     # print(weights_assign) 
-                # print(weights_assign) 
-                weights_assign = [x/weights_assign[-1] for x in weights_assign] 
+                    weights_assign = [x/weights_assign[-1] for x in weights_assign] 
+                elif weight_type == "linear": 
+                    weights_assign = [7 - i for i in range(7)] # [7, 6, 5, 4, 3, 2, 1] 
+                else: 
+                    raise ValueError("weight_type not recognized") 
                 weights_assign = torch.tensor(weights_assign, dtype = logits.dtype).to(logits.device).unsqueeze(0).expand(logits.shape[0], -1) 
                 print("weights_assign[0] {}".format(weights_assign[0])) 
                 print("weights_assign shape {}".format(weights_assign.shape)) 
