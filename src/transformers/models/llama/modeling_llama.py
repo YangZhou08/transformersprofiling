@@ -4957,7 +4957,9 @@ class LlamaWeirdLargeIterative(LlamaPreTrainedModel):
                         selected_indices.append(i) 
                 logits = logits[:, selected_indices, :] 
                 shift_logits = logits[..., :-1, :].contiguous() 
-                shift_labels = labels[..., 1:].contiguous() # shape (batch_size, seq_length - 1) 
+                # shift_labels = labels[..., 1:].contiguous() # shape (batch_size, seq_length - 1) 
+                temp_labels = labels[:, : dictionary_max_length[effective_kernel_size]] 
+                shift_labels = temp_labels[..., 1:].contiguous() # shape (batch_size, seq_length - 1) 
                 print("shift_logits shape {}; shift_labels shape {}".format(shift_logits.shape, shift_labels.shape)) 
                 # Flatten the tokens 
                 loss_fct = CrossEntropyLoss() 
