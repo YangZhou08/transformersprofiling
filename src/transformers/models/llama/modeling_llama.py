@@ -5104,7 +5104,9 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 print("weights_assign shape {}".format(weights_assign.shape)) 
                 for i in range((logits.shape[1] - 7) // 8): 
                     scaling_weight = torch.cat([scaling_weight, weights_assign], dim = 1) 
-                assert scaling_weight.shape == shift_logits.shape 
+                print("scaling_weight[0] {}".format(scaling_weight[0])) 
+                print("scaling_weight shape {}".format(scaling_weight.shape)) 
+                assert scaling_weight.shape == shift_logits.shape[0 : 2] 
             else: 
                 scaling_weight = None 
             exit(0) 
