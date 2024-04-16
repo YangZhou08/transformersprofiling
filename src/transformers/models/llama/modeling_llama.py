@@ -4923,7 +4923,7 @@ class LlamaWeirdLargeIterative(LlamaPreTrainedModel):
             seq_length = small_input_ids[:, : dictionary_max_length[effective_kernel_size]].shape[1] + temp_hidden_states.shape[1] 
             assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
             # mask_list_pos = [self.addonmodel_start + i * (self.sliding_window_length + 1) for i in range((seq_length - self.addonmodel_start) // (self.sliding_window_length + 1))] 
-            mask_list_pos = [self.addonmodel_start + i * (effective_kernel_size + 1) for i in range((seq_length - self.addonmodel_start) // (effective_kernel_size + 1))] 
+            mask_list_pos = [(effective_kernel_size + 1) + i * (effective_kernel_size + 1) for i in range((seq_length - (effective_kernel_size + 1)) // (effective_kernel_size + 1))] 
             mask_list_pos22 = [x - 1 for x in mask_list_pos] 
             print("mask list pos22: {}".format(mask_list_pos22)) 
             print("length of mask list pos22: {}".format(len(mask_list_pos22))) 
@@ -4932,10 +4932,12 @@ class LlamaWeirdLargeIterative(LlamaPreTrainedModel):
                 print("got inside") 
                 # copy_idx = [self.addonmodel_start + (self.sliding_window_length * i) for i in range(hidden_states.shape[1])] 
                 # copy_idx = [self.addonmodel_start + (effective_kernel_size * i) for i in range(hidden_states.shape[1])] 
-                copy_idx = [self.addonmodel_start + (effective_kernel_size * i) for i in range(temp_hidden_states.shape[1])] 
+                copy_idx = [(effective_kernel_size + 1) + (effective_kernel_size * i) for i in range(temp_hidden_states.shape[1])] 
                 labels_addition = labels[:, copy_idx] 
-                newlabels = labels[:, : self.addonmodel_start] 
-                old_label_count = self.addonmodel_start 
+                # newlabels = labels[:, : self.addonmodel_start] 
+                newlabels = labels[:, : effective_kernel_size + 1] 
+                # old_label_count = self.addonmodel_start 
+                old_label_count = effective_kernel_size + 1 
                 for i in range(labels_addition.shape[1]): 
                     newlabels = torch.cat([newlabels, labels_addition[:, i].unsqueeze(1)], dim = 1) 
                     if old_label_count < labels.shape[1]: 
@@ -4948,8 +4950,9 @@ class LlamaWeirdLargeIterative(LlamaPreTrainedModel):
                 labels = newlabels 
             
             if labels is not None: 
-                selected_indices = list(range(self.addonmodel_start - 1)) 
-                for i in range(self.addonmodel_start - 1, seq_length): 
+                # selected_indices = list(range(self.addonmodel_start - 1)) 
+                selected_indices = list(range(effective_kernel_size)) 
+                for i in range(effective_kernel_size, seq_length): 
                     if i not in mask_list_pos22: 
                         selected_indices.append(i) 
                 logits = logits[:, selected_indices, :] 
