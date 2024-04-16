@@ -5102,7 +5102,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 weights_assign = torch.tensor(weights_assign, dtype = logits.dtype).to(logits.device).unsqueeze(0).expand(logits.shape[0], -1) 
                 print("weights_assign[0] {}".format(weights_assign[0])) 
                 print("weights_assign shape {}".format(weights_assign.shape)) 
-                for i in range((logits.shape[1] - 7) // 8): 
+                for i in range((logits.shape[1] - 7) // 7): 
                     scaling_weight = torch.cat([scaling_weight, weights_assign], dim = 1) 
                 print("scaling_weight[0] {}".format(scaling_weight[0])) 
                 print("scaling_weight shape {}".format(scaling_weight.shape)) 
