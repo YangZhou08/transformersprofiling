@@ -985,6 +985,15 @@ class CustomTrainer(Trainer):
             # print(l2dist) 
             logits = logits[:, :-1, :] 
             print("the shape of logits is {}".format(logits.shape)) 
+        elif isinstance(getattr(model, "module", model), LlamaWeirdLargeIterative) or isinstance(model, LlamaWeirdLargeIterative): 
+            l2dist = logits[1].reshape(-1) 
+            ce_loss = logits[2].reshape(-1) 
+            l2dist_input = logits[3].reshape(-1) 
+            cos_sim_input = logits[4].reshape(-1) 
+            logits = logits[0] 
+            # print(l2dist) 
+            logits = logits[:, :-1, :] 
+            print("the shape of logits is {}".format(logits.shape)) 
         else: 
             logits = logits[:, :-1, :] 
             # input_attention_mask = input_attention_mask[:, :-1] 
