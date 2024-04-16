@@ -4844,7 +4844,7 @@ class LlamaWeirdLargeIterative(LlamaPreTrainedModel):
         
         # dictionary_max_length = {2 : 259, 3 : 259, 4 : 257, 5 : 256, 6 : 259, 7 : 260} 
         dictionary_max_length = {1 : 260, 2 : 259, 3 : 259, 4 : 257, 5 : 256, 6 : 259, 7 : 260} 
-        loss = torch.tensor(0) 
+        loss = torch.tensor(0, dtype = hidden_states.dtype).to(hidden_states.device) 
         for effective_kernel_size in range(1, self.sliding_window_length + 1): 
             if autoregressive_first_element: 
                 # selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
