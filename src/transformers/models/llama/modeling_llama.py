@@ -5109,7 +5109,6 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 assert scaling_weight.shape == shift_logits.shape[0 : 2] 
             else: 
                 scaling_weight = None 
-            exit(0) 
             # shift_labels = labels[..., 1:-1].contiguous() # shape (batch_size, seq_length - 1) 
             print("shift_logits shape {}; shift_labels shape {}".format(shift_logits.shape, shift_labels.shape)) 
             # Flatten the tokens 
@@ -5135,6 +5134,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             else: 
                 scaling_weight = scaling_weight.view(-1) 
                 ce_loss = loss_fct(shift_logits, shift_labels, reduction = "none") 
+                assert ce_loss.shape == scaling_weight.shape 
                 ce_loss = (ce_loss * scaling_weight).mean() 
             loss = ce_loss 
             # print(colored("rank {} loss {}".format(self.accelerator.state.process_index, loss), "yellow")) 
