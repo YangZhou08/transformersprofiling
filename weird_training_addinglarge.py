@@ -29,6 +29,7 @@ from src.transformers.models.llama.modeling_llama import LlamaWeirdLarge3
 from src.transformers.models.llama.modeling_llama import SimpleSmallModel2 
 from src.transformers.models.llama.modeling_llama import LlamaWeirdLargeTest 
 from src.transformers.models.llama.modeling_llama import LlamaWeirdLargeTestmixedb 
+from src.transformers.models.llama.modeling_llama import LlamaWeirdLargeIterative 
 from src.transformers.modeling_utils import PreTrainedModel, load_sharded_checkpoint, unwrap_model 
 import time 
 from torch.utils.data import random_split 
@@ -774,6 +775,36 @@ class CustomTrainer(Trainer):
                 # eval_model = self.eval_mode, 
                 eval_mode = self.eval_mode, 
             ) 
+        elif isinstance(getattr(model, "module", model), LlamaWeirdLargeIterative) or isinstance(model, LlamaWeirdLargeIterative): 
+            batch_size, seq_len = attention_mask.shape 
+            # addedon_length = condensed_embeds.shape[1] 
+            if not isinstance(model, LlamaWeirdLargeTest): 
+                addedon_length = (seq_len - model.module.addonmodel_start) // self.sliding_window_length 
+            else: 
+                addedon_length = (seq_len - model.addonmodel_start) // self.sliding_window_length 
+            # print("get the input sentence: {}".format(tokenizer.decode(input_ids[0]))) 
+            original_attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
+            if self.accelerator.is_main_process: 
+                print("printing out the experiment_setting: {} eval_mode: {}".format(self.experiment_setting, self.eval_mode)) 
+            print(colored("the length of input_ids is {}".format(input_ids.shape[1]), "green")) 
+            outputs = model(
+                large_input_ids = input_ids, 
+                small_input_ids = input_ids, 
+                attention_mask = attention_mask, 
+                original_attention_mask = original_attention_mask, 
+                labels = label2, 
+                output_hidden_states = True, 
+                output_attentions = True, 
+                return_dict = True, 
+                # condensed_fashion = "ground_truth", 
+                autoregressive_first_element = self.autoregressive_first_element, 
+                label_adjustment = False, 
+                # usingsecondtolastvectors = 
+                usingsecondtolastvectors = args.usingsecondlast, 
+                weight_added = args.use_weighted_loss, 
+                weight_type = args.weighted_type, 
+            ) 
+            
         elif isinstance(getattr(model, "module", model), LlamaWeirdLargeTest) or isinstance(model, LlamaWeirdLargeTest): 
             batch_size, seq_len = attention_mask.shape 
             # addedon_length = condensed_embeds.shape[1] 
@@ -1459,7 +1490,8 @@ elif args.use_plain_model and not args.use_past:
 elif args.use_large_model: 
     print(colored("we use large model", "cyan")) 
     # set up a large model that supports the condensed token inputs 
-    large_model = LlamaWeirdLargeTest.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
+    large_model = LlamaWeirdLargeIterative.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
+    # large_model = LlamaWeirdLargeTest.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
     # large_model = LlamaWeirdLargeTestmixedb.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
     large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True) 
     large_model.set_sliding_window_length(args.kernel_size) 
