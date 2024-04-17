@@ -220,7 +220,8 @@ if __name__ == "__main__":
         print("We now use eos_token as pad token") 
     tokenizer.padding_side = "left" 
     
-    small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-68m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-68m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     
     datasetnew = get_dataset("c4", tokenizer, 64, 10) 
     dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 1, shuffle = False) 
@@ -229,7 +230,8 @@ if __name__ == "__main__":
         input_ids = batch["input_ids"].to(torch_device) 
         attention_mask = batch["attention_mask"].to(torch_device) 
         
-        outputsequence, collected_probs = plain_single_model(tokenizer, small_model, input_ids, attention_mask, max_len = 256, top_k = -1, top_p = 0.9, temperature = 0.6, verbose = True) 
+        # outputsequence, collected_probs = plain_single_model(tokenizer, small_model, input_ids, attention_mask, max_len = 256, top_k = -1, top_p = 0.9, temperature = 0.6, verbose = True) 
+        outputsequence, collected_probs = plain_single_model(tokenizer, model, input_ids, attention_mask, max_len = 256, top_k = -1, top_p = 0.9, temperature = 0.6, verbose = True) 
         print("outputsequence: {}".format(outputsequence)) 
         print("outputsequence shape: {}".format(outputsequence.shape)) 
         print("len(collected_probs) {} collected_probs[0].shape {}".format(len(collected_probs), collected_probs[0].shape)) 
