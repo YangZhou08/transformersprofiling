@@ -133,6 +133,8 @@ def plain_single_model(tokenizer, model, input_ids, attention_mask, max_len = 25
     n = 0 
     generated_ids = None 
     collected_probs = [] 
+    if verbose: 
+        spec_stream(input_ids, tokenizer) 
     
     while n < max_len: 
         outputs = model(
