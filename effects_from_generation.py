@@ -231,4 +231,13 @@ if __name__ == "__main__":
         print("outputsequence: {}".format(outputsequence)) 
         print("outputsequence shape: {}".format(outputsequence.shape)) 
         print("len(collected_probs) {} collected_probs[0].shape {}".format(len(collected_probs), collected_probs[0].shape)) 
+        
+        list_collected_entropies = [] 
+        for i in range(len(collected_probs)): 
+            probs = collected_probs[i].squeeze(0) 
+            probs = probs.detach().cpu().numpy() 
+            ent = compute_entropy(probs) 
+            list_collected_entropies.append(ent) 
+        print("list_collected_entropies: {}".format(list_collected_entropies)) 
+        
         exit(0) 
