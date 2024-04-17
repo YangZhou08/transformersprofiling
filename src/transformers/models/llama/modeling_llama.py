@@ -5566,7 +5566,10 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             # shift_labels = labels[..., 1:-1].contiguous() # shape (batch_size, seq_length - 1) 
             print("shift_logits shape {}; shift_labels shape {}".format(shift_logits.shape, shift_labels.shape)) 
             # Flatten the tokens 
-            loss_fct = CrossEntropyLoss(reduction = "none") 
+            if weight_added: 
+                loss_fct = CrossEntropyLoss(reduction = "none") 
+            else: 
+                loss_fct = CrossEntropyLoss() 
             # shift_logits2 = shift_logits.clone().detach() # used for position investigation 
             # shift_labels2 = shift_labels.clone().detach() # used for position investigation 
             shift_logits = shift_logits.view(-1, self.config.vocab_size) 
