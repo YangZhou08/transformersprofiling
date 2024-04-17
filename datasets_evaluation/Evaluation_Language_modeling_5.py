@@ -226,6 +226,7 @@ parser.add_argument("--task_id", type = int, default = 0)
 parser.add_argument("--setting0usedq", action = "store_true") 
 parser.add_argument("--full_sequence_length_layer_pos", type = int, default = 10) 
 parser.add_argument("--label_adjustment", action = "store_true") 
+parser.add_argument("--secondlast", action = "store_true") 
 
 args = parser.parse_args() 
 
@@ -381,7 +382,7 @@ class CustomTrainer(Trainer):
                 labels = label2, 
                 condensed_embed_labels = condensed_embeds_labels, 
                 label_adjustment = self.label_adjustment, 
-                usingsecondtolastvectors = True, 
+                usingsecondtolastvectors = args.secondlast, 
             ) 
         # Save past state if it exists
         # TODO: this needs to be fixed and made cleaner later.
