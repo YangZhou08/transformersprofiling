@@ -134,7 +134,7 @@ def plain_single_model(tokenizer, model, input_ids, attention_mask, max_len = 25
     generated_ids = None 
     collected_probs = [] 
     if verbose: 
-        spec_stream(input_ids, tokenizer) 
+        spec_stream(input_ids, tokenizer, color = "green") 
     
     while n < max_len: 
         outputs = model(
@@ -241,5 +241,3 @@ if __name__ == "__main__":
             ent = compute_entropy(probs) 
             list_collected_entropies.append(ent) 
         print("list_collected_entropies: {}".format(list_collected_entropies)) 
-        
-        exit(0) 
