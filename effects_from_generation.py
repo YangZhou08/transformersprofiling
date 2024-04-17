@@ -131,7 +131,7 @@ def compute_entropy(prob_dist):
 
 def plain_single_model(tokenizer, model, input_ids, attention_mask, max_len = 256, top_k = -1, top_p = 0.9, temperature = 0.6, verbose = False): 
     n = 0 
-    generated_ids = [] 
+    generated_ids = None 
     collected_probs = [] 
     
     while n < max_len: 
@@ -145,7 +145,7 @@ def plain_single_model(tokenizer, model, input_ids, attention_mask, max_len = 25
         probs = norm_logits(next_token_logits, temperature = temperature, top_k = top_k, top_p = top_p) 
         collected_probs.append(probs) 
         next_token = sample(probs) 
-        generated_ids = [next_token] 
+        generated_ids = next_token 
         input_ids = torch.cat((input_ids, generated_ids), dim = 1) 
         attention_mask = torch.cat((attention_mask, torch.ones((1, 1)).to(attention_mask.device)), dim = 1) 
         n += 1 
