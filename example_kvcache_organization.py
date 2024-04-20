@@ -1489,7 +1489,7 @@ if __name__ == "__main__":
                 # datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = 64, limit = 200) 
             else: 
                 if args.perpositionali: 
-                    datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = max_length_table[args.kernel_size] + i, limit = 10000) 
+                    datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = max_length_table[args.kernel_size] + i, limit = 10) 
                 else: 
                     datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = max_length_table[args.kernel_size] + i, limit = 200) # i 0 means the first position, i 1 means the second position, etc. 
             
