@@ -1421,6 +1421,7 @@ if __name__ == "__main__":
     parser.add_argument("--double_decking", action = "store_true") 
     parser.add_argument("--speculation_length", type = int, default = None) 
     parser.add_argument("--perpositionali", action = "store_true") 
+    parser.add_argument("--max_len", type = int, default = 64) 
     
     args = parser.parse_args() 
     
@@ -1487,7 +1488,10 @@ if __name__ == "__main__":
                 datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = 64, limit = 200) 
                 # datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = 64, limit = 200) 
             else: 
-                datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = max_length_table[args.kernel_size] + i, limit = 200) # i 0 means the first position, i 1 means the second position, etc. 
+                if args.perpositionali: 
+                    datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = max_length_table[args.kernel_size] + i, limit = 10000) 
+                else: 
+                    datasetnew = get_dataset(datasetname = datasetname, tokenizer = tokenizer, max_length = max_length_table[args.kernel_size] + i, limit = 200) # i 0 means the first position, i 1 means the second position, etc. 
             
             # dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 32, shuffle = False) 
             dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 1, shuffle = False) 
@@ -1537,28 +1541,28 @@ if __name__ == "__main__":
                     else: 
                         # print("using specudectesting version3") 
                         large_model.resetgenerationcount() 
-                        '''
-                        acceptancer, draftcount = Vanilla_specu_dectesting3(tokenizer, 
-                                            target_largemodellmhead, 
-                                            large_model, 
-                                            input_ids, 
-                                            attention_mask, 
-                                            gamma = args.speculation_length, 
-                                            max_len = 1, 
-                                            verbose = True, 
-                                            target_model = target_largemodel, 
-                        ) 
-                        ''' 
-                        acceptancer, draftcount, total_accepted_tokens, num_verifications, expected_tokens = Vanilla_spec_decnokv3(tokenizer, 
-                                            target_largemodellmhead, 
-                                            large_model, 
-                                            input_ids, 
-                                            attention_mask, 
-                                            gamma = args.speculation_length, 
-                                            max_len = 64, 
-                                            verbose = True, 
-                                            target_model = target_largemodel, 
-                        ) 
+                        if args.perpositionali: 
+                            acceptancer, draftcount = Vanilla_specu_dectesting3(tokenizer, 
+                                                target_largemodellmhead, 
+                                                large_model, 
+                                                input_ids, 
+                                                attention_mask, 
+                                                gamma = args.speculation_length, 
+                                                max_len = 1, 
+                                                verbose = True, 
+                                                target_model = target_largemodel, 
+                            ) 
+                        else: 
+                            acceptancer, draftcount, total_accepted_tokens, num_verifications, expected_tokens = Vanilla_spec_decnokv3(tokenizer, 
+                                                target_largemodellmhead, 
+                                                large_model, 
+                                                input_ids, 
+                                                attention_mask, 
+                                                gamma = args.speculation_length, 
+                                                max_len = 64, 
+                                                verbose = True, 
+                                                target_model = target_largemodel, 
+                            ) 
                                     
                 globalacceptancerate += (acceptancer * draftcount) 
                 globaldraftcount += draftcount 
