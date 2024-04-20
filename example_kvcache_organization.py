@@ -1566,14 +1566,16 @@ if __name__ == "__main__":
                                     
                 globalacceptancerate += (acceptancer * draftcount) 
                 globaldraftcount += draftcount 
-                globalacceptedtokenscount += total_accepted_tokens 
-                globalnumverifications += num_verifications 
+                if not args.perpositionali: 
+                    globalacceptedtokenscount += total_accepted_tokens 
+                    globalnumverifications += num_verifications 
             
             # print("global acceptance rate: ", globalacceptancerate / globaldraftcount) 
             print("position {} acceptancerate: {}".format(i + 1, globalacceptancerate / globaldraftcount)) 
-            print("position {} average token accepted: {}".format(i + 1, globalacceptedtokenscount / globalnumverifications)) 
             acceptanceratelist[datasetname].append(globalacceptancerate / globaldraftcount) 
-            expectedtokensaccepted[datasetname].append(globalacceptedtokenscount / globalnumverifications) 
+            if not args.perpositionali: 
+                print("position {} average token accepted: {}".format(i + 1, globalacceptedtokenscount / globalnumverifications)) 
+                expectedtokensaccepted[datasetname].append(globalacceptedtokenscount / globalnumverifications) 
         
 # for datasetname in acceptanceratelist.keys(): 
 for datasetname in datasetlist: 
@@ -1581,6 +1583,7 @@ for datasetname in datasetlist:
     for i in range(iterationscounts): 
         print("position {} acceptance rate: {}".format(i + 1, acceptanceratelist[datasetname][i])) 
         print("gamma of the experiment is {} expected tokens accepted: {}".format(args.speculation_length, expectedtokensaccepted[datasetname][i])) 
-        solution_acceptance_rate = fsolve(equation, 0.5, args = (expectedtokensaccepted[datasetname][i], args.speculation_length)) 
-        print("solution_acceptance_rate {}".format(solution_acceptance_rate)) 
+        if not args.perpositionali: 
+            solution_acceptance_rate = fsolve(equation, 0.5, args = (expectedtokensaccepted[datasetname][i], args.speculation_length)) 
+            print("solution_acceptance_rate {}".format(solution_acceptance_rate)) 
     print() 
