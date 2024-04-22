@@ -249,6 +249,7 @@ parser.add_argument("--data_compensation", action = "store_true")
 parser.add_argument("--first_n_rows", type = int, default = None) 
 parser.add_argument("--usingsecondlast", action = "store_true") 
 parser.add_argument("--use_weighted_loss", action = "store_true") 
+parser.add_argument("--num_epoch", type = int, default = 1) 
 parser.add_argument("--weighted_type", type = str, choices = ["scalar", "linear"], default = None) 
 
 args = parser.parse_args() 
@@ -271,7 +272,8 @@ else:
     # dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
     dir_models = "/fsx-storygen/beidic/yang/model_checkpoints/" 
     dir_sdata = "/fsx-storygen/beidic/yang/c4llm_synthesized/" 
-    datapath_c4 = "/fsx-storygen/beidic/yang/c4_parts/downloads/" 
+    # datapath_c4 = "/fsx-storygen/beidic/yang/c4_parts/downloads/" 
+    datapath_c4 = "/fsx-storygen/beidic/hanshi/data/c4/" 
 
 # has_wandb = False # disable for debugging 
 # model_name = "openllama3b" 
@@ -1259,44 +1261,51 @@ class CustomTrainer(Trainer):
         return EvalLoopOutput(predictions=all_preds, label_ids=all_labels, metrics=metrics, num_samples=num_samples) 
         
 class CustomDataset: 
-    def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7, input_condensed = True, use_c4 = False): 
-        # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
+    def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7, input_condensed = True, use_c4 = False, istraining = True): 
         self.synthesize_dir = data_dir 
-        # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json", split = "train") 
-        # self.dataset = load_dataset('json', data_files = [self.synthesize_dir + 'c4synthesized_file1.json', self.synthesize_dir + 'c4synthesized_file2.json'], split="train") 
         dfiles = [] 
         topk = None 
         print(colored("hostname is {}".format(hostname), "yellow")) 
         if not use_c4: 
             if "ada" in hostname: 
                 for i in range(0, 2): 
-                    # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
-                    # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
                     filename = "c4synthesized_file1_kernel7_{}.json".format(i) 
                     dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
             elif "lovelace" in hostname: 
-                # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
                 filename = "c4synthesized_file1_kernel7_0.json" 
                 dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
             else: 
                 for i in range(0, 8): 
-                    # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
                     filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
                     dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
         else: 
-            if "lovelace" in hostname: 
-                for i in range(1, 9): 
-                    filename = "c4_file{}.json".format(i) 
-                    dfiles.append(self.synthesize_dir + filename) 
+            if istraining: 
+                if "lovelace" in hostname: 
+                    for i in range(1, 9): 
+                        filename = "c4_file{}.json".format(i) 
+                        dfiles.append(self.synthesize_dir + filename) 
+                else: 
+                    print(colored("using c4 files {} to {}".format(0, args.num_epoch * 8), "yellow")) 
+                    # for i in range(0, 8): 
+                    for i in range(0, args.num_epoch * 8): 
+                        filename = "c4_file{}.json".format(i) 
+                        dfiles.append(self.synthesize_dir + filename) 
             else: 
-                for i in range(0, 8): 
-                    filename = "c4_file{}.json".format(i) 
+                if "lovelace" in hostname: 
+                    filename = "c4_file9.json" 
+                    dfiles.append(self.synthesize_dir + filename) 
+                else: 
+                    filename = "c4_file{}.json".format(100) 
                     dfiles.append(self.synthesize_dir + filename) 
         
         if args.debug: 
             self.dataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
         else: 
-            self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
+            if istraining: 
+                self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
+            else: 
+                self.dataset = load_dataset('json', data_files = dfiles, split = "train[:200000]") 
+        
         # self.dataset = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
         self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
         self.kernel_size = kernel_size 
@@ -1436,13 +1445,15 @@ dictionary_max_length = {2 : 259, 3 : 259, 4 : 257, 5 : 256, 6 : 259, 7 : 260, 1
 # datasetnew = CustomDataset(max_length = 260 if args.kernel_size == 7 else 259, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed) 
 if args.usedatasettype == "synthesized": 
     datasetnew = CustomDataset(max_length = dictionary_max_length[args.kernel_size], data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed) 
-else: 
-    datasetnew = CustomDataset(max_length = dictionary_max_length[args.kernel_size], data_dir = datapath_c4, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed, use_c4 = True) 
-print("input sequence length is {}".format(dictionary_max_length[args.kernel_size])) 
-# datasetnew.preprocess_dataset() 
-train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.05 = 36k 
+    train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.05 = 36k 
                                                  # 356k * 0.99 = 352k 356k * 0.01 = 3.6k 
                                                  # 5 * 356k = 1780000, 1780000 * 0.98 = 1744400, 1780000 * 0.02 = 35600 
+else: 
+    train_set = CustomDataset(max_length = dictionary_max_length[args.kernel_size], data_dir = datapath_c4, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed, use_c4 = True, istraining = True) 
+    test_set = CustomDataset(max_length = dictionary_max_length[args.kernel_size], data_dir = datapath_c4, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed, use_c4 = True, istraining = False) 
+    
+print("input sequence length is {}".format(dictionary_max_length[args.kernel_size])) 
+# datasetnew.preprocess_dataset() 
 
 if (not args.use_plain_model or args.resume_from_checkpoint is not None) and not args.use_past and not args.finetune_checkpoint and not args.use_large_model: 
     print(colored("we use custom small", "cyan")) 
@@ -1604,7 +1615,7 @@ training_args = TrainingArguments(
     # resume_from_checkpoint = args.resume_from_checkpoint, 
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
-    num_train_epochs=1,            # number of training epochs, feel free to tweak
+    num_train_epochs = 1 if args.usedatasettype == "c4" else args.num_epoch,            # number of training epochs, feel free to tweak
     per_device_train_batch_size = args.batch_size,  # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights 
     per_device_eval_batch_size=args.batch_size, # evaluation batch size 
