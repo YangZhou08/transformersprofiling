@@ -567,7 +567,7 @@ class CustomTrainer(Trainer):
         return EvalLoopOutput(predictions=all_preds, label_ids=all_labels, metrics=metrics, num_samples=num_samples) 
 
 class CustomDataset: 
-    def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7, input_condensed = True, use_c4 = False): 
+    def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7, input_condensed = True, use_c4 = False, istraining = True): 
         self.synthesize_dir = data_dir 
         dfiles = [] 
         topk = None 
@@ -581,21 +581,32 @@ class CustomDataset:
                     filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
                     dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
         else: 
-            if "lovelace" in hostname: 
-                for i in range(1, 9): 
-                    filename = "c4_file{}.json".format(i) 
-                    dfiles.append(self.synthesize_dir + filename) 
+            if istraining: 
+                if "lovelace" in hostname: 
+                    for i in range(1, 9): 
+                        filename = "c4_file{}.json".format(i) 
+                        dfiles.append(self.synthesize_dir + filename) 
+                else: 
+                    print(colored("using c4 files {} to {}".format(args.path_d * 8, args.path_d * 8 + 8), "yellow")) 
+                    for i in range(args.path_d * 8, args.path_d * 8 + 8): 
+                    # for i in range(0, 8): 
+                        filename = "c4_file{}.json".format(i) 
+                        dfiles.append(self.synthesize_dir + filename) 
             else: 
-                print(colored("using c4 files {} to {}".format(args.path_d * 8, args.path_d * 8 + 8), "yellow")) 
-                for i in range(args.path_d * 8, args.path_d * 8 + 8): 
-                # for i in range(0, 8): 
-                    filename = "c4_file{}.json".format(i) 
+                if "lovelace" in hostname: 
+                    filename = "c4_file9.json" 
+                    dfiles.append(self.synthesize_dir + filename) 
+                else: 
+                    filename = "c4_file{}.json".format(100) 
                     dfiles.append(self.synthesize_dir + filename) 
         
         if args.debug: 
             self.dataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
         else: 
-            self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
+            if istraining: 
+                self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
+            else: 
+                self.dataset = load_dataset('json', data_files = dfiles, split = "train[:200000]") 
         
         self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
         self.kernel_size = kernel_size 
@@ -690,9 +701,10 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 ''' 
 if args.usedatasettype == "synthesized": 
     datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = 7, input_condensed = args.input_condensed) 
+    train_dataset, test_dataset = datasetnew.split(0.98) 
 else: 
-    datasetnew = CustomDataset(max_length = 260, data_dir = datapath_c4, tokenizer = tokenizer, kernel_size = 7, input_condensed = args.input_condensed, use_c4 = True) 
-train_dataset, test_dataset = datasetnew.split(0.98) 
+    train_dataset = CustomDataset(max_length = 260, data_dir = datapath_c4, tokenizer = tokenizer, kernel_size = 7, input_condensed = args.input_condensed, use_c4 = True, istraining = True) 
+    test_dataset = CustomDataset(max_length = 260, data_dir = datapath_c4, tokenizer = tokenizer, kernel_size = 7, input_condensed = args.input_condensed, use_c4 = True, istraining = False) 
 
 if args.model_name == "tinyllama": 
     model = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device).to(torch.bfloat16) 
