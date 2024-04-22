@@ -737,7 +737,7 @@ training_args = TrainingArguments(
     lr_scheduler_type = "cosine", 
 ) 
 print(colored("resume_from_checkpoint is {}".format(args.resume_from_checkpoint), "red")) 
-weightmodelfirst = next(small_model.parameters()) 
+weightmodelfirst = next(model.parameters()) 
 # print(weightmodelfirst.dtype) 
 print(colored(weightmodelfirst.dtype, "red")) 
 
