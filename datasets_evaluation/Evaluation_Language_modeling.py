@@ -1080,7 +1080,8 @@ def get_dataset(datasetname):
             datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
     elif datasetname == "c4": 
         dfiles = [] 
-        filename = "c4_file1.json" 
+        # filename = "c4_file1.json" 
+        filename = "c4_file150.json" 
         dfiles.append(dir_c4 + filename) 
         datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
     elif datasetname == "pg19": 

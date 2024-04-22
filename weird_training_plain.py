@@ -244,6 +244,7 @@ parser.add_argument("--batch_size", type = int, default = 64)
 parser.add_argument("--num_epochs", type = int, default = 1) 
 parser.add_argument("--usedatasettype", type = str, choices = ["synthesized", "c4"], default = "synthesized") 
 parser.add_argument("--path_d", type = int, default = None) # this is the argument that has to be specified 
+parser.add_argument("--wandbsession", type = str, default = None) 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
@@ -779,7 +780,11 @@ if trainer.accelerator.is_main_process and has_wandb:
     wandblogconfigs = training_args.to_dict() 
     wandblogconfigs["git_commit"] = commit_hash 
     wandblogconfigs["time_hash"] = hash_of_time 
-    wandb.init(project = "chunkedlargefinetuning", config = wandblogconfigs, name = "plainmodel{}_{}".format(today, args.model_name)) 
+    wandb.init(project = "chunkedlargefinetuning", 
+               config = wandblogconfigs, 
+               name = "plainmodel{}_{}".format(today, args.model_name), 
+               id = args.wandbsession, 
+               resume = True if args.resume_from_checkpoint is not None else False) 
 
 torch.autograd.set_detect_anomaly(True) 
 
@@ -790,6 +795,7 @@ if args.path_d > 0 and args.resume_from_checkpoint is None:
     raise ValueError("please specify the path to the checkpoint file") 
 
 if args.resume_from_checkpoint is not None: 
+    assert args.wandbsession is not None, "please specify the wandb session name" 
     trainer.train(resume_from_checkpoint = args.resume_from_checkpoint) 
 else: 
     trainer.train() 

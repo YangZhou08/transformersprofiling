@@ -249,6 +249,7 @@ parser.add_argument("--data_compensation", action = "store_true")
 parser.add_argument("--first_n_rows", type = int, default = None) 
 parser.add_argument("--newdataset", action = "store_true") 
 parser.add_argument("--num_epoch", type = int, default = 1) 
+parser.add_argument("--wandbsession", type = str, default = None)
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
@@ -1521,7 +1522,7 @@ training_args = TrainingArguments(
     # resume_from_checkpoint = args.resume_from_checkpoint, 
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
-    num_train_epochs=1 if args.usedatasettype == "c4" else 1,            # NOTE this requirement is a must for using disconnecteddataset 
+    num_train_epochs=1 if args.usedatasettype == "c4" else args.num_epoch,            # NOTE this requirement is a must for using disconnecteddataset 
     per_device_train_batch_size = args.batch_size,  # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=args.batch_size, # evaluation batch size 
@@ -1628,7 +1629,10 @@ if trainer.accelerator.is_main_process and has_wandb:
     wandblogconfigs["model_name"] = model_name 
     wandblogconfigs["texteval"] = model_path + text_eval 
     # wandb.init(project = "llm160m", config = training_args, name="{}_{}".format(today, project_setting)) 
-    wandb.init(project = "llm160m", config = wandblogconfigs, name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain")) 
+    wandb.init(project = "llm160m", 
+               config = wandblogconfigs, 
+               name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain") 
+    ) 
 
 print("experiment-setting is {}".format(trainer.experiment_setting)) 
 # print("***** Using input condensed tokens {} *****".format("yes" if trainer.input_condensed else "no")) 
