@@ -5,7 +5,7 @@
 # accelerate launch --main_process_port 29510 --num_processes 2 --num_machines 1 weird_training_addinglarge.py --experiment_setting setting0 --kernel_size 4 --model_name tinyllama --batch_size 32 --use_large_model --autoregressive_first_element 
 # accelerate launch --main_process_port 29510 --num_processes 4 --num_machines 1 weird_training_addingextralarge.py --experiment_setting setting0 --kernel_size 2 --model_name llama2_7b --use_large_model --autoregressive_first_element --batch_size 16 --usedatasettype c4 
 # accelerate launch --main_process_port 29510 --num_processes 1 --num_machines 1 weird_training_addinglarge.py --experiment_setting setting0 --kernel_size 7 --model_name tinyllama --use_large_model --autoregressive_first_element --batch_size 8 --debug 
-accelerate launch --main_process_port 29510 --num_processes 1 --num_machines 1 weird_training_plain.py --model_name tinyllama --batch_size 16 --usedatasettype c4 
+accelerate launch --main_process_port 29510 --num_processes 1 --num_machines 1 weird_training_plain.py --model_name tinyllama --batch_size 16 --usedatasettype c4 --path_d 0 
 # accelerate launch --main_process_port 29512 --num_processes 1 --num_machines 1 largemodelfinetuning_precisionup.py --large_model tinyllama --kernel_size 7 --alpha 0.5 --ce_loss_only --experiment_setting setting0 --use_new_small_model_checkpoint --group_compress --batch_size 64 --freeze_large_model --lr 2e-4 
 # python small_model_test_ben.py --kernel_size 7 --use_pretrained_small_model --finetuned_small_model_checkpoint YangZhoumill/deciphering_7_setting0_llama-160m --large_model tinyllama --batch_size 32 --ce_loss_only --debug --use_new_small_model_checkpoint --experiment_setting setting3 
 
