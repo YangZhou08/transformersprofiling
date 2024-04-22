@@ -1446,8 +1446,8 @@ dictionary_max_length = {2 : 259, 3 : 259, 4 : 257, 5 : 256, 6 : 259, 7 : 260, 1
 if args.usedatasettype == "synthesized": 
     datasetnew = CustomDataset(max_length = dictionary_max_length[args.kernel_size], data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed) 
     train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.05 = 36k 
-                                                 # 356k * 0.99 = 352k 356k * 0.01 = 3.6k 
-                                                 # 5 * 356k = 1780000, 1780000 * 0.98 = 1744400, 1780000 * 0.02 = 35600 
+                                                     # 356k * 0.99 = 352k 356k * 0.01 = 3.6k 
+                                                     # 5 * 356k = 1780000, 1780000 * 0.98 = 1744400, 1780000 * 0.02 = 35600 
 else: 
     train_set = CustomDataset(max_length = dictionary_max_length[args.kernel_size], data_dir = datapath_c4, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed, use_c4 = True, istraining = True) 
     test_set = CustomDataset(max_length = dictionary_max_length[args.kernel_size], data_dir = datapath_c4, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed, use_c4 = True, istraining = False) 
