@@ -766,6 +766,9 @@ if trainer.accelerator.is_main_process and has_wandb:
 
 torch.autograd.set_detect_anomaly(True) 
 
+if args.path_d is None: 
+    raise ValueError("please specify the path to the checkpoint file") 
+
 if args.path_d > 0 and args.resume_from_checkpoint is None: 
     raise ValueError("please specify the path to the checkpoint file") 
 
