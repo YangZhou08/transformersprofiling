@@ -1521,7 +1521,7 @@ training_args = TrainingArguments(
     # resume_from_checkpoint = args.resume_from_checkpoint, 
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
-    num_train_epochs=1,           # NOTE this requirement is a must for using disconnecteddataset 
+    num_train_epochs=1 if args.usedatasettype == "c4" else 1,            # NOTE this requirement is a must for using disconnecteddataset 
     per_device_train_batch_size = args.batch_size,  # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=8,  # accumulating the gradients before updating the weights
     per_device_eval_batch_size=args.batch_size, # evaluation batch size 
