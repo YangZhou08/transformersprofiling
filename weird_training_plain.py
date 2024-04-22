@@ -248,6 +248,7 @@ print(args)
 if "lovelace" in hostname: 
     dir_models = "/home/yangzho6/model_checkpoints/" 
     dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
+    datapath_c4 = "/home/yangzho6/c4_parts/downloads/" 
 elif "ada" in hostname: 
     dir_models = "/home/beidic/yangzho6/model_checkpoints/" 
     dir_sdata = "/home/beidic/yangzho6/c4llm_synthesized/" 
