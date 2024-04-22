@@ -236,7 +236,9 @@ parser.add_argument("--embedding_reinitialization_type", type = str, default = N
 parser.add_argument("--cosine_similarity", action = "store_true") 
 parser.add_argument("--use_old_checkpoint", action = "store_true") 
 parser.add_argument("--batch_size", type = int, default = 64) 
-parser.add_argument("--num_epochs", type = int, default = 5) 
+parser.add_argument("--num_epochs", type = int, default = 1) 
+parser.add_argument("--usedatasettype", type = str, choices = ["synthesized", "c4"], default = "synthesized") 
+parser.add_argument("--path_d", type = int, default = None) # this is the argument that has to be specified 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
@@ -244,30 +246,22 @@ if args.embedding_pretrained:
 print(args) 
 
 if "lovelace" in hostname: 
-    # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_models = "/home/yangzho6/model_checkpoints/" 
     dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
 elif "ada" in hostname: 
-    # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_models = "/home/beidic/yangzho6/model_checkpoints/" 
     dir_sdata = "/home/beidic/yangzho6/c4llm_synthesized/" 
 else: 
-    # cache_dir = "/home/bc20/yang/transformersprofiling" 
-    # dir_models = "/home/yangzho6/model_checkpoints/" 
-    # dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
     dir_models = "/fsx-storygen/beidic/yang/model_checkpoints/" 
     dir_sdata = "/fsx-storygen/beidic/yang/c4llm_synthesized/" 
+    datapath_c4 = "/fsx-storygen/beidic/hanshi/data/c4/" 
 
-# has_wandb = False # disable for debugging 
-# model_name = "openllama3b" 
-# model_name = "shearedllama2_7b" 
 model_name = args.model_name 
 text_eval = "evaluation_printout_{}_{}_{}.txt".format(commit_hash, hash_of_time, model_name) 
 
 class CustomTrainer(Trainer): 
     def __init__(
         self, 
-        experiment_setting = "setting0", 
         tokenizer = None, 
         commit_hash = None, 
         time_hash = None, 
@@ -279,9 +273,6 @@ class CustomTrainer(Trainer):
         **kwargs, 
     ): 
         super().__init__(*args, **kwargs) 
-        # self.large_model = large_model 
-        # self.generation_config = GenerationConfig(return_dict_in_generate = True) 
-        # self.time_checkpoint = time.time() 
         self.time_checkpoint = 0 
         self.iteration_count = 0 
         self.tokenizer = tokenizer 
@@ -303,22 +294,9 @@ class CustomTrainer(Trainer):
     def training_step(self, model, inputs): 
         model.train() 
         inputs = self._prepare_inputs(inputs) 
-        '''
-        for k, v in inputs.items(): 
-            if isinstance(v, tuple): 
-                print(k, len(v)) 
-            elif isinstance(v, torch.Tensor): 
-                print(k, v.shape) 
-            else: 
-                print(k, v) 
-        ''' 
-        '''
+
         if is_sagemaker_mp_enabled():
-            loss_mb = smp_forward_backward(model, inputs, self.args.gradient_accumulation_steps)
-            return loss_mb.reduce_mean().detach().to(self.args.device) 
-        ''' 
-        if is_sagemaker_mp_enabled():
-            loss_mb = smp_forward_backward(model, inputs, self.args.gradient_accumulation_steps)
+            loss_mb = smp_forward_backward(model, inputs, self.args.gradient_accumulation_steps) 
             return loss_mb.reduce_mean().detach().to(self.args.device) 
         
         with self.compute_loss_context_manager():
@@ -332,17 +310,6 @@ class CustomTrainer(Trainer):
                 scaled_loss.backward()
         else:
             self.accelerator.backward(loss) 
-        '''
-        for name, parameters in model.named_parameters(): 
-            if name == "embed_tokens.weight": 
-                # print(colored("{} has gradient {}".format(name, parameters.grad.data[1][: 100]), "light_magenta")) 
-                for i in range(parameters.grad.data.shape[0]): 
-                    if (parameters.grad.data[i] != 0).any(): 
-                        print(colored("row {} has gradient that is numerically not zero {}".format(i, parameters.grad.data[i][: 20]), "light_magenta")) 
-            else: 
-                print(colored("{} has gradient {}".format(name, parameters.grad.data.view(-1)[: 10]), "light_magenta")) 
-            print("the gradient of {} contains nan or not Ture or False: {}".format(name, torch.isnan(parameters.grad.data.view(-1).any()))) 
-        ''' 
         self.iteration_count += 1 
         print(colored("the training iteration count is {}".format(self.iteration_count), "red")) 
         return loss.detach() / self.args.gradient_accumulation_steps 
@@ -399,19 +366,8 @@ class CustomTrainer(Trainer):
             print(colored("generating images ... at iteration {}".format(self.iteration_count), "yellow")) 
             for layer in [0, 6, 11]: 
                 for head in [0, 6, 11]: 
-                    '''
-                    if isinstance(outputs.attentions, tuple): 
-                        print("the attention mask have shape {}".format(len(outputs.attentions))) 
-                        print("the attention mask first element has shape {}".format(outputs.attentions[0].shape)) 
-                    else: 
-                        print("the attention mask has shape {}".format(outputs.attentions.shape)) 
-                    ''' 
-                    # SimpleSmallModel.plot_attention_map(outputs.attentions, 0, 0, 144, "testing_attention_map.jpg") 
-                    # plot_name = "testing_attention_map_{}_{}_{}.jpg".format(self.commit_hash, self.time_hash) 
                     plot_name = "testing_attention_map_{}_{}.jpg".format(self.commit_hash, self.time_hash) 
                     SimpleSmallModel.plot_attention_map(outputs.attentions, layer, head, input_ids.shape[1], plot_name) 
-                    # print(outputs.attentions[0][0][0][64]) 
-                    # time.sleep(0.1) # ensure the file is written to disk 
                     field_name = "layer{}_head{}".format(layer, head) 
 
                     try: 
@@ -539,12 +495,7 @@ class CustomTrainer(Trainer):
             loss, logits, labels = self.prediction_step(model, inputs, False, ignore_keys=ignore_keys) 
             if local_device == None: 
                 local_device = loss.device 
-            # print(ignore_keys) 
-            # print(colored("the loss is {}".format(loss), "yellow")) 
-            # print(colored("the shape of logits is {} {}".format(logits.shape, "yellow"))) 
-            # print(colored("the shape of logits if {} {}".format(len(logits), logits[0].shape), "yellow")) 
-            # print(colored("the shape of logits is {}".format(logits.shape), "yellow")) 
-            # print(colored("the shape of labels is {}".format(labels.shape), "yellow")) 
+            
             total_loss += loss.item() 
             local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"], step) 
             total_correct_words += local_metrics["correct_words"] 
@@ -614,6 +565,89 @@ class CustomTrainer(Trainer):
 
         return EvalLoopOutput(predictions=all_preds, label_ids=all_labels, metrics=metrics, num_samples=num_samples) 
 
+class CustomDataset: 
+    def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7, input_condensed = True, use_c4 = False): 
+        self.synthesize_dir = data_dir 
+        dfiles = [] 
+        topk = None 
+        print(colored("hostname is {}".format(hostname), "yellow")) 
+        if not use_c4: 
+            if "lovelace" in hostname: 
+                filename = "c4synthesized_file1_kernel7_0.json" 
+                dfiles.append(self.synthesize_dir + "{}/".format(model_name) + filename) 
+            else: 
+                for i in range(0, 8): 
+                    filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
+                    dfiles.append(self.synthesize_dir + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
+        else: 
+            if "lovelace" in hostname: 
+                for i in range(1, 9): 
+                    filename = "c4_file{}.json".format(i) 
+                    dfiles.append(self.synthesize_dir + filename) 
+            else: 
+                print(colored("using c4 files {} to {}".format(args.path_d * 8, args.path_d * 8 + 8), "yellow")) 
+                for i in range(args.path_d * 8, args.path_d * 8 + 8): 
+                # for i in range(0, 8): 
+                    filename = "c4_file{}.json".format(i) 
+                    dfiles.append(self.synthesize_dir + filename) 
+        
+        if args.debug: 
+            self.dataset = load_dataset('json', data_files = dfiles, split = "train[:2000]") 
+        else: 
+            self.dataset = load_dataset('json', data_files = dfiles, split = "train") 
+        
+        self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
+        self.kernel_size = kernel_size 
+        self.input_condensed = input_condensed 
+        self.use_c4 = use_c4 
+        
+        self.tokenizer = tokenizer 
+        self.max_length = max_length 
+    
+    def __len__(self): 
+        return len(self.dataset) 
+    
+    def preprocess_dataset(self): 
+        def encode_with_truncation(examples): 
+            # return tokenizer(examples["text"], truncation = True, padding = "max_length", 
+                            #  max_length = max_length, return_special_tokens_mask = True) 
+            return tokenizer(examples["text"], padding = "max_length", max_length = self.max_length, 
+                            return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                            add_special_tokens = True) 
+        
+        def loading_condensed_embeds(examples): 
+            # not used because it consumes too much memory 
+            return {"condensed_embeds": torch.load(examples["condensed_token_path"])} 
+        
+        self.dataset = self.dataset.map(encode_with_truncation, batched = True, num_proc = 4) 
+        # self.dataset = self.dataset.map(loading_condensed_embeds, batched = True, num_proc = 4) 
+        # self.dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+    
+    def __getitem__(self, idx): 
+        item = self.dataset[idx] 
+        
+        if self.tokenizer is not None: 
+            encoded_text = self.tokenizer(
+                item["text"], 
+                add_special_tokens = True, 
+                padding = "max_length", 
+                max_length = self.max_length, 
+                return_attention_mask = True, 
+                return_tensors = "pt", 
+                truncation = True, 
+            ) 
+            
+            item['input_ids'] = encoded_text['input_ids'].squeeze(0) 
+            item['attention_mask'] = encoded_text['attention_mask'].squeeze(0) 
+        
+        return item 
+    
+    def split(self, train_size): 
+        if isinstance(train_size, float): 
+            train_size = int(train_size * len(self)) 
+        eval_size = len(self) - train_size 
+        return random_split(self, [train_size, evl_size]) 
+                
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 
 if tokenizer.pad_token is not None: 
@@ -622,23 +656,19 @@ else:
     tokenizer.pad_token = tokenizer.eos_token 
     print("We now use eos_token as pad token") 
 tokenizer.padding_side = "left" # we pad from the left 
-
+'''
 dfiles = [] 
 print(colored("hostname is {}".format(hostname), "yellow")) 
 topk = None 
 if "ada" in hostname: 
     for i in range(0, 2): 
-        # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
-        # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, i) 
         filename = "c4synthesized_file1_kernel7_{}.json".format(i) 
         dfiles.append(dir_sdata + "{}/".format(model_name) + filename) 
 elif "lovelace" in hostname: 
-    # filename = "c4synthesized_file1_kernel{}_{}.json".format(kernel_size, 0) 
     filename = "c4synthesized_file1_kernel7_0.json" 
     dfiles.append(dir_sdata + "{}/".format(model_name) + filename) 
 else: 
     for i in range(0, 8): 
-        # filename = "c4synthesized_file1_kernel{}_{}_combined.json".format(kernel_size, i) 
         filename = "c4synthesized_file1_kernel7_{}_combined.json".format(i) 
         dfiles.append(dir_sdata + "{}_topk{}/".format(model_name, topk if topk is not None else "na") + filename) 
 
@@ -656,26 +686,30 @@ test_dataset = d["test"].map(encode_with_truncation, batched = True, num_proc = 
 
 train_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
 test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
-
-for i in range(0, 5): 
-    example = train_dataset[i] 
-    print("The input ids is {}".format(example["input_ids"])) 
-    print("The attention mask is {}".format(example["attention_mask"])) 
-    # print("The text is {}".format(example["text"])) 
+''' 
+if args.usedatasettype == "synthesized": 
+    datasetnew = CustomDataset(max_length = 260, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = 7, input_condensed = args.input_condensed) 
+else: 
+    datasetnew = CustomDataset(max_length = 260, data_dir = datapath_c4, tokenizer = tokenizer, kernel_size = 7, input_condensed = args.input_condensed, use_c4 = True) 
+train_dataset, test_dataset = datasetnew.split(0.98) 
 
 if args.model_name == "tinyllama": 
-    # model = LlamaForCausalLM2.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device).to(torch.bfloat16) 
-    config = LlamaConfig.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device).to(torch.bfloat16) 
-    model = LlamaForCausalLM2(config).to(torch_device).to(torch.bfloat16) 
-    if args.embedding_reinitialization_type is not None: 
-        print(colored(args.embedding_reinitialization_type, "red")) 
-        model.reinitialize_embeddings(type = args.embedding_reinitialization_type) 
+    model = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device).to(torch.bfloat16) 
 elif args.model_name == "small_model": 
     # small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
     model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device).to(torch.bfloat16) 
 
 model.train() 
 model.config.pad_token_id = tokenizer.pad_token_id 
+
+training_weights_group = [] 
+for k, v in model.named_parameters(): 
+    training_weights_group.append(v) 
+print("length of the weight group is {}".format(len(training_weights_group))) 
+
+custom_optimizer = torch.optim.AdamW([
+    {"params": training_weights_group, "lr": args.group1lr}, 
+]) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
@@ -688,17 +722,23 @@ training_args = TrainingArguments(
     per_device_train_batch_size = args.batch_size if not args.debug else 10,
     gradient_accumulation_steps=args.gradient_accumulation_steps,
     per_device_eval_batch_size= args.batch_size if not args.debug else 10, 
-    logging_steps = 100 if not args.debug else 1,  
-    save_steps = 100 if not args.debug else 1, 
-    learning_rate = 2e-4, 
+    # logging_steps = 100 if not args.debug else 1, 
+    logging_steps = 500 if not args.debug else 1, 
+    # save_steps = 100 if not args.debug else 1, 
+    save_steps = 500 if not args.debug else 1, 
+    learning_rate = 2e-5, 
     save_total_limit=5,
-    warmup_steps = 25, 
+    warmup_steps = 100, 
     label_names = ["labels"], 
     remove_unused_columns = True, 
     save_strategy = "steps", 
     evaluation_strategy = "steps", 
+    lr_scheduler_type = "cosine", 
 ) 
 print(colored("resume_from_checkpoint is {}".format(args.resume_from_checkpoint), "red")) 
+weightmodelfirst = next(small_model.parameters()) 
+# print(weightmodelfirst.dtype) 
+print(colored(weightmodelfirst.dtype, "red")) 
 
 trainer = CustomTrainer(
     model = model, 
@@ -708,6 +748,7 @@ trainer = CustomTrainer(
     # eval_dataset = test_dataset, 
     eval_dataset = test_dataset, 
     data_collator = data_collator, 
+    optimizers = (custom_optimizer, None), 
     # optimizers = (custom_optimizer, None), 
     tokenizer = tokenizer, 
     time_hash = hash_of_time, 
@@ -722,7 +763,10 @@ if trainer.accelerator.is_main_process and has_wandb:
     wandblogconfigs["time_hash"] = hash_of_time 
     wandb.init(project = "chunkedlargefinetuning", config = wandblogconfigs, name = "plainmodel{}_{}".format(today, args.model_name)) 
 
-torch.autograd.set_detect_anomaly(True)
+torch.autograd.set_detect_anomaly(True) 
+
+if args.path_d > 0 and args.resume_from_checkpoint is None: 
+    raise ValueError("please specify the path to the checkpoint file") 
 
 if args.resume_from_checkpoint is not None: 
     trainer.train(resume_from_checkpoint = args.resume_from_checkpoint) 
