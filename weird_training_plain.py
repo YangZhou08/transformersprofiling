@@ -647,7 +647,7 @@ class CustomDataset:
         if isinstance(train_size, float): 
             train_size = int(train_size * len(self)) 
         eval_size = len(self) - train_size 
-        return random_split(self, [train_size, evl_size]) 
+        return random_split(self, [train_size, eval_size]) 
                 
 tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
 
