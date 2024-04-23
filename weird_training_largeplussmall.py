@@ -255,7 +255,7 @@ parser.add_argument("--weighted_type", type = str, choices = ["scalar", "linear"
 args = parser.parse_args() 
 if args.embedding_pretrained: 
     args.group2lr = None # we enforce it 
-assert args.finetune_checkpoint is not None 
+# assert args.finetune_checkpoint is not None 
 print(args) 
 
 if "lovelace" in hostname: 
