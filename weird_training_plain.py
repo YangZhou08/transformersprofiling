@@ -784,7 +784,8 @@ if trainer.accelerator.is_main_process and has_wandb:
                config = wandblogconfigs, 
                name = "plainmodel{}_{}".format(today, args.model_name), 
                id = args.wandbsession, 
-               resume = True if args.resume_from_checkpoint is not None else False) 
+               resume = True if args.resume_from_checkpoint is not None else False 
+    ) 
 
 torch.autograd.set_detect_anomaly(True) 
 
