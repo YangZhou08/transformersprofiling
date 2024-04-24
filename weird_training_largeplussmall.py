@@ -541,6 +541,35 @@ class CustomTrainer(Trainer):
                 label_adjustment = False, 
                 first_n_rows = args.first_n_rows, 
             ) 
+            
+        elif isinstance(getattr(model, "module", model), LlamaWeirdLargeFullCoverage) or isinstance(model, LlamaWeirdLargeFullCoverage): 
+            batch_size, seq_len = attention_mask.shape 
+            if not isinstance(model, LlamaWeirdLargeFullCoverage): 
+                addedon_length = (seq_len - model.module.addonmodel_start) // self.sliding_window_length 
+            else: 
+                addedon_length = (seq_len - model.addonmodel_start) // self.sliding_window_length 
+            original_attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
+            if self.accelerator.is_main_process: 
+                print("printing out the experiment_setting: {} eval_mode: {}".format(self.experiment_setting, self.eval_mode)) 
+            print(colored("the length of input_ids is {}".format(input_ids.shape[1]), "green")) 
+            outputs = model(
+                large_input_ids = input_ids, 
+                small_input_ids = input_ids, 
+                attention_mask = attention_mask, 
+                original_attention_mask = original_attention_mask, 
+                labels = label2, 
+                output_hidden_states = True, 
+                output_attentions = True, 
+                return_dict = True, 
+                # condensed_fashion = "ground_truth", 
+                autoregressive_first_element = self.autoregressive_first_element, 
+                label_adjustment = False, 
+                # usingsecondtolastvectors = 
+                usingsecondtolastvectors = args.usingsecondlast, 
+                weight_added = args.use_weighted_loss, 
+                weight_type = args.weighted_type, 
+            ) 
+            
         else: 
             outputs = model(
                 input_ids = input_ids, 
