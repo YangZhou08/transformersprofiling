@@ -30,6 +30,7 @@ from src.transformers.models.llama.modeling_llama import SimpleSmallModel2
 from src.transformers.models.llama.modeling_llama import LlamaWeirdLargeTest 
 from src.transformers.models.llama.modeling_llama import LlamaWeirdLargeTestmixedb 
 from src.transformers.models.llama.modeling_llama import LlamaWeirdLargeIterative 
+from src.transformers.models.llama.modeling_llama import LlamaWeirdLargeFullCoverage 
 from src.transformers.modeling_utils import PreTrainedModel, load_sharded_checkpoint, unwrap_model 
 import time 
 from torch.utils.data import random_split 
@@ -1160,7 +1161,10 @@ if trainer.accelerator.is_main_process and has_wandb:
     wandblogconfigs["model_name"] = model_name 
     wandblogconfigs["texteval"] = model_path + text_eval 
     # wandb.init(project = "llm160m", config = training_args, name="{}_{}".format(today, project_setting)) 
-    wandb.init(project = "llm160m", config = wandblogconfigs, name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain")) 
+    wandb.init(project = "chunkedlargefinetuning", 
+               config = wandblogconfigs, 
+               name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain"), 
+    ) 
 
 print("experiment-setting is {}".format(trainer.experiment_setting)) 
 # print("***** Using input condensed tokens {} *****".format("yes" if trainer.input_condensed else "no")) 
