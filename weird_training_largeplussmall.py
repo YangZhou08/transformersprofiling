@@ -1136,7 +1136,7 @@ training_args = TrainingArguments(
     overwrite_output_dir=True,      
     num_train_epochs = 1 if args.usedatasettype == "c4" else args.num_epoch,            # number of training epochs, feel free to tweak
     per_device_train_batch_size = args.batch_size,  # the training batch size, put it as high as your GPU memory fits
-    gradient_accumulation_steps=16,  # accumulating the gradients before updating the weights 
+    gradient_accumulation_steps=32,  # accumulating the gradients before updating the weights 
     per_device_eval_batch_size=args.batch_size, # evaluation batch size 
     # logging_steps=1, 
     logging_steps=500 if not args.debug else 1,            # evaluate, log and save model checkpoints every 1000 step
