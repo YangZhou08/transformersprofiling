@@ -1168,7 +1168,7 @@ training_args = TrainingArguments(
     load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
     save_total_limit=5,            # whether you don't have much space so you let only 3 model weights saved in the disk 
     lr_scheduler_type = "cosine", 
-    warmup_steps = 1000, 
+    warmup_steps = 500,
     label_names = ["labels"], 
 ) 
 print(colored("resum_from_checkpoint is {}".format(args.resume_from_checkpoint), "red")) 
