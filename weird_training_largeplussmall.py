@@ -1157,7 +1157,7 @@ training_args = TrainingArguments(
     logging_steps=100 if not args.debug else 1,            # evaluate, log and save model checkpoints every 1000 step
     # save_steps=1000, 
     # save_steps = 2000, 
-    logging_steps=100 if not args.debug else 1, 
+    save_steps=100 if not args.debug else 1, 
     # save_steps = 1, 
     # learning_rate=5e-7, 
     # learning_rate=5e-5, 
@@ -1168,7 +1168,7 @@ training_args = TrainingArguments(
     load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
     save_total_limit=5,            # whether you don't have much space so you let only 3 model weights saved in the disk 
     lr_scheduler_type = "cosine", 
-    warmup_steps = 500, 
+    warmup_steps = 1000, 
     label_names = ["labels"], 
 ) 
 print(colored("resum_from_checkpoint is {}".format(args.resume_from_checkpoint), "red")) 
