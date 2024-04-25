@@ -688,13 +688,23 @@ class CustomTrainer(Trainer):
             # print(l2dist) 
             logits = logits[:, :-1, :] 
             print("the shape of logits is {}".format(logits.shape)) 
+        elif isinstance(getattr(model, "module", model), LlamaWeirdLargeFullCoverage) or isinstance(model, LlamaWeirdLargeFullCoverage): 
+            l2dist = logits[1].reshape(-1) 
+            ce_loss = logits[2].reshape(-1) 
+            l2dist_input = logits[3].reshape(-1) 
+            cos_sim_input = logits[4].reshape(-1) 
+            logits = logits[0] 
+            # print(l2dist) 
+            logits = logits[:, :-1, :] 
+            print("the shape of logits is {}".format(logits.shape)) 
         else: 
             logits = logits[:, :-1, :] 
             # input_attention_mask = input_attention_mask[:, :-1] 
         input_attention_mask = input_attention_mask[:, 1:] 
         labels = labels[:, 1:] 
         preds = torch.argmax(logits, dim = -1) 
-        if self.accelerator.is_main_process and outside_step == 0 and not (isinstance(getattr(model, "module", model), LlamaWeirdLargeTestmixedb) or isinstance(model, LlamaWeirdLargeTestmixedb)): 
+        '''
+        if self.accelerator.is_main_process and outside_step == 0 and not (isinstance(getattr(model, "module", model), LlamaWeirdLargeFullCoverage) or isinstance(model, LlamaWeirdLargeFullCoverage)): 
             print("*** evaluating at step {} ***".format(self.iteration_count)) 
             # f = open("key_notes{}.md".format(self.commit_hash), "a") 
             # f.write("writing key notes at step {}".format(self.iteration_count)) 
@@ -738,6 +748,7 @@ class CustomTrainer(Trainer):
             # f.close() 
             # self.artifact.add_file("key_notes{}.md".format(self.commit_hash), name = "key_notes.md") 
             # wandb.log_artifact(self.artifact) 
+        ''' 
         if self.accelerator.state.num_processes > 1: 
             # torch.distributed.barrier() # I found that barrier() works, but it still not as good as wait_for_everyone() 
             self.accelerator.wait_for_everyone() 
@@ -752,6 +763,7 @@ class CustomTrainer(Trainer):
         # print("shape of indices_to_keep: {}".format(indices_to_keep.shape)) 
         interest_token_count = torch.sum(indices_to_keep[:, 63 :].reshape(-1), dim = 0).item() # check whether 63 makes sense and make it more general if it is correct or not 
         # accuracy = accuracy_score(labels[indices_to_keep], preds[indices_to_keep]) 
+        '''
         if not (isinstance(getattr(model, "module", model), LlamaWeirdLargeTestmixedb) or isinstance(model, LlamaWeirdLargeTestmixedb)): 
             correct_words = torch.sum((preds[indices_to_keep] == labels[indices_to_keep]).view(-1), dim = 0).item() 
             # print("shape of indices_to_keep: {}".format(indices_to_keep.shape)) 
@@ -760,6 +772,9 @@ class CustomTrainer(Trainer):
         else: 
             correct_words = 0 
             interest_correct_count = 0 
+        ''' 
+        correct_words = 0 
+        interest_correct_count = 0 
         print("correct words: {} and total words: {}".format(correct_words, total_valid_tokens)) 
         print("interest correct words: {} and interest total words: {}".format(interest_correct_count, interest_token_count)) 
         # use preds to compute f1 score 
