@@ -251,6 +251,7 @@ parser.add_argument("--first_n_rows", type = int, default = None)
 parser.add_argument("--usingsecondlast", action = "store_true") 
 parser.add_argument("--use_weighted_loss", action = "store_true") 
 parser.add_argument("--num_epoch", type = int, default = 1) 
+parser.add_argument("--fullcoverage", action = "store_true") 
 parser.add_argument("--weighted_type", type = str, choices = ["scalar", "linear"], default = None) 
 
 args = parser.parse_args() 
@@ -1085,7 +1086,10 @@ print(colored("we use large model", "cyan"))
 # large_model = LlamaWeirdLargeIterative.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
 # large_model = LlamaWeirdLargeTest.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
 assert args.finetune_checkpoint is not None 
-large_model = LlamaWeirdLargeFullCoverage.from_pretrained(args.finetune_checkpoint) 
+if args.fullcoverage: 
+    large_model = LlamaWeirdLargeFullCoverage.from_pretrained(args.finetune_checkpoint) 
+else: 
+    large_model = LlamaWeirdLargeTest.from_pretrained(args.finetune_checkpoint) 
 # large_model = LlamaWeirdLargeTest.from_pretrained(args.finetune_checkpoint) 
 # large_model = LlamaWeirdLargeTestmixedb.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
 large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True) 
