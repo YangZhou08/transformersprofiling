@@ -345,10 +345,10 @@ for i, batch in enumerate(trainer.get_eval_dataloader(eval_dataset)):
     labels = labels[..., 1:].contiguous() 
     print("logits shape is {}".format(logits.shape)) 
     
-    ce_loss = CrossEntropyLoss() 
+    ce_loss = CrossEntropyLoss(reduction = "none") 
     
     loss = ce_loss(logits.view(-1, logits.shape[-1]), labels.view(-1)) 
-    print("loss is {}".format(loss)) 
+    print("loss.shape is {}".format(loss.shape)) 
+    # print("loss is {}".format(loss)) 
     
-    if i == 10: 
-        break 
+    
