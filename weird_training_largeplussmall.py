@@ -1232,7 +1232,7 @@ print("***** Using input condensed tokens {} *****".format("yes" if args.input_c
 
 torch.autograd.set_detect_anomaly(True) 
 if trainer.accelerator.is_main_process and has_wandb: 
-    wandb.watch(trainer.model, log = "parameters", log_freq = 2000) 
+    wandb.watch(trainer.model, log = "parameters", log_freq = 10000) 
     
 trainer.train(resume_from_checkpoint = args.resume_from_checkpoint) 
 
