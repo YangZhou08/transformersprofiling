@@ -17,6 +17,7 @@ from transformers.models.llama.modeling_llama import LlamaForCausalLM
 from transformers import Trainer, TrainingArguments 
 from transformers import DataCollatorForLanguageModeling 
 from torch.utils.data import random_split 
+from torch.nn import CrossEntropyLoss 
 
 from tqdm import tqdm 
 
@@ -341,3 +342,9 @@ for i, batch in enumerate(trainer.get_eval_dataloader(eval_dataset)):
                     labels = None) 
     logits = outputs.logits 
     print("logits shape is {}".format(logits.shape)) 
+    
+    ce_loss = CrossEntropyLoss() 
+    
+    loss = ce_loss(logits.view(-1, logits.shape[-1]), labels.view(-1)) 
+    print("loss is {}".format(loss)) 
+    break 
