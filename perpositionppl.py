@@ -423,3 +423,4 @@ for i, batch in tqdm(enumerate(trainer.get_eval_dataloader(eval_dataset))):
 
 accumulate_loss /= accumulate_count 
 print("accumulate_loss is {}".format(accumulate_loss)) 
+print("sum is {}".format(sum)) 
