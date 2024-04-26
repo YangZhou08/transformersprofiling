@@ -351,4 +351,5 @@ for i, batch in enumerate(trainer.get_eval_dataloader(eval_dataset)):
     print("loss.shape is {}".format(loss.shape)) 
     # print("loss is {}".format(loss)) 
     
-    
+    if i == 10: 
+        break 
