@@ -347,4 +347,6 @@ for i, batch in enumerate(trainer.get_eval_dataloader(eval_dataset)):
     
     loss = ce_loss(logits.view(-1, logits.shape[-1]), labels.view(-1)) 
     print("loss is {}".format(loss)) 
-    break 
+    
+    if i == 10: 
+        break 
