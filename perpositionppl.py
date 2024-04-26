@@ -333,5 +333,11 @@ trainer = Trainer(
 
 for i, batch in enumerate(trainer.get_eval_dataloader(eval_dataset)): 
     print("i is {}".format(i)) 
-    print(batch) 
-    break 
+    input_ids = batch["input_ids"].to(torch_device) 
+    attention_mask = batch["attention_mask"].to(torch_device) 
+    labels = batch["labels"].to(torch_device) 
+    outputs = model(input_ids = input_ids, 
+                    attention_mask = attention_mask, 
+                    labels = None) 
+    logits = outputs.logits 
+    print("logits shape is {}".format(logits.shape)) 
