@@ -341,9 +341,10 @@ for i, batch in tqdm(enumerate(trainer.get_eval_dataloader(eval_dataset))):
     input_ids = batch["input_ids"].to(torch_device) 
     attention_mask = batch["attention_mask"].to(torch_device) 
     labels = batch["labels"].to(torch_device) 
-    outputs = model(input_ids = input_ids, 
-                    attention_mask = attention_mask, 
-                    labels = None) 
+    with torch.no_grad(): 
+        outputs = model(input_ids = input_ids, 
+                        attention_mask = attention_mask, 
+                        labels = None) 
     logits = outputs.logits 
     logits = logits[..., :-1, :].contiguous() 
     labels = labels[..., 1:].contiguous() 
