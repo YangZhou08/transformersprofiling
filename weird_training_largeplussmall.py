@@ -254,6 +254,7 @@ parser.add_argument("--num_epoch", type = int, default = 1)
 parser.add_argument("--fullcoverage", action = "store_true") 
 parser.add_argument("--weighted_type", type = str, choices = ["scalar", "linear"], default = None) 
 parser.add_argument("--warmup_steps", type = int, default = 1000) 
+parser.add_argument("--wandb_session", type = str, default = None) 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
@@ -1152,7 +1153,7 @@ training_args = TrainingArguments(
     overwrite_output_dir=True,      
     num_train_epochs = 1 if args.usedatasettype == "c4" else args.num_epoch,            # number of training epochs, feel free to tweak
     per_device_train_batch_size = args.batch_size,  # the training batch size, put it as high as your GPU memory fits
-    gradient_accumulation_steps=32 if not args.debug else 1,  # accumulating the gradients before updating the weights 
+    gradient_accumulation_steps=8 if not args.debug else 1,  # accumulating the gradients before updating the weights 
     per_device_eval_batch_size=args.batch_size, # evaluation batch size 
     # logging_steps=1, 
     logging_steps=100 if not args.debug else 1,            # evaluate, log and save model checkpoints every 1000 step
@@ -1212,10 +1213,18 @@ if trainer.accelerator.is_main_process and has_wandb:
     wandblogconfigs["model_name"] = model_name 
     wandblogconfigs["texteval"] = model_path + text_eval 
     # wandb.init(project = "llm160m", config = training_args, name="{}_{}".format(today, project_setting)) 
-    wandb.init(project = "chunkedlargefinetuning", 
-               config = wandblogconfigs, 
-               name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain"), 
-    ) 
+    if args.resume_from_checkpoint is not None: 
+        wandb.init(project = "chunkedlargefinetuning", 
+                   config = wandblogconfigs, 
+                   name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain"), 
+                   resume = True, 
+                   id = args.wandb_session, 
+        ) 
+    else: 
+        wandb.init(project = "chunkedlargefinetuning", 
+                config = wandblogconfigs, 
+                name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain"), 
+        ) 
 
 print("experiment-setting is {}".format(trainer.experiment_setting)) 
 # print("***** Using input condensed tokens {} *****".format("yes" if trainer.input_condensed else "no")) 
