@@ -30,6 +30,8 @@ import socket
 hostname = socket.gethostname() 
 print("Hostname: ", hostname) 
 
+torch.set_printoptions(precision=3) 
+
 if "lovelace" in hostname: 
     # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_models = "/home/yangzho6/model_checkpoints/" 
