@@ -336,8 +336,8 @@ trainer = Trainer(
 
 accumulate_loss = torch.zeros((259)).to(torch_device).float() 
 accumulate_count = torch.zeros((259,)).to(torch_device).float() 
-for i, batch in enumerate(trainer.get_eval_dataloader(eval_dataset)): 
-    print("i is {}".format(i)) 
+for i, batch in tqdm(enumerate(trainer.get_eval_dataloader(eval_dataset))): 
+    # print("i is {}".format(i)) 
     input_ids = batch["input_ids"].to(torch_device) 
     attention_mask = batch["attention_mask"].to(torch_device) 
     labels = batch["labels"].to(torch_device) 
@@ -352,12 +352,14 @@ for i, batch in enumerate(trainer.get_eval_dataloader(eval_dataset)):
     ce_loss = CrossEntropyLoss(reduction = "none") 
     
     loss = ce_loss(logits.view(-1, logits.shape[-1]), labels.view(-1)) 
-    print("loss.shape is {}".format(loss.shape)) 
+    # print("loss.shape is {}".format(loss.shape)) 
     mask = loss != 0 
     mask = mask.float() 
     accumulate_loss += loss 
     accumulate_count += mask 
     # print("loss is {}".format(loss)) 
-    print("loss {}".format(loss)) 
-    print("mask {}".format(mask)) 
-    break 
+    # print("loss {}".format(loss)) 
+    # print("mask {}".format(mask)) 
+
+accumulate_loss /= accumulate_count 
+print("accumulate_loss is {}".format(accumulate_loss)) 
