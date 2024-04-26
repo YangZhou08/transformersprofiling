@@ -334,6 +334,8 @@ trainer = Trainer(
     eval_dataset = eval_dataset, 
 ) 
 
+accumulate_loss = torch.zeros((256,)).to(torch_device).float() 
+accumulate_count = torch.zeros((256,)).to(torch_device).float() 
 for i, batch in enumerate(trainer.get_eval_dataloader(eval_dataset)): 
     print("i is {}".format(i)) 
     input_ids = batch["input_ids"].to(torch_device) 
@@ -351,5 +353,11 @@ for i, batch in enumerate(trainer.get_eval_dataloader(eval_dataset)):
     
     loss = ce_loss(logits.view(-1, logits.shape[-1]), labels.view(-1)) 
     print("loss.shape is {}".format(loss.shape)) 
+    mask = loss != 0 
+    mask = mask.float() 
+    accumulate_loss += loss 
+    accumulate_count += mask 
     # print("loss is {}".format(loss)) 
     print("loss {}".format(loss)) 
+    print("mask {}".format(mask)) 
+    break 
