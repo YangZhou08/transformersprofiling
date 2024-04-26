@@ -341,6 +341,8 @@ for i, batch in enumerate(trainer.get_eval_dataloader(eval_dataset)):
                     attention_mask = attention_mask, 
                     labels = None) 
     logits = outputs.logits 
+    logits = logits[..., :-1, :].contiguous() 
+    labels = labels[..., 1:].contiguous() 
     print("logits shape is {}".format(logits.shape)) 
     
     ce_loss = CrossEntropyLoss() 
