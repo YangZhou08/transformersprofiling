@@ -368,9 +368,11 @@ for i, batch in tqdm(enumerate(trainer.get_eval_dataloader(eval_dataset))):
     batch_size, seq_len = original_attention_mask.shape 
     # addedon_length = (seq_len - self.n - 1) // self.n 
     addedon_length = (seq_len - 7 - 1) // 7 
-    original_attention_mask2 = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
+    
     large_input_ids = input_ids 
     small_input_ids = input_ids 
+    
+    original_attention_mask2 = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
     with torch.no_grad(): 
         outputs = model(
             large_input_ids = large_input_ids, 
