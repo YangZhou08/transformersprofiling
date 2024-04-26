@@ -67,6 +67,11 @@ tokenizer.padding_side = "left"
 
 kernel_size = 7 
 
+parser = argparse.ArgumentParser() 
+parser.add_argument("--loading_from_checkpoint", type = str, default = None) 
+
+args = parser.parse_args() 
+
 class CustomDataset: 
     # def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7): 
     def __init__(self, data_dir, large_tokenizer = None, small_tokenizer = None, max_length = 256, kernel_size = 7, topk = None, prompt_length = 64, use_minipile = False, in_training = True): 
@@ -215,8 +220,9 @@ class CustomDataset:
         eval_size = len(self) - train_size 
         return random_split(self, [train_size, eval_size]) 
 
+large_model = LlamaWeirdLargeTest.from_pretrained(args.loading_from_checkpoint, cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+# large_model = LlamaWeirdLargeTest.from_pretrained("/home/yangzho6/model_checkpoints/smallmodelkernelsize7setting0checkpoint-1000").to(torch.bfloat16).to(torch_device) 
 # large_model = LlamaWeirdLargeTest.from_pretrained(args.loading_from_checkpoint, cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
-large_model = LlamaWeirdLargeTest.from_pretrained("/home/yangzho6/model_checkpoints/smallmodelkernelsize7setting0checkpoint-1000").to(torch.bfloat16).to(torch_device) 
 # large_model.set_full_sequence_length_layer_pos(args.full_sequence_length_layer_pos) 
 # large_model.set_sliding_window_length(args.kernel_size) 
 large_model.set_sliding_window_length(7) 
@@ -359,6 +365,7 @@ trainer = Trainer(
 
 accumulate_loss = torch.zeros((259)).to(torch_device).float() 
 accumulate_count = torch.zeros((259,)).to(torch_device).float() 
+sum = torch.zeros((1,)).to(torch_device).float() 
 for i, batch in tqdm(enumerate(trainer.get_eval_dataloader(eval_dataset))): 
     # print("i is {}".format(i)) 
     input_ids = batch["input_ids"].to(torch_device) 
@@ -404,6 +411,7 @@ for i, batch in tqdm(enumerate(trainer.get_eval_dataloader(eval_dataset))):
     ce_loss = CrossEntropyLoss(reduction = "none") 
     
     loss = ce_loss(logits.view(-1, logits.shape[-1]), labels.view(-1)) 
+    sum += loss.sum(0) 
     # print("loss.shape is {}".format(loss.shape)) 
     mask = loss != 0 
     mask = mask.float() 
