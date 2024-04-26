@@ -236,6 +236,7 @@ large_model.addonsmallmodel.config.pad_token_id = tokenizer.pad_token_id
 # small_model.config.pad_token_id = tokenizer.pad_token_id 
 large_model.model.eval() 
 large_model.addonsmallmodel.eval() 
+model = large_model 
 # model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
 # model = model.to(torch_device) 
 # model.eval() 
@@ -362,11 +363,37 @@ for i, batch in tqdm(enumerate(trainer.get_eval_dataloader(eval_dataset))):
     # print("i is {}".format(i)) 
     input_ids = batch["input_ids"].to(torch_device) 
     attention_mask = batch["attention_mask"].to(torch_device) 
+    original_attention_mask = batch["attention_mask"] # (batch_size, 203) 
     labels = batch["labels"].to(torch_device) 
+    batch_size, seq_len = original_attention_mask.shape 
+    # addedon_length = (seq_len - self.n - 1) // self.n 
+    addedon_length = (seq_len - 7 - 1) // 7 
+    original_attention_mask2 = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
+    large_input_ids = input_ids 
+    small_input_ids = input_ids 
     with torch.no_grad(): 
+        outputs = model(
+            large_input_ids = large_input_ids, 
+            small_input_ids = small_input_ids, 
+            # attention_mask = attention_mask, 
+            attention_mask = original_attention_mask, 
+            output_hidden_states = True, 
+            output_attentions = True, 
+            return_dict = True, 
+            # condensed_embed_labels = None, 
+            # original_attention_mask = original_attention_mask, 
+            original_attention_mask = original_attention_mask2, 
+            labels = None, 
+            condensed_embed_labels = None, 
+            label_adjustment = False, 
+            usingsecondtolastvectors = False, 
+            # usingsecondtolastvectors = True, 
+        ) 
+        '''
         outputs = model(input_ids = input_ids, 
                         attention_mask = attention_mask, 
                         labels = None) 
+        ''' 
     logits = outputs.logits 
     logits = logits[..., :-1, :].contiguous() 
     labels = labels[..., 1:].contiguous() 
