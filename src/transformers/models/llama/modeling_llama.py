@@ -5858,6 +5858,9 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             # select and shift the logits 
             logits = logits[:, selected_indices, :] 
             
+            first_pos_ce_loss = torch.tensor(0) 
+            second_pos_ce_loss = torch.tensor(0) 
+            
         # print(colored("mask_list_pos {}".format(mask_list_pos), "red")) 
         loss = None 
         
