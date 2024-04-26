@@ -5848,6 +5848,16 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         mask_list_pos22 = [x - 1 for x in mask_list_pos] 
         print("mask list pos22: {}".format(mask_list_pos22)) 
         print("length of mask list pos22: {}".format(len(mask_list_pos22))) 
+        if labels is None: 
+            selected_indices = list(range(self.addonmodel_start - 1)) 
+            for i in range(self.addonmodel_start - 1, seq_length): 
+                if i not in mask_list_pos22: 
+                    selected_indices.append(i) 
+            # selected_indices = mask_list_pos22 
+            # print(colored("selected_indices {}".format(selected_indices), "red")) 
+            # select and shift the logits 
+            logits = logits[:, selected_indices, :] 
+            
         # print(colored("mask_list_pos {}".format(mask_list_pos), "red")) 
         loss = None 
         

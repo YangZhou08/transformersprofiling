@@ -14,6 +14,7 @@ from transformers import GPTNeoXForCausalLM
 from transformers import LlamaConfig, LlamaPreTrainedModel 
 from transformers import LlamaTokenizer 
 from transformers.models.llama.modeling_llama import LlamaForCausalLM 
+from transformers.models.llama.modeling_llama import LlamaWeirdLargeTest 
 from transformers import Trainer, TrainingArguments 
 from transformers import DataCollatorForLanguageModeling 
 from torch.utils.data import random_split 
@@ -214,9 +215,30 @@ class CustomDataset:
         eval_size = len(self) - train_size 
         return random_split(self, [train_size, eval_size]) 
 
-model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
-model = model.to(torch_device) 
-model.eval() 
+# large_model = LlamaWeirdLargeTest.from_pretrained(args.loading_from_checkpoint, cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+large_model = LlamaWeirdLargeTest.from_pretrained("/home/yangzho6/model_checkpoints/smallmodelkernelsize7setting0checkpoint-1000").to(torch.bfloat16).to(torch_device) 
+# large_model.set_full_sequence_length_layer_pos(args.full_sequence_length_layer_pos) 
+# large_model.set_sliding_window_length(args.kernel_size) 
+large_model.set_sliding_window_length(7) 
+large_model.addonsmallmodel.set_criticalpath(hostname = hostname) 
+large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True) 
+large_model.to(torch.bfloat16).to(torch_device) 
+# large_model.set_inference_setting(args.experiment_setting) 
+large_model.set_inference_setting("setting0") 
+large_model.set_walpha(0.5) 
+# large_model.set_slidingwindowlength(sliding_window_length = args.kernel_size, addonmodel_start = args.kernel_size + 1) 
+large_model.set_slidingwindowlength(sliding_window_length = 7, addonmodel_start = 7 + 1) 
+large_model.set_tokenizer_bos_id(bos_id = tokenizer.bos_token_id, pad_id = tokenizer.pad_token_id) 
+large_model.set_cosinesimilarity(False) 
+
+large_model.config.pad_token_id = tokenizer.pad_token_id 
+large_model.addonsmallmodel.config.pad_token_id = tokenizer.pad_token_id 
+# small_model.config.pad_token_id = tokenizer.pad_token_id 
+large_model.model.eval() 
+large_model.addonsmallmodel.eval() 
+# model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
+# model = model.to(torch_device) 
+# model.eval() 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
