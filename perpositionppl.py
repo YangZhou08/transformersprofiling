@@ -334,8 +334,8 @@ trainer = Trainer(
     eval_dataset = eval_dataset, 
 ) 
 
-accumulate_loss = torch.zeros((256,)).to(torch_device).float() 
-accumulate_count = torch.zeros((256,)).to(torch_device).float() 
+accumulate_loss = torch.zeros((259)).to(torch_device).float() 
+accumulate_count = torch.zeros((259,)).to(torch_device).float() 
 for i, batch in enumerate(trainer.get_eval_dataloader(eval_dataset)): 
     print("i is {}".format(i)) 
     input_ids = batch["input_ids"].to(torch_device) 
