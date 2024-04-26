@@ -253,6 +253,7 @@ parser.add_argument("--use_weighted_loss", action = "store_true")
 parser.add_argument("--num_epoch", type = int, default = 1) 
 parser.add_argument("--fullcoverage", action = "store_true") 
 parser.add_argument("--weighted_type", type = str, choices = ["scalar", "linear"], default = None) 
+parser.add_argument("--warmup_steps", type = int, default = 1000) 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
@@ -1168,9 +1169,10 @@ training_args = TrainingArguments(
     load_best_model_at_end=True,  # whether to load the best model (in terms of loss) at the end of training
     save_total_limit=5,            # whether you don't have much space so you let only 3 model weights saved in the disk 
     lr_scheduler_type = "cosine", 
-    warmup_steps = 500,
+    warmup_steps = args.warmup_steps, 
     label_names = ["labels"], 
 ) 
+    
 print(colored("resum_from_checkpoint is {}".format(args.resume_from_checkpoint), "red")) 
 weightmodelfirst = next(small_model.parameters()) 
 # print(weightmodelfirst.dtype) 
