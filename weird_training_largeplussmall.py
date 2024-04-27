@@ -256,6 +256,7 @@ parser.add_argument("--weighted_type", type = str, choices = ["scalar", "linear"
 parser.add_argument("--warmup_steps", type = int, default = 1000) 
 parser.add_argument("--gradient_accumulation_steps", type = int, default = 16) 
 parser.add_argument("--wandb_session", type = str, default = None) 
+parser.add_argument("--wandb_session_name", type = str, default = None) 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
@@ -1217,7 +1218,8 @@ if trainer.accelerator.is_main_process and has_wandb:
     if args.resume_from_checkpoint is not None: 
         wandb.init(project = "chunkedlargefinetuning", 
                    config = wandblogconfigs, 
-                   name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain"), 
+                   #    name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain"), 
+                   name = args.wandb_session_name, 
                    resume = True, 
                    id = args.wandb_session, 
         ) 
