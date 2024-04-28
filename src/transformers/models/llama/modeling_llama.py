@@ -5248,12 +5248,13 @@ class LlamaWeirdLargeFullCoverage(LlamaPreTrainedModel):
         # for j in [self.sliding_window_length - 1]: 
         for j in [0]: 
             # selected_seq_indices = [i * self.sliding_window_length for i in range(0, (seq_len - 1) // self.sliding_window_length)] 
-            selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
+            # selected_seq_indices = [i * self.sliding_window_length + nummagic for i in range(0, seq_len // self.sliding_window_length)] 
+            nummagic = self.sliding_window_length - 1 - j 
+            selected_seq_indices = [i * self.sliding_window_length + j for i in range(0, seq_len // self.sliding_window_length)] 
             print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
             selected_hidden = hidden_states[:, selected_seq_indices, :][:, 1 :, :] 
             print("hidden_states shape {} dtype {}".format(selected_hidden.shape, selected_hidden.dtype)) 
             
-            nummagic = self.sliding_window_length - 1 - j 
             if nummagic != 0: 
                 newsmallinputids = torch.cat([torch.full((large_input_ids.shape[0], nummagic), self.tokenizer_pad_id, dtype = large_input_ids.dtype).to(large_input_ids.device), large_input_ids[:, : -nummagic].clone()], dim = 1) 
                 newattentionmask = torch.cat([torch.zeros((large_input_ids.shape[0], nummagic), dtype = attention_mask.dtype).to(attention_mask.device), original_attention_mask[:, : -nummagic].clone()], dim = 1) 
