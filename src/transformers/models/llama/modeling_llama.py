@@ -5244,8 +5244,8 @@ class LlamaWeirdLargeFullCoverage(LlamaPreTrainedModel):
         
         loss = torch.tensor(0, dtype = hidden_states.dtype).to(hidden_states.device) 
         # for j in range(self.sliding_window_length): 
-        # for j in [self.sliding_window_length - 1]: 
-        for j in [self.sliding_window_length - 2]: 
+        for j in [self.sliding_window_length - 1]: 
+        # for j in [self.sliding_window_length - 2]: 
             # selected_seq_indices = [i * self.sliding_window_length for i in range(0, (seq_len - 1) // self.sliding_window_length)] 
             selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
             print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
@@ -5330,12 +5330,9 @@ class LlamaWeirdLargeFullCoverage(LlamaPreTrainedModel):
                 shift_labels = shift_labels.to(shift_logits.device) 
                 ce_loss = loss_fct(shift_logits, shift_labels) 
                 
-                print("ce_loss {} dtype {}".format(ce_loss, ce_loss.dtype)) 
                 loss += ce_loss 
-                print("loss {} dtype {}".format(loss, loss.dtype)) 
-        print("loss {}".format(loss)) 
+                
         loss = loss/self.sliding_window_length 
-        print("loss {}".format(loss)) 
         if loss is not None and not self.use_mse_loss: 
             if self.ce_loss_only: 
                 print(colored("ce_loss only", "red")) 
@@ -5351,8 +5348,6 @@ class LlamaWeirdLargeFullCoverage(LlamaPreTrainedModel):
         if not return_dict:
             output = (logits,) + outputs[1:]
             return (loss,) + output if loss is not None else output 
-        
-        print("loss {}".format(loss)) 
 
         return CausalLMOutputWithPastLargeDistance2(
             loss=loss,
