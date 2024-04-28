@@ -5332,7 +5332,7 @@ class LlamaWeirdLargeFullCoverage(LlamaPreTrainedModel):
                 
                 loss += ce_loss 
                 
-        loss = loss/self.sliding_window_length 
+        # loss = loss/self.sliding_window_length # please remember to add back 
         if loss is not None and not self.use_mse_loss: 
             if self.ce_loss_only: 
                 print(colored("ce_loss only", "red")) 
