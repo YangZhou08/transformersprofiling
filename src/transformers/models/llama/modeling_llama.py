@@ -5244,7 +5244,8 @@ class LlamaWeirdLargeFullCoverage(LlamaPreTrainedModel):
         
         loss = torch.tensor(0, dtype = hidden_states.dtype).to(hidden_states.device) 
         # for j in range(self.sliding_window_length): 
-        for j in [self.sliding_window_length - 1]: 
+        # for j in [self.sliding_window_length - 1]: 
+        for j in [self.sliding_window_length - 2]: 
             # selected_seq_indices = [i * self.sliding_window_length for i in range(0, (seq_len - 1) // self.sliding_window_length)] 
             selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
             print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
