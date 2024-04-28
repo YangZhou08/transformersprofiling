@@ -257,6 +257,7 @@ parser.add_argument("--warmup_steps", type = int, default = 1000)
 parser.add_argument("--gradient_accumulation_steps", type = int, default = 16) 
 parser.add_argument("--wandb_session", type = str, default = None) 
 parser.add_argument("--wandb_session_name", type = str, default = None) 
+parser.add_argument("--path_d", type = str, default = 0) 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 

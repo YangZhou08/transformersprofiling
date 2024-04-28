@@ -37,6 +37,7 @@ from transformers.models.llama.modeling_llama import LlamaCausalLMWeirdTwo
 from transformers.models.llama.modeling_llama import LlamaWeirdLarge3 
 from transformers.models.llama.modeling_llama import LlamaWeirdLargeIntermediate 
 from transformers.models.llama.modeling_llama import LlamaWeirdLargeTest 
+from transformers.models.llama.modeling_llama import LlamaWeirdLargeFullCoverage 
 from transformers.modeling_utils import PreTrainedModel, load_sharded_checkpoint, unwrap_model 
 import time 
 from torch.utils.data import random_split 
@@ -1010,6 +1011,10 @@ else:
         # small_model.config.pad_token_id = tokenizer.pad_token_id 
         large_model.model.eval() 
         large_model.addonsmallmodel.eval() 
+    elif model_name == "debugging5": 
+        large_model = LlamaWeirdLargeFullCoverage.from_pretrained(args.loading_from_checkpoint, cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+        large_model.set_sliding_window_length(args.kernel_size) 
+        
     else: 
         raise ValueError("model_name is not recognized") 
 
@@ -1065,7 +1070,8 @@ def get_dataset(datasetname, max_length):
     elif datasetname == "c4": 
         dfiles = [] 
         # filename = "c4_file1.json" 
-        filename = "c4_file15.json" 
+        # filename = "c4_file15.json" 
+        filename = "c4_file150.json" 
         dfiles.append(dir_c4 + filename) 
         datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
     elif datasetname == "pg19": 
@@ -1143,8 +1149,8 @@ def get_dataset(datasetname, max_length):
     # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
     return datasetnew 
 
-dataset_list = ["c4llm_synthesized", "c4", "pg19", "cnn_dailymail", "openwebtext", "xsum"] 
-# dataset_list = ["c4"] 
+# dataset_list = ["c4llm_synthesized", "c4", "pg19", "cnn_dailymail", "openwebtext", "xsum"] 
+dataset_list = ["c4"] 
 # dataset_list = ["c4llm_synthesized"] # restricted dataset 
 ce_loss_list = [] 
 ppl_list = [] 
