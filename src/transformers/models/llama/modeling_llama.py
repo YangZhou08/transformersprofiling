@@ -5336,8 +5336,8 @@ class LlamaWeirdLargeFullCoverage(LlamaPreTrainedModel):
         if loss is not None and not self.use_mse_loss: 
             if self.ce_loss_only: 
                 print(colored("ce_loss only", "red")) 
-                loss = ce_loss 
-                # loss = loss 
+                # loss = ce_loss 
+                loss = loss 
             else: 
                 print(colored("ce_loss + mse_loss", "red")) 
                 loss = self.alpha * ce_loss + (1 - self.alpha) * mse_loss 
