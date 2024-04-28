@@ -1103,8 +1103,8 @@ def get_dataset(datasetname, max_length):
     elif datasetname == "c4": 
         dfiles = [] 
         # filename = "c4_file1.json" 
-        # filename = "c4_file15.json" 
-        filename = "c4_file150.json" 
+        filename = "c4_file15.json" 
+        # filename = "c4_file150.json" 
         dfiles.append(dir_c4 + filename) 
         datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
     elif datasetname == "pg19": 
