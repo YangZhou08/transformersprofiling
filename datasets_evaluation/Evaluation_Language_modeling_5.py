@@ -386,6 +386,25 @@ class CustomTrainer(Trainer):
                 usingsecondtolastvectors = args.secondlast, 
                 # usingsecondtolastvectors = True, 
             ) 
+        elif isinstance(self.model, LlamaWeirdLargeFullCoverage): 
+            original_attention_mask2 = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
+            outputs = model(
+                large_input_ids = large_input_ids, 
+                small_input_ids = small_input_ids, 
+                # attention_mask = attention_mask, 
+                attention_mask = original_attention_mask, 
+                output_hidden_states = True, 
+                output_attentions = True, 
+                return_dict = True, 
+                # condensed_embed_labels = None, 
+                # original_attention_mask = original_attention_mask, 
+                original_attention_mask = original_attention_mask2, 
+                labels = label2, 
+                condensed_embed_labels = condensed_embeds_labels, 
+                label_adjustment = self.label_adjustment, 
+                usingsecondtolastvectors = args.secondlast, 
+                # usingsecondtolastvectors = True, 
+            ) 
         # Save past state if it exists
         # TODO: this needs to be fixed and made cleaner later.
         if self.args.past_index >= 0:
@@ -1014,7 +1033,20 @@ else:
     elif model_name == "debugging5": 
         large_model = LlamaWeirdLargeFullCoverage.from_pretrained(args.loading_from_checkpoint, cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
         large_model.set_sliding_window_length(args.kernel_size) 
+        large_model.addonsmallmodel.set_criticalpath(hostname = hostname) 
+        large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True) 
+        large_model.to(torch.bfloat16).to(torch_device) 
+        large_model.set_inference_setting(args.experiment_setting) 
+        large_model.set_walpha(0.5) 
+        large_model.set_slidingwindowlength(sliding_window_length = args.kernel_size, addonmodel_start = args.kernel_size + 1) 
+        large_model.set_tokenizer_bos_id(bos_id = tokenizer.bos_token_id, pad_id = tokenizer.pad_token_id) 
+        large_model.set_cosinesimilarity(False) 
         
+        large_model.config.pad_token_id = tokenizer.pad_token_id 
+        large_model.addonsmallmodel.config.pad_token_id = tokenizer.pad_token_id 
+        # small_model.config.pad_token_id = tokenizer.pad_token_id 
+        large_model.model.eval() 
+        large_model.addonsmallmodel.eval() 
     else: 
         raise ValueError("model_name is not recognized") 
 
