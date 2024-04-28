@@ -1058,7 +1058,7 @@ training_args = TrainingArguments(
     label_names = ["labels"], 
 ) 
 
-if args.model_name == "debugging" or args.model_name == "debugging2" or args.model_name == "debugging3": 
+if args.model_name == "debugging" or args.model_name == "debugging2" or args.model_name == "debugging3" or args.model_name == "debugging5": 
     model = large_model 
     
 trainer = CustomTrainer( 
