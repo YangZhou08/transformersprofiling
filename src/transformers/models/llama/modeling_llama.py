@@ -5330,9 +5330,9 @@ class LlamaWeirdLargeFullCoverage(LlamaPreTrainedModel):
                 shift_labels = shift_labels.to(shift_logits.device) 
                 ce_loss = loss_fct(shift_logits, shift_labels) 
                 
-                print("ce_loss {}".format(ce_loss)) 
+                print("ce_loss {} dtype {}".format(ce_loss, ce_loss.dtype)) 
                 loss += ce_loss 
-                print("loss {}".format(loss)) 
+                print("loss {} dtype {}".format(loss, loss.dtype)) 
         print("loss {}".format(loss)) 
         loss = loss/self.sliding_window_length 
         print("loss {}".format(loss)) 
