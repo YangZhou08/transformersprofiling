@@ -1,1 +1,0 @@
-# please specify the path to the checkpoint file 
