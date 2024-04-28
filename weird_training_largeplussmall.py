@@ -997,9 +997,10 @@ class CustomDataset:
                         filename = "c4_file{}.json".format(i) 
                         dfiles.append(self.synthesize_dir + filename) 
                 else: 
-                    print(colored("using c4 files {} to {}".format(0, args.num_epoch * 8), "yellow")) 
+                    # print(colored("using c4 files {} to {}".format(0, args.num_epoch * 8), "yellow")) 
+                    print(colored("using c4 files {} to {}".format(args.path_d * 8, args.path_d * 8 + 8), "yellow")) 
                     # for i in range(0, 8): 
-                    for i in range(0, args.num_epoch * 8): 
+                    for i in range(args.path_d * 8, args.path_d * 8 + 8): 
                         filename = "c4_file{}.json".format(i) 
                         dfiles.append(self.synthesize_dir + filename) 
             else: 
@@ -1215,6 +1216,7 @@ if trainer.accelerator.is_main_process and has_wandb:
     wandblogconfigs["time_hash"] = hash_of_time 
     wandblogconfigs["model_name"] = model_name 
     wandblogconfigs["texteval"] = model_path + text_eval 
+    wandblogconfigs["filesused"] = "file{}tofile{}".format(args.path_d * 8, args.path_d * 8 + 8) 
     # wandb.init(project = "llm160m", config = training_args, name="{}_{}".format(today, project_setting)) 
     if args.resume_from_checkpoint is not None: 
         wandb.init(project = "chunkedlargefinetuning", 
