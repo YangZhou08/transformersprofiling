@@ -428,6 +428,7 @@ class CustomTrainer(Trainer):
                 )
             # We don't use .loss here since the model may return tuples instead of ModelOutput.
             loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0] 
+            print("the loss is {}".format(loss)) 
             ce_loss = outputs["ce_loss"] if isinstance(outputs, dict) else outputs[-2] 
             l2_distance = outputs["l2_distance"] if isinstance(outputs, dict) else outputs[-3] 
             l2_distance_input = outputs["l2_distance_input"] if isinstance(outputs, dict) else outputs[-1] 

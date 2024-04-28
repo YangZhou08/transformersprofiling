@@ -5348,6 +5348,8 @@ class LlamaWeirdLargeFullCoverage(LlamaPreTrainedModel):
         if not return_dict:
             output = (logits,) + outputs[1:]
             return (loss,) + output if loss is not None else output 
+        
+        print("loss {}".format(loss)) 
 
         return CausalLMOutputWithPastLargeDistance2(
             loss=loss,
