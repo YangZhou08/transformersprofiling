@@ -745,7 +745,6 @@ trainer = CustomTrainer(
     model = model, 
     data_collator = data_collator, 
     time_hash = hash_of_time, 
-    model_name = model_name, 
     text_eval = "just_evaluation_{}.txt".format(hash_of_time), 
     tokenizer = tokenizer, 
     commit_hash = commit_hash, 
