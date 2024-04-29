@@ -5064,7 +5064,8 @@ class LlamaWeirdLargeFullCoverage(LlamaPreTrainedModel):
         # self.sliding_window_length = 7 
         # self.sliding_window_length = 2 
         # self.sliding_window_length = 1 
-        self.addonsmallmodel = SimpleSmallModel(small_config, target_model_dim = self.config.hidden_size) # sliding_window_length is set elsewhere 
+        # self.addonsmallmodel = SimpleSmallModel(small_config, target_model_dim = self.config.hidden_size) # sliding_window_length is set elsewhere 
+        self.addonsmallmodel = SimpleSmallModelmixedb(small_config, target_model_dim = self.config.hidden_size) # sliding_window_length is set elsewhere 
         self.small_model_dtype = torch.bfloat16 
         self.use_mse_loss = False 
         self.ce_loss_only = False 
@@ -5303,8 +5304,8 @@ class LlamaWeirdLargeFullCoverage(LlamaPreTrainedModel):
             seq_length = newsmallinputids.shape[1] + selected_hidden.shape[1] 
             assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
             # mask_list_pos = [i * (self.sliding_window_length + 1) for i in range(seq_length // (self.sliding_window_length + 1))] 
-            # mask_list_pos = [7 + i * (self.sliding_window_length + 1) for i in range((seq_length - 7) // (self.sliding_window_length + 1))] 
-            mask_list_pos = [self.addonmodel_start + i * (self.sliding_window_length + 1) for i in range((seq_length - self.addonmodel_start) // (self.sliding_window_length + 1))] 
+            # mask_list_pos = [self.addonmodel_start + i * (self.sliding_window_length + 1) for i in range((seq_length - self.addonmodel_start) // (self.sliding_window_length + 1))] 
+            mask_list_pos = [self.addonmodel_start + self.sliding_window_length - 1 + i * (self.sliding_window_length + 1) for i in range((seq_length - self.addonmodel_start) // (self.sliding_window_length + 1))] 
             mask_list_pos22 = [x - 1 for x in mask_list_pos] 
             print("mask list pos22: {}".format(mask_list_pos22)) 
             print("length of mask list pos22: {}".format(len(mask_list_pos22))) 
