@@ -230,6 +230,7 @@ parser.add_argument("--label_adjustment", action = "store_true")
 parser.add_argument("--secondlast", action = "store_true") 
 parser.add_argument("--using_prefix", action = "store_true") 
 parser.add_argument("--max_length", type = int, default = 260) 
+parser.add_argument("--batch_size", type = int, default = 8) 
 
 args = parser.parse_args() 
 
@@ -735,7 +736,7 @@ model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir =
 
 training_args = TrainingArguments(
     output_dir = dir_models, 
-    per_device_eval_batch_size = 32, 
+    per_device_eval_batch_size = args.batch_size, 
     do_train = False, 
     do_eval = True, 
     label_names = ["labels"], 
