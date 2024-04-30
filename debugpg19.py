@@ -775,7 +775,13 @@ def get_dataset(datasetname, max_length):
         dfiles.append(dir_c4 + filename) 
         datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
     elif datasetname == "pg19": 
-        datasetnew = load_dataset('emozilla/pg19', split = "train[:10000]") 
+        if max_length == 2048: 
+            numexample = 1000 
+        elif max_length == 1024: 
+            numexample = 2000 
+        else: 
+            numexample = 10000 
+        datasetnew = load_dataset('emozilla/pg19', split = "train[:{}]".format(numexample)) 
     elif datasetname == "cnn_dailymail": # we need to use special processing for this dataset 
         datasetnew = load_dataset("cnn_dailymail", "3.0.0", split = "test[:10000]") 
     elif datasetname == "openwebtext": 
