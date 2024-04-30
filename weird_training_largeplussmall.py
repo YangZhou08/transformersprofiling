@@ -1155,7 +1155,7 @@ training_args = TrainingArguments(
     # resume_from_checkpoint = args.resume_from_checkpoint, 
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
-    num_train_epochs = 1 if args.usedatasettype == "c4" else args.num_epoch,            # number of training epochs, feel free to tweak
+    num_train_epochs = args.num_epoch,            # number of training epochs, feel free to tweak
     per_device_train_batch_size = args.batch_size,  # the training batch size, put it as high as your GPU memory fits
     gradient_accumulation_steps=args.gradient_accumulation_steps if not args.debug else 1,  # accumulating the gradients before updating the weights 
     per_device_eval_batch_size=args.batch_size, # evaluation batch size 
