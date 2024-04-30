@@ -228,8 +228,10 @@ parser.add_argument("--setting0usedq", action = "store_true")
 parser.add_argument("--full_sequence_length_layer_pos", type = int, default = 10) 
 parser.add_argument("--label_adjustment", action = "store_true") 
 parser.add_argument("--secondlast", action = "store_true") 
+parser.add_argument("--using_prefix", action = "store_true") 
+parser.add_argument("--max_length", type = int, default = 260) 
 
-# args = parser.parse_args() 
+args = parser.parse_args() 
 
 # model_name = "openllama3b" 
 # model_name = args.model_name 
@@ -783,12 +785,14 @@ def get_dataset(datasetname, max_length):
         raise ValueError("dataset_name is not recognized") 
 
     def encode_with_truncationspecialized(examples): 
-        tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = max_length, 
-                        return_attention_mask = True, return_tensors = "pt", truncation = True, 
-                        add_special_tokens = True) 
-        # tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 260, 
-        #                          return_attention_mask = True, return_tensors = "pt", truncation = True, 
-        #                          add_special_tokens = True) 
+        if args.using_prefix: 
+            tokdictionary = tokenizer(examples['text'][: 5000 * (max_length // 256)], padding = "max_length", max_length = max_length, 
+                                 return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                                 add_special_tokens = True) 
+        else: 
+            tokdictionary = tokenizer(examples['text'][100000 : 100000 + (5000 * (max_length // 256))], padding = "max_length", max_length = max_length, 
+                            return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                            add_special_tokens = True) 
         newdictionary = {} 
         newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
         newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
@@ -846,7 +850,7 @@ def get_dataset(datasetname, max_length):
     # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
     return datasetnew 
 
-onedataset = get_dataset("pg19", 260) 
+onedataset = get_dataset("pg19", args.max_length) 
 results = trainer.evaluate(onedataset) 
 ce_loss = results["eval_loss"] 
 ppl = results["eval_perplexity"] 
