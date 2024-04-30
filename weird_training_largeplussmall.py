@@ -1107,10 +1107,13 @@ print(colored("we use large model", "cyan"))
 # large_model = LlamaWeirdLargeIterative.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
 # large_model = LlamaWeirdLargeTest.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
 assert args.finetune_checkpoint is not None 
-if args.fullcoverage: 
-    large_model = LlamaWeirdLargeFullCoverage.from_pretrained(args.finetune_checkpoint) 
+if args.resume_from_checkpoint is not None: 
+    large_model = LlamaWeirdLargeTest.from_pretrained(args.resume_from_checkpoint) 
 else: 
-    large_model = LlamaWeirdLargeTest.from_pretrained(args.finetune_checkpoint) 
+    if args.fullcoverage: 
+        large_model = LlamaWeirdLargeFullCoverage.from_pretrained(args.finetune_checkpoint) 
+    else: 
+        large_model = LlamaWeirdLargeTest.from_pretrained(args.finetune_checkpoint) 
 # large_model = LlamaWeirdLargeTest.from_pretrained(args.finetune_checkpoint) 
 # large_model = LlamaWeirdLargeTestmixedb.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
 large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True) 
@@ -1152,7 +1155,7 @@ model_path = dir_models + "{}_{}_{}_{}_{}/".format(model_name, args.experiment_s
 training_args = TrainingArguments(
     output_dir=model_path,          # output directory to where save model checkpoint 
     # resume_from_checkpoint="./model_output/checkpoint-500", 
-    # resume_from_checkpoint = args.resume_from_checkpoint, 
+    resume_from_checkpoint = args.resume_from_checkpoint, 
     evaluation_strategy="steps",    # evaluate each `logging_steps` steps
     overwrite_output_dir=True,      
     num_train_epochs = args.num_epoch,            # number of training epochs, feel free to tweak
@@ -1240,6 +1243,7 @@ torch.autograd.set_detect_anomaly(True)
 if trainer.accelerator.is_main_process and has_wandb: 
     wandb.watch(trainer.model, log = "parameters", log_freq = 100000) 
     
-trainer.train(resume_from_checkpoint = args.resume_from_checkpoint) 
+# trainer.train(resume_from_checkpoint = args.resume_from_checkpoint) 
+trainer.train() 
 
 wandb.finish() 
