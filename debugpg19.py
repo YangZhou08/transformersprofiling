@@ -779,6 +779,8 @@ def get_dataset(datasetname, max_length):
             numexample = 1000 
         elif max_length == 1024: 
             numexample = 2000 
+        elif max_length == 4096: 
+            numexample = 500 
         else: 
             numexample = 10000 
         datasetnew = load_dataset('emozilla/pg19', split = "train[:{}]".format(numexample)) 
