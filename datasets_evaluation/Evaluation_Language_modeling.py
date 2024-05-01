@@ -1043,7 +1043,6 @@ else:
         model = LlamaForCausalLM2.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     else: 
         raise ValueError("model_name is not recognized") 
-    exit(0) 
 
 training_args = TrainingArguments(
     output_dir = dir_models, 
