@@ -984,10 +984,9 @@ else:
             model = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
         elif args.deploypreviouslmhead: 
             model, outputloadinginformation = LlamaForCausalLM.from_pretrained(args.loading_from_checkpoint, output_loading_info = True) 
-            print(outputloadinginformation) 
             # print("matched keys: {}".format(outputloadinginformation["matched_keys"])) 
-            # print("missing keys: {}".format(outputloadinginformation["missing_keys"])) 
-            # print("unexpected keys: {}".format(outputloadinginformation["unexpected_keys"])) 
+            print("missing keys: {}".format(outputloadinginformation["missing_keys"])) 
+            print("unexpected keys: {}".format(outputloadinginformation["unexpected_keys"])) 
             model.lm_head = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).lm_head 
             model = model.to(torch.bfloat16).to(torch_device) 
         else: 
