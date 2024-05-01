@@ -224,6 +224,7 @@ parser.add_argument("--experiment_setting", type = str, default = "setting0")
 parser.add_argument("--condensed_token_random", action = "store_true") 
 parser.add_argument("--task_id", type = int, default = 0) 
 parser.add_argument("--use_small_model", action = "store_true") 
+parser.add_argument("--deploypreviouslmhead", action = "store_true") 
 parser.add_argument("--setting0usedq", action = "store_true") 
 
 args = parser.parse_args() 
@@ -981,9 +982,13 @@ else:
     elif model_name == "tinyllama": 
         if args.loading_from_checkpoint is None: 
             model = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+        elif args.deploypreviouslmhead: 
+            model = LlamaForCausalLM.from_pretrained(args.loading_from_checkpoint) 
+            model.lm_head = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).lm_head 
+            model = model.to(torch.bfloat16).to(torch_device) 
         else: 
             print(colored("loading from checkpoint", "yellow")) 
-            model = LlamaForCausalLM.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device)
+            model = LlamaForCausalLM.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device) 
     elif model_name == "llama2_7b": 
         model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
         model.config.pad_token_id = tokenizer.pad_token_id 
@@ -1035,6 +1040,7 @@ else:
         model = LlamaForCausalLM2.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     else: 
         raise ValueError("model_name is not recognized") 
+    exit(0) 
 
 training_args = TrainingArguments(
     output_dir = dir_models, 
