@@ -21,8 +21,16 @@ from sklearn.metrics import accuracy_score
 from datasets.utils.logging import disable_progress_bar
 # disable_progress_bar() 
 
+rank = os.environ.get("RANK") 
+print("the rank is {}".format(rank)) 
+if rank is None: 
+    rank = 0 
+torch_device = "cuda:{}".format(rank) if torch.cuda.is_available() else "cpu" 
+
 hostname = socket.gethostname()
-print("Hostname:", hostname)
+print("Hostname:", hostname) 
+
+dir_models = "/fsx-storygen/beidic/yang/model_checkpoints/" 
 
 def evaluate(model, dataloader, accelerator):
     model.eval()
@@ -67,9 +75,9 @@ def main(args):
         d_files = ["c4_file{}.json".format(i) for i in range(30)]
     else:
         # output_dir = f"/fsx-storygen/beidic/hanshi/ckpts/{args.outputdir}" 
-        output_dir = "/checkpoint/beidic/yang/model_checkpoints/" 
-        # datasetparent = f"/fsx-storygen/beidic/hanshi/data/{args.datadir}/"
-        datasetparent = f"/checkpoint/beidic/yang/c4_parts/" 
+        output_dir = "/checkpoint/beidic/yang/model_checkpoints/{}/".format(args.outputdir) 
+        datasetparent = f"/fsx-storygen/beidic/hanshi/data/{args.datadir}/"
+        # datasetparent = f"/checkpoint/beidic/yang/c4_parts/" 
         d_files = os.listdir(datasetparent)
 
     os.makedirs(output_dir, exist_ok=True)
@@ -100,9 +108,8 @@ def main(args):
         init_kwargs={"wandb":{"name":args.outputdir}}
     )
 
-    # dataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train") 
-    dataset = load_dataset("c4", "en", split = "train", cache_dir = datasetparent) 
-    exit(0) 
+    dataset = load_dataset("json", data_files = [datasetparent + name for name in d_files], split = "train") 
+    # dataset = load_dataset("c4", "en", split = "train", cache_dir = datasetparent) 
 
     # tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-68m", legacy=False, use_fast=True) 
     tokenizer = AutoTokenizer.from_pretrained("JackFram/llama-160m", legacy = False, use_fast = True) 
@@ -140,7 +147,8 @@ def main(args):
         batch_size=args.batch_size
     )
 
-    model = LlamaForCausalLM.from_pretrained(args.model, torch_dtype=torch.bfloat16)
+    # model = LlamaForCausalLM.from_pretrained(args.model, torch_dtype=torch.bfloat16) 
+    model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device).to(torch.bfloat16) 
     optim = torch.optim.AdamW(model.parameters(), lr=args.learning_rate)
 
     raw_max_train_steps = args.epochs * len(train_loader)
@@ -229,7 +237,7 @@ def main(args):
 
 if __name__ == "__main__":
     args = argparse.ArgumentParser()
-    args.add_argument("--batch-size", type=int, default=256)
+    args.add_argument("--batch-size", type=int, default=96) 
     args.add_argument("--epochs", type=int, default=1)
     args.add_argument("--gradient-accumulate-every", type=int, default=8)
     args.add_argument("--wandb", type=str, default=None)
