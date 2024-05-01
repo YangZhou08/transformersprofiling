@@ -74,8 +74,8 @@ def main(args):
         datasetparent = f"/home/hanshis/workspace/Train/data/{args.datadir}/"
         d_files = ["c4_file{}.json".format(i) for i in range(30)]
     else:
-        # output_dir = f"/fsx-storygen/beidic/hanshi/ckpts/{args.outputdir}" 
-        output_dir = "/checkpoint/beidic/yang/model_checkpoints/{}/".format(args.outputdir) 
+        output_dir = f"/fsx-storygen/beidic/hanshi/ckpts/{args.outputdir}" 
+        # output_dir = "/checkpoint/beidic/yang/model_checkpoints/{}/".format(args.outputdir) 
         datasetparent = f"/fsx-storygen/beidic/hanshi/data/{args.datadir}/"
         # datasetparent = f"/checkpoint/beidic/yang/c4_parts/" 
         d_files = os.listdir(datasetparent)
