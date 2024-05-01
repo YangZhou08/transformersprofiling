@@ -251,6 +251,7 @@ parser.add_argument("--usingsecondlast", action = "store_true")
 parser.add_argument("--use_weighted_loss", action = "store_true") 
 parser.add_argument("--num_epoch", type = int, default = 1) 
 parser.add_argument("--weighted_type", type = str, choices = ["scalar", "linear"], default = None) 
+parser.add_argument("--reinitializesmallmodel", action = "store_true") 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
@@ -1455,70 +1456,21 @@ else:
 print("input sequence length is {}".format(dictionary_max_length[args.kernel_size])) 
 # datasetnew.preprocess_dataset() 
 
-if (not args.use_plain_model or args.resume_from_checkpoint is not None) and not args.use_past and not args.finetune_checkpoint and not args.use_large_model: 
-    print(colored("we use custom small", "cyan")) 
-    # handling simplesmallmodel 
-    # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m", cache_dir = cache_dir).to(torch_device) 
-    # small_config = LlamaConfig.from_pretrained("JackFram/llama-160m", cache_dir = dir_models) 
-    small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
-
-    small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
-    if model_name == "openllama3b": 
-        small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 3200) 
-    elif model_name == "shearedllama2_7b": 
-        small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 2560) 
-    else: 
-        small_model = SimpleSmallModel(small_config, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 2048) 
-
-    new_state_dict = {} 
-
-    for key in small_state_dict_for_model.keys(): 
-        new_key = key 
-        if 'lm_head' in key: 
-            print("got here found the following key {}".format(key)) 
-        if 'model.' in key: 
-            new_key = key[6 :] 
-        print(new_key) 
-        new_state_dict[new_key] = small_state_dict_for_model[key] 
-    if args.embedding_pretrained: 
-        new_state_dict["embed_projection.weight"] = torch.load("linearprojectionweighttesting.pt") 
-
-    try: 
-        small_model.load_state_dict(new_state_dict) 
-    except RuntimeError as r: 
-        print(colored(r, "yellow")) 
-
-    small_model = small_model.to(torch_device).to(torch.bfloat16) 
-    # small_model = small_model.to(torch.bfloat16).to(torch_device) 
-    small_model.train() 
-
-    # custom_lr_scheduler = torch.optim.lr_scheduler.LambdaLR 
-elif args.finetune_checkpoint: 
-    print(colored("we use finetune model", "cyan")) 
-    small_model = SimpleSmallModel.from_pretrained(args.finetune_checkpoint, hostname = hostname, sliding_window_length = kernel_size, target_model_dim = 2048).to(torch_device) 
-    small_model.train() 
-elif args.use_plain_model and not args.use_past: 
-    print(colored("we use plain model", "cyan")) 
-    # alternative pretrained model 
-    # small_model = LlamaForCausalLM.from_pretrained("JackFram/llama-160m").to(torch_device) 
-    # config = LlamaConfig.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models) 
-    # print(config) 
-    # small_model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m", cache_dir = dir_models).to(torch_device) 
-    # small_model = AutoModelForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
-    small_model = LlamaCausalLMWeirdTwo.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
-    # small_model = LlamaCausalLMWeirdTwo.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).to(torch_device) 
-    small_model.train() 
-elif args.use_large_model: 
+if args.use_large_model: 
     print(colored("we use large model", "cyan")) 
     # set up a large model that supports the condensed token inputs 
     # large_model = LlamaWeirdLargeIterative.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
-    large_model = LlamaWeirdLargeTest.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
+    if args.finetune_checkpoint is not None: 
+        large_model = LlamaWeirdLargeTest.from_pretrained(args.finetune_checkpoint).to(torch_device) 
+    else: 
+        large_model = LlamaWeirdLargeTest.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
     # large_model = LlamaWeirdLargeTestmixedb.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
+    if args.finetune_checkpoint is None or args.reinitializesmallmodel: 
+        small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
+        large_model.set_addonsmallmodel_statedict(small_state_dict_for_model) 
     large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True) 
     large_model.set_sliding_window_length(args.kernel_size) 
     # loading in the small model inside the larger one properly 
-    small_state_dict_for_model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models).state_dict() 
-    large_model.set_addonsmallmodel_statedict(small_state_dict_for_model) 
     large_model.set_inference_setting(args.experiment_setting) 
     large_model.set_walpha(0.5) 
     large_model.set_slidingwindowlength(args.kernel_size) 
