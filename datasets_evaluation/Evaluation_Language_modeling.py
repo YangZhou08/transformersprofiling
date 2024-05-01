@@ -983,6 +983,7 @@ else:
         if args.loading_from_checkpoint is None: 
             model = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
         elif args.deploypreviouslmhead: 
+            print("got here") 
             model = LlamaForCausalLM.from_pretrained(args.loading_from_checkpoint) 
             model.lm_head = LlamaForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).lm_head 
             model = model.to(torch.bfloat16).to(torch_device) 
