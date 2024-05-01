@@ -258,6 +258,7 @@ parser.add_argument("--gradient_accumulation_steps", type = int, default = 16)
 parser.add_argument("--wandb_session", type = str, default = None) 
 parser.add_argument("--wandb_session_name", type = str, default = None) 
 parser.add_argument("--path_d", type = int, default = 0) 
+parser.add_argument("--datafilegranularity", type = int, default = 8) 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
@@ -998,9 +999,11 @@ class CustomDataset:
                         dfiles.append(self.synthesize_dir + filename) 
                 else: 
                     # print(colored("using c4 files {} to {}".format(0, args.num_epoch * 8), "yellow")) 
-                    print(colored("using c4 files {} to {}".format(args.path_d * 8, args.path_d * 8 + 8), "yellow")) 
+                    # print(colored("using c4 files {} to {}".format(args.path_d * 8, args.path_d * 8 + 8), "yellow")) 
+                    print(colored("using c4 files {} to {}".format(args.path_d * args.datafilegranularity, args.path_d * args.datafilegranularity + args.datafilegranularity), "yellow")) 
                     # for i in range(0, 8): 
-                    for i in range(args.path_d * 8, args.path_d * 8 + 8): 
+                    # for i in range(args.path_d * 8, args.path_d * 8 + 8): 
+                    for i in range(args.path_d * args.datafilegranularity, args.path_d * args.datafilegranularity + args.datafilegranularity): 
                         filename = "c4_file{}.json".format(i) 
                         dfiles.append(self.synthesize_dir + filename) 
             else: 
@@ -1219,7 +1222,8 @@ if trainer.accelerator.is_main_process and has_wandb:
     wandblogconfigs["time_hash"] = hash_of_time 
     wandblogconfigs["model_name"] = model_name 
     wandblogconfigs["texteval"] = model_path + text_eval 
-    wandblogconfigs["filesused"] = "file{}tofile{}".format(args.path_d * 8, args.path_d * 8 + 8) 
+    # wandblogconfigs["filesused"] = "file{}tofile{}".format(args.path_d * 8, args.path_d * 8 + 8) 
+    wandblogconfigs["filesused"] = "file{}tofile{}".format(args.path_d * args.datafilegranularity, args.path_d * args.datafilegranularity + args.datafilegranularity) 
     # wandb.init(project = "llm160m", config = training_args, name="{}_{}".format(today, project_setting)) 
     if args.resume_from_checkpoint is not None: 
         wandb.init(project = "chunkedlargefinetuning", 
