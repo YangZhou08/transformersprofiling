@@ -926,4 +926,5 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
 accumulate_loss /= accumulate_count 
 print("accumulate_loss is {}".format(accumulate_loss)) 
 # print("sum is {}".format(sum)) 
-print("loss is {}".format(accumulate_loss.sum(0)/accumulate_count.sum(0))) 
+# print("loss is {}".format(accumulate_loss.sum(0)/accumulate_count.sum(0))) 
+print("loss is {}".format(torch.mean(accumulate_loss, dim = 0))) 
