@@ -872,6 +872,7 @@ trainer = CustomTrainer(
 
 accumulate_loss = torch.zeros((259)).to(torch_device).float() 
 accumulate_count = torch.zeros((259,)).to(torch_device).float() 
+sum = torch.zeros((1,)).to(torch_device).float() 
 for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())): 
     input_ids = batch["input_ids"].to(torch_device) 
     attention_mask = batch["attention_mask"].to(torch_device) 
