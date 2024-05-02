@@ -900,7 +900,9 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
     print(loss) 
     mask = (loss != 0).float() 
     print(loss.sum(0)/mask.sum(0)) 
-    exit(0) 
+    if i == 10: 
+        exit(0) 
+    continue 
     sum += loss.sum(0) 
     mask = loss != 0 
     mask = mask.float() 
