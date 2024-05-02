@@ -397,6 +397,7 @@ for i, batch in tqdm(enumerate(trainer.get_eval_dataloader(eval_dataset))):
             label_adjustment = False, 
             usingsecondtolastvectors = False, 
             # usingsecondtolastvectors = True, 
+            autoregressive_first_element = True, 
         ) 
         '''
         outputs = model(input_ids = input_ids, 
