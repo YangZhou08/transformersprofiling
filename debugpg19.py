@@ -886,22 +886,9 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
     original_attention_mask2 = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
     with torch.no_grad(): 
         outputs = model(
-            large_input_ids = large_input_ids, 
-            small_input_ids = small_input_ids, 
-            # attention_mask = attention_mask, 
-            attention_mask = original_attention_mask, 
-            output_hidden_states = True, 
-            output_attentions = True, 
-            return_dict = True, 
-            # condensed_embed_labels = None, 
-            # original_attention_mask = original_attention_mask, 
-            original_attention_mask = original_attention_mask2, 
-            labels = None, 
-            condensed_embed_labels = None, 
-            label_adjustment = False, 
-            usingsecondtolastvectors = False, 
-            # usingsecondtolastvectors = True, 
-            autoregressive_first_element = True, 
+            input_ids = input_ids, 
+            attention_mask = attention_mask, 
+            labels = None 
         ) 
     logits = outputs.logits 
     logits = logits[..., :-1, :].contiguous() 
