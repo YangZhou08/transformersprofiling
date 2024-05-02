@@ -897,20 +897,18 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
     ce_loss = CrossEntropyLoss(reduction = "none") 
     
     loss = ce_loss(logits.view(-1, logits.shape[-1]), labels.view(-1)) 
-    print(loss) 
-    mask = (loss != 0).float() 
-    print(loss.sum(0)/mask.sum(0)) 
-    if i == 10: 
-        exit(0) 
-    continue 
+    # print(loss) 
+    # mask = (loss != 0).float() 
+    # print(loss.sum(0)/mask.sum(0)) 
+    # if i == 10: 
+        # exit(0) 
+    # continue 
     sum += loss.sum(0) 
     mask = loss != 0 
     mask = mask.float() 
     accumulate_loss += loss 
     accumulate_count += mask 
 
-''' 
 accumulate_loss /= accumulate_count 
 print("accumulate_loss is {}".format(accumulate_loss)) 
-''' 
 # print("sum is {}".format(sum)) 
