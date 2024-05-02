@@ -903,7 +903,6 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
                 logits = torch.cat((logits, temp_logits), dim = 1) 
             past_key_values = outputs.past_key_values 
     print("the shape of logits is {}".format(logits.shape)) 
-    exit(0) 
     logits = outputs.logits 
     logits = logits[..., :-1, :].contiguous() 
     labels = labels[..., 1:].contiguous() 
@@ -920,9 +919,11 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
     sum += loss.sum(0) 
     mask = loss != 0 
     mask = mask.float() 
+    print(loss.sum(0)/mask.sum(0)) 
     accumulate_loss += loss 
     accumulate_count += mask 
 
 accumulate_loss /= accumulate_count 
 print("accumulate_loss is {}".format(accumulate_loss)) 
 # print("sum is {}".format(sum)) 
+print("loss is {}".format(accumulate_loss.sum(0)/accumulate_count.sum(0))) 
