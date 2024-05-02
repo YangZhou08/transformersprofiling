@@ -870,8 +870,8 @@ trainer = CustomTrainer(
     eval_dataset = get_dataset("pg19", args.max_length), 
 ) 
 
-accumulate_loss = torch.zeros((259)).to(torch_device).float() 
-accumulate_count = torch.zeros((259,)).to(torch_device).float() 
+accumulate_loss = torch.zeros((args.max_length - 1, )).to(torch_device).float() 
+accumulate_count = torch.zeros((args.max_length - 1, )).to(torch_device).float() 
 sum = torch.zeros((1,)).to(torch_device).float() 
 for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())): 
     input_ids = batch["input_ids"].to(torch_device) 
