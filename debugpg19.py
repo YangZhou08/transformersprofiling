@@ -45,6 +45,8 @@ from transformers import BitsAndBytesConfig
 from packaging import version 
 # import torch.nn.parallel.distributed.DistributedDataParallel as DDP 
 
+from torch.nn import CrossEntropyLoss 
+
 import datetime 
 
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union 
@@ -736,22 +738,14 @@ model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir =
 
 training_args = TrainingArguments(
     output_dir = dir_models, 
-    per_device_eval_batch_size = args.batch_size, 
+    # per_device_eval_batch_size = args.batch_size, 
+    per_device_eval_batch_size = 1, 
     do_train = False, 
     do_eval = True, 
     label_names = ["labels"], 
 ) 
 
 # if args.model_name == "debugging" or args.model_name == "debugging2" or args.model_name == "debugging3": 
-trainer = CustomTrainer(
-    args = training_args, 
-    model = model, 
-    data_collator = data_collator, 
-    time_hash = hash_of_time, 
-    text_eval = "just_evaluation_{}.txt".format(hash_of_time), 
-    tokenizer = tokenizer, 
-    commit_hash = commit_hash, 
-) 
 
 def get_dataset(datasetname, max_length): 
     if datasetname == "c4llm_synthesized": 
@@ -859,8 +853,73 @@ def get_dataset(datasetname, max_length):
     # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
     return datasetnew 
 
-onedataset = get_dataset("pg19", args.max_length) 
-results = trainer.evaluate(onedataset) 
-ce_loss = results["eval_loss"] 
-ppl = results["eval_perplexity"] 
-print("ce_loss {} ppl {}".format(ce_loss, ppl)) 
+# onedataset = get_dataset("pg19", args.max_length) 
+# results = trainer.evaluate(onedataset) 
+# ce_loss = results["eval_loss"] 
+# ppl = results["eval_perplexity"] 
+# print("ce_loss {} ppl {}".format(ce_loss, ppl)) 
+
+trainer = CustomTrainer(
+    args = training_args, 
+    model = model, 
+    data_collator = data_collator, 
+    time_hash = hash_of_time, 
+    text_eval = "just_evaluation_{}.txt".format(hash_of_time), 
+    tokenizer = tokenizer, 
+    commit_hash = commit_hash, 
+    eval_dataset = get_dataset("pg19", args.max_length), 
+) 
+
+accumulate_loss = torch.zeros((259)).to(torch_device).float() 
+accumulate_count = torch.zeros((259,)).to(torch_device).float() 
+for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())): 
+    input_ids = batch["input_ids"].to(torch_device) 
+    attention_mask = batch["attention_mask"].to(torch_device) 
+    original_attention_mask = batch["attention_mask"] 
+    labels = batch["labels"].to(torch_device) 
+    batch_size, seq_len = original_attention_mask.shape 
+    addedon_length = (seq_len - 7 - 1) // 7 
+    
+    large_input_ids = input_ids 
+    small_input_ids = input_ids 
+    
+    original_attention_mask2 = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
+    with torch.no_grad(): 
+        outputs = model(
+            large_input_ids = large_input_ids, 
+            small_input_ids = small_input_ids, 
+            # attention_mask = attention_mask, 
+            attention_mask = original_attention_mask, 
+            output_hidden_states = True, 
+            output_attentions = True, 
+            return_dict = True, 
+            # condensed_embed_labels = None, 
+            # original_attention_mask = original_attention_mask, 
+            original_attention_mask = original_attention_mask2, 
+            labels = None, 
+            condensed_embed_labels = None, 
+            label_adjustment = False, 
+            usingsecondtolastvectors = False, 
+            # usingsecondtolastvectors = True, 
+            autoregressive_first_element = True, 
+        ) 
+    logits = outputs.logits 
+    logits = logits[..., :-1, :].contiguous() 
+    labels = labels[..., 1:].contiguous() 
+    
+    ce_loss = CrossEntropyLoss(reduction = "none") 
+    
+    loss = ce_loss(logits.view(-1, logits.shape[-1]), labels.view(-1)) 
+    print(loss) 
+    exit(0) 
+    sum += loss.sum(0) 
+    mask = loss != 0 
+    mask = mask.float() 
+    accumulate_loss += loss 
+    accumulate_count += mask 
+
+''' 
+accumulate_loss /= accumulate_count 
+print("accumulate_loss is {}".format(accumulate_loss)) 
+''' 
+# print("sum is {}".format(sum)) 
