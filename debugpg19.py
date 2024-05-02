@@ -898,6 +898,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
     
     loss = ce_loss(logits.view(-1, logits.shape[-1]), labels.view(-1)) 
     print(loss) 
+    mask = (loss != 0).float() 
     print(loss.sum(0)/mask.sum(0)) 
     exit(0) 
     sum += loss.sum(0) 
