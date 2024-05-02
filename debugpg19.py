@@ -903,7 +903,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
                 logits = torch.cat((logits, temp_logits), dim = 1) 
             past_key_values = outputs.past_key_values 
     print("the shape of logits is {}".format(logits.shape)) 
-    logits = outputs.logits 
+    # logits = outputs.logits 
     logits = logits[..., :-1, :].contiguous() 
     labels = labels[..., 1:].contiguous() 
     
