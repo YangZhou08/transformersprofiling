@@ -890,8 +890,8 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
         past_key_values = None 
         with torch.no_grad(): 
             outputs = model(
-                input_ids = input_ids[: , i * args.max_length/2 : (i + 1) * args.max_length/2], 
-                attention_mask = attention_mask[: , i * args.max_length/2 : (i + 1) * args.max_length/2], 
+                input_ids = input_ids[: ,int(i * args.max_length/2) : int((i + 1) * args.max_length/2)], 
+                attention_mask = attention_mask[: , int(i * args.max_length/2) : int((i + 1) * args.max_length/2)], 
                 labels = None, 
                 use_cache = (i == 1), 
                 past_key_values = past_key_values, 
