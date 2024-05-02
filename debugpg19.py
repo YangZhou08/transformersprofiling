@@ -885,12 +885,25 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
     small_input_ids = input_ids 
     
     original_attention_mask2 = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
-    with torch.no_grad(): 
-        outputs = model(
-            input_ids = input_ids, 
-            attention_mask = attention_mask, 
-            labels = None 
-        ) 
+    logits = None 
+    for i in range(2): 
+        past_key_values = None 
+        with torch.no_grad(): 
+            outputs = model(
+                input_ids = input_ids[: , i * args.max_length/2 : (i + 1) * args.max_length/2], 
+                attention_mask = attention_mask[: , i * args.max_length/2 : (i + 1) * args.max_length/2], 
+                labels = None, 
+                use_cache = (i == 1), 
+                past_key_values = past_key_values, 
+            ) 
+            temp_logits = outputs.logits 
+            if logits is None: 
+                logits = temp_logits 
+            else: 
+                logits = torch.cat((logits, temp_logits), dim = 1) 
+            past_key_values = outputs.past_key_values 
+    print("the shape of logits is {}".format(logits.shape)) 
+    exit(0) 
     logits = outputs.logits 
     logits = logits[..., :-1, :].contiguous() 
     labels = labels[..., 1:].contiguous() 
