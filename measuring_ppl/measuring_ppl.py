@@ -153,7 +153,7 @@ def get_dataset(datasetname, max_length = 256, tokenizer = None):
     elif datasetname == "xsum": # we need to use special processing for this dataset 
         datasetnew = load_dataset("xsum", split = "test[:10000]") 
     elif datasetname == "wikitext": 
-        datasetnew = load_dataset("wikitext", "wikitext-103-raw-v1", split = "train[:1000]") 
+        datasetnew = load_dataset("wikitext", "wikitext-103-raw-v1", split = "test") 
     elif datasetname == "Wikipedia": 
         datasetnew = load_dataset("wikipedia", "20220301.en", split="train[:1000]") 
     else: 
