@@ -234,7 +234,7 @@ def get_dataset(datasetname, max_length = 256, tokenizer = None):
     # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
     return datasetnew 
 
-datasetlist = ["c4", "OpenWebText", "wikitext", "Wikipedia"] 
+datasetlist = ["c4", "openwebtext", "wikitext", "Wikipedia"] 
 ce_loss_list = [] 
 ppl_list = [] 
 
