@@ -17,7 +17,6 @@ from torch import nn
 from torch.utils.data import random_split 
 from packaging import version 
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union 
-from itertools import chain 
 seed_value = 42 # Set a global seed for reproducibility 
 from transformers import set_seed 
 set_seed(seed_value) 
@@ -100,9 +99,6 @@ else:
     dir_models = "/fsx-storygen/beidic/yang/model_checkpoints/" 
     dir_sdata = "/fsx-storygen/beidic/yang/c4llm_synthesized/" 
 
-model_name = args.model_name 
-text_eval = "evaluation_printout_{}_{}_{}.txt".format(commit_hash, hash_of_time, model_name) 
-
 class CustomTrainer(Trainer): 
     # Sometimes custom models need to have its own forward function 
     # If that is the case, please override the compute_loss function 
@@ -118,7 +114,10 @@ else:
     print("We now use eos_token as pad token") 
 tokenizer.padding_side = "left" 
 
-model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+if args.loading_from_checkpoint is not None: 
+    model = AutoModelForCausalLM.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device) 
+else:   
+    model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 
 datacollator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 training_args = TrainingArguments(
