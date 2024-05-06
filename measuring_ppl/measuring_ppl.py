@@ -93,6 +93,7 @@ args = parser.parse_args()
 
 ##### Setting the directories ##### 
 if "lovelace" in hostname: 
+    dir_models = "/home/yangzho6/model_checkpoints/" 
     dir_sdata = "/home/yangzho6/slimpajama/SlimPajama-627B/test/chunk1/" 
     dir_c4 = "/home/yangzho6/c4_parts/downloads/" # for C4 dataset, I used the jsonl files to load in the data 
 else: 
