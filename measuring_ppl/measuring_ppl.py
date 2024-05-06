@@ -244,6 +244,7 @@ for datasetname in datasetlist:
     else: 
         if datasetname != args.dataset_name: 
             continue 
+        eval_dataset = get_dataset(datasetname, max_length = args.max_length, tokenizer = tokenizer) 
     results = trainer.evaluate(eval_dataset = eval_dataset) 
     ce_loss_list.append(results["eval_loss"]) 
     if "eval_perplexity" in results: 
