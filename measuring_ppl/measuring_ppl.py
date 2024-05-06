@@ -239,7 +239,11 @@ ce_loss_list = []
 ppl_list = [] 
 
 for datasetname in datasetlist: 
-    eval_dataset = get_dataset(datasetname, max_length = args.max_length, tokenizer = tokenizer) 
+    if args.dataset_name is None: 
+        eval_dataset = get_dataset(datasetname, max_length = args.max_length, tokenizer = tokenizer) 
+    else: 
+        if datasetname != args.dataset_name: 
+            continue 
     results = trainer.evaluate(eval_dataset = eval_dataset) 
     ce_loss_list.append(results["eval_loss"]) 
     if "eval_perplexity" in results: 
