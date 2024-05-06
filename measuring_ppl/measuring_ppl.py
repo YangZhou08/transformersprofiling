@@ -85,6 +85,7 @@ parser = argparse.ArgumentParser(
                     epilog='Text at the bottom of help') 
 
 parser.add_argument("--loading_from_checkpoint", type = str, default = None) 
+parser.add_argument("--max_length", type = int, default = 256) 
 parser.add_argument("--batch_size", type = int, default = 8) 
 parser.add_argument("--dataset_name", type = str, choices = ["c4", "OpenWebText", "wikitext", "Wikipedia"], default = None) 
 # TODO: add the statistics of the Llama-2-7B model 
@@ -237,7 +238,7 @@ ce_loss_list = []
 ppl_list = [] 
 
 for datasetname in datasetlist: 
-    eval_dataset = get_dataset(datasetname) 
+    eval_dataset = get_dataset(datasetname, max_length = args.max_length, tokenizer = tokenizer) 
     results = trainer.evaluate(eval_dataset = eval_dataset) 
     ce_loss_list.append(results["eval_loss"]) 
     if "eval_perplexity" in results: 
