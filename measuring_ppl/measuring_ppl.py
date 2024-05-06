@@ -119,12 +119,13 @@ tokenizer.padding_side = "left"
 if args.loading_from_checkpoint is not None: 
     model = AutoModelForCausalLM.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16).to(torch_device) 
 else:   
-    model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    # model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+    model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-13b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 
 datacollator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 training_args = TrainingArguments(
     output_dir = dir_models, 
-    per_device_eval_batch_size = 8, 
+    per_device_eval_batch_size = args.batch_size, 
     do_train = False, 
     do_eval = True, 
     label_names = ["labels"], # this argument is optional for default models, but vital for custom models 
