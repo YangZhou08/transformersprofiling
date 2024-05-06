@@ -143,19 +143,19 @@ def get_dataset(datasetname, max_length = 256, tokenizer = None):
         dfiles = [] 
         filename = "c4_file150.json" 
         dfiles.append(dir_c4 + filename) 
-        datasetnew = load_dataset("json", data_files = dfiles, split = "train[:1000]") 
+        datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
     elif datasetname == "pg19": 
         datasetnew = load_dataset('emozilla/pg19', split = "train[:10000]") 
     elif datasetname == "cnn_dailymail": # we need to use special processing for this dataset 
         datasetnew = load_dataset("cnn_dailymail", "3.0.0", split = "test[:10000]") 
     elif datasetname == "openwebtext": 
-        datasetnew = load_dataset("Skylion007/openwebtext", split = "train[:1000]") 
+        datasetnew = load_dataset("Skylion007/openwebtext", split = "train[:10000]") 
     elif datasetname == "xsum": # we need to use special processing for this dataset 
         datasetnew = load_dataset("xsum", split = "test[:10000]") 
     elif datasetname == "wikitext": 
         datasetnew = load_dataset("wikitext", "wikitext-103-raw-v1", split = "test") 
     elif datasetname == "Wikipedia": 
-        datasetnew = load_dataset("wikipedia", "20220301.en", split="train[:1000]") 
+        datasetnew = load_dataset("wikipedia", "20220301.en", split="train[:10000]") 
     else: 
         raise ValueError("dataset_name is not recognized") 
 
@@ -253,5 +253,8 @@ for datasetname in datasetlist:
         ppl_list.append(np.exp(results["eval_loss"]).item()) 
     print(results) 
 
-for idx, datasetname in enumerate(datasetlist): 
-    print("{}: ce_loss is {}, ppl is {}".format(datasetname, ce_loss_list[idx], ppl_list[idx])) 
+if args.dataset_name is None: 
+    for idx, datasetname in enumerate(datasetlist): 
+        print("{}: ce_loss is {}, ppl is {}".format(datasetname, ce_loss_list[idx], ppl_list[idx])) 
+else: 
+    print("ce_loss is {}, ppl is {}".format(ce_loss_list[0], ppl_list[0])) 
