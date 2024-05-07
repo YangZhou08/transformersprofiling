@@ -201,7 +201,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
     labels = batch["labels"].to(torch_device) 
     batch_size, seq_len = original_attention_mask.shape 
     # addedon_length = (seq_len - 7 - 1) // 7 
-    addon_length = (seq_len - args.kernelsize - 1) // args.kernelsize 
+    addedon_length = (seq_len - args.kernelsize - 1) // args.kernelsize 
     
     large_input_ids = input_ids 
     small_input_ids = input_ids 
