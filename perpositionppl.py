@@ -34,24 +34,14 @@ print("Hostname: ", hostname)
 torch.set_printoptions(precision=3) 
 
 if "lovelace" in hostname: 
-    # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_models = "/home/yangzho6/model_checkpoints/" 
-    # dir_c4llmsynthesized = "/home/yangzho6/c4llm_synthesized/" 
-    # dir_c4llmsynthesized = "/home/yangzho6/c4llm_synthesized/tinyllama/" 
     dir_c4llmsynthesized = "/home/yangzho6/c4llm_synthesized/llama2_7b_topkna/" 
-    # dir_c4llmsynthesized = "/home/beidic/yangzho6/c4llm_synthesized/" 
     dir_c4 = "/home/yangzho6/c4_parts/downloads/" 
-    # dir_sdata = "/home/yangzho6/slimpajama/SlimPajama-627B/test/chunk1/" 
 elif "ada" in hostname: 
-    # cache_dir = "/home/bc20/yang/transformersprofiling" 
     dir_models = "/home/beidic/yangzho6/model_checkpoints/" 
     dir_c4llmsynthesized = "/home/beidic/yangzho6/c4llm_synthesized/" 
 else: 
-    # cache_dir = "/home/bc20/yang/transformersprofiling" 
-    # dir_models = "/home/yangzho6/model_checkpoints/" 
     dir_models = "/fsx-storygen/beidic/yang/model_checkpoints/" 
-    # dir_sdata = "/home/yangzho6/c4llm_synthesized/" 
-    # dir_sdata = "/fsx-storygen/beidic/yang/c4llm_synthesized/" 
     dir_c4llmsynthesized = "/fsx-storygen/beidic/yang/c4llm_synthesized/" 
     dir_c4 = "/fsx-storygen/beidic/yang/c4_parts/downloads/" 
 
@@ -63,7 +53,6 @@ else:
     tokenizer.pad_token = tokenizer.eos_token 
     print("We now use eos_token as pad token") 
 tokenizer.padding_side = "left" 
-# tokenizer.padding_side = "right" 
 
 kernel_size = 7 
 
