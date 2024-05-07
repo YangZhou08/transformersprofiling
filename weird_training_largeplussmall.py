@@ -259,11 +259,14 @@ parser.add_argument("--wandb_session", type = str, default = None)
 parser.add_argument("--wandb_session_name", type = str, default = None) 
 parser.add_argument("--path_d", type = int, default = 0) 
 parser.add_argument("--datafilegranularity", type = int, default = 8) 
+parser.add_argument("--disable_wandb", action = "store_true") 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
     args.group2lr = None # we enforce it 
 # assert args.finetune_checkpoint is not None 
+if args.disable_wandb: 
+    has_wandb = False 
 print(args) 
 
 if "lovelace" in hostname: 
