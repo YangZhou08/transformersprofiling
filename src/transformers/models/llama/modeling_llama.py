@@ -6118,16 +6118,12 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                     start = start.unsqueeze(0) 
                 small_input_ids = torch.cat([small_input_ids, start], dim = 1) 
                 original_attention_mask = torch.cat([original_attention_mask, torch.ones_like(start)], dim = 1) 
-            seq_len = hidden_states.shape[1] 
+            # seq_len = hidden_states.shape[1] 
             
             if self.small_model_dtype == torch.float32: 
                 hidden_states = hidden_states.to(torch.float32) 
             elif self.small_model_dtype == torch.bfloat16: 
                 hidden_states = hidden_states.to(torch.bfloat16) 
-            if self.sliding_window_length != 1: 
-                selected_seq_indices = [i * self.sliding_window_length for i in range(0, math.ceil(seq_len / self.sliding_window_length))]  # adding the last one to get future tokens 
-            else: 
-                selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
             # print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
             
             if self.generate_model_hidden_states is None: 
@@ -6137,12 +6133,17 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 print(colored("before appending hidden states to length {}".format(self.generate_model_hidden_states.shape[1]), "yellow")) 
                 self.generate_model_hidden_states = torch.cat([self.generate_model_hidden_states, hidden_states.clone().detach()], dim = 1) 
                 print(colored("appending hidden states to length {}".format(self.generate_model_hidden_states.shape[1]), "yellow")) 
-            
-            # hidden_states = hidden_states[:, selected_seq_indices, :] 
-            # hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
-            select_states = self.generate_model_hidden_states[:, selected_seq_indices, :] 
-            select_states = select_states[:, 1 :, :] 
+                
             self.generate_model_past_key_values = outputs.past_key_values 
+        seq_len = self.generate_model_hidden_states.shape[1] 
+        if self.sliding_window_length != 1: 
+            selected_seq_indices = [i * self.sliding_window_length for i in range(0, math.ceil(seq_len / self.sliding_window_length))]  # adding the last one to get future tokens 
+        else: 
+            selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
+        # hidden_states = hidden_states[:, selected_seq_indices, :] 
+        # hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
+        select_states = self.generate_model_hidden_states[:, selected_seq_indices, :] 
+        select_states = select_states[:, 1 :, :] 
             
         self.generate_iteration_count += 1 
         
