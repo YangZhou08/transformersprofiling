@@ -5250,9 +5250,13 @@ class LlamaWeirdLargeFullCoverage(LlamaPreTrainedModel):
             # selected_seq_indices = [i * self.sliding_window_length + nummagic for i in range(0, seq_len // self.sliding_window_length)] 
             nummagic = self.sliding_window_length - 1 - j 
             selected_seq_indices = [i * self.sliding_window_length + j for i in range(0, seq_len // self.sliding_window_length)] 
+            '''
             print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
+            ''' 
             selected_hidden = hidden_states[:, selected_seq_indices, :][:, 1 :, :] 
+            '''
             print("hidden_states shape {} dtype {}".format(selected_hidden.shape, selected_hidden.dtype)) 
+            ''' 
             
             if nummagic != 0: 
                 newsmallinputids = torch.cat([torch.full((large_input_ids.shape[0], nummagic), self.tokenizer_pad_id, dtype = large_input_ids.dtype).to(large_input_ids.device), large_input_ids[:, : -nummagic].clone()], dim = 1) 
@@ -5270,7 +5274,7 @@ class LlamaWeirdLargeFullCoverage(LlamaPreTrainedModel):
             # mse_loss = 0.5 * mse_loss + 0.5 * cossim_loss 
             intermediate_l2_dist = mse_loss.clone().detach() 
             cossim_input = cossim_loss.clone().detach() 
-            
+            '''
             # interleave the hidden_states and the input_ids 
             # print("expected {}".format(small_input_ids.shape[1] // self.sliding_window_length - 1)) 
             print("expected {}".format(newsmallinputids.shape[1] // self.sliding_window_length - 1)) 
@@ -5279,6 +5283,7 @@ class LlamaWeirdLargeFullCoverage(LlamaPreTrainedModel):
             print("self.addonmodel_start {}".format(self.addonmodel_start)) 
             print("sliding_window_length {}".format(self.sliding_window_length)) 
             print("hidden_states.shape[1] {}".format(selected_hidden.shape[1])) 
+            ''' 
             # assert hidden_states.shape[1] == (small_input_ids.shape[1] - self.addonmodel_start) // self.sliding_window_length  # please add back 
             assert selected_hidden.shape[1] == (newsmallinputids.shape[1] - self.addonmodel_start) // self.sliding_window_length # please add back 
             addonmodeloutput = self.addonsmallmodel( 
@@ -5305,8 +5310,10 @@ class LlamaWeirdLargeFullCoverage(LlamaPreTrainedModel):
             # mask_list_pos = [self.addonmodel_start + i * (self.sliding_window_length + 1) for i in range((seq_length - self.addonmodel_start) // (self.sliding_window_length + 1))] 
             mask_list_pos = [self.addonmodel_start + self.sliding_window_length - 1 + i * (self.sliding_window_length + 1) for i in range((seq_length - self.addonmodel_start) // (self.sliding_window_length + 1))] 
             mask_list_pos22 = [x - 1 for x in mask_list_pos] 
+            ''' 
             print("mask list pos22: {}".format(mask_list_pos22)) 
             print("length of mask list pos22: {}".format(len(mask_list_pos22))) 
+            ''' 
             
             if labels is not None: 
                 selected_indices = list(range(self.addonmodel_start - 1)) 
