@@ -6268,6 +6268,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 return_dict = True, 
                 output_attentions = output_attentions, 
                 output_hidden_states = output_hidden_states, 
+                use_cache = True, 
             ) 
 
             if synced_gpus and this_peer_finished:
