@@ -6128,11 +6128,11 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             
             if self.generate_model_hidden_states is None: 
                 self.generate_model_hidden_states = hidden_states.clone().detach() 
-                print(colored("length of the generate_model_hidden_states is {}".format(hidden_states.shape[1]), "yellow")) 
+                # print(colored("length of the generate_model_hidden_states is {}".format(hidden_states.shape[1]), "yellow")) 
             else: 
-                print(colored("before appending hidden states to length {}".format(self.generate_model_hidden_states.shape[1]), "yellow")) 
+                # print(colored("before appending hidden states to length {}".format(self.generate_model_hidden_states.shape[1]), "yellow")) 
                 self.generate_model_hidden_states = torch.cat([self.generate_model_hidden_states, hidden_states.clone().detach()], dim = 1) 
-                print(colored("appending hidden states to length {}".format(self.generate_model_hidden_states.shape[1]), "yellow")) 
+                # print(colored("appending hidden states to length {}".format(self.generate_model_hidden_states.shape[1]), "yellow")) 
                 
             self.generate_model_past_key_values = outputs.past_key_values 
         seq_len = self.generate_model_hidden_states.shape[1] 
@@ -6502,10 +6502,10 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
     def prepare_inputs_for_generation(
         self, input_ids, past_key_values = None, attention_mask = None, inputs_embeds = None, **kwargs
     ): 
-        print("pask_key_values is not none {}".format(past_key_values is not None)) 
+        # print("pask_key_values is not none {}".format(past_key_values is not None)) 
         remove_prefix_length = None 
         if past_key_values is not None: 
-            print("past_key_values is not None") 
+            # print("past_key_values is not None") 
             past_length = past_key_values[0][0].shape[2] 
             
             # Some generation methods already pass only the last input ID
