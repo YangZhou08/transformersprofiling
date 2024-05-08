@@ -224,6 +224,6 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
         #     usingsecondtolastvectors = False, 
         #     autoregressive_first_element = True, 
         # ) 
-        output = model.generate(input_ids, attention_mask = attention_mask, max_length = 100, return_dict_in_generate = True, do_sample = True) 
+        output = model.generate(input_ids, attention_mask = attention_mask, max_length = 200, return_dict_in_generate = True, do_sample = True) 
         print(tokenizer.decode(output.sequences[0])) 
         exit(0) 
