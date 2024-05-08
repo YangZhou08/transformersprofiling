@@ -19,6 +19,7 @@ from transformers import Trainer, TrainingArguments
 from transformers import DataCollatorForLanguageModeling 
 from torch.utils.data import random_split 
 from torch.nn import CrossEntropyLoss 
+from termcolor import colored 
 
 from tqdm import tqdm 
 
@@ -225,5 +226,8 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
         #     autoregressive_first_element = True, 
         # ) 
         output = model.generate(input_ids, attention_mask = attention_mask, max_length = 200, return_dict_in_generate = True, do_sample = True) 
-        print(tokenizer.decode(output.sequences[0])) 
+        # print(tokenizer.decode(output.sequences[0])) 
+        print(colored(tokenizer.decode(output.sequences[0][:101]), "blue"), end = "") 
+        print(colored(tokenizer.decode(output.sequences[0][101:]), "green")) 
+        
         exit(0) 
