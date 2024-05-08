@@ -6130,9 +6130,6 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
             # print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
             
-            hidden_states = hidden_states[:, selected_seq_indices, :] 
-            hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
-            self.generate_model_past_key_values = outputs.past_key_values 
             if self.generate_model_hidden_states is None: 
                 self.generate_model_hidden_states = hidden_states.clone().detach() 
                 print(colored("length of the generate_model_hidden_states is {}".format(hidden_states.shape[1]), "yellow")) 
@@ -6140,6 +6137,13 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 print(colored("before appending hidden states to length {}".format(self.generate_model_hidden_states.shape[1]), "yellow")) 
                 self.generate_model_hidden_states = torch.cat([self.generate_model_hidden_states, hidden_states.clone().detach()], dim = 1) 
                 print(colored("appending hidden states to length {}".format(self.generate_model_hidden_states.shape[1]), "yellow")) 
+            
+            # hidden_states = hidden_states[:, selected_seq_indices, :] 
+            # hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
+            select_states = self.generate_model_hidden_states[:, selected_seq_indices, :] 
+            select_states = select_states[:, 1 :, :] 
+            self.generate_model_past_key_values = outputs.past_key_values 
+            
         self.generate_iteration_count += 1 
         
         # print(colored("running the small model side", "green")) 
@@ -6148,7 +6152,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             attention_mask = original_attention_mask, 
             position_ids = None, 
             past_key_values = None, 
-            condensed_embeds = self.generate_model_hidden_states, 
+            condensed_embeds = select_states, 
             labels = None, 
             use_cache = None, 
             output_attentions = True, 
