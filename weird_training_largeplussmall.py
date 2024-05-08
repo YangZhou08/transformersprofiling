@@ -1088,9 +1088,44 @@ for k, v in large_model.named_parameters():
     pretraining_weights_group.append(v) 
 print("length of the pretraining_weights_group is {} ".format(len(pretraining_weights_group))) 
 
-custom_optimizer = torch.optim.AdamW([
-    {"params": pretraining_weights_group, "lr": float(args.group1lr)}, 
-]) 
+class CastOutputToFloat(nn.Sequential):
+  def forward(self, x): return super().forward(x).to(torch.float32)
+large_model.lm_head = CastOutputToFloat(large_model.lm_head)
+large_model.addonsmallmodel.lm_head = CastOutputToFloat(large_model.addonsmallmodel.lm_head)
+
+from peft import LoraConfig, get_peft_model 
+def print_trainable_parameters(model):
+    """
+    Prints the number of trainable parameters in the model.
+    """
+    trainable_params = 0
+    all_param = 0
+    for _, param in model.named_parameters():
+        all_param += param.numel()
+        if param.requires_grad:
+            trainable_params += param.numel()
+    print(
+        f"trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param}"
+    )
+
+config = LoraConfig(
+    r=8,
+    lora_alpha=32,
+    target_modules=["q_proj", "v_proj", "gate_proj", "up_proj", "down_proj"],
+    lora_dropout=0.05,
+    bias="none",
+    task_type="CAUSAL_LM"
+)
+# custom_optimizer = torch.optim.AdamW([
+#     {"params": pretraining_weights_group, "lr": float(args.group1lr)}, 
+# ]) 
+
+print_trainable_parameters(large_model)
+large_model = get_peft_model(large_model, config)
+print_trainable_parameters(large_model)
+# custom_optimizer = torch.optim.AdamW([
+#     {"params": pretraining_weights_group, "lr": float(args.group1lr)}, 
+# ]) 
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
@@ -1140,7 +1175,7 @@ trainer = CustomTrainer(
     # eval_dataset = test_dataset, 
     data_collator = data_collator, 
     # compute_metrics = compute_metrics, 
-    optimizers = (custom_optimizer, None), 
+    #optimizers = (custom_optimizer, None), 
     experiment_setting = args.experiment_setting, 
     tokenizer = tokenizer, 
     eval_mode = args.eval_mode, 
