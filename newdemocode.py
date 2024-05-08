@@ -177,7 +177,7 @@ def get_dataset(datasetname, max_length):
 
 datasetname = "c4" 
 listmaxl = {1 : 259, 2 : 259, 3 : 259, 4 : 257, 5 : 256, 7 : 260, 10 : 261} 
-eval_dataset = get_dataset(datasetname, listmaxl[2]) 
+eval_dataset = get_dataset(datasetname, 100) 
 
 training_args = TrainingArguments(
     output_dir = dir_models, 
