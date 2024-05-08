@@ -227,7 +227,9 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
         # ) 
         output = model.generate(input_ids, attention_mask = attention_mask, max_length = 200, return_dict_in_generate = True, do_sample = True) 
         # print(tokenizer.decode(output.sequences[0])) 
-        print(colored(tokenizer.decode(output.sequences[0][:101]), "blue"), end = "") 
-        print(colored(tokenizer.decode(output.sequences[0][101:]), "green")) 
+        for i in range(output.sequences.shape[0]): 
+            print(colored(tokenizer.decode(output.sequences[i][:101]), "blue"), end = "") 
+            print(colored(tokenizer.decode(output.sequences[i][101:]), "green")) 
+            print("\n", end = "") 
         
         exit(0) 
