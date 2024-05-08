@@ -6452,13 +6452,60 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         )
         return model_inputs 
     
-    def prepare_inputs_for_generation(
+    def prepare_inputs_for_generation3(
         self, input_ids, past_key_values = None, attention_mask = None, inputs_embeds = None, **kwargs
     ): 
         assert past_key_values is None, "past_key_values is not None" 
         
         position_ids = None 
         
+        # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
+        if inputs_embeds is not None and past_key_values is None:
+            model_inputs = {"inputs_embeds": inputs_embeds}
+        else:
+            model_inputs = {"large_input_ids": input_ids, 
+                            "small_input_ids": input_ids,} 
+        
+        # print("attention_mask", attention_mask.shape) 
+        # print("input_ids", input_ids.shape) 
+        if attention_mask.shape[1] == input_ids.shape[1] - 1: 
+            torch.cat([attention_mask, torch.ones(attention_mask.shape[0], 1, device = attention_mask.device)], dim = 1) 
+        assert attention_mask.shape[1] == input_ids.shape[1], "attention_mask is not compatible with input_ids" 
+        original_attention_mask = torch.cat([attention_mask, torch.ones(attention_mask.shape[0], (input_ids.shape[1] - self.addonmodel_start)//self.sliding_window_length + 1, device = attention_mask.device)], dim = 1) 
+        
+        model_inputs.update( 
+            { 
+                "position_ids": position_ids, 
+                "past_key_values": past_key_values, 
+                "use_cache": kwargs.get("use_cache"), 
+                "attention_mask": attention_mask, 
+                "original_attention_mask": original_attention_mask, 
+            } 
+        ) 
+        return model_inputs 
+    
+    def prepare_inputs_for_generation(
+        self, input_ids, past_key_values = None, attention_mask = None, inputs_embeds = None, **kwargs
+    ): 
+        if past_key_values is not None: 
+            past_length = past_key_values[0][0].shape[2] 
+            
+            # Some generation methods already pass only the last input ID
+            if input_ids.shape[1] > past_length:
+                remove_prefix_length = past_length
+            else:
+                # Default to old behavior: keep only final ID
+                remove_prefix_length = input_ids.shape[1] - 1
+
+            input_ids = input_ids[:, remove_prefix_length:] 
+        
+        posision_ids = kwargs.get("position_ids", None) 
+        if attention_mask is not None and position_ids is None: 
+            position_ids = attention_mask.long().cumsum(-1) - 1 
+            position_ids.masked_fill_(attention_mask == 0, 1) 
+            if past_key_values: 
+                position_ids = position_ids[:, -input_ids.shape[1] :] 
+                
         # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
         if inputs_embeds is not None and past_key_values is None:
             model_inputs = {"inputs_embeds": inputs_embeds}
