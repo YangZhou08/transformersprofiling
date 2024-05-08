@@ -208,22 +208,20 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
     
     original_attention_mask2 = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
     with torch.no_grad(): 
-        outputs = model(
-            large_input_ids = large_input_ids, 
-            small_input_ids = small_input_ids, 
-            attention_mask = original_attention_mask, 
-            output_hidden_states = True, 
-            output_attentions = True, 
-            return_dict = True, 
-            original_attention_mask = original_attention_mask2, 
-            labels = labels, 
-            condensed_embed_labels = None, 
-            label_adjustment = False, 
-            usingsecondtolastvectors = False, 
-            autoregressive_first_element = True, 
-        ) 
-        loss = outputs.loss 
-        print("loss: ", loss) 
-
-sum += loss 
-print("score: ", sum/len(trainer.get_eval_dataloader())) 
+        # outputs = model(
+        #     large_input_ids = large_input_ids, 
+        #     small_input_ids = small_input_ids, 
+        #     attention_mask = original_attention_mask, 
+        #     output_hidden_states = True, 
+        #     output_attentions = True, 
+        #     return_dict = True, 
+        #     original_attention_mask = original_attention_mask2, 
+        #     labels = labels, 
+        #     condensed_embed_labels = None, 
+        #     label_adjustment = False, 
+        #     usingsecondtolastvectors = False, 
+        #     autoregressive_first_element = True, 
+        # ) 
+        output = model.generate(input_ids, attention_mask = attention_mask, max_length = 100, return_dict_in_generate = True) 
+        print(tokenizer.decode(output.sequences[0])) 
+        exit(0) 
