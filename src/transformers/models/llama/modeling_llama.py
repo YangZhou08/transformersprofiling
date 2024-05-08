@@ -5418,38 +5418,13 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
     """ 
     # almost identical to LlamaWeirdLarge3, but weird fix for some model 
     _tied_weights_keys = ["lm_head.weight"]
-    '''
-    def __init__(self, *args, small_config, hostname, large_dim, sliding_window_length = 7, use_mse_loss = False, **kwargs): 
-        super().__init__(*args, **kwargs) 
-        self.model = LlamaModel(self.config) 
-        self.vocab_size = self.config.vocab_size 
-        # self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False) 
-        self.lm_head = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias = False) 
-        
-        # self.addonsmallmodel = addonsmallmodel 
-        # self.addonsmallmodel = SimpleSmallModel(small_config, sliding_window_length = sliding_window_length, hostname = hostname, target_model_dim = large_dim) 
-        self.addonsmallmodel = None 
-        self.sliding_window_length = sliding_window_length 
-        # self.small_model_dtype = self.addonsmallmodel.embed_projection.weight.dtype 
-        self.small_model_dtype = torch.bfloat16 
-        print(colored("small_model_dtype {}".format(self.small_model_dtype), "red")) 
-        
-        self.use_mse_loss = use_mse_loss 
-        self.alpha = 0.5 
 
-        # Initialize weights and apply final processing
-        self.post_init()
-    ''' 
     def __init__(self, config): 
         super().__init__(config) 
         self.model = LlamaModel(config) 
         self.vocab_size = config.vocab_size 
         self.lm_head = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias = False) 
-        # self.addonsmallmodel = None 
         small_config = LlamaConfig.from_pretrained("Cheng98/llama-160m") 
-        # self.sliding_window_length = 7 
-        # self.sliding_window_length = 2 
-        # self.sliding_window_length = 1 
         self.addonsmallmodel = SimpleSmallModel(small_config, target_model_dim = self.config.hidden_size) # sliding_window_length is set elsewhere 
         self.small_model_dtype = torch.bfloat16 
         self.use_mse_loss = False 
