@@ -6487,6 +6487,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
     def prepare_inputs_for_generation(
         self, input_ids, past_key_values = None, attention_mask = None, inputs_embeds = None, **kwargs
     ): 
+        print("pask_key_values is not none {}".format(past_key_values is not None)) 
         if past_key_values is not None: 
             print("past_key_values is not None") 
             past_length = past_key_values[0][0].shape[2] 
