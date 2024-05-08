@@ -571,10 +571,8 @@ class CustomTrainer(Trainer):
                 output_hidden_states = True, 
                 output_attentions = True, 
                 return_dict = True, 
-                # condensed_fashion = "ground_truth", 
                 autoregressive_first_element = self.autoregressive_first_element, 
                 label_adjustment = False, 
-                # usingsecondtolastvectors = 
                 usingsecondtolastvectors = args.usingsecondlast, 
                 weight_added = args.use_weighted_loss, 
                 weight_type = args.weighted_type, 
@@ -712,52 +710,7 @@ class CustomTrainer(Trainer):
         input_attention_mask = input_attention_mask[:, 1:] 
         labels = labels[:, 1:] 
         preds = torch.argmax(logits, dim = -1) 
-        '''
-        if self.accelerator.is_main_process and outside_step == 0 and not (isinstance(getattr(model, "module", model), LlamaWeirdLargeFullCoverage) or isinstance(model, LlamaWeirdLargeFullCoverage)): 
-            print("*** evaluating at step {} ***".format(self.iteration_count)) 
-            # f = open("key_notes{}.md".format(self.commit_hash), "a") 
-            # f.write("writing key notes at step {}".format(self.iteration_count)) 
-            mask_correctness = (preds[: 20, 63 :] == labels[: 20, 63 :]).to(torch.bool) 
-            # print(mask_correctness.shape) 
-            pred_outputs = preds[: 20] 
-            write_out_text = [] 
-            for i in range(len(pred_outputs)): 
-                prediction_prefix = self.tokenizer.decode(pred_outputs[i][: 63]) 
-                prediction_text = "the prediction is: {}".format(prediction_prefix) 
-                for j in range(mask_correctness.shape[1]): 
-                    if mask_correctness[i][j]: 
-                        prediction_text += colored(self.tokenizer.decode(pred_outputs[i][63 + j]), "green") + " " 
-                    else: 
-                        prediction_text += colored(self.tokenizer.decode(pred_outputs[i][63 + j]), "red") + " " 
-                print(prediction_text) 
-                print() 
-                # print(labels[i]) 
-                mask_filtered = labels[i][input_attention_mask[i] == 1] 
-                mask_filtered[mask_filtered == -100] = 0 
-                labels_outputs1 = self.tokenizer.decode(mask_filtered[: 63]) 
-                label_text = "the label is: {}".format(colored(labels_outputs1, "yellow")) 
-                print(label_text, end = " ") 
-                labels_outputs2 = self.tokenizer.decode(mask_filtered[63 :]) 
-                write_out_text.append("the prediction is: " + prediction_prefix + " " + prediction_text + "\n" + "the label is: " + label_text + " " + labels_outputs2 + "\n") 
-                print(colored(labels_outputs2, "cyan")) 
-                print() 
-                print() 
-                # wandb.log({"key notes: ": prediction_text + label_text}) 
-                # f.write(prediction_text + "\n" + label_text + "\n") 
-                
-            with open(self.text_eval, "a") as f: 
-                f.write("*** at step {} {}".format(self.iteration_count, self.state.global_step)) 
-                f.write("\n") 
-                for i, text in enumerate(write_out_text): 
-                    f.write("example {}/{}\n".format(i, len(write_out_text))) 
-                    f.write(text) 
-                    f.write("\n") 
-                f.write("\n") 
-            # f.write("\n") 
-            # f.close() 
-            # self.artifact.add_file("key_notes{}.md".format(self.commit_hash), name = "key_notes.md") 
-            # wandb.log_artifact(self.artifact) 
-        ''' 
+        
         if self.accelerator.state.num_processes > 1: 
             # torch.distributed.barrier() # I found that barrier() works, but it still not as good as wait_for_everyone() 
             self.accelerator.wait_for_everyone() 
@@ -772,16 +725,7 @@ class CustomTrainer(Trainer):
         # print("shape of indices_to_keep: {}".format(indices_to_keep.shape)) 
         interest_token_count = torch.sum(indices_to_keep[:, 63 :].reshape(-1), dim = 0).item() # check whether 63 makes sense and make it more general if it is correct or not 
         # accuracy = accuracy_score(labels[indices_to_keep], preds[indices_to_keep]) 
-        '''
-        if not (isinstance(getattr(model, "module", model), LlamaWeirdLargeTestmixedb) or isinstance(model, LlamaWeirdLargeTestmixedb)): 
-            correct_words = torch.sum((preds[indices_to_keep] == labels[indices_to_keep]).view(-1), dim = 0).item() 
-            # print("shape of indices_to_keep: {}".format(indices_to_keep.shape)) 
-            # interest_correct_count = torch.sum((preds[indices_to_keep][:, 63 :] == labels[indices_to_keep][:, 63 :]).view(-1), dim = 0).item() 
-            interest_correct_count = torch.sum(((preds * indices_to_keep)[:, 63: ] == (labels * indices_to_keep)[:, 63: ]).view(-1), dim = 0).item() 
-        else: 
-            correct_words = 0 
-            interest_correct_count = 0 
-        ''' 
+        
         correct_words = 0 
         interest_correct_count = 0 
         print("correct words: {} and total words: {}".format(correct_words, total_valid_tokens)) 
@@ -889,12 +833,7 @@ class CustomTrainer(Trainer):
             loss, logits, labels = self.prediction_step(model, inputs, False, ignore_keys=ignore_keys) 
             if local_device == None: 
                 local_device = loss.device 
-            # print(ignore_keys) 
-            # print(colored("the loss is {}".format(loss), "yellow")) 
-            # print(colored("the shape of logits is {} {}".format(logits.shape, "yellow"))) 
-            # print(colored("the shape of logits if {} {}".format(len(logits), logits[0].shape), "yellow")) 
-            # print(colored("the shape of logits is {}".format(logits.shape), "yellow")) 
-            # print(colored("the shape of labels is {}".format(labels.shape), "yellow")) 
+            
             total_loss += loss.item() 
             local_metrics = self.local_compute_metrics(logits, labels, loss, inputs["attention_mask"], step) 
             total_correct_words += local_metrics["correct_words"] 
