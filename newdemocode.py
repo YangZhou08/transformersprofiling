@@ -232,6 +232,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
                                 do_sample = True, 
                                 use_cache = True, 
         ) 
+        model.resetgenerationcount() 
         # print(tokenizer.decode(output.sequences[0])) 
         for i in range(output.sequences.shape[0]): 
             print(colored(tokenizer.decode(output.sequences[i][:101]), "blue"), end = "") 
