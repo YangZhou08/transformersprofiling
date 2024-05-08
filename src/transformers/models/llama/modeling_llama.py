@@ -6488,6 +6488,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         self, input_ids, past_key_values = None, attention_mask = None, inputs_embeds = None, **kwargs
     ): 
         if past_key_values is not None: 
+            print("past_key_values is not None") 
             past_length = past_key_values[0][0].shape[2] 
             
             # Some generation methods already pass only the last input ID
