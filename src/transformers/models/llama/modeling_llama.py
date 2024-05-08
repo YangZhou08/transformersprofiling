@@ -6135,6 +6135,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             self.generate_model_past_key_values = outputs.past_key_values 
             if self.generate_model_hidden_states is None: 
                 self.generate_model_hidden_states = hidden_states.clone().detach() 
+                print(colored("length of the generate_model_hidden_states is {}".format(hidden_states.shape[1]), "yellow")) 
             else: 
                 print(colored("appending hidden states to length {}".format(self.generate_model_hidden_states.shape[1]), "yellow")) 
                 self.generate_model_hidden_states = torch.cat([self.generate_model_hidden_states, hidden_states.clone().detach()], dim = 1) 
