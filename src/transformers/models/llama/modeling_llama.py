@@ -6268,7 +6268,6 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 return_dict = True, 
                 output_attentions = output_attentions, 
                 output_hidden_states = output_hidden_states, 
-                use_cache = True, 
             ) 
 
             if synced_gpus and this_peer_finished:
@@ -6527,11 +6526,13 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             { 
                 "position_ids": position_ids, 
                 "past_key_values": past_key_values, 
-                "use_cache": kwargs.get("use_cache"), 
+                # "use_cache": kwargs.get("use_cache"), 
+                "use_cache": True, 
                 "attention_mask": attention_mask, 
                 "original_attention_mask": original_attention_mask, 
             } 
         ) 
+        
         return model_inputs 
 
     @staticmethod
