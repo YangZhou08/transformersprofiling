@@ -6162,7 +6162,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         return CausalLMOutputWithPastLargeDistance3(
             loss = loss, 
             logits = logits, 
-            past_key_values = past_key_values, 
+            past_key_values = outputs.past_key_values, 
             hidden_states = None, 
             attentions = None, 
             l2_distance = None, 
