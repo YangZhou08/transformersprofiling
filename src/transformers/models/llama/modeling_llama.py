@@ -6504,12 +6504,13 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
 
             # input_ids = input_ids[:, remove_prefix_length:] 
         
-        position_ids = kwargs.get("position_ids", None) 
-        if attention_mask is not None and position_ids is None: 
-            position_ids = attention_mask.long().cumsum(-1) - 1 
-            position_ids.masked_fill_(attention_mask == 0, 1) 
-            if past_key_values: 
-                position_ids = position_ids[:, -input_ids.shape[1] :] 
+        # position_ids = kwargs.get("position_ids", None) 
+        # if attention_mask is not None and position_ids is None: 
+        #     position_ids = attention_mask.long().cumsum(-1) - 1 
+        #     position_ids.masked_fill_(attention_mask == 0, 1) 
+        #     if past_key_values: 
+        #         position_ids = position_ids[:, -input_ids.shape[1] :] 
+        position_ids = None 
                 
         # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
         if inputs_embeds is not None and past_key_values is None:
