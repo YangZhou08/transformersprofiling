@@ -552,16 +552,17 @@ class CustomTrainer(Trainer):
                 first_n_rows = args.first_n_rows, 
             ) 
             
-        elif isinstance(getattr(model, "module", model), LlamaWeirdLargeFullCoverage) or isinstance(model, LlamaWeirdLargeFullCoverage): 
-            batch_size, seq_len = attention_mask.shape 
-            if not isinstance(model, LlamaWeirdLargeFullCoverage): 
-                addedon_length = (seq_len - model.module.addonmodel_start) // self.sliding_window_length 
-            else: 
-                addedon_length = (seq_len - model.addonmodel_start) // self.sliding_window_length 
+        else: 
+
+            
+            batch_size, seq_len = attention_mask.shape  
+            addedon_length = (seq_len - model.module.addonmodel_start) // self.sliding_window_length 
             original_attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
             if self.accelerator.is_main_process: 
                 print("printing out the experiment_setting: {} eval_mode: {}".format(self.experiment_setting, self.eval_mode)) 
             print(colored("the length of input_ids is {}".format(input_ids.shape[1]), "green")) 
+            print(input_ids)
+
             outputs = model(
                 large_input_ids = input_ids, 
                 small_input_ids = input_ids, 
@@ -578,17 +579,7 @@ class CustomTrainer(Trainer):
                 weight_type = args.weighted_type, 
             ) 
             
-        else: 
-            outputs = model(
-                input_ids = input_ids, 
-                attention_mask = attention_mask, 
-                labels = label2, 
-                # condensed_embeds = condensed_embeds, 
-                output_hidden_states = True, 
-                output_attentions = True, 
-                return_dict = True, 
-                # eval_mode = True, 
-            ) 
+        
         
         if labels is not None: 
             unwrapped_model = unwrap_model(model)
@@ -1081,12 +1072,12 @@ large_model.config.pad_token_id = tokenizer.pad_token_id
 small_model.config.pad_token_id = tokenizer.pad_token_id 
 # print(small_model.embed_projection.weight.dtype) 
 
-pretraining_weights_group = [] 
+#pretraining_weights_group = [] 
 
 for k, v in large_model.named_parameters(): 
     v.requires_grad = True 
-    pretraining_weights_group.append(v) 
-print("length of the pretraining_weights_group is {} ".format(len(pretraining_weights_group))) 
+    #pretraining_weights_group.append(v) 
+#print("length of the pretraining_weights_group is {} ".format(len(pretraining_weights_group))) 
 
 class CastOutputToFloat(nn.Sequential):
   def forward(self, x): return super().forward(x).to(torch.float32)
@@ -1109,12 +1100,12 @@ def print_trainable_parameters(model):
     )
 
 config = LoraConfig(
-    r=8,
+    r=32,
     lora_alpha=32,
     target_modules=["q_proj", "v_proj", "gate_proj", "up_proj", "down_proj"],
     lora_dropout=0.05,
     bias="none",
-    task_type="CAUSAL_LM"
+    #task_type="CAUSAL_LM"
 )
 # custom_optimizer = torch.optim.AdamW([
 #     {"params": pretraining_weights_group, "lr": float(args.group1lr)}, 
@@ -1123,9 +1114,7 @@ config = LoraConfig(
 print_trainable_parameters(large_model)
 large_model = get_peft_model(large_model, config)
 print_trainable_parameters(large_model)
-# custom_optimizer = torch.optim.AdamW([
-#     {"params": pretraining_weights_group, "lr": float(args.group1lr)}, 
-# ]) 
+
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
@@ -1159,6 +1148,7 @@ training_args = TrainingArguments(
     lr_scheduler_type = "cosine", 
     warmup_steps = args.warmup_steps, 
     label_names = ["labels"], 
+    ddp_find_unused_parameters=False
 ) 
     
 print(colored("resum_from_checkpoint is {}".format(args.resume_from_checkpoint), "red")) 
