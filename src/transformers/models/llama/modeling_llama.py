@@ -6499,7 +6499,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
 
             input_ids = input_ids[:, remove_prefix_length:] 
         
-        posision_ids = kwargs.get("position_ids", None) 
+        position_ids = kwargs.get("position_ids", None) 
         if attention_mask is not None and position_ids is None: 
             position_ids = attention_mask.long().cumsum(-1) - 1 
             position_ids.masked_fill_(attention_mask == 0, 1) 
