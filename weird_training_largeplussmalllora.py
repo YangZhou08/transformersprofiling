@@ -554,8 +554,10 @@ class CustomTrainer(Trainer):
             
         else: 
             batch_size, seq_len = attention_mask.shape  
-            #addedon_length = (seq_len - model.module.addonmodel_start) // self.sliding_window_length
-            addedon_length = (seq_len - model.addonmodel_start) // self.sliding_window_length 
+            if not isinstance(model, LlamaWeirdLargeFullCoverage): 
+                addedon_length = (seq_len - model.module.addonmodel_start) // self.sliding_window_length 
+            else: 
+                addedon_length = (seq_len - model.addonmodel_start) // self.sliding_window_length  
             original_attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
             
 
