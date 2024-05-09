@@ -5663,7 +5663,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         return_dict: Optional[bool] = None, 
         original_attention_mask = None, 
         condensed_embed_labels = None, 
-        autoregressive_first_element = False, 
+        autoregressive_first_element = True, 
         label_adjustment = False, 
         usingsecondtolastvectors = False, 
         weight_added = False, 
@@ -5699,7 +5699,12 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict 
+        
+        if original_attention_mask is None: 
+            batch_size, seq_len = attention_mask.shape 
+            addedon_length = (seq_len - self.addonmodel_start) // self.sliding_window_length 
+            original_attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
 
         outputs = self.model(
             input_ids = large_input_ids, 
@@ -5716,7 +5721,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         if not usingsecondtolastvectors: 
             hidden_states = outputs[0] # we don't need the lm_head 
         else: 
-            print(colored("using second last", "yellow")) 
+            # print(colored("using second last", "yellow")) 
             allhiddenstates = outputs.hidden_states 
             hidden_states = allhiddenstates[len(allhiddenstates) - 2] # using second to last hidden states 
             hidden_states = self.model.norm(hidden_states) 
@@ -5748,13 +5753,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             hidden_states = self.avgpool(hidden_states) 
             if removelast: 
                 hidden_states = hidden_states[:, :-1, :] 
-                # hidden_states = hidden_states[:, :-2, :] 
         hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
-        print("hidden_states shape {}".format(hidden_states.shape)) 
-        # hidden_states = hidden_states[:, 2 :, :] # works with 1 as the start of the sampling index 
-        # hidden_states = hidden_states[:, 3:, :] 
-        # print("some hidden states numbers: ", hidden_states.reshape(-1)[: 100]) 
-        # hidden_states = hidden_states[:, -28 :, :] 
         
         mse_loss = torch.tensor(0) 
         cossim_loss = torch.tensor(0) 
@@ -5768,7 +5767,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         # print(colored("mse_loss {}".format(mse_loss), "red")) 
         
         if self.use_mse_loss: 
-            print(colored("mse_loss {}".format(mse_loss), "red")) 
+            # print(colored("mse_loss {}".format(mse_loss), "red")) 
             # still use the small model and get ce 
             hidden_states = hidden_states.detach().clone() 
             # hidden_states = torch.zeros_like(hidden_states).detach() 
