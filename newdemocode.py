@@ -229,7 +229,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
                                 attention_mask = attention_mask, 
                                 max_length = 200, 
                                 return_dict_in_generate = True, 
-                                do_sample = True, 
+                                do_sample = False, 
                                 use_cache = True, 
         ) 
         model.resetgenerationcount() 
