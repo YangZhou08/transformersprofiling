@@ -5701,6 +5701,12 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         )
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict 
         
+        if small_input_ids is None: 
+            small_input_ids = large_input_ids 
+        
+        if attention_mask is None: 
+            attention_mask = torch.ones(large_input_ids.shape, dtype = torch.long).to(large_input_ids.device) 
+        
         if original_attention_mask is None: 
             batch_size, seq_len = attention_mask.shape 
             addedon_length = (seq_len - self.addonmodel_start) // self.sliding_window_length 
