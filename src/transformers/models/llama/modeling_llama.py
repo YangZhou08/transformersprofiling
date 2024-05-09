@@ -5710,7 +5710,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         if original_attention_mask is None: 
             batch_size, seq_len = attention_mask.shape 
             addedon_length = (seq_len - self.addonmodel_start) // self.sliding_window_length 
-            original_attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
+            original_attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(large_input_ids.device)), dim = 1) 
 
         outputs = self.model(
             input_ids = large_input_ids, 
