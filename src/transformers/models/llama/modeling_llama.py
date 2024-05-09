@@ -6262,7 +6262,9 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             model_kwargs["attention_mask"] = torch.cat([torch.zeros((input_ids.shape[0], missinglength), dtype = input_ids.dtype, device = input_ids.device), model_kwargs["attention_mask"]], dim = 1) 
             print("input_ids shape {}; attention_mask shape {}".format(input_ids.shape, model_kwargs["attention_mask"].shape)) 
 
-        this_peer_finished = False  # used by synced_gpus only
+        this_peer_finished = False  # used by synced_gpus only 
+        
+        self.resetgenerationcount() 
         while True:
             if synced_gpus:
                 # Under synced_gpus the `forward` call must continue until all gpus complete their sequence.
@@ -6458,9 +6460,16 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         # keep track of which sequences are already finished
         unfinished_sequences = torch.ones(input_ids.shape[0], dtype=torch.long, device=input_ids.device) 
         
+        if (input_ids.shape[1] - 1) % self.sliding_window_length != 0: 
+            missinglength = self.sliding_window_length - ((input_ids.shape[1] - 1) % self.sliding_window_length) 
+            input_ids = torch.cat([torch.full((input_ids.shape[0], missinglength), self.tokenizer_pad_id, dtype = input_ids.dtype, device = input_ids.device), input_ids], dim = 1) 
+            attention_mask = torch.cat([torch.zeros((input_ids.shape[0], missinglength), dtype = input_ids.dtype, device = input_ids.device), attention_mask], dim = 1) 
+            print("input_ids shape {}; attention_mask shape {}".format(input_ids.shape, attention_mask.shape)) 
+        
         this_peer_finished = False # used by synced_gpus only 
         
-        self.generate_iteration_count = 0 
+        # self.generate_iteration_count = 0 
+        self.resetgenerationcount() 
         # auto-regressive generation 
         while True: 
             if synced_gpus:
@@ -6473,11 +6482,6 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 if this_peer_finished_flag.item() == 0.0:
                     break
             
-            if (input_ids.shape[1] - 1) % self.sliding_window_length != 0: 
-                missinglength = self.sliding_window_length - ((input_ids.shape[1] - 1) % self.sliding_window_length) 
-                input_ids = torch.cat([torch.full((input_ids.shape[0], missinglength), self.tokenizer_pad_id, dtype = input_ids.dtype, device = input_ids.device), input_ids], dim = 1) 
-                attention_mask = torch.cat([torch.zeros((input_ids.shape[0], missinglength), dtype = input_ids.dtype, device = input_ids.device), attention_mask], dim = 1) 
-                print("input_ids shape {}; attention_mask shape {}".format(input_ids.shape, attention_mask.shape)) 
             # prepare model inputs
             model_inputs = self.prepare_inputs_for_generation(input_ids, adjustment_scheme = "case1", **model_kwargs) 
 
