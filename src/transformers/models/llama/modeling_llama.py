@@ -6472,7 +6472,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         
         if (input_ids.shape[1] - 1) % self.sliding_window_length != 0: 
             missinglength = self.sliding_window_length - ((input_ids.shape[1] - 1) % self.sliding_window_length) 
-            input_ids = torch.cat([torch.full((input_ids.shape[0], missinglength), self.tokenizer_pad_id, dtype = input_ids.dtype, device = input_ids.device), input_ids], dim = 1) 
+            input_ids = torch.cat([torch.full((input_ids.shape[0], missinglength), 2, dtype = input_ids.dtype, device = input_ids.device), input_ids], dim = 1) 
             attention_mask = torch.cat([torch.zeros((input_ids.shape[0], missinglength), dtype = input_ids.dtype, device = input_ids.device), attention_mask], dim = 1) 
             print("input_ids shape {}; attention_mask shape {}".format(input_ids.shape, attention_mask.shape)) 
         
