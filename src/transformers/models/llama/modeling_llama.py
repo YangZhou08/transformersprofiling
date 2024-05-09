@@ -6465,7 +6465,11 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 # did all peers finish? the reduced sum will be 0.0 then
                 if this_peer_finished_flag.item() == 0.0:
                     break
-
+            
+            if (input_ids.shape[1] - 1) % self.sliding_window_length != 0: 
+                missinglength = (input_ids.shape[1] - 1) % self.sliding_window_length 
+                input_ids = torch.cat([torch.full((input_ids.shape[0], missinglength), self.tokenizer_pad_id, dtype = input_ids.dtype, device = input_ids.device), input_ids], dim = 1) 
+                attention_mask = torch.cat([torch.zeros((input_ids.shape[0], missinglength), dtype = input_ids.dtype, device = input_ids.device), attention_mask], dim = 1) 
             # prepare model inputs
             model_inputs = self.prepare_inputs_for_generation(input_ids, adjustment_scheme = "case1", **model_kwargs) 
 
