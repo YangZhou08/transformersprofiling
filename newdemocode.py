@@ -83,7 +83,7 @@ large_model.addonsmallmodel.eval()
 model = large_model 
 ''' 
 large_model = LlamaWeirdLargeTest.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
-large_model.set_sliding_window_length(args.kernel_size) 
+large_model.set_sliding_window_length(args.kernelsize) 
 small_model_state_dict = SimpleSmallModel.from_pretrained("YangZhoumill/llama_160m_deciphering_tinyllama_setting0_01da4cb_hf", target_model_dim = 2048, cache_dir = dir_models).state_dict() 
 large_model.set_addonsmallmodel_statedict(small_model_state_dict) 
 large_model.addonsmallmodel.set_criticalpath(hostname = hostname) 
@@ -91,7 +91,7 @@ large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True)
 large_model.to(torch.bfloat16).to(torch_device) 
 large_model.set_inference_setting(args.experiment_setting) 
 large_model.set_walpha(0.5) 
-large_model.set_slidingwindowlength(sliding_window_length = args.kernel_size, addonmodel_start = args.kernel_size + 1) 
+large_model.set_slidingwindowlength(sliding_window_length = args.kernelsize, addonmodel_start = args.kernelsize + 1) 
 large_model.set_tokenizer_bos_id(bos_id = tokenizer.bos_token_id, pad_id = tokenizer.pad_token_id) 
 large_model.set_cosinesimilarity(False) 
 
