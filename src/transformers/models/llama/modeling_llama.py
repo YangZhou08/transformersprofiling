@@ -7026,7 +7026,7 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
                 sum += hidden_states[:, idxused, :] 
         if hidden_states.shape[1] % self.sliding_window_length != 0: 
             downsampled_vectors.append(sum / (hidden_states.shape[1] % self.sliding_window_length)) 
-            print(colored("got here", "green")) 
+            print(colored("downsampled_vectors length {}".format(len(downsampled_vectors)), "green")) 
         else: 
             print("printing length when divisible by sliding_window_length length {}".format(len(downsampled_vectors))) 
         
