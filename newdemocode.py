@@ -253,6 +253,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
                                 do_sample = True, 
                                 use_cache = True, 
         ) 
+        print("input_ids shape {} output.sequences shape {}".format(input_ids.shape, output.sequences.shape)) 
         model.resetgenerationcount() 
         # print(tokenizer.decode(output.sequences[0])) 
         for i in range(output.sequences.shape[0]): 
