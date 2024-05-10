@@ -1177,9 +1177,9 @@ class CustomDataset:
         return random_split(self, [train_size, eval_size]) 
 
 class CustomSpecializedDataset: 
-    def __init__(self, data_dir, tokenizer = None, max_length = 256, dataset = None): 
+    def __init__(self, tokenizer = None, max_length = 256, dataset = None): 
         # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
-        self.synthesize_dir = data_dir 
+        # self.synthesize_dir = data_dir 
         # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json", split = "train") 
         # self.dataset = load_dataset('json', data_files = [self.synthesize_dir + 'c4synthesized_file1.json', self.synthesize_dir + 'c4synthesized_file2.json'], split="train") 
         dfiles = [] 
