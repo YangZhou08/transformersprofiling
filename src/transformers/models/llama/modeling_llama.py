@@ -7470,6 +7470,7 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
                 next_input_id = torch.argmax(logits, dim = -1) 
             else: 
                 next_input_id = torch.cat([next_input_id, torch.argmax(logits, dim = -1)], dim = 1) 
+            print("next_input_id shape {}".format(next_input_id.shape)) 
             
             self.generate_model_hidden_states = hidden_states 
             
