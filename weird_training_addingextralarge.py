@@ -244,7 +244,8 @@ parser.add_argument("--use_large_model", action = "store_true")
 parser.add_argument("--autoregressive_first_element", action = "store_true") 
 parser.add_argument("--debug", action = "store_true") 
 parser.add_argument("--batch_size", type = int, default = 32) 
-parser.add_argument("--usedatasettype", type = str, choices = ["synthesized", "c4"], default = "synthesized") 
+# parser.add_argument("--usedatasettype", type = str, choices = ["synthesized", "c4"], default = "synthesized") 
+parser.add_argument("--usedatasettype", type = str, choices = ["synthesized", "c4", "math"], default = "synthesized") 
 parser.add_argument("--data_compensation", action = "store_true") 
 parser.add_argument("--first_n_rows", type = int, default = None) 
 parser.add_argument("--newdataset", action = "store_true") 
@@ -1175,6 +1176,76 @@ class CustomDataset:
         eval_size = len(self) - train_size 
         return random_split(self, [train_size, eval_size]) 
 
+class CustomSpecializedDataset: 
+    def __init__(self, data_dir, tokenizer = None, max_length = 256, dataset = None): 
+        # self.synthesize_dir = "/home/yangzho6/c4llm_synthesized/" 
+        self.synthesize_dir = data_dir 
+        # self.dataset = load_dataset('json', data_files = self.synthesize_dir + "c4synthesized_file1.json", split = "train") 
+        # self.dataset = load_dataset('json', data_files = [self.synthesize_dir + 'c4synthesized_file1.json', self.synthesize_dir + 'c4synthesized_file2.json'], split="train") 
+        dfiles = [] 
+        topk = None 
+        print(colored("hostname is {}".format(hostname), "yellow")) 
+        
+        self.dataset = dataset 
+        # self.dataset = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
+        self.dict_kernel_maxlength = {2 : 64, 3 : 63, 4 : 64, 5 : 65, 6 : 66, 7 : 70, 10 : 70} 
+        self.kernel_size = kernel_size 
+        # self.dataset = self.dataset["train"][0: 5120] 
+
+        self.tokenizer = tokenizer 
+        self.max_length = max_length 
+    
+    def __len__(self): 
+        return len(self.dataset) 
+    
+    def preprocess_dataset(self): 
+        def encode_with_truncation(examples): 
+            # return tokenizer(examples["text"], truncation = True, padding = "max_length", 
+                            #  max_length = max_length, return_special_tokens_mask = True) 
+            return tokenizer(examples["text"], padding = "max_length", max_length = self.max_length, 
+                            return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                            add_special_tokens = True) 
+        
+        def loading_condensed_embeds(examples): 
+            # not used because it consumes too much memory 
+            return {"condensed_embeds": torch.load(examples["condensed_token_path"])} 
+        
+        self.dataset = self.dataset.map(encode_with_truncation, batched = True, num_proc = 4) 
+        # self.dataset = self.dataset.map(loading_condensed_embeds, batched = True, num_proc = 4) 
+        # self.dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask']) 
+        
+    
+    def __getitem__(self, idx): 
+        item = self.dataset[idx] 
+        
+        if self.tokenizer is not None: 
+            encoded_text = self.tokenizer( 
+                item["text"], 
+                # add_special_tokens = False, 
+                add_special_tokens = True, 
+                padding = "max_length", 
+                # max_length = 64 + self.dict_kernel_maxlength[self.kernel_size], 
+                max_length = self.max_length, 
+                return_attention_mask = True, 
+                return_tensors = "pt", 
+                truncation = True, 
+            ) 
+            
+            item['input_ids'] = encoded_text['input_ids'].squeeze(0)  # remove the batch dimension
+            item['attention_mask'] = encoded_text['attention_mask'].squeeze(0)  # remove the batch dimension 
+        
+        # print(colored("the shape of condensed_embeds is {}".format(tensor.shape), "yellow")) 
+        # item["input_ids"] = torch.tensor(item["input_ids"]) 
+        # item["attention_mask"] = torch.tensor(item["attention_mask"]) 
+
+        return item 
+
+    def split(self, train_size): 
+        if isinstance(train_size, float): 
+            train_size = int(train_size * len(self)) 
+        eval_size = len(self) - train_size 
+        return random_split(self, [train_size, eval_size]) 
+
 class CustomDatasetDisconnected: 
     # The dataset class is for intermitent training 
     def __init__(self, data_dir, tokenizer = None, max_length = 256, kernel_size = 7, input_condensed = True, use_c4 = False): 
@@ -1349,12 +1420,22 @@ kernel_size = args.kernel_size
 
 dictionary_max_length = {1 : 259, 2 : 259, 3 : 259, 4 : 257, 5 : 256, 6 : 259, 7 : 260, 10 : 261} 
 
+dictionary_length_two = {1 : 512, 2 : 513, 3 : 514, 4 : 517, 5 : 516, 6 : 517, 7 : 519, 10 : 521} 
+
 # datasetnew = CustomDataset(max_length = 260 if args.kernel_size == 7 else 259, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed) 
 if args.usedatasettype == "synthesized": 
     datasetnew = CustomDataset(max_length = dictionary_max_length[args.kernel_size], data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed) 
     train_set, test_set = datasetnew.split(0.98)     # 712k * 0.95 = 676k 712k * 0.05 = 36k 
                                                  # 356k * 0.99 = 352k 356k * 0.01 = 3.6k 
                                                  # 5 * 356k = 1780000, 1780000 * 0.98 = 1744400, 1780000 * 0.02 = 35600 
+elif args.usedatasettype == "math": 
+    onedatasett = load_dataset("open-web-math/open-web-math") 
+        
+    torch.manual_seed(42) 
+    
+    collectivedatasett = onedatasett.train_test_split(test_size = 0.05) # 3 hundred thousand documents 
+    train_set = CustomSpecializedDataset(tokenizer = tokenizer, max_length = dictionary_length_two[args.kernel_size], dataset = collectivedatasett["train"]) 
+    test_set = CustomSpecializedDataset(tokenizer = tokenizer, max_length = dictionary_length_two[args.kernel_size], dataset = collectivedatasett["test"]) 
 else: 
     train_set = CustomDataset(max_length = dictionary_max_length[args.kernel_size], data_dir = datapath_c4, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed, use_c4 = True, istraining = True) 
     test_set = CustomDataset(max_length = dictionary_max_length[args.kernel_size], data_dir = datapath_c4, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed, use_c4 = True, istraining = False) 
