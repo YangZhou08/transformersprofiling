@@ -1452,7 +1452,7 @@ test_dataset.set_format(type = 'torch', columns = ['input_ids', 'attention_mask'
 # defining custom dataset 
 kernel_size = args.kernel_size 
 
-dictionary_max_length = {1 : 259, 2 : 259, 3 : 259, 4 : 257, 5 : 256, 6 : 259, 7 : 260, 10 : 261} 
+dictionary_max_length = {1 : 259, 2 : 259, 3 : 259, 4 : 257, 5 : 256, 6 : 259, 7 : 260, 8 : 257, 10 : 261} 
 
 dictionary_length_two = {1 : 512, 2 : 513, 3 : 514, 4 : 517, 5 : 516, 6 : 517, 7 : 519, 8 : 513, 10 : 521} 
 
