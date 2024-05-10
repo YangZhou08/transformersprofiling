@@ -259,11 +259,13 @@ parser.add_argument("--wandb_session", type = str, default = None)
 parser.add_argument("--wandb_session_name", type = str, default = None) 
 parser.add_argument("--path_d", type = int, default = 0) 
 parser.add_argument("--datafilegranularity", type = int, default = 8) 
+parser.add_argument("--larger_lr_small", action = "store_true") 
 parser.add_argument("--disable_wandb", action = "store_true") 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
-    args.group2lr = None # we enforce it 
+    # args.group2lr = None # we enforce it 
+    args.group2lr = args.group1lr * 2 
 # assert args.finetune_checkpoint is not None 
 if args.disable_wandb: 
     has_wandb = False 
@@ -1082,15 +1084,31 @@ small_model.config.pad_token_id = tokenizer.pad_token_id
 # print(small_model.embed_projection.weight.dtype) 
 
 pretraining_weights_group = [] 
+small_model_weights_group = [] 
+custom_optimizer = None 
 
-for k, v in large_model.named_parameters(): 
-    v.requires_grad = True 
-    pretraining_weights_group.append(v) 
-print("length of the pretraining_weights_group is {} ".format(len(pretraining_weights_group))) 
+if not args.larger_lr_small: 
+    for k, v in large_model.named_parameters(): 
+        v.requires_grad = True 
+        pretraining_weights_group.append(v) 
+    print("length of the pretraining_weights_group is {} ".format(len(pretraining_weights_group))) 
 
-custom_optimizer = torch.optim.AdamW([
-    {"params": pretraining_weights_group, "lr": float(args.group1lr)}, 
-]) 
+    custom_optimizer = torch.optim.AdamW([
+        {"params": pretraining_weights_group, "lr": float(args.group1lr)}, 
+    ]) 
+else: 
+    for k, v in large_model.named_parameters(): 
+        v.requires_grad = True 
+        if "addonsmallmodel" in k: 
+            small_model_weights_group.append(v) 
+        else: 
+            pretraining_weights_group.append(v) 
+    print("length of the pretraining_weights_group is {} and the length of the small_model_weights_group is {}".format(len(pretraining_weights_group), len(small_model_weights_group))) 
+    
+    custom_optimizer = torch.optim.AdamW([
+        {"params": pretraining_weights_group, "lr": float(args.group1lr)}, 
+        {"params": small_model_weights_group, "lr": float(args.group2lr)}, 
+    ])
 
 data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False) 
 
