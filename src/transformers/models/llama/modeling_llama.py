@@ -7480,6 +7480,8 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
         select_states = self.reverseavgpool(self.generate_model_hidden_states) 
         select_states = select_states[:, 1 :, :] 
         
+        self.generate_iteration_count += 1 
+        
         # print(colored("running the small model side", "green")) 
         addonmodeloutput = self.addonsmallmodel.generate_forward(
             input_ids = small_input_ids, 
@@ -10962,8 +10964,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         assert input_ids.shape[0] == condensed_embeds.shape[0] # batch size has to match 
         
         # assert ((input_ids.shape[1] - start_idx)//self.sliding_window_length) + 1 == condensed_embeds.shape[1] 
-        # print(math.ceil((input_ids.shape[1] - (start_idx - 1)) / self.sliding_window_length)) 
-        # print(condensed_embeds.shape[1]) 
+        print(math.ceil((input_ids.shape[1] - (start_idx - 1)) / self.sliding_window_length)) 
+        print(condensed_embeds.shape[1]) 
         assert math.ceil((input_ids.shape[1] - (start_idx - 1))/self.sliding_window_length) == condensed_embeds.shape[1] 
         # assert math.ceil((input_ids.shape[1] - start_idx)/self.sliding_window_length) == condensed_embeds.shape[1] 
                 
