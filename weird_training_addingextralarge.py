@@ -29,6 +29,7 @@ from src.transformers.models.llama.modeling_llama import LlamaWeirdLarge3
 from src.transformers.models.llama.modeling_llama import SimpleSmallModel2 
 from src.transformers.models.llama.modeling_llama import LlamaWeirdLargeTest 
 from src.transformers.models.llama.modeling_llama import LlamaWeirdLargeTestmixedb 
+from src.transformers.models.llama.modeling_llama import LlamaWeirdLargeRecoveringModeOn 
 from src.transformers.modeling_utils import PreTrainedModel, load_sharded_checkpoint, unwrap_model 
 import time 
 from torch.utils.data import random_split 
@@ -674,6 +675,31 @@ class CustomTrainer(Trainer):
                 label_adjustment = False, 
                 first_n_rows = args.first_n_rows, 
             ) 
+        elif isinstance(getattr(model, "module", model), LlamaWeirdLargeRecoveringModeOn) or isinstance(getattr(model, "module", model), LlamaWeirdLargeRecoveringModeOn): 
+            batch_size, seq_len = attention_mask.shape 
+            # addedon_length = condensed_embeds.shape[1] 
+            if not isinstance(model, LlamaWeirdLargeTest): 
+                addedon_length = (seq_len - model.module.addonmodel_start) // self.sliding_window_length 
+            else: 
+                addedon_length = (seq_len - model.addonmodel_start) // self.sliding_window_length 
+            # print("get the input sentence: {}".format(tokenizer.decode(input_ids[0]))) 
+            original_attention_mask = torch.cat((attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(input_ids.device)), dim = 1) 
+            if self.accelerator.is_main_process: 
+                print("printing out the experiment_setting: {} eval_mode: {}".format(self.experiment_setting, self.eval_mode)) 
+            print(colored("the length of input_ids is {}".format(input_ids.shape[1]), "green")) 
+            outputs = model(
+                large_input_ids = input_ids, 
+                small_input_ids = input_ids, 
+                attention_mask = attention_mask, 
+                original_attention_mask = original_attention_mask, 
+                labels = label2, 
+                output_hidden_states = True, 
+                output_attentions = True, 
+                return_dict = True, 
+                # condensed_fashion = "ground_truth", 
+                autoregressive_first_element = self.autoregressive_first_element, 
+                label_adjustment = False 
+            ) 
         else: 
             outputs = model(
                 input_ids = input_ids, 
@@ -785,6 +811,15 @@ class CustomTrainer(Trainer):
             logits = logits[:, :-1, :] 
             print("the shape of logits is {}".format(logits.shape)) 
         elif isinstance(getattr(model, "module", model), LlamaWeirdLargeTestmixedb) or isinstance(model, LlamaWeirdLargeTestmixedb): 
+            l2dist = logits[1].reshape(-1) 
+            ce_loss = logits[2].reshape(-1) 
+            l2dist_input = logits[3].reshape(-1) 
+            cos_sim_input = logits[4].reshape(-1) 
+            logits = logits[0] 
+            # print(l2dist) 
+            logits = logits[:, :-1, :] 
+            print("the shape of logits is {}".format(logits.shape)) 
+        elif isinstance(getattr(model, "module", model), LlamaWeirdLargeRecoveringModeOn) or isinstance(model, LlamaWeirdLargeRecoveringModeOn): 
             l2dist = logits[1].reshape(-1) 
             ce_loss = logits[2].reshape(-1) 
             l2dist_input = logits[3].reshape(-1) 
@@ -1501,7 +1536,10 @@ elif args.use_large_model:
     # set up a large model that supports the condensed token inputs 
     # world_size = os.environ.get("WORLD_SIZE") 
     with torch.no_grad(): 
-        large_model = LlamaWeirdLargeTest.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+        if args.autoregressive_first_element: 
+            large_model = LlamaWeirdLargeTest.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+        else: 
+            large_model = LlamaWeirdLargeRecoveringModeOn.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
     # large_model = LlamaWeirdLargeTestmixedb.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch_device) 
     large_model.set_msece_loss(use_mse_loss = False, ce_loss_only = True) 
     large_model.set_sliding_window_length(args.kernel_size) 

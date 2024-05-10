@@ -6787,7 +6787,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             )
         return reordered_past 
 
-class LlamaWeirdLargeTest(LlamaPreTrainedModel): 
+class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel): 
     """ 
     We call this autoregressive Medusa model 
     """ 
@@ -7027,8 +7027,6 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None, 
         original_attention_mask = None, 
-        condensed_embed_labels = None, 
-        autoregressive_first_element = True, 
         label_adjustment = False, 
         usingsecondtolastvectors = False, 
         weight_added = False, 
@@ -7097,7 +7095,6 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         if not usingsecondtolastvectors: 
             hidden_states = outputs[0] # we don't need the lm_head 
         else: 
-            # print(colored("using second last", "yellow")) 
             allhiddenstates = outputs.hidden_states 
             hidden_states = allhiddenstates[len(allhiddenstates) - 2] # using second to last hidden states 
             hidden_states = self.model.norm(hidden_states) 
@@ -7106,29 +7103,12 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             hidden_states = hidden_states.to(torch.float32) 
         elif self.small_model_dtype == torch.bfloat16: 
             hidden_states = hidden_states.to(torch.bfloat16) 
-        # print(colored("small_model_type: {}".format(self.small_model_dtype), "red")) 
-        # intermediate_l2_dist = self.l2distancecompute(inputs_embeds, hidden_states) 
         seq_len = hidden_states.shape[1] 
         
-        
-        # selected_seq_indices = [i * self.sliding_window_length for i in range(1, (seq_len - 1) // self.sliding_window_length)] 
-        # print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
-        # hidden_states = self.avgpool(hidden_states) 
-        if autoregressive_first_element: 
-            # selected_seq_indices = [i * self.sliding_window_length for i in range(0, (seq_len - 1) // self.sliding_window_length)] 
-            selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
-            print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
-            print("using autoregressive_baseline") 
-            hidden_states = hidden_states[:, selected_seq_indices, :] 
-            print("hidden_states shape {} dtype {}".format(hidden_states.shape, hidden_states.dtype)) 
-            removelast = (seq_len % self.sliding_window_length == 0) 
-            if removelast: 
-                hidden_states = hidden_states[:, :-1, :] 
-        else: 
-            removelast = (hidden_states.shape[1] % self.sliding_window_length == 0) 
-            hidden_states = self.avgpool(hidden_states) 
-            if removelast: 
-                hidden_states = hidden_states[:, :-1, :] 
+        removelast = (hidden_states.shape[1] % self.sliding_window_length == 0) 
+        hidden_states = self.avgpool(hidden_states) 
+        if removelast: 
+            hidden_states = hidden_states[:, :-1, :] 
         hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
         
         mse_loss = torch.tensor(0) 
@@ -7159,11 +7139,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 ce_loss = torch.tensor(0), 
             ) 
             ''' 
-        # hidden_states has shape (batch_size, seq_length // 7, hidden states) 
-        # hidden_states = hidden_states[:, :-1, :] 
         
-        # interleave the hidden_states and the input_ids 
-        # assert hidden_states.shape[1] == small_input_ids.shape[1] // 7 - 1 
         print("expected {}".format(small_input_ids.shape[1] // self.sliding_window_length - 1)) 
         print("small_input_ids: {}".format(small_input_ids[0])) 
         print("self.addonmodel_start {}".format(self.addonmodel_start)) 
@@ -7194,19 +7170,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
         ) 
         
         logits = addonmodeloutput.logits 
-        # loss = addonmodeloutput["loss"] 
-        # logits = addonmodeloutput["logits"] 
-        # ce_loss = loss 
         
-        '''
-        if self.config.pretraining_tp > 1:
-            lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
-            logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]
-            logits = torch.cat(logits, dim=-1)
-        else:
-            logits = self.lm_head(hidden_states)
-        logits = logits.float()
-        ''' 
         # seq_length = input_ids.shape[1] + hidden_states.shape[1] 
         seq_length = small_input_ids.shape[1] + hidden_states.shape[1] 
         assert seq_length == logits.shape[1], "seq_length is not compatible to logits" 
@@ -7221,9 +7185,7 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             for i in range(self.addonmodel_start - 1, seq_length): 
                 if i not in mask_list_pos22: 
                     selected_indices.append(i) 
-            # selected_indices = mask_list_pos22 
-            # print(colored("selected_indices {}".format(selected_indices), "red")) 
-            # select and shift the logits 
+            
             logits = logits[:, selected_indices, :] 
             
             first_pos_ce_loss = torch.tensor(0) 
@@ -7246,12 +7208,6 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
                 old_label_count += self.sliding_window_length 
             assert newlabels.shape[1] == seq_length 
             
-            # some visual check, printing index and values together 
-            # for i in range(newlabelsone.shape[0]): 
-                # if i < labels.shape[0]: 
-                    # print("index {} labels value {} newlabels value {}".format(i, labels[0, i], newlabels[0, i])) 
-                # else: 
-                    # print("index {} labels values {} new labels value {}".format(i, "None", newlabels[0, i])) 
             labels = newlabels 
         
         if labels is not None: 
@@ -7311,12 +7267,6 @@ class LlamaWeirdLargeTest(LlamaPreTrainedModel):
             shift_logits = shift_logits.view(-1, self.config.vocab_size) 
             shift_labels = shift_labels.view(-1) 
             
-            # position loss performance investigation below 
-            # num_chunks = (shift_logits2.shape[1] - 1) // (self.sliding_window_length + 1) 
-            # first_pos_indices = [self.addonmodel_start - 1 + (self.sliding_window_length + 1) * i for i in range(num_chunks)] 
-            # first_pos_ce_loss = loss_fct(shift_logits2[:, first_pos_indices, :].view(-1, self.config.vocab_size), shift_labels2[:, first_pos_indices].view(-1)) 
-            # second_pos_indices = [self.addonmodel_start + (self.sliding_window_length + 1) * i for i in range(num_chunks)] 
-            # second_pos_ce_loss = loss_fct(shift_logits2[:, second_pos_indices, :].view(-1, self.config.vocab_size), shift_labels2[:, second_pos_indices].view(-1)) 
             first_pos_ce_loss = torch.tensor(0) 
             second_pos_ce_loss = torch.tensor(0) 
             
