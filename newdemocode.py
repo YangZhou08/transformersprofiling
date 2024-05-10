@@ -219,6 +219,7 @@ trainer = Trainer(
 sum = torch.zeros((1,)).to(torch_device).float() 
 for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())): 
     input_ids = batch["input_ids"].to(torch_device) 
+    print("input_ids shape {}".format(input_ids.shape)) 
     attention_mask = batch["attention_mask"].to(torch_device) 
     original_attention_mask = batch["attention_mask"] # (batch_size, 203) 
     labels = batch["labels"].to(torch_device) 
