@@ -14,7 +14,8 @@ from transformers import GPTNeoXForCausalLM
 from transformers import LlamaConfig, LlamaPreTrainedModel 
 from transformers import LlamaTokenizer 
 from transformers.models.llama.modeling_llama import LlamaForCausalLM 
-from transformers.models.llama.modeling_llama import LlamaWeirdLargeTest 
+# from transformers.models.llama.modeling_llama import LlamaWeirdLargeTest 
+from transformers.models.llama.modeling_llama import LlamaWeirdLargeRecoveringModeOn 
 from transformers.models.llama.modeling_llama import SimpleSmallModel 
 from transformers import Trainer, TrainingArguments 
 from transformers import DataCollatorForLanguageModeling 
@@ -82,7 +83,8 @@ large_model.model.eval()
 large_model.addonsmallmodel.eval() 
 model = large_model 
 ''' 
-large_model = LlamaWeirdLargeTest.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+# large_model = LlamaWeirdLargeTest.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+large_model = LlamaWeirdLargeRecoveringModeOn.from_pretrained("TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
 large_model.set_sliding_window_length(args.kernelsize) 
 small_model_state_dict = SimpleSmallModel.from_pretrained("YangZhoumill/llama_160m_deciphering_tinyllama_setting0_01da4cb_hf", target_model_dim = 2048, cache_dir = dir_models).state_dict() 
 large_model.set_addonsmallmodel_statedict(small_model_state_dict) 
