@@ -1454,7 +1454,7 @@ kernel_size = args.kernel_size
 
 dictionary_max_length = {1 : 259, 2 : 259, 3 : 259, 4 : 257, 5 : 256, 6 : 259, 7 : 260, 10 : 261} 
 
-dictionary_length_two = {1 : 512, 2 : 513, 3 : 514, 4 : 517, 5 : 516, 6 : 517, 7 : 519, 10 : 521} 
+dictionary_length_two = {1 : 512, 2 : 513, 3 : 514, 4 : 517, 5 : 516, 6 : 517, 7 : 519, 8 : 513, 10 : 521} 
 
 # datasetnew = CustomDataset(max_length = 260 if args.kernel_size == 7 else 259, data_dir = dir_sdata, tokenizer = tokenizer, kernel_size = kernel_size, input_condensed = args.input_condensed) 
 if args.usedatasettype == "synthesized": 
