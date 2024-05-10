@@ -7465,6 +7465,7 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
                 hidden_states = hidden_states.to(torch.bfloat16) 
             # print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
             
+            print("hidden_states shape {}".format(hidden_states.shape)) 
             logits = self.lm_head(hidden_states)[..., -1, :] 
             print("logits shape {}".format(logits.shape)) 
             if next_input_id is None: 
