@@ -697,7 +697,6 @@ class CustomTrainer(Trainer):
                 output_attentions = True, 
                 return_dict = True, 
                 # condensed_fashion = "ground_truth", 
-                autoregressive_first_element = self.autoregressive_first_element, 
                 label_adjustment = False 
             ) 
         else: 
