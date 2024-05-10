@@ -1430,7 +1430,7 @@ if args.usedatasettype == "synthesized":
                                                  # 5 * 356k = 1780000, 1780000 * 0.98 = 1744400, 1780000 * 0.02 = 35600 
 elif args.usedatasettype == "math": 
     print("We are using Open-Web-Math dataset") 
-    onedatasett = load_dataset("open-web-math/open-web-math") 
+    onedatasett = load_dataset("open-web-math/open-web-math", split = "train") 
         
     torch.manual_seed(42) 
     
