@@ -7469,10 +7469,9 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
             logits = self.lm_head(hidden_states)[:, -1, :] 
             print("logits shape {}".format(logits.shape)) 
             if next_input_id is None: 
-                next_input_id = torch.argmax(logits, dim = -1) 
-                next_input_id = next_input_id.unsqueeze(1) 
+                next_input_id = torch.argmax(logits, dim = -1).unsqueeze(0) 
             else: 
-                next_input_id = torch.cat([next_input_id, torch.argmax(logits, dim = -1)], dim = 1) 
+                next_input_id = torch.cat([next_input_id, torch.argmax(logits, dim = -1).unsqueeze(0)], dim = 1) 
             print("next_input_id shape {}".format(next_input_id.shape)) 
             
             self.generate_model_hidden_states = hidden_states 
