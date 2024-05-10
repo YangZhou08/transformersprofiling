@@ -1468,7 +1468,7 @@ elif args.usedatasettype == "math":
         
     torch.manual_seed(42) 
     
-    collectivedatasett = onedatasett.train_test_split(test_size = 0.05) # 3 hundred thousand documents 
+    collectivedatasett = onedatasett.train_test_split(test_size = 0.0005) # 3 hundred thousand documents 
     train_set = CustomSpecializedDataset(tokenizer = tokenizer, max_length = dictionary_length_two[args.kernel_size], dataset = collectivedatasett["train"]) 
     test_set = CustomSpecializedDataset(tokenizer = tokenizer, max_length = dictionary_length_two[args.kernel_size], dataset = collectivedatasett["test"]) 
 else: 
