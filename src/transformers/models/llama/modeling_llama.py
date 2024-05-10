@@ -7010,6 +7010,25 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
         # downsampled_vectors.append(downsampled_vectors[-1]) 
         
         return torch.stack(downsampled_vectors, dim = 1) 
+    
+    def reverseavgpool(self, hidden_states): 
+        # this function is for generate function only 
+        downsampled_vectors = [] 
+        sum = torch.zeros((hidden_states.shape[0], hidden_states.shape[2]), dtype = hidden_states.dtype).to(hidden_states.device) 
+        for i in range(hidden_states.shape[1]): 
+            idxused = hidden_states.shape[1] - 1 - i 
+            if i % self.sliding_window_length == self.sliding_window_length - 1: 
+                sum += hidden_states[:, idxused, :] 
+                downsampled_vectors.append(sum / self.sliding_window_length) 
+                sum.mul_(0.) 
+                assert sum.view(-1).sum() == 0 
+            else: 
+                sum += hidden_states[:, idxused, :] 
+        
+        downsampled_vectors.reverse() 
+        
+        return torch.stack(downsampled_vectors, dim = 1) 
+            
 
     @add_start_docstrings_to_model_forward(LLAMA_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=CausalLMOutputWithPast, config_class=_CONFIG_FOR_DOC)
@@ -7419,33 +7438,24 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
 
         last_hidden_states = None 
         start = None 
-        if self.generate_iteration_count % self.sliding_window_length == 0: 
+        next_input_id = None 
+        
+        for i in range(self.sliding_window_length): 
             # NOTE for this case, we use the pass-in attention mask 
             # print(colored("running the large model side", "green")) 
             outputs = self.model(
-                input_ids = large_input_ids, 
-                attention_mask = attention_mask, 
+                input_ids = torch.cat([large_input_ids, next_input_id], dim = 1) if next_input_id is not None else large_input_ids, 
+                attention_mask = torch.cat([attention_mask, torch.ones_like(next_input_id)], dim = 1) if next_input_id is not None else attention_mask, 
                 position_ids = position_ids, 
                 past_key_values = past_key_values, 
                 inputs_embeds = input_embeds, 
-                use_cache = use_cache, 
+                use_cache = use_cache,  
                 output_attentions = output_attentions, 
                 output_hidden_states = output_hidden_states, 
                 return_dict = return_dict, 
             ) 
             
             hidden_states = outputs[0] # we don't need the lm_head 
-            if output_large_model_last_hidden_states: 
-                last_hidden_states = hidden_states.clone().detach() 
-            if inmiddlesample: 
-                outputdist = target_lmhead(hidden_states) 
-                probs = self.norm_logits(outputdist[:, -1, :], temperature = temperature, top_k = top_k, top_p = top_p) 
-                start = self.sample2(probs) 
-                if len(start.shape) == 1: 
-                    start = start.unsqueeze(0) 
-                small_input_ids = torch.cat([small_input_ids, start], dim = 1) 
-                original_attention_mask = torch.cat([original_attention_mask, torch.ones_like(start)], dim = 1) 
-            # seq_len = hidden_states.shape[1] 
             
             if self.small_model_dtype == torch.float32: 
                 hidden_states = hidden_states.to(torch.float32) 
@@ -7453,26 +7463,20 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
                 hidden_states = hidden_states.to(torch.bfloat16) 
             # print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
             
-            if self.generate_model_hidden_states is None: 
-                self.generate_model_hidden_states = hidden_states.clone().detach() 
-                # print(colored("length of the generate_model_hidden_states is {}".format(hidden_states.shape[1]), "yellow")) 
+            logits = self.lm_head(hidden_states)[..., -1, :] 
+            if next_input_id is None: 
+                next_input_id = torch.argmax(logits, dim = -1) 
             else: 
-                # print(colored("before appending hidden states to length {}".format(self.generate_model_hidden_states.shape[1]), "yellow")) 
-                self.generate_model_hidden_states = torch.cat([self.generate_model_hidden_states, hidden_states.clone().detach()], dim = 1) 
-                # print(colored("appending hidden states to length {}".format(self.generate_model_hidden_states.shape[1]), "yellow")) 
-                
-            self.generate_model_past_key_values = outputs.past_key_values 
-        seq_len = self.generate_model_hidden_states.shape[1] 
-        if self.sliding_window_length != 1: 
-            selected_seq_indices = [i * self.sliding_window_length for i in range(0, math.ceil(seq_len / self.sliding_window_length))]  # adding the last one to get future tokens 
-        else: 
-            selected_seq_indices = [i * self.sliding_window_length for i in range(0, seq_len // self.sliding_window_length)] 
-        # hidden_states = hidden_states[:, selected_seq_indices, :] 
-        # hidden_states = hidden_states[:, 1 :, :] # works with 0 as the start of the sampling index 
-        select_states = self.generate_model_hidden_states[:, selected_seq_indices, :] 
-        select_states = select_states[:, 1 :, :] 
+                next_input_id = torch.cat([next_input_id, torch.argmax(logits, dim = -1)], dim = 1) 
             
-        self.generate_iteration_count += 1 
+            self.generate_model_hidden_states = hidden_states 
+            
+        self.generate_model_past_key_values = outputs.past_key_values 
+        seq_len = self.generate_model_hidden_states.shape[1] 
+        
+        assert self.sliding_window_length != 1, "sliding_window_length is 1" 
+        select_states = self.reverseavgpool(self.generate_model_hidden_states) 
+        select_states = select_states[:, 1 :, :] 
         
         # print(colored("running the small model side", "green")) 
         addonmodeloutput = self.addonsmallmodel.generate_forward(
@@ -7911,132 +7915,6 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
         else:
             return input_ids 
     
-    def prepare_inputs_for_generation2( 
-        self, input_ids, past_key_values = None, attention_mask = None, inputs_embeds = None, adjustment_scheme = None, **kwargs): 
-        # mainly used to debug preparing inputs for generation and not using past_key_values 
-        assert past_key_values is None, "past_key_values is not None" 
-        batch_size, seq_length = input_ids.shape 
-        print("batch_size {}; seq_length {}".format(batch_size, seq_length)) 
-        
-        # adjusting the inputs and mask 
-        print("input_ids {}".format(input_ids[2])) 
-        print("attention_mask {}".format(attention_mask[2])) 
-        condition_mask = input_ids == self.tokenizer_bos_id 
-        input_sequence_indices = torch.nonzero(condition_mask).to(input_ids.device).to(torch.long) 
-        print("input_sequence_indices shape {}".format(input_sequence_indices.shape)) 
-        print("input_sequence_indices: {}".format(input_sequence_indices[2])) 
-        input_sequence_indices2 = [] 
-        modified_input_bos_sequence_indices = [] 
-        assert input_sequence_indices.shape[0] == input_ids.shape[0], "every row of sequences need to have an bos" 
-        for i in range(input_ids.shape[0]): # iterate through the batch_size 
-            # if input_sequence_indices[i] % self.sliding_window_length != 0: # we found a sequence that needs to be adjusted 
-            if input_sequence_indices[i][1].data % self.sliding_window_length != 0: # we found a sequence that needs to be adjusted 
-                input_sequence_indices2.append(torch.tensor([i, (input_sequence_indices[i][1])]).to(input_ids.device).view(1, -1)) 
-                if adjustment_scheme == "case1": 
-                    modified_input_bos_sequence_indices.append(torch.tensor([i, (input_sequence_indices[i][1] // self.sliding_window_length) * self.sliding_window_length]).to(input_ids.device).view(1, -1)) 
-                elif adjustment_scheme == "case2": 
-                    modified_input_bos_sequence_indices.append(torch.tensor([i, (input_sequence_indices[i][1] // self.sliding_window_length + 1) * self.sliding_window_length]).to(input_ids.device).view(1, -1)) 
-                else: 
-                    raise ValueError("adjustment_scheme is not recognized") 
-        if len(input_sequence_indices2) != 0: 
-            # adjusting the input_ids 
-            input_sequence_indices2 = torch.cat(input_sequence_indices2, dim = 0).to(input_ids.device).to(torch.long) 
-            modified_input_bos_sequence_indices = torch.cat(modified_input_bos_sequence_indices, dim = 0).to(input_ids.device).to(torch.long) 
-            print("shape of modified_input_bos_sequence_indices {}".format(modified_input_bos_sequence_indices.shape)) 
-            print(modified_input_bos_sequence_indices) 
-            
-            row_indices = input_sequence_indices2[:, 0] 
-            col_indices = input_sequence_indices2[:, 1] 
-            input_ids.index_put_((row_indices, col_indices), torch.full_like(row_indices, fill_value = self.tokenizer_pad_id, device = input_ids.device, dtype = input_ids.dtype), accumulate = False) 
-            
-            row_indices = modified_input_bos_sequence_indices[:, 0] 
-            col_indices = modified_input_bos_sequence_indices[:, 1] 
-            input_ids.index_put_((row_indices, col_indices), torch.full_like(row_indices, fill_value = self.tokenizer_bos_id, device = input_ids.device, dtype = input_ids.dtype), accumulate = False) 
-            
-            print("input_ids {}".format(input_ids[2])) 
-        # just for checking 
-        checking_indices = torch.nonzero(input_ids == self.tokenizer_bos_id) 
-        print("positions of the start of sequence after modification: {}".format(checking_indices)) 
-        for i in range(checking_indices.shape[0]): 
-            assert checking_indices[i][1] % self.sliding_window_length == 0, "start of sequence is not at the right position" 
-            
-        # making attention_mask 
-        modified_input_bos_sequence_indices = torch.nonzero(input_ids == self.tokenizer_bos_id).to(input_ids.device).to(torch.long) 
-        modified_input_bos_sequence_indices = modified_input_bos_sequence_indices[:, 1].unsqueeze(1).expand(-1, seq_length) 
-        print("modified_input_bos_sequence_indices shape {}".format(modified_input_bos_sequence_indices.shape)) 
-        col_indices = torch.arange(seq_length).expand(batch_size, -1).to(input_ids.device) 
-        attention_mask = col_indices >= modified_input_bos_sequence_indices 
-        # attention_mask = input_ids != self.tokenizer_pad_id 
-        attention_mask = attention_mask.to(torch.long) 
-        print("attention_mask {}".format(attention_mask[2])) 
-        # just for checking 
-        for i in range(checking_indices.shape[0]): 
-            if checking_indices[i][1] != 0: 
-                assert torch.unique(attention_mask[i][: checking_indices[i][1]]) == 0, "attention_mask is not correct" 
-            assert torch.unique(attention_mask[i][checking_indices[i][1] : ]) == 1, "attention_mask is not correct" 
-            print(colored("checking attention_mask passed", "green")) 
-                
-        # past_key_values is not used and input_ids is not changed 
-        '''
-        position_ids = kwargs.get("position_ids", None) 
-        if attention_mask is not None and position_ids is None:
-            # create position_ids on the fly for batch generation
-            position_ids = attention_mask.long().cumsum(-1) - 1
-            position_ids.masked_fill_(attention_mask == 0, 1)
-            if past_key_values:
-                position_ids = position_ids[:, -input_ids.shape[1] :] 
-        ''' 
-        position_ids = None 
-        
-        # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
-        if inputs_embeds is not None and past_key_values is None:
-            model_inputs = {"inputs_embeds": inputs_embeds}
-        else:
-            model_inputs = {"large_input_ids": input_ids, 
-                            "small_input_ids": input_ids,} 
-
-        model_inputs.update(
-            {
-                "position_ids": position_ids,
-                "past_key_values": past_key_values,
-                "use_cache": kwargs.get("use_cache"),
-                "attention_mask": attention_mask,
-            }
-        )
-        return model_inputs 
-    
-    def prepare_inputs_for_generation3(
-        self, input_ids, past_key_values = None, attention_mask = None, inputs_embeds = None, **kwargs
-    ): 
-        assert past_key_values is None, "past_key_values is not None" 
-        
-        position_ids = None 
-        
-        # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
-        if inputs_embeds is not None and past_key_values is None:
-            model_inputs = {"inputs_embeds": inputs_embeds}
-        else:
-            model_inputs = {"large_input_ids": input_ids, 
-                            "small_input_ids": input_ids,} 
-        
-        # print("attention_mask", attention_mask.shape) 
-        # print("input_ids", input_ids.shape) 
-        if attention_mask.shape[1] == input_ids.shape[1] - 1: 
-            torch.cat([attention_mask, torch.ones(attention_mask.shape[0], 1, device = attention_mask.device)], dim = 1) 
-        assert attention_mask.shape[1] == input_ids.shape[1], "attention_mask is not compatible with input_ids" 
-        original_attention_mask = torch.cat([attention_mask, torch.ones(attention_mask.shape[0], (input_ids.shape[1] - self.addonmodel_start)//self.sliding_window_length + 1, device = attention_mask.device)], dim = 1) 
-        
-        model_inputs.update( 
-            { 
-                "position_ids": position_ids, 
-                "past_key_values": past_key_values, 
-                "use_cache": kwargs.get("use_cache"), 
-                "attention_mask": attention_mask, 
-                "original_attention_mask": original_attention_mask, 
-            } 
-        ) 
-        return model_inputs 
-    
     def prepare_inputs_for_generation(
         self, input_ids, past_key_values = None, attention_mask = None, inputs_embeds = None, **kwargs
     ): 
@@ -8084,7 +7962,7 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
                 "position_ids": position_ids, 
                 "past_key_values": past_key_values, 
                 # "use_cache": kwargs.get("use_cache"), 
-                "use_cache": True, 
+                "use_cache": False, 
                 "attention_mask": attention_mask, 
                 "original_attention_mask": original_attention_mask, 
             } 
