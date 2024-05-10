@@ -228,6 +228,7 @@ parser.add_argument("--setting0usedq", action = "store_true")
 parser.add_argument("--full_sequence_length_layer_pos", type = int, default = 10) 
 parser.add_argument("--label_adjustment", action = "store_true") 
 parser.add_argument("--secondlast", action = "store_true") 
+parser.add_argument("--recovering", action = "store_true") 
 
 args = parser.parse_args() 
 
@@ -385,7 +386,7 @@ class CustomTrainer(Trainer):
                 label_adjustment = self.label_adjustment, 
                 usingsecondtolastvectors = args.secondlast, 
                 # usingsecondtolastvectors = True, 
-                autoregressive_first_element = True, 
+                autoregressive_first_element = True if not args.recovering else False, 
             ) 
         elif isinstance(self.model, LlamaWeirdLargeFullCoverage): 
             original_attention_mask2 = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
