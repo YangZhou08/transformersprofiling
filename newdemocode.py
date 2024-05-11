@@ -252,8 +252,8 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
                                 attention_mask = attention_mask, 
                                 max_length = 200, 
                                 return_dict_in_generate = True, 
-                                # do_sample = False, 
-                                do_sample = True, 
+                                do_sample = False, 
+                                # do_sample = True, 
                                 use_cache = True, 
         ) 
         print("input_ids shape {} output.sequences shape {}".format(input_ids.shape, output.sequences.shape)) 
