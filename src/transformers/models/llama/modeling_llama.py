@@ -7478,6 +7478,7 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
             next_input_id = pred 
             
             self.generate_model_hidden_states = hidden_states 
+            past_key_values = outputs.past_key_values 
             
         new_key_values = [] 
         for layer in outputs.past_key_values: # num_layers 
