@@ -7437,6 +7437,8 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
         )
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
+        temp_attention_mask = attention_mask 
+        
         last_hidden_states = None 
         start = None 
         next_input_id = None 
@@ -7449,7 +7451,6 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
             #     print("next_input_ids.shap ", next_input_id.shape) 
             print(large_input_ids.shape) 
             print(next_input_id.shape if next_input_id is not None else "//") 
-            temp_attention_mask = attention_mask 
             outputs = self.model(
                 # input_ids = torch.cat([large_input_ids, next_input_id], dim = 1) if next_input_id is not None else large_input_ids, 
                 input_ids = large_input_ids if next_input_id is None else next_input_id, 
