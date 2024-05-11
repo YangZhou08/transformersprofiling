@@ -7469,7 +7469,7 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
             if usingsampling is False: 
                 pred = torch.argmax(logits, dim = -1).unsqueeze(0) 
             else: 
-                pred = self.sample2(self.norm_logits(logits, temperature=temperature ,top_k=top_k, top_p=top_p)) 
+                pred = self.sample2(self.norm_logits(logits, temperature=temperature ,top_k=top_k, top_p=top_p)).unsqueeze(0) 
             
             if next_input_id is None: 
                 next_input_id = pred 
