@@ -11050,6 +11050,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             else: 
                 raise ValueError("We do not have the experiment setting you are looking for") 
         
+        self.visualize_attention_mask(seq_length, attention_mask[0][0], self.criticalpath + "modificationattentionmask{}.jpg".format(seq_length)) 
+        
         hidden_states = input_embeds 
         # print("hidden_states shape {}".format(hidden_states.shape)) 
         
