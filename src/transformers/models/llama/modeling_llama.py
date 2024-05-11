@@ -7748,6 +7748,7 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
         print(colored("inside the function that is overloaded for the model", "yellow")) 
         
         print("temperature is a key in model_kwargs {}".format("temperature" in model_kwargs.keys())) 
+        print("logits_warper is {}".format(logits_warper)) 
         
         logits_processor = logits_processor if logits_processor is not None else LogitsProcessorList() 
         stopping_criteria = stopping_criteria if stopping_criteria is not None else StoppingCriteriaList() 
