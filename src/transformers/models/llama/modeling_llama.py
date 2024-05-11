@@ -7466,7 +7466,7 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
                 print("length layer ", len(layer)) 
                 for kv in layer: 
                     print("kv ", type(kv)) 
-                    print("length kv ", len(kv)) 
+                    print("length kv ", kv.shape) 
                     exit(0) 
             
             hidden_states = outputs[0] # we don't need the lm_head 
