@@ -227,6 +227,7 @@ parser.add_argument("--task_id", type = int, default = 0)
 parser.add_argument("--use_small_model", action = "store_true") 
 parser.add_argument("--deploypreviouslmhead", action = "store_true") 
 parser.add_argument("--setting0usedq", action = "store_true") 
+parser.add_argument("--finetuningsmall", action = "store_true") 
 
 args = parser.parse_args() 
 
@@ -970,6 +971,10 @@ if model_type == "use_small_model":
         # ) 
         model = model.to(torch_device) 
         model.eval() 
+    elif args.finetuningsmall: 
+        model = LlamaForCausalLM.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16) 
+        model.to(torch_device) 
+        model.eval() 
     else: 
         # model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
         # prepare checkpoint 
@@ -990,11 +995,10 @@ if model_type == "use_small_model":
         config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
         model = LlamaForCausalLM(config) 
         load_results = model.load_state_dict(new_state_dict, strict = False) 
+        model = model.to(torch.bfloat16) 
         
         # print("Missing Keys:", load_results["missing_keys"]) 
         # print("Unexpected Keys:", load_results["unexpected_keys"]) 
-        print(load_results) 
-        exit(0) 
         model = model.to(torch_device) 
         model.eval() 
 else: 
