@@ -980,6 +980,10 @@ if model_type == "use_small_model":
             if "addonsmallmodel" not in key: 
                 continue # skip 
             new_key = key.replace("addonsmallmodel", "model") 
+            if "lm_head" in key: 
+                print(new_key) 
+                new_key = new_key[6 :] 
+                print(new_key) 
             new_state_dict[new_key] = model_state_dict[key] 
         
         # initialize the small model 
