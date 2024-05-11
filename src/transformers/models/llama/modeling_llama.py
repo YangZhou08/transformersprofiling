@@ -7732,7 +7732,9 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
                 break
 
         if streamer is not None:
-            streamer.end()
+            streamer.end() 
+        
+        print("batch 0 sequence is {}".format(input_ids[0])) 
 
         if return_dict_in_generate:
             if self.config.is_encoder_decoder:
