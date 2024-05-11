@@ -7463,14 +7463,11 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
                 hidden_states = hidden_states.to(torch.bfloat16) 
             # print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
             
-            print("hidden_states shape {}".format(hidden_states.shape)) 
             logits = self.lm_head(hidden_states)[:, -1, :] 
-            print("logits shape {}".format(logits.shape)) 
             if next_input_id is None: 
                 next_input_id = torch.argmax(logits, dim = -1).unsqueeze(0) 
             else: 
                 next_input_id = torch.cat([next_input_id, torch.argmax(logits, dim = -1).unsqueeze(0)], dim = 1) 
-            print("next_input_id shape {}".format(next_input_id.shape)) 
             
             self.generate_model_hidden_states = hidden_states 
             
@@ -10965,8 +10962,6 @@ class SimpleSmallModel(LlamaPreTrainedModel):
         assert input_ids.shape[0] == condensed_embeds.shape[0] # batch size has to match 
         
         # assert ((input_ids.shape[1] - start_idx)//self.sliding_window_length) + 1 == condensed_embeds.shape[1] 
-        print(math.ceil((input_ids.shape[1] - (start_idx - 1)) / self.sliding_window_length)) 
-        print(condensed_embeds.shape[1]) 
         assert math.ceil((input_ids.shape[1] - (start_idx - 1))/self.sliding_window_length) == condensed_embeds.shape[1] 
         # assert math.ceil((input_ids.shape[1] - start_idx)/self.sliding_window_length) == condensed_embeds.shape[1] 
                 
@@ -11005,8 +11000,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             position_ids = torch.tensor(position_list, dtype = torch.long, device = device) 
             position_ids = position_ids.unsqueeze(0) 
             
-            print("position ids found is {}".format(position_ids.shape)) 
-            print("position ids found is {}".format(position_ids)) 
+            # print("position ids found is {}".format(position_ids.shape)) 
+            # print("position ids found is {}".format(position_ids)) 
         
         # the important part 
         # input_embeds should not be None 
@@ -11049,8 +11044,6 @@ class SimpleSmallModel(LlamaPreTrainedModel):
                 pass 
             else: 
                 raise ValueError("We do not have the experiment setting you are looking for") 
-        
-        self.visualize_attention_mask(seq_length, attention_mask[0][0], self.criticalpath + "modificationattentionmask{}.jpg".format(seq_length)) 
         
         hidden_states = input_embeds 
         # print("hidden_states shape {}".format(hidden_states.shape)) 
