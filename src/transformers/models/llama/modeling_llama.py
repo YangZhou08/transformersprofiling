@@ -7449,8 +7449,8 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
             # print("shape of large_input_ids {}".format(large_input_ids.shape)) 
             # if next_input_id != None: 
             #     print("next_input_ids.shap ", next_input_id.shape) 
-            print(large_input_ids.shape) 
-            print(next_input_id.shape if next_input_id is not None else "//") 
+            # print(large_input_ids.shape) 
+            # print(next_input_id.shape if next_input_id is not None else "//") 
             outputs = self.model(
                 # input_ids = torch.cat([large_input_ids, next_input_id], dim = 1) if next_input_id is not None else large_input_ids, 
                 input_ids = large_input_ids if next_input_id is None else next_input_id, 
