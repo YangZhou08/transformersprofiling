@@ -7475,10 +7475,7 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
             else: 
                 pred = self.sample2(self.norm_logits(logits, temperature=temperature ,top_k=top_k, top_p=top_p)) 
             
-            if next_input_id is None: 
-                next_input_id = pred 
-            else: 
-                next_input_id = torch.cat([next_input_id, pred], dim = 1) 
+            next_input_id = pred 
             
             self.generate_model_hidden_states = hidden_states 
             
