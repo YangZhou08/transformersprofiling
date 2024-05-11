@@ -984,6 +984,8 @@ if model_type == "use_small_model":
         config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
         model = LlamaForCausalLM(config) 
         load_results = model.load_state_dict(new_state_dict, strict = False) 
+        
+        print(load_results) 
         model = model.to(torch.bfloat16) 
     elif args.finetuningsmall: 
         model = LlamaForCausalLM.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16) 
