@@ -971,10 +971,24 @@ if model_type == "use_small_model":
         model.eval() 
     else: 
         # model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
-        model, loading_info = LlamaForCausalLM.from_pretrained(args.loading_from_checkpoint, output_loading_info = True) 
+        # prepare checkpoint 
+        model_checkpoint = torch.load(args.loading_from_checkpoint) 
+        model_state_dict = model_checkpoint["model_state_dict"] 
         
-        print("Missing Keys:", loading_info['missing_keys']) 
-        print("Unexpected Keys:", loading_info['unexpected_keys']) 
+        new_state_dict = {} 
+        for key in model_state_dict.keys(): 
+            if "addonsmallmodel" not in key: 
+                continue # skip 
+            new_key = key.replace("addonsmallmodel", "model") 
+            new_state_dict[new_key] = model_state_dict[key] 
+        
+        # initialize the small model 
+        config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
+        model = LlamaForCausalLM(config) 
+        load_results = model.load_state_dict(new_state_dict, strict = False) 
+        
+        print("Missing Keys:", load_results["missing_keys"]) 
+        print("Unexpected Keys:", load_results["unexpected_keys"]) 
         exit(0) 
         model = model.to(torch_device) 
         model.eval() 
