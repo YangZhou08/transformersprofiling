@@ -37,6 +37,7 @@ from transformers.models.llama.modeling_llama import LlamaForCausalLM, SimpleSma
 from transformers.models.llama.modeling_llama import LlamaCausalLMWeirdTwo 
 from transformers.models.llama.modeling_llama import LlamaWeirdLarge3 
 from transformers.models.llama.modeling_llama import LlamaForCausalLM2 
+from transformers.models.llama.modeling_llama import LlamaWeirdLargeTest 
 from transformers.modeling_utils import PreTrainedModel, load_sharded_checkpoint, unwrap_model 
 import time 
 from torch.utils.data import random_split 
@@ -972,8 +973,7 @@ if model_type == "use_small_model":
     else: 
         # model = LlamaForCausalLM.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
         # prepare checkpoint 
-        model_checkpoint = torch.load(args.loading_from_checkpoint) 
-        model_state_dict = model_checkpoint["model_state_dict"] 
+        model_state_dict = LlamaWeirdLargeTest.from_pretrained(args.loading_from_checkpoint, cache_dir = dir_models).state_dict() 
         
         new_state_dict = {} 
         for key in model_state_dict.keys(): 
