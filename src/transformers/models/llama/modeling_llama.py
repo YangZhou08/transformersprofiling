@@ -7444,13 +7444,14 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
         for i in range(self.sliding_window_length): 
             # NOTE for this case, we use the pass-in attention mask 
             # print(colored("running the large model side", "green")) 
+            print("shape of large_input_ids {}".format(large_input_ids)) 
             outputs = self.model(
                 input_ids = torch.cat([large_input_ids, next_input_id], dim = 1) if next_input_id is not None else large_input_ids, 
                 attention_mask = torch.cat([attention_mask, torch.ones_like(next_input_id)], dim = 1) if next_input_id is not None else attention_mask, 
                 position_ids = position_ids, 
                 past_key_values = past_key_values, 
                 inputs_embeds = input_embeds, 
-                use_cache = use_cache,  
+                use_cache = False, 
                 output_attentions = output_attentions, 
                 output_hidden_states = output_hidden_states, 
                 return_dict = return_dict, 
