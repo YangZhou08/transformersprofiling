@@ -7764,7 +7764,7 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
             elif isinstance(wpr, TopPLogitsWarper): 
                 topp = wpr.top_p 
             elif isinstance(wpr, TopKLogitsWarper): 
-                topk = wpr.topk 
+                topk = wpr.top_k 
         temperature = temperature if temperature != None else 1.0 
         topk = topk if topk != None else 0 
         topp = topp if topp != None else 1.0 
