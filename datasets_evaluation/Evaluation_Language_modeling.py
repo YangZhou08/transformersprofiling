@@ -979,6 +979,7 @@ if model_type == "use_small_model":
         for key in model_state_dict.keys(): 
             if "addonsmallmodel" not in key: 
                 continue # skip 
+            print(key) 
             new_key = key.replace("addonsmallmodel", "model") 
             if "lm_head" in key: 
                 new_key = new_key[6 :] 
