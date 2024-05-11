@@ -987,8 +987,9 @@ if model_type == "use_small_model":
         model = LlamaForCausalLM(config) 
         load_results = model.load_state_dict(new_state_dict, strict = False) 
         
-        print("Missing Keys:", load_results["missing_keys"]) 
-        print("Unexpected Keys:", load_results["unexpected_keys"]) 
+        # print("Missing Keys:", load_results["missing_keys"]) 
+        # print("Unexpected Keys:", load_results["unexpected_keys"]) 
+        print(load_results) 
         exit(0) 
         model = model.to(torch_device) 
         model.eval() 
