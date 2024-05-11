@@ -973,7 +973,7 @@ if model_type == "use_small_model":
         model = model.to(torch_device) 
         model.eval() 
     elif args.recoveringsmall: 
-        model_state_dict = SimpleSmallModel.from_pretrained(args.loading_from_checkpoint, cache_dir = dir_models).state_dict() 
+        model_state_dict = SimpleSmallModel.from_pretrained(args.loading_from_checkpoint, target_model_dim = 2048, cache_dir = dir_models).state_dict() 
         
         new_state_dict = {} 
         for key in model_state_dict.keys(): 
