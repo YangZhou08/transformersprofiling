@@ -7448,7 +7448,8 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
             # if next_input_id != None: 
             #     print("next_input_ids.shap ", next_input_id.shape) 
             outputs = self.model(
-                input_ids = torch.cat([large_input_ids, next_input_id], dim = 1) if next_input_id is not None else large_input_ids, 
+                # input_ids = torch.cat([large_input_ids, next_input_id], dim = 1) if next_input_id is not None else large_input_ids, 
+                input_ids = large_input_ids if next_input_id is not None else next_input_id, 
                 attention_mask = torch.cat([attention_mask, torch.ones_like(next_input_id)], dim = 1) if next_input_id is not None else attention_mask, 
                 position_ids = position_ids, 
                 past_key_values = past_key_values, 
@@ -7458,16 +7459,6 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
                 output_hidden_states = output_hidden_states, 
                 return_dict = return_dict, 
             ) 
-            
-            print("past_key_values: ", type(outputs.past_key_values)) 
-            print("length: ", len(outputs.past_key_values)) 
-            for layer in outputs.past_key_values: 
-                print("layer ", type(layer)) 
-                print("length layer ", len(layer)) 
-                for kv in layer: 
-                    print("kv ", type(kv)) 
-                    print("length kv ", kv.shape) 
-                    exit(0) 
             
             hidden_states = outputs[0] # we don't need the lm_head 
             
@@ -7491,7 +7482,18 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
             
             self.generate_model_hidden_states = hidden_states 
             
-        self.generate_model_past_key_values = outputs.past_key_values 
+        new_key_values = [] 
+        for layer in outputs.past_key_values: # num_layers 
+            new_layer = [] 
+            for kv in layer: # 2 
+                new_kv = kv[:, :, : -(self.sliding_window_length - 1), :] 
+                new_layer.append(new_kv) 
+            new_layer = tuple(new_layer) 
+            new_key_values.append(new_layer) 
+        new_key_values = tuple(new_key_values) 
+                
+        # self.generate_model_past_key_values = outputs.past_key_values 
+        self.generate_model_past_key_values = new_key_values 
         seq_len = self.generate_model_hidden_states.shape[1] 
         
         assert self.sliding_window_length != 1, "sliding_window_length is 1" 
