@@ -977,6 +977,7 @@ if model_type == "use_small_model":
         
         new_state_dict = {} 
         for key in model_state_dict.keys(): 
+            new_key = key 
             if "lm_head" in key: 
                 new_key = new_key[6 :] 
             new_state_dict[new_key] = model_state_dict[key] 
