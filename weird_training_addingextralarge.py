@@ -251,7 +251,8 @@ parser.add_argument("--data_compensation", action = "store_true")
 parser.add_argument("--first_n_rows", type = int, default = None) 
 parser.add_argument("--newdataset", action = "store_true") 
 parser.add_argument("--num_epoch", type = int, default = 1) 
-parser.add_argument("--wandbsession", type = str, default = None)
+parser.add_argument("--wandb_session", type = str, default = None) 
+parser.add_argument("--wandb_session_name", type = str, default = None) 
 
 args = parser.parse_args() 
 if args.embedding_pretrained: 
@@ -1748,10 +1749,18 @@ if trainer.accelerator.is_main_process and has_wandb:
     wandblogconfigs["model_name"] = model_name 
     wandblogconfigs["texteval"] = model_path + text_eval 
     # wandb.init(project = "llm160m", config = training_args, name="{}_{}".format(today, project_setting)) 
-    wandb.init(project = "llm160m", 
-               config = wandblogconfigs, 
-               name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain") 
-    ) 
+    if args.resume_from_checkpoint is not None: 
+        wandb.init(project = "llm160m", 
+                   config = wandblogconfigs, 
+                   name = args.wandb_session_name, 
+                   resume = True, 
+                   id = args.wandb_session, 
+        ) 
+    else: 
+        wandb.init(project = "llm160m", 
+                config = wandblogconfigs, 
+                name = "{}_{}_{}".format(today, project_setting, "custom" if args.use_plain_model is False else "plain") 
+        ) 
 
 print("experiment-setting is {}".format(trainer.experiment_setting)) 
 # print("***** Using input condensed tokens {} *****".format("yes" if trainer.input_condensed else "no")) 
