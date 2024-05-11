@@ -7486,8 +7486,6 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
         select_states = self.reverseavgpool(self.generate_model_hidden_states) 
         select_states = select_states[:, 1 :, :] 
         
-        self.generate_iteration_count += 1 
-        
         # print(colored("running the small model side", "green")) 
         addonmodeloutput = self.addonsmallmodel.generate_forward(
             input_ids = small_input_ids, 
@@ -7500,11 +7498,13 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
             output_attentions = True, 
             output_hidden_states = None, 
             return_dict = True, 
-            start_idx = self.sliding_window_length + 1, # NOTE this is very important 
+            start_idx = self.sliding_window_length + 1 + (self.generate_iteration_count % self.sliding_window_length), # NOTE this is very important 
             eval_mode = False, 
             experiment_setting = self.inference_setting, 
             generate_flag = True, 
         ) 
+        
+        self.generate_iteration_count += 1 
         
         logits = addonmodeloutput.logits 
         # logits = torch.zeros((small_input_ids.shape[0], small_input_ids.shape[1], self.config.vocab_size)).to(small_input_ids.device).to(torch.float32) 
@@ -11010,8 +11010,8 @@ class SimpleSmallModel(LlamaPreTrainedModel):
             position_ids = torch.tensor(position_list, dtype = torch.long, device = device) 
             position_ids = position_ids.unsqueeze(0) 
             
-            # print("position ids found is {}".format(position_ids.shape)) 
-            # print("position ids found is {}".format(position_ids)) 
+            print("position ids found is {}".format(position_ids.shape)) 
+            print("position ids found is {}".format(position_ids)) 
         
         # the important part 
         # input_embeds should not be None 
