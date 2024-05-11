@@ -7997,7 +7997,7 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
                 "position_ids": position_ids, 
                 "past_key_values": past_key_values, 
                 # "use_cache": kwargs.get("use_cache"), 
-                "use_cache": False, 
+                "use_cache": use_cache, 
                 "attention_mask": attention_mask, 
                 "original_attention_mask": original_attention_mask, 
             } 
