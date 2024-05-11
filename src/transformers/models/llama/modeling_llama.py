@@ -7453,11 +7453,14 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
                 position_ids = position_ids, 
                 past_key_values = past_key_values, 
                 inputs_embeds = input_embeds, 
-                use_cache = False, 
+                use_cache = use_cache, 
                 output_attentions = output_attentions, 
                 output_hidden_states = output_hidden_states, 
                 return_dict = return_dict, 
             ) 
+            
+            print("past_key_values: ", past_key_values) 
+            exit(0) 
             
             hidden_states = outputs[0] # we don't need the lm_head 
             
