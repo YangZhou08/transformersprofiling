@@ -7484,7 +7484,10 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
             
             temp_attention_mask = torch.cat([temp_attention_mask, torch.ones_like(next_input_id)], dim = 1) 
             
-            self.generate_model_hidden_states = hidden_states 
+            if self.generate_model_hidden_states is None: 
+                self.generate_model_hidden_states = hidden_states 
+            else: 
+                self.generate_model_hidden_states = torch.cat([self.generate_model_hidden_states, hidden_states], dim = 1) 
             past_key_values = outputs.past_key_values 
             
         new_key_values = [] 
@@ -7504,6 +7507,8 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
         assert self.sliding_window_length != 1, "sliding_window_length is 1" 
         select_states = self.reverseavgpool(self.generate_model_hidden_states) 
         select_states = select_states[:, 1 :, :] 
+        
+        self.generate_model_hidden_states = self.generate_model_hidden_states[:, : -(self.sliding_window_length - 1), :] 
         
         # print(colored("running the small model side", "green")) 
         addonmodeloutput = self.addonsmallmodel.generate_forward(
