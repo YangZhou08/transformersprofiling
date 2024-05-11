@@ -227,6 +227,7 @@ parser.add_argument("--task_id", type = int, default = 0)
 parser.add_argument("--use_small_model", action = "store_true") 
 parser.add_argument("--deploypreviouslmhead", action = "store_true") 
 parser.add_argument("--setting0usedq", action = "store_true") 
+parser.add_argument("--recoveringsmall", action = "store_true") 
 parser.add_argument("--finetuningsmall", action = "store_true") 
 
 args = parser.parse_args() 
@@ -971,6 +972,18 @@ if model_type == "use_small_model":
         # ) 
         model = model.to(torch_device) 
         model.eval() 
+    elif args.recoveringsmall: 
+        model_state_dict = SimpleSmallModel.from_pretrained(args.loading_from_checkpoint, cache_dir = dir_models).state_dict() 
+        
+        new_state_dict = {} 
+        for key in model_state_dict.keys(): 
+            if "lm_head" in key: 
+                new_key = new_key[6 :] 
+            new_state_dict[new_key] = model_state_dict[key] 
+        config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
+        model = LlamaForCausalLM(config) 
+        load_results = model.load_state_dict(new_state_dict, strict = False) 
+        model = model.to(torch.bfloat16) 
     elif args.finetuningsmall: 
         model = LlamaForCausalLM.from_pretrained(args.loading_from_checkpoint).to(torch.bfloat16) 
         model.to(torch_device) 
