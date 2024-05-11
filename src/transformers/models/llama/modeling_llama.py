@@ -7465,10 +7465,16 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
             # print("selected_seq_indices {} total length {}".format(selected_seq_indices, len(selected_seq_indices))) 
             
             logits = self.lm_head(hidden_states)[:, -1, :] 
-            if next_input_id is None: 
-                next_input_id = torch.argmax(logits, dim = -1).unsqueeze(0) 
+            pred = None 
+            if usingsampling is False: 
+                pred = torch.argmax(logits, dim = -1).unsqueeze(0) 
             else: 
-                next_input_id = torch.cat([next_input_id, torch.argmax(logits, dim = -1).unsqueeze(0)], dim = 1) 
+                pred = self.sample(self.norm_logits(logits, temperature=temperature ,top_k=top_k, top_p=top_p)) 
+            
+            if next_input_id is None: 
+                next_input_id = pred 
+            else: 
+                next_input_id = torch.cat([next_input_id, pred], dim = 1) 
             
             self.generate_model_hidden_states = hidden_states 
             
@@ -7749,6 +7755,19 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
         
         print("temperature is a key in model_kwargs {}".format("temperature" in model_kwargs.keys())) 
         print("logits_warper is {}".format(logits_warper)) 
+        temperature = None 
+        topk = None 
+        topp = None 
+        for wpr in logits_warper: 
+            if isinstance(wpr, TemperatureLogitsWarper): 
+                temperature = wpr.temperature 
+            elif isinstance(wpr, TopPLogitsWarper): 
+                topp = wpr.top_p 
+            elif isinstance(wpr, TopKLogitsWarper): 
+                topk = wpr.topk 
+        temperature = temperature if temperature != None else 1.0 
+        topk = topk if topk != None else 0 
+        topp = topp if topp != None else 1.0 
         
         logits_processor = logits_processor if logits_processor is not None else LogitsProcessorList() 
         stopping_criteria = stopping_criteria if stopping_criteria is not None else StoppingCriteriaList() 
@@ -7831,6 +7850,10 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
                 return_dict = True, 
                 output_attentions = output_attentions, 
                 output_hidden_states = output_hidden_states, 
+                temperature = temperature, 
+                top_k = topk, 
+                top_p = topp, 
+                usingsampling = True, 
             ) 
 
             if synced_gpus and this_peer_finished:
