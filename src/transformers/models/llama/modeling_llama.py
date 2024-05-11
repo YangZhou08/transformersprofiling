@@ -7403,6 +7403,7 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
         temperature = 0.6, 
         top_k = -1, 
         top_p = 0.9, 
+        usingsampling = False, 
     ) -> Union[Tuple, CausalLMOutputWithPastLargeDistance2]: 
         r"""
         Args:
@@ -7631,8 +7632,8 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
                 return_dict = True, 
                 output_attentions = output_attentions, 
                 output_hidden_states = output_hidden_states, 
+                usingsampling = False, 
             ) 
-            
             '''
             print("outputs.logits.shape", outputs.logits.shape) 
             ''' 
@@ -7745,6 +7746,8 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
         
         print("inside generate function, output_hidden_states is {}".format(output_hidden_states)) 
         print(colored("inside the function that is overloaded for the model", "yellow")) 
+        
+        print("temperature is a key in model_kwargs {}".format("temperature" in model_kwargs.keys())) 
         
         logits_processor = logits_processor if logits_processor is not None else LogitsProcessorList() 
         stopping_criteria = stopping_criteria if stopping_criteria is not None else StoppingCriteriaList() 
