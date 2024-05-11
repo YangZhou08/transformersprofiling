@@ -7449,10 +7449,12 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
             #     print("next_input_ids.shap ", next_input_id.shape) 
             print(large_input_ids.shape) 
             print(next_input_id.shape if next_input_id is not None else "//") 
+            temp_attention_mask = attention_mask 
             outputs = self.model(
                 # input_ids = torch.cat([large_input_ids, next_input_id], dim = 1) if next_input_id is not None else large_input_ids, 
                 input_ids = large_input_ids if next_input_id is None else next_input_id, 
-                attention_mask = torch.cat([attention_mask, torch.ones_like(next_input_id)], dim = 1) if next_input_id is not None else attention_mask, 
+                # attention_mask = torch.cat([attention_mask, torch.ones_like(next_input_id)], dim = 1) if next_input_id is not None else attention_mask, 
+                attention_mask = temp_attention_mask, 
                 position_ids = position_ids, 
                 past_key_values = past_key_values, 
                 inputs_embeds = input_embeds, 
@@ -7478,6 +7480,8 @@ class LlamaWeirdLargeRecoveringModeOn(LlamaPreTrainedModel):
                 pred = self.sample2(self.norm_logits(logits, temperature=temperature ,top_k=top_k, top_p=top_p)) 
             
             next_input_id = pred 
+            
+            temp_attention_mask = torch.cat([temp_attention_mask, torch.ones_like(next_input_id)], dim = 1) 
             
             self.generate_model_hidden_states = hidden_states 
             past_key_values = outputs.past_key_values 
