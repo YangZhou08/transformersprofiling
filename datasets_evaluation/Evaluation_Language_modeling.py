@@ -981,10 +981,9 @@ if model_type == "use_small_model":
                 continue # skip 
             new_key = key.replace("addonsmallmodel", "model") 
             if "lm_head" in key: 
-                print(new_key) 
                 new_key = new_key[6 :] 
-                print(new_key) 
             new_state_dict[new_key] = model_state_dict[key] 
+        print("length of the statedictnew ", len(new_state_dict.keys())) 
         
         # initialize the small model 
         config = LlamaConfig.from_pretrained("Cheng98/llama-160m", cache_dir = dir_models) 
