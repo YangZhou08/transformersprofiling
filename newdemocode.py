@@ -226,7 +226,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
     print("input_ids shape {}".format(input_ids.shape)) 
     attention_mask = batch["attention_mask"].to(torch_device) 
     ''' 
-    input_ids = torch.tensor([    2,     2,   894, 29901,  4335,   508,  1134, 29871, 29929, 29900,                                           
+    input_ids = torch.tensor([    2,     2,   1,    894, 29901,  4335,   508,  1134, 29871, 29929, 29900,                                           
          3838,   263, 11015, 29889, 29871,   319,  1813,   338, 29871, 29946,                                                               
         29945, 29900,  3838, 29889, 29871,  1128,  1472,   723,   372,  2125,                                                               
          1075,   304,  1134,   714, 29871, 29896, 29900,  6515, 29973,    13,                                                               
