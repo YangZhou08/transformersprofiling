@@ -1202,9 +1202,9 @@ def get_dataset(datasetname, max_length):
     # datasetnew = datasetnew.map(unflatten_list_func, num_proc = 8) 
     return datasetnew 
 
-dataset_list = ["c4llm_synthesized", "c4", "pg19", "cnn_dailymail", "openwebtext", "xsum"] 
+# dataset_list = ["c4llm_synthesized", "c4", "pg19", "cnn_dailymail", "openwebtext", "xsum"] 
 # dataset_list = ["c4"] 
-# dataset_list = ["c4", "pg19", "cnn_dailymail", "openwebtext", "xsum"] # restricted dataset 
+dataset_list = ["c4", "pg19", "cnn_dailymail", "openwebtext", "xsum"] # restricted dataset 
 ce_loss_list = [] 
 ppl_list = [] 
 
