@@ -243,6 +243,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
           769, 12212,   491, 29871, 29941, 29900, 29995,   297,   278,  4654,
          4098, 29889,  1128,  1784,  5142, 29879,  1258,   278,  1824,   505,
          3001,   975,   278,  2211,  7378, 29973,    13, 22550, 29901, 29871]) 
+    input_ids = input_ids.unsqueeze(0).to(torch.long).to(torch_device) 
     attention_mask = torch.ones_like(input_ids) 
     original_attention_mask = batch["attention_mask"] # (batch_size, 203) 
     labels = batch["labels"].to(torch_device) 
