@@ -221,9 +221,29 @@ trainer = Trainer(
 
 sum = torch.zeros((1,)).to(torch_device).float() 
 for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())): 
+    '''
     input_ids = batch["input_ids"].to(torch_device) 
     print("input_ids shape {}".format(input_ids.shape)) 
     attention_mask = batch["attention_mask"].to(torch_device) 
+    ''' 
+    input_ids = torch.tensor([    2,     2,   894, 29901,  4335,   508,  1134, 29871, 29929, 29900,                                           
+         3838,   263, 11015, 29889, 29871,   319,  1813,   338, 29871, 29946,                                                               
+        29945, 29900,  3838, 29889, 29871,  1128,  1472,   723,   372,  2125,                                                               
+         1075,   304,  1134,   714, 29871, 29896, 29900,  6515, 29973,    13,                                                               
+        22550, 29901,   940,   508,  1134,   714, 29871, 29896,  1813,   297,                                                               
+        29871, 29946, 29945, 29900, 29914, 29929, 29900, 29922,  9314, 29946,                                                               
+        29945, 29900, 29914, 29929, 29900, 29922, 29945,  6778, 29945,  6233,
+           13,  6295,   372,   723,  2125, 29871, 29945, 29930, 29896, 29900,
+        29922,  9314, 29945, 29930, 29896, 29900, 29922, 29945, 29900,  6778,
+        29945, 29900,  6233,    13,  4136, 29871, 29945, 29900,    13,    13,
+        16492, 29901,   319,   716,  1824,   750, 29871, 29953, 29900,  5142,
+        29879,   297,   278,   937,  4098, 29889,   450,  1353,   310,  5142,
+        29879,   297,   278,  1473,  4098,   471,  2211,  3064,   408,  1784,
+          408,   278,  5142, 29879,   297,   278,   937,  4098, 29892,   541,
+          769, 12212,   491, 29871, 29941, 29900, 29995,   297,   278,  4654,
+         4098, 29889,  1128,  1784,  5142, 29879,  1258,   278,  1824,   505,
+         3001,   975,   278,  2211,  7378, 29973,    13, 22550, 29901, 29871]) 
+    
     original_attention_mask = batch["attention_mask"] # (batch_size, 203) 
     labels = batch["labels"].to(torch_device) 
     batch_size, seq_len = original_attention_mask.shape 
@@ -264,3 +284,4 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
             print(colored(tokenizer.decode(output.sequences[i][:101]), "blue"), end = "") 
             print(colored(tokenizer.decode(output.sequences[i][101:]), "green")) 
             print("\n", end = "") 
+        break 
