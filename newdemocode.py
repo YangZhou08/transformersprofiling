@@ -236,11 +236,10 @@ trainer = Trainer(
 
 sum = torch.zeros((1,)).to(torch_device).float() 
 for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())): 
-    '''
     input_ids = batch["input_ids"].to(torch_device) 
     print("input_ids shape {}".format(input_ids.shape)) 
     attention_mask = batch["attention_mask"].to(torch_device) 
-    ''' 
+    '''
     input_ids = torch.tensor([    2,     2,   1,    894, 29901,  4335,   508,  1134, 29871, 29929, 29900,                                           
          3838,   263, 11015, 29889, 29871,   319,  1813,   338, 29871, 29946,                                                               
         29945, 29900,  3838, 29889, 29871,  1128,  1472,   723,   372,  2125,                                                               
@@ -260,6 +259,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
          3001,   975,   278,  2211,  7378, 29973,    13, 22550, 29901, 29871]) 
     input_ids = input_ids.unsqueeze(0).to(torch.long).to(torch_device) 
     attention_mask = torch.ones_like(input_ids) 
+    ''' 
     original_attention_mask = batch["attention_mask"] # (batch_size, 203) 
     labels = batch["labels"].to(torch_device) 
     batch_size, seq_len = original_attention_mask.shape 
