@@ -2489,6 +2489,7 @@ class LlamaForCausalLM2(LlamaPreTrainedModel):
                 new_layer = tuple(new_layer) 
                 new_key_valuess.append(new_layer) 
             new_key_valuess = tuple(new_key_valuess) 
+            past_key_values = new_key_valuess 
         if past_key_values is not None:
             past_length = past_key_values[0][0].shape[2]
 
