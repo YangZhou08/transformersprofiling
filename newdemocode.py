@@ -102,7 +102,7 @@ model = large_model
 # large_model.set_tokenizer_bos_id(bos_id = tokenizer.bos_token_id, pad_id = tokenizer.pad_token_id) 
 # large_model.set_cosinesimilarity(False) 
 
-from griffin.llama_chunk_redirecting import get_llama_griffin 
+from griffin.llama_chunk_redirecting import get_llama_griffintwo 
 density = 0.5 
 # config = AutoConfig.from_pretrained("meta-llama/Llama-2-7b-hf") 
 # large_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16) 
@@ -114,7 +114,7 @@ large_model.config.selection_method = "topk"
 
 schedule = [density for _ in range(config.num_hidden_layers)] 
 
-large_model = get_llama_griffin(large_model, schedule) 
+large_model = get_llama_griffintwo(large_model, schedule) 
 
 large_model.config.pad_token_id = tokenizer.pad_token_id 
 # large_model.addonsmallmodel.config.pad_token_id = tokenizer.pad_token_id 
