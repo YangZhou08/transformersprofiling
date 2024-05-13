@@ -2501,7 +2501,7 @@ class LlamaForCausalLM2(LlamaPreTrainedModel):
                 remove_prefix_length = input_ids.shape[1] - 1
 
             input_ids = input_ids[:, remove_prefix_length:] 
-            print("past_length {} remove_prefix_length {}".format(past_length, remove_prefix_length)) 
+            # print("past_length {} remove_prefix_length {}".format(past_length, remove_prefix_length)) 
 
         position_ids = kwargs.get("position_ids", None)
         if attention_mask is not None and position_ids is None:
