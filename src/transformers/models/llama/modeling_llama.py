@@ -2063,7 +2063,7 @@ class LlamaForCausalLM2(LlamaPreTrainedModel):
 
         # Initialize weights and apply final processing
         self.post_init() 
-    
+    '''
     def reinitialize_embeddings(self, type = "xavieruniform"): 
         from torch.nn import init 
         embedding = self.model.embed_tokens 
@@ -2075,7 +2075,7 @@ class LlamaForCausalLM2(LlamaPreTrainedModel):
             init.kaiming_normal_(embedding.weight) 
         else: 
             raise ValueError("type not recognized") 
-
+    ''' 
     def get_input_embeddings(self):
         return self.model.embed_tokens
 
