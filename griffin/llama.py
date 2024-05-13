@@ -89,10 +89,10 @@ class LlamaMLP(nn.Module):
                         # print("int_states.norm(dim=-1).shape {}".format(int_states.norm(dim = -1).shape)) 
                         # print("int_states.norm(dim=-1).unsqueeze(-1).shape {}".format(int_states.norm(dim=-1).unsqueeze(-1).shape)) 
                         neuron_stat = ((int_states / int_states.norm(dim=-1).unsqueeze(-1))).norm(dim=1) # B, D 
-                        print("(int_states / int_states.norm(dim=-1).unsqueeze(-1)).shape {}".format((int_states / int_states.norm(dim=-1).unsqueeze(-1)).shape)) 
-                        print("neuron_stat.shape {}".format(neuron_stat.shape)) 
+                        # print("(int_states / int_states.norm(dim=-1).unsqueeze(-1)).shape {}".format((int_states / int_states.norm(dim=-1).unsqueeze(-1)).shape)) 
+                        # print("neuron_stat.shape {}".format(neuron_stat.shape)) 
                         topk_weight, topk_indices = select_neurons(neuron_stat, self.config.selection_method, k) 
-                        print("topk_indices.shape {}".format(topk_indices.shape)) 
+                        # print("topk_indices.shape {}".format(topk_indices.shape)) 
                         self.prepare_reduced_weights(topk_indices)
                         
                     down_proj = self.down_proj(int_states)
