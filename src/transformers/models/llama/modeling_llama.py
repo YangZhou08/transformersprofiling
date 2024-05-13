@@ -2480,7 +2480,7 @@ class LlamaForCausalLM2(LlamaPreTrainedModel):
     ):  
         self.generateiterationcount += 1 
         if self.generateiterationcount % (self.chunksize + 1) == 0 and past_key_values is not None: 
-            print("count is {} large full model runs using its own past_key_values".format(self.generateiterationcount)) 
+            # print("count is {} large full model runs using its own past_key_values".format(self.generateiterationcount)) 
             new_key_valuess = [] 
             for layer in past_key_values: 
                 new_layer = [] 
