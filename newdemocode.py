@@ -11,6 +11,7 @@ sys.path.append(src_folder)
 
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM 
 from transformers import GPTNeoXForCausalLM 
+from transformers import AutoConfig 
 from transformers import LlamaConfig, LlamaPreTrainedModel 
 from transformers import LlamaTokenizer 
 from transformers.models.llama.modeling_llama import LlamaForCausalLM 
@@ -100,7 +101,16 @@ model = large_model
 # large_model.set_tokenizer_bos_id(bos_id = tokenizer.bos_token_id, pad_id = tokenizer.pad_token_id) 
 # large_model.set_cosinesimilarity(False) 
 
-large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16).to(torch_device) 
+from griffin.llama import get_llama_griffin 
+density = 0.5 
+config = AutoConfig.from_pretrained("meta-llama/Llama-2-7b-hf") 
+large_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16) 
+large_model.config.mode = "gen" 
+large_model.config.selection_method = "topk" 
+
+schedule = [density for _ in range(config.num_hidden_layers)] 
+
+large_model = get_llama_griffin(large_model, schedule) 
 
 large_model.config.pad_token_id = tokenizer.pad_token_id 
 # large_model.addonsmallmodel.config.pad_token_id = tokenizer.pad_token_id 
