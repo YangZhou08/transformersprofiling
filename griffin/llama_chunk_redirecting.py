@@ -46,6 +46,9 @@ class LlamaMLP(nn.Module):
         assert self.mode in ['gen', 'class'] 
         self.chunksize = config.chunksize 
         self.generationiterationcount = -1 
+        
+    def resetgenerationiterateingcount(self): 
+        self.generationiterationcount = -1 
 
 
     def prepare_reduced_weights(self, topk_indices):
@@ -63,6 +66,7 @@ class LlamaMLP(nn.Module):
 
     def forward(self, x):
         self.generationiterationcount += 1 
+        
         if self.config.pretraining_tp > 1:
             slice = self.intermediate_size // self.config.pretraining_tp
             gate_proj_slices = self.gate_proj.weight.split(slice, dim=0)
