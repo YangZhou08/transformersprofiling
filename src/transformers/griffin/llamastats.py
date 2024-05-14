@@ -61,9 +61,9 @@ class LlamaMLP(nn.Module):
         tensorinput = torch.zeros(shape, dtype = torch.int32).to("cpu") 
         print("type of indextensor {}".format(type(indextensor))) 
         print("shape of indextensor[0] {}".format(indextensor[0].shape)) 
-        for i in range(len(indextensor)): 
-            print("indextensor[i] {}".format(indextensor[i])) 
-            tensorinput[indextensor[i]] = 1 
+        
+        exit(0) 
+        
         assert tensorinput.shape[0] == 1 
         if self.savingintermediatestates is not None: 
             self.savingintermediatestates = torch.cat([self.savingintermediatestates, tensorinput], dim = 0) 
