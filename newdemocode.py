@@ -37,6 +37,8 @@ hostname = socket.gethostname()
 print("Hostname: ", hostname) 
 
 torch.set_printoptions(precision=3) 
+import matplotlib.pyplot as plt 
+import numpy as np 
 
 ##### Useful dataset path ##### 
 if "lovelace" in hostname: 
