@@ -46,9 +46,11 @@ class LlamaMLP(nn.Module):
         assert self.mode in ['gen', 'class'] 
         self.chunksize = config.chunksize 
         self.generationiterationcount = -1 
+        self.neuron_stat = None 
         
     def resetgenerationiterateingcount(self): 
         self.generationiterationcount = -1 
+        self.neuron_stat = None 
 
 
     def prepare_reduced_weights(self, topk_indices):
@@ -92,8 +94,13 @@ class LlamaMLP(nn.Module):
                     # GRIFFIN Expert Selection
                     if self.config.selection_method != 'magnitude' and k_factor > 0.0: ###
                         k = int(int_states.shape[-1] * k_factor)
-                        neuron_stat = ((int_states / int_states.norm(dim=-1).unsqueeze(-1))).norm(dim=1) # B, D
-                        topk_weight, topk_indices = select_neurons(neuron_stat, self.config.selection_method, k) 
+                        neuron_stat = ((int_states / int_states.norm(dim=-1).unsqueeze(-1))).norm(dim=1) # B, D 
+                        if self.neuron_stat is None: 
+                            self.neuron_stat = neuron_stat 
+                        else: 
+                            self.neuron_stat = torch.sqrt(torch.pow(self.neuron_stat, 2) + torch.pow(neuron_stat, 2)) 
+                        # topk_weight, topk_indices = select_neurons(neuron_stat, self.config.selection_method, k) 
+                        topk_weight, topk_indices = select_neurons(self.neuron_stat, self.config.selection_method, k) 
                         # print("at number {}, we re-select neurons".format(self.generationiterationcount)) 
                         self.prepare_reduced_weights(topk_indices)
                         
