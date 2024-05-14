@@ -2,8 +2,16 @@
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from griffin.utils import select_neurons
+import torch.nn.functional as F 
+
+import sys 
+import os 
+current_dir = os.path.dirname(__file__) 
+parent_dir = os.path.dirname(current_dir) 
+sys.path.append(current_dir) 
+sys.path.append(parent_dir) 
+
+from utils import select_neurons 
 
 def get_llama_griffin(model,  k_schedule):
     config = model.config
