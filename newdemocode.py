@@ -30,6 +30,8 @@ from tqdm import tqdm
 import torch.nn.functional as F 
 
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
+from transformers.griffin.llamastats import get_llama_griffinstats 
+from transformers.griffin.llama_chunk_redirecting import get_llama_griffintwo 
 
 import socket 
 
@@ -104,7 +106,6 @@ model = large_model
 # large_model.set_tokenizer_bos_id(bos_id = tokenizer.bos_token_id, pad_id = tokenizer.pad_token_id) 
 # large_model.set_cosinesimilarity(False) 
 
-from griffin.llama_chunk_redirecting import get_llama_griffintwo 
 density = 0.5 
 # config = AutoConfig.from_pretrained("meta-llama/Llama-2-7b-hf") 
 # large_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16) 
@@ -116,7 +117,8 @@ large_model.config.selection_method = "topk"
 
 schedule = [density for _ in range(config.num_hidden_layers)] 
 
-large_model = get_llama_griffintwo(large_model, schedule) 
+# large_model = get_llama_griffintwo(large_model, schedule) 
+large_model = get_llama_griffinstats(large_model, schedule) 
 
 large_model.config.pad_token_id = tokenizer.pad_token_id 
 # large_model.addonsmallmodel.config.pad_token_id = tokenizer.pad_token_id 
@@ -293,7 +295,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
         # ) 
         output = model.generate(input_ids, 
                                 attention_mask = attention_mask, 
-                                max_length = 200, 
+                                max_length = 300, 
                                 return_dict_in_generate = True, 
                                 # do_sample = False, 
                                 do_sample = True, 
@@ -306,3 +308,4 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
             print(colored(tokenizer.decode(output.sequences[i][:101]), "blue"), end = "") 
             print(colored(tokenizer.decode(output.sequences[i][101:]), "green")) 
             print("\n", end = "") 
+        break 

@@ -15,7 +15,7 @@ sys.path.append(parent_dir)
 
 from utils import select_neurons 
 
-def get_llama_griffin(model,  k_schedule):
+def get_llama_griffinstats(model,  k_schedule): 
     config = model.config
     for i, l in enumerate(model.model.layers):
         new_mlp = LlamaMLP(config, k_schedule[i], i) 
@@ -54,15 +54,22 @@ class LlamaMLP(nn.Module):
         self.k_factor = k_factor
         self.mode = config.mode
         assert self.mode in ['gen', 'class'] 
-    
-    def seqlenbyintermediate(self, indextensor, shape, filename): 
-        # assert tensorinput.shape[1] == 111008 
-        # this is the intermediate 
-
+        self.savingintermediatestates = None 
+        
+    def getdense(self, indextensor, shape): 
         # Convert the tensor to a numpy array for visualization 
-        tensorinput = torch.zeros(shape, dtype = torch.int32) 
+        tensorinput = torch.zeros(shape, dtype = torch.int32).to("cpu") 
         for i in range(len(indextensor)): 
             tensorinput[indextensor[i]] = 1 
+        assert tensorinput.shape[0] == 1 
+        if self.savingintermediatestates is not None: 
+            self.savingintermediatestates = torch.cat([self.savingintermediatestates, tensorinput], dim = 0) 
+        else: 
+            self.savingintermediatestates = tensorinput 
+    
+    def seqlenbyintermediate(self, tensorinput, filename): 
+        # assert tensorinput.shape[1] == 111008 
+        # this is the intermediate 
         
         array = tensorinput.cpu().numpy() 
 
@@ -117,7 +124,9 @@ class LlamaMLP(nn.Module):
                     # print("neuron_stat.shape {}".format(neuron_stat.shape)) 
                     topk_weight, topk_indices = select_neurons(neuron_stat, self.config.selection_method, k) 
                     if self.layer_index in [5, 15, 25]: 
-                        self.seqlenbyintermediate(topk_indices, int_states.shape, "intermediate_layer_{}_{}.png".format(self.layer_index, self.config.selection_method)) 
+                        # self.seqlenbyintermediate(topk_indices, int_states.shape, "intermediate_layer_{}_{}.png".format(self.layer_index, self.config.selection_method)) 
+                        self.getdense(topk_indices, int_states.shape) 
+                        print("shape of self.savingintermediatestates {}".format(self.savingintermediatestates.shape)) 
                     # print("topk_indices.shape {}".format(topk_indices.shape)) 
                     
                 down_proj = self.down_proj(int_states) 
