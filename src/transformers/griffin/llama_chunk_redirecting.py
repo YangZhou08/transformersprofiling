@@ -13,10 +13,10 @@ sys.path.append(parent_dir)
 
 from utils import select_neurons 
 
-def get_llama_griffintwo(model,  k_schedule): 
+def get_llama_griffintwo(model, k_schedule, chunksize): 
     config = model.config
     for i, l in enumerate(model.model.layers):
-        new_mlp = LlamaMLP(config, k_schedule[i])
+        new_mlp = LlamaMLP(config, k_schedule[i], chunksize) 
 
         new_mlp.gate_proj = l.mlp.gate_proj
         new_mlp.up_proj = l.mlp.up_proj
@@ -39,7 +39,7 @@ def get_llama_griffintwo(model,  k_schedule):
 
 
 class LlamaMLP(nn.Module):
-    def __init__(self, config, k_factor):
+    def __init__(self, config, k_factor, chunksize): 
         super().__init__()
         self.config = config
         self.hidden_size = config.hidden_size
@@ -52,7 +52,7 @@ class LlamaMLP(nn.Module):
         self.k_factor = k_factor
         self.mode = config.mode
         assert self.mode in ['gen', 'class'] 
-        self.chunksize = config.chunksize 
+        self.chunksize = chunksize 
         self.generationiterationcount = -1 
         self.neuron_stat = None 
         
