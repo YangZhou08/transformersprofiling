@@ -86,7 +86,7 @@ class LlamaMLP(nn.Module):
         array = tensorinput.cpu().numpy() 
 
         # Create a colormap: 0 -> white, 1 -> green
-        cmap = plt.colors.ListedColormap(['white', 'green'])
+        cmap = colors.ListedColormap(['white', 'green']) 
 
         # Create the plot
         fig, ax = plt.figure(figsize=(10, 20)) 
