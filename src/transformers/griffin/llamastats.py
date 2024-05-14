@@ -60,6 +60,7 @@ class LlamaMLP(nn.Module):
         # Convert the tensor to a numpy array for visualization 
         if shape[1] > 1: 
             shape = (shape[0], 1, shape[2]) 
+        shape = (shape[1], shape[2]) 
         tensorinput = torch.zeros(shape).to(torch.int32).to("cpu") 
         print("shape of tensorinput {}".format(tensorinput.shape)) 
         print("type of indextensor {}".format(type(indextensor))) 
@@ -68,7 +69,7 @@ class LlamaMLP(nn.Module):
         # Separate the indices into row and column indices
         # row_indices, col_indices = indextensor[:, 0], indextensor[:, 1] 
         # Use index_put_ to set the specified positions to one
-        tensorinput.index_put_(indextensor, torch.tensor(1).to(torch.int32)) 
+        tensorinput.index_put_((torch.zeros_like(indextensor), indextensor), torch.tensor(1).to(torch.int32)) 
         exit(0) 
         
         assert tensorinput.shape[0] == 1 
