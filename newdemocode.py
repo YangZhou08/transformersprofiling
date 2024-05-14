@@ -110,7 +110,8 @@ density = 0.5
 # config = AutoConfig.from_pretrained("meta-llama/Llama-2-7b-hf") 
 # large_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16) 
 config = LlamaConfig.from_pretrained("meta-llama/Llama-2-7b-hf") 
-large_model = LlamaForCausalLM2.from_pretrained("meta-llama/Llama-2-7b-hf") 
+# large_model = LlamaForCausalLM2.from_pretrained("meta-llama/Llama-2-7b-hf") 
+large_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf") 
 large_model.config.mode = "gen" 
 large_model.config.chunksize = 8 
 large_model.config.selection_method = "topk" 
