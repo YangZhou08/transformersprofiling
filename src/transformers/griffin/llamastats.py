@@ -59,7 +59,9 @@ class LlamaMLP(nn.Module):
     def getdense(self, indextensor, shape): 
         # Convert the tensor to a numpy array for visualization 
         tensorinput = torch.zeros(shape, dtype = torch.int32).to("cpu") 
+        print("length of index tensor {}".format(len(indextensor))) 
         for i in range(len(indextensor)): 
+            print("indextensor[i] {}".format(indextensor[i])) 
             tensorinput[indextensor[i]] = 1 
         assert tensorinput.shape[0] == 1 
         if self.savingintermediatestates is not None: 

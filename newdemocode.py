@@ -64,6 +64,20 @@ else:
     print("We now use eos_token as pad token") 
 tokenizer.padding_side = "left" 
 
+def jaccard_similarity(vector1, vector2):
+    # Ensure the vectors are numpy arrays
+    vector1 = vector1.cpu().numpy() 
+    vector2 = vector2.cpu().numpy() 
+    
+    # Compute the intersection and union
+    intersection = np.sum((vector1 == 1) & (vector2 == 1))
+    union = np.sum((vector1 == 1) | (vector2 == 1))
+    
+    # Compute the Jaccard similarity
+    if union == 0:
+        return 1.0 if np.array_equal(vector1, vector2) else 0.0
+    return intersection / union
+
 ##### Argument parsing ##### 
 parser = argparse.ArgumentParser() 
 parser.add_argument("--loading_from_checkpoint", type = str, default = None) 
