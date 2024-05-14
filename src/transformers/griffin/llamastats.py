@@ -89,7 +89,7 @@ class LlamaMLP(nn.Module):
         cmap = colors.ListedColormap(['white', 'green']) 
 
         # Create the plot
-        fig, ax = plt.figure(figsize=(10, 20)) 
+        fig, ax = plt.subplots(figsize=(10, 20)) 
         car = ax.imshow(array, cmap=cmap, interpolation='nearest') 
 
         # Remove grid lines
