@@ -62,6 +62,11 @@ class LlamaMLP(nn.Module):
         print("type of indextensor {}".format(type(indextensor))) 
         print("shape of indextensor[0] {}".format(indextensor[0].shape)) 
         
+        # Separate the indices into row and column indices
+        row_indices, col_indices = indextensor[:, 0], indextensor[:, 1]
+
+        # Use index_put_ to set the specified positions to one
+        tensorinput.index_put_((row_indices, col_indices), torch.tensor(1))
         exit(0) 
         
         assert tensorinput.shape[0] == 1 
