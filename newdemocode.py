@@ -302,6 +302,12 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
                                 use_cache = True, 
         ) 
         print("input_ids shape {} output.sequences shape {}".format(input_ids.shape, output.sequences.shape)) 
+        for i, l in enumerate(model.model.layers): 
+            print("Layer {} saving found {}".format(i, l.mlp.savingintermediatestates is not None)) 
+            print() 
+            if l.mlp.savingintermediatestates is not None: 
+                print("Layer {} saving shape {}".format(i, l.mlp.savingintermediatestates.shape)) 
+                l.mlp.seqlenbyintermediate(l.mlp.savingintermediatestates, "layer{}_intermediate".format(i)) 
         # model.resetgenerationcount() 
         # print(tokenizer.decode(output.sequences[0])) 
         for i in range(output.sequences.shape[0]): 
