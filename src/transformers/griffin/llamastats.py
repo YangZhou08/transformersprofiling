@@ -70,7 +70,7 @@ class LlamaMLP(nn.Module):
         # row_indices, col_indices = indextensor[:, 0], indextensor[:, 1] 
         # Use index_put_ to set the specified positions to one
         tensorinput.index_put_((torch.zeros_like(indextensor), indextensor), torch.tensor(1).to(torch.int32)) 
-        exit(0) 
+        print("tensorinput is {}".format(tensorinput)) 
         
         assert tensorinput.shape[0] == 1 
         if self.savingintermediatestates is not None: 
