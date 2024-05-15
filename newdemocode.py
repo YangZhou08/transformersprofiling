@@ -121,7 +121,7 @@ model = large_model
 # large_model.set_tokenizer_bos_id(bos_id = tokenizer.bos_token_id, pad_id = tokenizer.pad_token_id) 
 # large_model.set_cosinesimilarity(False) 
 
-density = 0.1 
+density = args.densitychose 
 # config = AutoConfig.from_pretrained("meta-llama/Llama-2-7b-hf") 
 # large_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16) 
 config = LlamaConfig.from_pretrained("meta-llama/Llama-2-7b-hf") 
@@ -312,7 +312,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
         for i, l in enumerate(model.model.layers): 
             if l.mlp.savingintermediatestates is not None: 
                 layerjaccardsimilarity = [] # this line is for clearing previous list 
-                l.mlp.seqlenbyintermediate(l.mlp.savingintermediatestates, "layer{}_intermediate.png".format(i)) 
+                # l.mlp.seqlenbyintermediate(l.mlp.savingintermediatestates, "layer{}_intermediate.png".format(i)) 
                 
                 for j in range(1, l.mlp.savingintermediatestates.shape[0]): 
                     similarity = jaccard_similarity(l.mlp.savingintermediatestates[j - 1], l.mlp.savingintermediatestates[j]) 
@@ -332,7 +332,6 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
             print(colored(tokenizer.decode(output.sequences[i][:101]), "blue"), end = "") 
             print(colored(tokenizer.decode(output.sequences[i][101:]), "green")) 
             print("\n", end = "") 
-    break 
 
 for key in seq_level_jaccard_sim_collection.keys(): 
     print("length of collected samples {}".format(len(seq_level_jaccard_sim_collection[key]))) 
