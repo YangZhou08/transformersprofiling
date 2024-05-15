@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt 
 import numpy as np 
 from matplotlib import colors 
+from matplotlib.colors import LinearSegmentedColormap 
 
 import sys 
 import os 
@@ -56,6 +57,7 @@ class LlamaMLP(nn.Module):
         self.mode = config.mode
         assert self.mode in ['gen', 'class'] 
         self.savingintermediatestates = None 
+        self.savingactivations = None 
     
     def resetgenerationiterateingcount(self): 
         self.savingintermediatestates = None 
@@ -107,8 +109,24 @@ class LlamaMLP(nn.Module):
         plt.savefig(filename, bbox_inches='tight') 
     
     def visualizecolormap(self, tensorinput, filename): 
-        # array = tensorinput.cpu().numpy() 
-        pass 
+        array = tensorinput.cpu().numpy() 
+        
+        cmap = LinearSegmentedColormap.from_list('white_to_green', ['white', 'darkgreen']) 
+        
+        fig, ax = plt.subplots(figsize = (20, 20)) 
+        array = array[:, : array.shape[0]] 
+        car = ax.imshow(array, cmap=cmap, interpolation='nearest') 
+
+        # Remove grid lines
+        ax.grid(False)
+
+        # Remove axis ticks
+        ax.set_xticks([]) 
+        ax.set_yticks([]) 
+
+        # Display the plot
+        
+        plt.savefig(filename, bbox_inches='tight') 
 
     def forward(self, x):
         if self.config.pretraining_tp > 1:
@@ -130,7 +148,11 @@ class LlamaMLP(nn.Module):
         else:
             k_factor = self.k_factor
             if self.mode == 'gen':
-                int_states = self.act_fn(self.gate_proj(x)) * self.up_proj(x)
+                int_states = self.act_fn(self.gate_proj(x)) * self.up_proj(x) 
+                if self.savingactivations is None: 
+                    self.savingactivations = int_states.squeeze(0).clone().cpu().detach() 
+                else: 
+                    self.savingactivations = torch.cat([self.savingactivations, int_states.squeeze(0).clone().cpu().detach()], dim = 0) 
 
                 # GRIFFIN Expert Selection
                 if self.config.selection_method != 'magnitude' and k_factor > 0.0: ### 
