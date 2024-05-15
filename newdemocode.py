@@ -310,7 +310,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
         # ) 
         output = model.generate(input_ids, 
                                 attention_mask = attention_mask, 
-                                max_length = 2000, 
+                                max_length = 1000, 
                                 return_dict_in_generate = True, 
                                 # do_sample = False, 
                                 do_sample = True, 
@@ -320,9 +320,18 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
         for i, l in enumerate(model.model.layers): 
             print("Layer {} saving found {}".format(i, l.mlp.savingintermediatestates is not None)) 
             print() 
+            layerjaccardsimilarity = [] 
             if l.mlp.savingintermediatestates is not None: 
                 print("Layer {} saving shape {}".format(i, l.mlp.savingintermediatestates.shape)) 
                 l.mlp.seqlenbyintermediate(l.mlp.savingintermediatestates, "layer{}_intermediate.png".format(i)) 
+                
+                for j in range(1, l.mlp.savingintermediatestates.shape[0]): 
+                    similarity = jaccard_similarity(l.mlp.savingintermediatestates[j - 1], l.mlp.savingintermediatestates[j]) 
+                    layerjaccardsimilarity.append(similarity) 
+                fig, ax = plt.subplots(figsize=(10, 20)) 
+                ax.plot(list(range(len(layerjaccardsimilarity))), layerjaccardsimilarity) 
+                ax.set_title("Layer {} Jaccard Similarity".format(i)) 
+                plt.savefig("layer{}_jaccardsimilarity.png".format(i)) 
                 
         # model.resetgenerationcount() 
         # print(tokenizer.decode(output.sequences[0])) 
