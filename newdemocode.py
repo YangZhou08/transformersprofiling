@@ -223,9 +223,13 @@ def get_dataset(datasetname, max_length):
     
     def encode_text_summary_gsm8k(examples): 
         # tokdictionary = tokenizer( 
-        topdictionary = tokenizer("Question: " + examples["question"] + "\n " + "Answer: " + examples["answer"], padding = "max_length", 
+        tokdictionary = tokenizer("Question: " + examples["question"] + "\n " + "Answer: " + examples["answer"], padding = "max_length", 
                                   max_length = max_length, return_attention_mask = True, return_tensors = "pt", 
                                   add_special_tokens = True) 
+        newdictionary = {} 
+        newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
+        newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
+        return newdictionary 
 
     def unflatten_list_func(examples): 
         examples['input_ids'] = examples['input_ids'].squeeze(0) 
