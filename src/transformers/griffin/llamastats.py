@@ -143,6 +143,7 @@ class LlamaMLP(nn.Module):
                     if self.layer_index in [5, 15, 25]: 
                         # self.seqlenbyintermediate(topk_indices, int_states.shape, "intermediate_layer_{}_{}.png".format(self.layer_index, self.config.selection_method)) 
                         self.getdense(topk_indices, int_states.shape) 
+                        print("summation on the row axis {}".format(torch.sum(topk_indices, dim = -1))) 
                         print("shape of self.savingintermediatestates {}".format(self.savingintermediatestates.shape)) 
                     # print("topk_indices.shape {}".format(topk_indices.shape)) 
                     
