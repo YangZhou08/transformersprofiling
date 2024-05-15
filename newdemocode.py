@@ -84,6 +84,7 @@ parser.add_argument("--densitychose", type = float, default = 0.5)
 parser.add_argument("--loading_from_checkpoint", type = str, default = None) 
 parser.add_argument("--kernelsize", type = int, default = 2) 
 parser.add_argument("--experiment_setting", type = str, default = "setting0") 
+parser.add_argument("--use_dataset", type = str, default = "pg19") 
 
 args = parser.parse_args() 
 '''
