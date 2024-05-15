@@ -120,7 +120,7 @@ model = large_model
 # large_model.set_tokenizer_bos_id(bos_id = tokenizer.bos_token_id, pad_id = tokenizer.pad_token_id) 
 # large_model.set_cosinesimilarity(False) 
 
-density = 0.1 
+density = 0.3 
 # config = AutoConfig.from_pretrained("meta-llama/Llama-2-7b-hf") 
 # large_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16) 
 config = LlamaConfig.from_pretrained("meta-llama/Llama-2-7b-hf") 
