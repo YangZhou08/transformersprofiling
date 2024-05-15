@@ -2349,6 +2349,8 @@ class LlamaForCausalLM2(LlamaPreTrainedModel):
             encoder_hidden_states = (
                 model_kwargs["encoder_outputs"].get("hidden_states") if output_hidden_states else None
             )
+        
+        print("input_ids {}".format(input_ids)) 
 
         # keep track of which sequences are already finished
         unfinished_sequences = torch.ones(input_ids.shape[0], dtype=torch.long, device=input_ids.device) 

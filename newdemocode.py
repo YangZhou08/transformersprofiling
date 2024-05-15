@@ -262,6 +262,8 @@ trainer = Trainer(
 ) 
 
 sum = torch.zeros((1,)).to(torch_device).float() 
+
+seq_level_jaccard_sim_collection = {5 : [], 15 : [], 25 : []} 
 for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())): 
     input_ids = batch["input_ids"].to(torch_device) 
     attention_mask = batch["attention_mask"].to(torch_device) 
@@ -298,6 +300,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
                     layerjaccardsimilarity.append(similarity) 
                 
                 avgjaccardsimilarity = np.mean(layerjaccardsimilarity) 
+                seq_level_jaccard_sim_collection
                 
         for i in range(output.sequences.shape[0]): 
             print(colored(tokenizer.decode(output.sequences[i][:101]), "blue"), end = "") 
