@@ -70,7 +70,8 @@ class LlamaMLP(nn.Module):
         # Separate the indices into row and column indices
         # row_indices, col_indices = indextensor[:, 0], indextensor[:, 1] 
         # Use index_put_ to set the specified positions to one
-        tensorinput.index_put_((torch.zeros_like(indextensor), indextensor), torch.tensor(1).to(torch.int32)) 
+        # tensorinput.index_put_((torch.zeros_like(indextensor), indextensor), torch.tensor(1).to(torch.int32)) 
+        tensorinput.index_put_((indextensor[:, 0], indextensor[:, 1]), torch.tensor(1).to(torch.int32)) 
         print("tensorinput is {}".format(tensorinput)) 
         
         # assert tensorinput.shape[0] == 1 
@@ -143,7 +144,7 @@ class LlamaMLP(nn.Module):
                     if self.layer_index in [5, 15, 25]: 
                         # self.seqlenbyintermediate(topk_indices, int_states.shape, "intermediate_layer_{}_{}.png".format(self.layer_index, self.config.selection_method)) 
                         self.getdense(topk_indices, int_states.shape) 
-                        print("summation on the row axis {}".format(torch.sum(topk_indices, dim = -1))) 
+                        # print("summation on the row axis {}".format(torch.sum(self.savingintermediatestates, dim = 1))) 
                         print("shape of self.savingintermediatestates {}".format(self.savingintermediatestates.shape)) 
                     # print("topk_indices.shape {}".format(topk_indices.shape)) 
                     
