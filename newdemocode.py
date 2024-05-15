@@ -312,7 +312,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
         for i, l in enumerate(model.model.layers): 
             if l.mlp.savingintermediatestates is not None: 
                 layerjaccardsimilarity = [] # this line is for clearing previous list 
-                l.mlp.visualizecolormap(l.mlp.savingintermediatestates, "layer{}_intermediateac.png".format(i)) 
+                l.mlp.visualizecolormap(l.mlp.savingactivations, "layer{}_intermediateac.png".format(i)) 
                 # l.mlp.seqlenbyintermediate(l.mlp.savingintermediatestates, "layer{}_intermediate.png".format(i)) 
                 
                 for j in range(1, l.mlp.savingintermediatestates.shape[0]): 
