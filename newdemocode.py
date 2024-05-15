@@ -173,6 +173,8 @@ def get_dataset(datasetname, max_length):
         datasetnew = load_dataset("Skylion007/openwebtext", split = "train[:10000]") 
     elif datasetname == "xsum": # we need to use special processing for this dataset 
         datasetnew = load_dataset("xsum", split = "test[:10000]") 
+    elif datasetname == "gsm8k": 
+        datasetnew = load_dataset("gsm8k", split = "train[:10000]") 
     else: 
         raise ValueError("dataset_name is not recognized") 
 
@@ -231,6 +233,8 @@ def get_dataset(datasetname, max_length):
     elif datasetname == "cnn_dailymail": 
         datasetnew = datasetnew.map(encode_text_summary, num_proc = 8) 
         datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
+    elif datasetname == "gsm8k": 
+        
     else: 
         datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
         datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
@@ -260,29 +264,8 @@ trainer = Trainer(
 sum = torch.zeros((1,)).to(torch_device).float() 
 for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())): 
     input_ids = batch["input_ids"].to(torch_device) 
-    print("input_ids shape {}".format(input_ids.shape)) 
     attention_mask = batch["attention_mask"].to(torch_device) 
-    '''
-    input_ids = torch.tensor([    2,     2,   1,    894, 29901,  4335,   508,  1134, 29871, 29929, 29900,                                           
-         3838,   263, 11015, 29889, 29871,   319,  1813,   338, 29871, 29946,                                                               
-        29945, 29900,  3838, 29889, 29871,  1128,  1472,   723,   372,  2125,                                                               
-         1075,   304,  1134,   714, 29871, 29896, 29900,  6515, 29973,    13,                                                               
-        22550, 29901,   940,   508,  1134,   714, 29871, 29896,  1813,   297,                                                               
-        29871, 29946, 29945, 29900, 29914, 29929, 29900, 29922,  9314, 29946,                                                               
-        29945, 29900, 29914, 29929, 29900, 29922, 29945,  6778, 29945,  6233,
-           13,  6295,   372,   723,  2125, 29871, 29945, 29930, 29896, 29900,
-        29922,  9314, 29945, 29930, 29896, 29900, 29922, 29945, 29900,  6778,
-        29945, 29900,  6233,    13,  4136, 29871, 29945, 29900,    13,    13,
-        16492, 29901,   319,   716,  1824,   750, 29871, 29953, 29900,  5142,
-        29879,   297,   278,   937,  4098, 29889,   450,  1353,   310,  5142,
-        29879,   297,   278,  1473,  4098,   471,  2211,  3064,   408,  1784,
-          408,   278,  5142, 29879,   297,   278,   937,  4098, 29892,   541,
-          769, 12212,   491, 29871, 29941, 29900, 29995,   297,   278,  4654,
-         4098, 29889,  1128,  1784,  5142, 29879,  1258,   278,  1824,   505,
-         3001,   975,   278,  2211,  7378, 29973,    13, 22550, 29901, 29871]) 
-    input_ids = input_ids.unsqueeze(0).to(torch.long).to(torch_device) 
-    attention_mask = torch.ones_like(input_ids) 
-    ''' 
+    
     original_attention_mask = batch["attention_mask"] # (batch_size, 203) 
     labels = batch["labels"].to(torch_device) 
     batch_size, seq_len = original_attention_mask.shape 
@@ -294,20 +277,6 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
     
     original_attention_mask2 = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
     with torch.no_grad(): 
-        # outputs = model(
-        #     large_input_ids = large_input_ids, 
-        #     small_input_ids = small_input_ids, 
-        #     attention_mask = original_attention_mask, 
-        #     output_hidden_states = True, 
-        #     output_attentions = True, 
-        #     return_dict = True, 
-        #     original_attention_mask = original_attention_mask2, 
-        #     labels = labels, 
-        #     condensed_embed_labels = None, 
-        #     label_adjustment = False, 
-        #     usingsecondtolastvectors = False, 
-        #     autoregressive_first_element = True, 
-        # ) 
         output = model.generate(input_ids, 
                                 attention_mask = attention_mask, 
                                 max_length = 257, 
@@ -319,7 +288,6 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
         print("input_ids shape {} output.sequences shape {}".format(input_ids.shape, output.sequences.shape)) 
         for i, l in enumerate(model.model.layers): 
             print("Layer {} saving found {}".format(i, l.mlp.savingintermediatestates is not None)) 
-            print() 
             layerjaccardsimilarity = [] 
             if l.mlp.savingintermediatestates is not None: 
                 print("Layer {} saving shape {}".format(i, l.mlp.savingintermediatestates.shape)) 
@@ -328,17 +296,14 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
                 for j in range(1, l.mlp.savingintermediatestates.shape[0]): 
                     similarity = jaccard_similarity(l.mlp.savingintermediatestates[j - 1], l.mlp.savingintermediatestates[j]) 
                     layerjaccardsimilarity.append(similarity) 
-                print("layer {}".format(i)) 
+                
                 for num in layerjaccardsimilarity: 
                     print(f"{num:.2f}".format(num), end = ", ") 
-                print() 
                 fig, ax = plt.subplots(figsize=(20, 10)) 
                 ax.plot(list(range(len(layerjaccardsimilarity))), layerjaccardsimilarity) 
                 ax.set_title("Layer {} Jaccard Similarity".format(i)) 
                 plt.savefig("layer{}_jaccardsimilarity.png".format(i)) 
                 
-        # model.resetgenerationcount() 
-        # print(tokenizer.decode(output.sequences[0])) 
         for i in range(output.sequences.shape[0]): 
             print(colored(tokenizer.decode(output.sequences[i][:101]), "blue"), end = "") 
             print(colored(tokenizer.decode(output.sequences[i][101:]), "green")) 
