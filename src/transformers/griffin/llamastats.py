@@ -70,9 +70,9 @@ class LlamaMLP(nn.Module):
         # Separate the indices into row and column indices
         # row_indices, col_indices = indextensor[:, 0], indextensor[:, 1] 
         # Use index_put_ to set the specified positions to one
-        # tensorinput.index_put_((torch.zeros_like(indextensor), indextensor), torch.tensor(1).to(torch.int32)) 
-        rows = torch.arange(tensorinput.shape[0]).view(-1, 1).expand_as(indextensor) 
-        tensorinput.index_put_((rows, indextensor), torch.tensor(1).to(torch.int32)) 
+        tensorinput.index_put_((torch.zeros_like(indextensor), indextensor), torch.tensor(1).to(torch.int32)) 
+        # rows = torch.arange(tensorinput.shape[0]).view(-1, 1).expand_as(indextensor) 
+        # tensorinput.index_put_((rows, indextensor), torch.tensor(1).to(torch.int32)) 
         print("tensorinput is {}".format(tensorinput)) 
         
         assert tensorinput.shape[0] == 1 
