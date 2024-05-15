@@ -80,7 +80,7 @@ def jaccard_similarity(vector1, vector2):
 
 ##### Argument parsing ##### 
 parser = argparse.ArgumentParser() 
-parser.add_argument("--densitychose", type = int, default = 0.5) 
+parser.add_argument("--densitychose", type = float, default = 0.5) 
 parser.add_argument("--loading_from_checkpoint", type = str, default = None) 
 parser.add_argument("--kernelsize", type = int, default = 2) 
 parser.add_argument("--experiment_setting", type = str, default = "setting0") 
