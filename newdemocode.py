@@ -308,7 +308,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
                 
                 avgjaccardsimilarity = np.mean(layerjaccardsimilarity) 
                 if not np.isnan(avgjaccardsimilarity): 
-                seq_level_jaccard_sim_collection[i].append(avgjaccardsimilarity.item()) 
+                    seq_level_jaccard_sim_collection[i].append(avgjaccardsimilarity.item()) 
 
         for key in seq_level_jaccard_sim_collection.keys(): 
             print("Layer {} average Jaccard similarity {}".format(key, seq_level_jaccard_sim_collection[key][-1])) 
