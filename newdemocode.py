@@ -154,7 +154,7 @@ def get_dataset(datasetname, max_length):
             filename = "c4synthesized_file1_1_0.json" 
             # dfiles.append(dir_c4llmsynthesized + "{}/".format("tinyllama") + filename) 
             dfiles.append(dir_c4llmsynthesized + filename) 
-            datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
+            datasetnew = load_dataset("json", data_files = dfiles, split = "train[:100]") 
         else: 
             filename = "c4synthesized_file1_kernel7_{}_combined.json".format(7) 
             dfiles.append(dir_c4llmsynthesized + "{}_topk{}/".format("tinyllama", "na") + filename) 
@@ -312,7 +312,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
         for i, l in enumerate(model.model.layers): 
             if l.mlp.savingintermediatestates is not None: 
                 layerjaccardsimilarity = [] # this line is for clearing previous list 
-                l.mlp.visualizecolormap(l.mlp.savingactivations, "layer{}_intermediateac.png".format(i)) 
+                # l.mlp.visualizecolormap(l.mlp.savingactivations, "layer{}_intermediateac.png".format(i)) 
                 # l.mlp.seqlenbyintermediate(l.mlp.savingintermediatestates, "layer{}_intermediate.png".format(i)) 
                 
                 for j in range(1, l.mlp.savingintermediatestates.shape[0]): 
@@ -333,7 +333,6 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
             print(colored(tokenizer.decode(output.sequences[i][:101]), "blue"), end = "") 
             print(colored(tokenizer.decode(output.sequences[i][101:]), "green")) 
             print("\n", end = "") 
-    break 
 
 for key in seq_level_jaccard_sim_collection.keys(): 
     print("length of collected samples {}".format(len(seq_level_jaccard_sim_collection[key]))) 
