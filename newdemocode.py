@@ -234,7 +234,7 @@ def get_dataset(datasetname, max_length):
         datasetnew = datasetnew.map(encode_text_summary, num_proc = 8) 
         datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
     elif datasetname == "gsm8k": 
-        
+        pass 
     else: 
         datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
         datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
