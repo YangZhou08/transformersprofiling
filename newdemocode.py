@@ -80,6 +80,7 @@ def jaccard_similarity(vector1, vector2):
 
 ##### Argument parsing ##### 
 parser = argparse.ArgumentParser() 
+parser.add_argument("--densitychose", type = int, default = 0.5) 
 parser.add_argument("--loading_from_checkpoint", type = str, default = None) 
 parser.add_argument("--kernelsize", type = int, default = 2) 
 parser.add_argument("--experiment_setting", type = str, default = "setting0") 
@@ -120,7 +121,7 @@ model = large_model
 # large_model.set_tokenizer_bos_id(bos_id = tokenizer.bos_token_id, pad_id = tokenizer.pad_token_id) 
 # large_model.set_cosinesimilarity(False) 
 
-density = 0.5 
+density = args.densitychose 
 # config = AutoConfig.from_pretrained("meta-llama/Llama-2-7b-hf") 
 # large_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models).to(torch.bfloat16) 
 config = LlamaConfig.from_pretrained("meta-llama/Llama-2-7b-hf") 
