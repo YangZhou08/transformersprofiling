@@ -303,7 +303,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
     with torch.no_grad(): 
         output = model.generate(input_ids, 
                                 attention_mask = attention_mask, 
-                                max_length = 450, 
+                                max_length = 320, 
                                 return_dict_in_generate = True, 
                                 # do_sample = False, 
                                 do_sample = True, 
@@ -325,8 +325,8 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
                     seq_level_jaccard_sim_collection[i].append(avgjaccardsimilarity.item()) 
 
         for key in seq_level_jaccard_sim_collection.keys(): 
-            print("Layer {} average Jaccard similarity {}".format(key, seq_level_jaccard_sim_collection[key][-1])) 
             if len(seq_level_jaccard_sim_collection[key]) > 1: 
+                print("Layer {} average Jaccard similarity {}".format(key, seq_level_jaccard_sim_collection[key][-1])) 
                 print("Layer {} average Jaccard similarity {}".format(key, np.mean(seq_level_jaccard_sim_collection[key]))) 
             # print("Layer {} average Jaccard similarity {}".format(key, np.mean(seq_level_jaccard_sim_collection[key]))) 
                 
