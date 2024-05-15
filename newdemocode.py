@@ -164,7 +164,7 @@ def get_dataset(datasetname, max_length):
         # filename = "c4_file15.json" 
         filename = "c4_file150.json" 
         dfiles.append(dir_c4 + filename) 
-        datasetnew = load_dataset("json", data_files = dfiles, split = "train[:1000]") 
+        datasetnew = load_dataset("json", data_files = dfiles, split = "train[:100]") 
     elif datasetname == "pg19": 
         datasetnew = load_dataset('emozilla/pg19', split = "train[:10000]") 
     elif datasetname == "cnn_dailymail": # we need to use special processing for this dataset 
