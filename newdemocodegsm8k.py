@@ -258,7 +258,7 @@ def get_dataset(datasetname, max_length):
 datasetname = args.use_dataset 
 listmaxl = {1 : 259, 2 : 259, 3 : 259, 4 : 257, 5 : 256, 7 : 260, 10 : 261} 
 # 259 = 256 + 3
-eval_dataset = get_dataset(datasetname, max_length = 1024) # 101 = 98 + 3 
+eval_dataset = get_dataset(datasetname, max_length = 256) # 101 = 98 + 3 
 
 training_args = TrainingArguments(
     output_dir = dir_models, 
@@ -303,7 +303,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
     with torch.no_grad(): 
         output = model.generate(input_ids, 
                                 attention_mask = attention_mask, 
-                                max_length = 1256, 
+                                max_length = 320, 
                                 return_dict_in_generate = True, 
                                 # do_sample = False, 
                                 do_sample = True, 
