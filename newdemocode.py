@@ -281,7 +281,9 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
     attention_mask = batch["attention_mask"].to(torch_device) 
     if datasetname == "gsm8k": 
         input_ids = torch.cat((input_ids[0], input_ids[1]), dim = 0) 
+        input_ids = input_ids.unsqueeze(0) 
         attention_mask = torch.cat((attention_mask[0], attention_mask[1]), dim = 0) 
+        attention_mask = attention_mask.unsqueeze(0) 
     
     original_attention_mask = batch["attention_mask"] 
     # (batch_size, 203) 
