@@ -279,7 +279,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
     with torch.no_grad(): 
         output = model.generate(input_ids, 
                                 attention_mask = attention_mask, 
-                                max_length = 257, 
+                                max_length = 1000, 
                                 return_dict_in_generate = True, 
                                 # do_sample = False, 
                                 do_sample = True, 
