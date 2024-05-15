@@ -223,7 +223,7 @@ def get_dataset(datasetname, max_length):
     
     def encode_text_summary_gsm8k(examples): 
         # tokdictionary = tokenizer( 
-        topdictionary = tokenizer(examples["question"] + " " + examples["context"], padding = "max_length", 
+        topdictionary = tokenizer("Question: " + examples["question"] + "\n " + "Answer: " + examples["context"], padding = "max_length", 
                                   max_length = max_length, return_attention_mask = True, return_tensors = "pt", 
                                   add_special_tokens = True) 
 
@@ -249,14 +249,14 @@ def get_dataset(datasetname, max_length):
 
     return datasetnew 
 
-datasetname = "pg19" 
+datasetname = "gsm8k" 
 listmaxl = {1 : 259, 2 : 259, 3 : 259, 4 : 257, 5 : 256, 7 : 260, 10 : 261} 
 # 259 = 256 + 3
 eval_dataset = get_dataset(datasetname, max_length = 256) # 101 = 98 + 3 
 
 training_args = TrainingArguments(
     output_dir = dir_models, 
-    per_device_eval_batch_size = 1, 
+    per_device_eval_batch_size = 2 if datasetname == "gsm8k" else 1, 
     do_train = False, 
     do_eval = True, 
     label_names = ["labels"], 
@@ -275,8 +275,12 @@ seq_level_jaccard_sim_collection = {5 : [], 15 : [], 25 : []}
 for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())): 
     input_ids = batch["input_ids"].to(torch_device) 
     attention_mask = batch["attention_mask"].to(torch_device) 
+    if datasetname == "gsm8k": 
+        input_ids = torch.cat((input_ids[0], input_ids[1]), dim = 0) 
+        attention_mask = torch.cat((attention_mask[0], attention_mask[1]), dim = 0) 
     
-    original_attention_mask = batch["attention_mask"] # (batch_size, 203) 
+    original_attention_mask = batch["attention_mask"] 
+    # (batch_size, 203) 
     labels = batch["labels"].to(torch_device) 
     batch_size, seq_len = original_attention_mask.shape 
     # addedon_length = (seq_len - 7 - 1) // 7 
@@ -319,6 +323,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
             print(colored(tokenizer.decode(output.sequences[i][:101]), "blue"), end = "") 
             print(colored(tokenizer.decode(output.sequences[i][101:]), "green")) 
             print("\n", end = "") 
+    break 
 
 for key in seq_level_jaccard_sim_collection.keys(): 
     print("length of collected samples {}".format(len(seq_level_jaccard_sim_collection[key]))) 
