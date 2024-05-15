@@ -90,7 +90,9 @@ class LlamaMLP(nn.Module):
         cmap = colors.ListedColormap(['white', 'green']) 
 
         # Create the plot
-        fig, ax = plt.subplots(figsize=(10, 20)) 
+        # fig, ax = plt.subplots(figsize=(10, 20)) 
+        fig, ax = plt.subplots(figsize = (20, 20)) 
+        array = array[:, : array.shape[0]] 
         car = ax.imshow(array, cmap=cmap, interpolation='nearest') 
 
         # Remove grid lines
@@ -103,6 +105,10 @@ class LlamaMLP(nn.Module):
         # Display the plot
         
         plt.savefig(filename, bbox_inches='tight') 
+    
+    def visualizecolormap(self, tensorinput, filename): 
+        # array = tensorinput.cpu().numpy() 
+        pass 
 
     def forward(self, x):
         if self.config.pretraining_tp > 1:
