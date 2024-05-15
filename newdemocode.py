@@ -302,6 +302,9 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
                 
                 avgjaccardsimilarity = np.mean(layerjaccardsimilarity) 
                 seq_level_jaccard_sim_collection[i].append(avgjaccardsimilarity) 
+
+        for key in seq_level_jaccard_sim_collection.keys(): 
+            print("Layer {} average Jaccard similarity {}".format(key, seq_level_jaccard_sim_collection[key][-1])) 
                 
         for i in range(output.sequences.shape[0]): 
             print(colored(tokenizer.decode(output.sequences[i][:101]), "blue"), end = "") 
