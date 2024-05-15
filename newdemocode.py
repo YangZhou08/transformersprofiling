@@ -76,7 +76,7 @@ def jaccard_similarity(vector1, vector2):
     # Compute the Jaccard similarity
     if union == 0:
         return 1.0 if np.array_equal(vector1, vector2) else 0.0
-    return intersection / union
+    return intersection / union 
 
 ##### Argument parsing ##### 
 parser = argparse.ArgumentParser() 
@@ -310,7 +310,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
         # ) 
         output = model.generate(input_ids, 
                                 attention_mask = attention_mask, 
-                                max_length = 1000, 
+                                max_length = 2000, 
                                 return_dict_in_generate = True, 
                                 # do_sample = False, 
                                 do_sample = True, 
@@ -323,6 +323,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
             if l.mlp.savingintermediatestates is not None: 
                 print("Layer {} saving shape {}".format(i, l.mlp.savingintermediatestates.shape)) 
                 l.mlp.seqlenbyintermediate(l.mlp.savingintermediatestates, "layer{}_intermediate.png".format(i)) 
+                
         # model.resetgenerationcount() 
         # print(tokenizer.decode(output.sequences[0])) 
         for i in range(output.sequences.shape[0]): 
