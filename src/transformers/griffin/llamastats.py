@@ -133,7 +133,7 @@ class LlamaMLP(nn.Module):
                     # print("int_states.norm(dim=-1).unsqueeze(-1).shape {}".format(int_states.norm(dim=-1).unsqueeze(-1).shape)) 
                     neuron_stat = ((int_states / int_states.norm(dim=-1).unsqueeze(-1))).norm(dim=1) # B, D 
                     print("neuron_stat.shape {}".format(neuron_stat.shape)) 
-                    neuron_stat = ((int_states / int_states.norm(dim=-1).unsqueeze(-1))) 
+                    neuron_stat = ((int_states / int_states.norm(dim=-1).unsqueeze(-1))).squeeze(dim = 1) 
                     print("neuron_stat.shape {}".format(neuron_stat.shape)) 
                     # print("(int_states / int_states.norm(dim=-1).unsqueeze(-1)).shape {}".format((int_states / int_states.norm(dim=-1).unsqueeze(-1)).shape)) 
                     # print("neuron_stat.shape {}".format(neuron_stat.shape)) 
