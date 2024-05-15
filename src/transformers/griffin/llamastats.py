@@ -63,9 +63,6 @@ class LlamaMLP(nn.Module):
             shape = (shape[0], 1, shape[2]) 
         shape = (shape[1], shape[2]) 
         tensorinput = torch.zeros(shape).to(torch.int32).to("cpu") 
-        print("shape of tensorinput {}".format(tensorinput.shape)) 
-        print("type of indextensor {}".format(type(indextensor))) 
-        print("shape of indextensor[0] {}".format(indextensor[0].shape)) 
         
         # Separate the indices into row and column indices
         # row_indices, col_indices = indextensor[:, 0], indextensor[:, 1] 
@@ -73,7 +70,6 @@ class LlamaMLP(nn.Module):
         tensorinput.index_put_((torch.zeros_like(indextensor), indextensor), torch.tensor(1).to(torch.int32)) 
         # rows = torch.arange(tensorinput.shape[0]).view(-1, 1).expand_as(indextensor) 
         # tensorinput.index_put_((rows, indextensor), torch.tensor(1).to(torch.int32)) 
-        print("tensorinput is {}".format(tensorinput)) 
         
         assert tensorinput.shape[0] == 1 
         if self.savingintermediatestates is not None: 
@@ -137,7 +133,6 @@ class LlamaMLP(nn.Module):
                     
                     # print("neuron_stat.shape {}".format(neuron_stat.shape)) 
                     topk_weight, topk_indices = select_neurons(neuron_stat, self.config.selection_method, k) 
-                    print("topk_indices.shape {}".format(topk_indices.shape)) 
                     if self.layer_index in [5, 15, 25]: 
                         # self.seqlenbyintermediate(topk_indices, int_states.shape, "intermediate_layer_{}_{}.png".format(self.layer_index, self.config.selection_method)) 
                         self.getdense(topk_indices, int_states.shape) 

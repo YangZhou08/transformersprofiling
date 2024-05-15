@@ -289,10 +289,8 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
         ) 
         print("input_ids shape {} output.sequences shape {}".format(input_ids.shape, output.sequences.shape)) 
         for i, l in enumerate(model.model.layers): 
-            print("Layer {} saving found {}".format(i, l.mlp.savingintermediatestates is not None)) 
             if l.mlp.savingintermediatestates is not None: 
                 layerjaccardsimilarity = [] # this line is for clearing previous list 
-                print("Layer {} saving shape {}".format(i, l.mlp.savingintermediatestates.shape)) 
                 l.mlp.seqlenbyintermediate(l.mlp.savingintermediatestates, "layer{}_intermediate.png".format(i)) 
                 
                 for j in range(1, l.mlp.savingintermediatestates.shape[0]): 
