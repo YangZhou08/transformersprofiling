@@ -59,8 +59,8 @@ class LlamaMLP(nn.Module):
         
     def getdense(self, indextensor, shape): 
         # Convert the tensor to a numpy array for visualization 
-        if shape[1] > 1: 
-            shape = (shape[0], 1, shape[2]) 
+        # if shape[1] > 1: 
+            # shape = (shape[0], 1, shape[2]) 
         shape = (shape[1], shape[2]) 
         tensorinput = torch.zeros(shape).to(torch.int32).to("cpu") 
         print("shape of tensorinput {}".format(tensorinput.shape)) 
@@ -132,6 +132,9 @@ class LlamaMLP(nn.Module):
                     # print("int_states.norm(dim=-1).shape {}".format(int_states.norm(dim = -1).shape)) 
                     # print("int_states.norm(dim=-1).unsqueeze(-1).shape {}".format(int_states.norm(dim=-1).unsqueeze(-1).shape)) 
                     neuron_stat = ((int_states / int_states.norm(dim=-1).unsqueeze(-1))).norm(dim=1) # B, D 
+                    print("neuron_stat.shape {}".format(neuron_stat.shape)) 
+                    neuron_stat = ((int_states / int_states.norm(dim=-1).unsqueeze(-1))) 
+                    print("neuron_stat.shape {}".format(neuron_stat.shape)) 
                     # print("(int_states / int_states.norm(dim=-1).unsqueeze(-1)).shape {}".format((int_states / int_states.norm(dim=-1).unsqueeze(-1)).shape)) 
                     # print("neuron_stat.shape {}".format(neuron_stat.shape)) 
                     topk_weight, topk_indices = select_neurons(neuron_stat, self.config.selection_method, k) 

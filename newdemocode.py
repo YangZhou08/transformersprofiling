@@ -310,7 +310,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
         # ) 
         output = model.generate(input_ids, 
                                 attention_mask = attention_mask, 
-                                max_length = 1000, 
+                                max_length = 257, 
                                 return_dict_in_generate = True, 
                                 # do_sample = False, 
                                 do_sample = True, 
