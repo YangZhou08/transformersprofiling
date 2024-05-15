@@ -164,7 +164,7 @@ def get_dataset(datasetname, max_length):
         # filename = "c4_file15.json" 
         filename = "c4_file150.json" 
         dfiles.append(dir_c4 + filename) 
-        datasetnew = load_dataset("json", data_files = dfiles, split = "train[:5000]") 
+        datasetnew = load_dataset("json", data_files = dfiles, split = "train[:1000]") 
     elif datasetname == "pg19": 
         datasetnew = load_dataset('emozilla/pg19', split = "train[:10000]") 
     elif datasetname == "cnn_dailymail": # we need to use special processing for this dataset 
@@ -281,7 +281,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
     with torch.no_grad(): 
         output = model.generate(input_ids, 
                                 attention_mask = attention_mask, 
-                                max_length = 1000, 
+                                max_length = 450, 
                                 return_dict_in_generate = True, 
                                 # do_sample = False, 
                                 do_sample = True, 
@@ -306,7 +306,6 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
             print(colored(tokenizer.decode(output.sequences[i][:101]), "blue"), end = "") 
             print(colored(tokenizer.decode(output.sequences[i][101:]), "green")) 
             print("\n", end = "") 
-        break 
 
 for key in seq_level_jaccard_sim_collection.keys(): 
     print("Layer {} average Jaccard similarity {}".format(key, np.mean(seq_level_jaccard_sim_collection[key]))) 
