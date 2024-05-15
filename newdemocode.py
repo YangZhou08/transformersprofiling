@@ -241,14 +241,15 @@ def get_dataset(datasetname, max_length):
         datasetnew = datasetnew.map(encode_text_summary, num_proc = 8) 
         datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
     elif datasetname == "gsm8k": 
-        pass 
+        datasetnew = datasetnew.map(encode_text_summary_gsm8k, num_proc = 8) 
+        datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
     else: 
         datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
         datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
 
     return datasetnew 
 
-datasetname = "c4" 
+datasetname = "pg19" 
 listmaxl = {1 : 259, 2 : 259, 3 : 259, 4 : 257, 5 : 256, 7 : 260, 10 : 261} 
 # 259 = 256 + 3
 eval_dataset = get_dataset(datasetname, max_length = 256) # 101 = 98 + 3 
