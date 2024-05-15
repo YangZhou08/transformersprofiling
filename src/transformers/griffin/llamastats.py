@@ -139,7 +139,6 @@ class LlamaMLP(nn.Module):
                     # print("neuron_stat.shape {}".format(neuron_stat.shape)) 
                     topk_weight, topk_indices = select_neurons(neuron_stat, self.config.selection_method, k) 
                     print("topk_indices.shape {}".format(topk_indices.shape)) 
-                    exit(0) 
                     if self.layer_index in [5, 15, 25]: 
                         # self.seqlenbyintermediate(topk_indices, int_states.shape, "intermediate_layer_{}_{}.png".format(self.layer_index, self.config.selection_method)) 
                         self.getdense(topk_indices, int_states.shape) 
