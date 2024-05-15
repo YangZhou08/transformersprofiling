@@ -278,6 +278,8 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
     small_input_ids = input_ids 
     
     original_attention_mask2 = torch.cat((original_attention_mask, torch.ones((batch_size, addedon_length), dtype = torch.long).to(small_input_ids.device)), dim = 1) 
+    for i, l in enumerate(model.model.layers): 
+        l.mlp.resetgenerationiterateingcount() 
     with torch.no_grad(): 
         output = model.generate(input_ids, 
                                 attention_mask = attention_mask, 
