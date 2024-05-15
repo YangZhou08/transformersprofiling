@@ -328,6 +328,8 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
                 for j in range(1, l.mlp.savingintermediatestates.shape[0]): 
                     similarity = jaccard_similarity(l.mlp.savingintermediatestates[j - 1], l.mlp.savingintermediatestates[j]) 
                     layerjaccardsimilarity.append(similarity) 
+                print("layer {}".format(i)) 
+                print(layerjaccardsimilarity) 
                 fig, ax = plt.subplots(figsize=(10, 20)) 
                 ax.plot(list(range(len(layerjaccardsimilarity))), layerjaccardsimilarity) 
                 ax.set_title("Layer {} Jaccard Similarity".format(i)) 
