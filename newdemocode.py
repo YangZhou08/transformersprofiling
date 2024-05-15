@@ -223,7 +223,9 @@ def get_dataset(datasetname, max_length):
     
     def encode_text_summary_gsm8k(examples): 
         # tokdictionary = tokenizer( 
-        pass 
+        topdictionary = tokenizer(examples["question"] + " " + examples["context"], padding = "max_length", 
+                                  max_length = max_length, return_attention_mask = True, return_tensors = "pt", 
+                                  add_special_tokens = True) 
 
     def unflatten_list_func(examples): 
         examples['input_ids'] = examples['input_ids'].squeeze(0) 
@@ -305,6 +307,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
                     layerjaccardsimilarity.append(similarity) 
                 
                 avgjaccardsimilarity = np.mean(layerjaccardsimilarity) 
+                if not np.isnan(avgjaccardsimilarity): 
                 seq_level_jaccard_sim_collection[i].append(avgjaccardsimilarity.item()) 
 
         for key in seq_level_jaccard_sim_collection.keys(): 
