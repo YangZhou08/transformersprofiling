@@ -73,7 +73,7 @@ class LlamaMLP(nn.Module):
         tensorinput.index_put_((torch.zeros_like(indextensor), indextensor), torch.tensor(1).to(torch.int32)) 
         print("tensorinput is {}".format(tensorinput)) 
         
-        assert tensorinput.shape[0] == 1 
+        # assert tensorinput.shape[0] == 1 
         if self.savingintermediatestates is not None: 
             self.savingintermediatestates = torch.cat([self.savingintermediatestates, tensorinput], dim = 0) 
         else: 
