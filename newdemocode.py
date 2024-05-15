@@ -330,7 +330,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
                     layerjaccardsimilarity.append(similarity) 
                 print("layer {}".format(i)) 
                 for num in layerjaccardsimilarity: 
-                    print(f"{num:.2f}".format(num), end = " ") 
+                    print(f"{num:.2f}".format(num), end = ", ") 
                 print() 
                 fig, ax = plt.subplots(figsize=(20, 10)) 
                 ax.plot(list(range(len(layerjaccardsimilarity))), layerjaccardsimilarity) 
