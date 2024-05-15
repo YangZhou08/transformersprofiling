@@ -175,7 +175,7 @@ def get_dataset(datasetname, max_length):
     elif datasetname == "xsum": # we need to use special processing for this dataset 
         datasetnew = load_dataset("xsum", split = "test[:10000]") 
     elif datasetname == "gsm8k": 
-        datasetnew = load_dataset("gsm8k", split = "train[:10000]") 
+        datasetnew = load_dataset("gsm8k", "main", split = "train[:10000]") 
     else: 
         raise ValueError("dataset_name is not recognized") 
 
