@@ -220,6 +220,9 @@ def get_dataset(datasetname, max_length):
         newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
         newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
         return newdictionary 
+    
+    def encode_text_summary_gsm8k(examples): 
+        tokdictionary = tokenizer(examples[])
 
     def unflatten_list_func(examples): 
         examples['input_ids'] = examples['input_ids'].squeeze(0) 
@@ -301,10 +304,11 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
                     layerjaccardsimilarity.append(similarity) 
                 
                 avgjaccardsimilarity = np.mean(layerjaccardsimilarity) 
-                seq_level_jaccard_sim_collection[i].append(avgjaccardsimilarity) 
+                seq_level_jaccard_sim_collection[i].append(avgjaccardsimilarity.item()) 
 
         for key in seq_level_jaccard_sim_collection.keys(): 
             print("Layer {} average Jaccard similarity {}".format(key, seq_level_jaccard_sim_collection[key][-1])) 
+            print("Layer {} average Jaccard similarity {}".format(key, np.mean(seq_level_jaccard_sim_collection[key]))) 
                 
         for i in range(output.sequences.shape[0]): 
             print(colored(tokenizer.decode(output.sequences[i][:101]), "blue"), end = "") 
