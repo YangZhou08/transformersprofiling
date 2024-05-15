@@ -222,7 +222,8 @@ def get_dataset(datasetname, max_length):
         return newdictionary 
     
     def encode_text_summary_gsm8k(examples): 
-        tokdictionary = tokenizer(examples[])
+        # tokdictionary = tokenizer( 
+        pass 
 
     def unflatten_list_func(examples): 
         examples['input_ids'] = examples['input_ids'].squeeze(0) 
