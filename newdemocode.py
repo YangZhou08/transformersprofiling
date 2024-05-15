@@ -255,7 +255,7 @@ def get_dataset(datasetname, max_length):
     return datasetnew 
 
 # datasetname = "gsm8k" 
-datasetname = "pg19" 
+datasetname = args.use_dataset 
 listmaxl = {1 : 259, 2 : 259, 3 : 259, 4 : 257, 5 : 256, 7 : 260, 10 : 261} 
 # 259 = 256 + 3
 eval_dataset = get_dataset(datasetname, max_length = 256) # 101 = 98 + 3 
