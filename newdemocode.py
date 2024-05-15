@@ -240,7 +240,7 @@ def get_dataset(datasetname, max_length):
 datasetname = "c4" 
 listmaxl = {1 : 259, 2 : 259, 3 : 259, 4 : 257, 5 : 256, 7 : 260, 10 : 261} 
 # 259 = 256 + 3
-eval_dataset = get_dataset(datasetname, max_length = 107) # 101 = 98 + 3 
+eval_dataset = get_dataset(datasetname, max_length = 256) # 101 = 98 + 3 
 
 training_args = TrainingArguments(
     output_dir = dir_models, 
@@ -310,7 +310,7 @@ for i, batch in enumerate(tqdm(trainer.get_eval_dataloader())):
         # ) 
         output = model.generate(input_ids, 
                                 attention_mask = attention_mask, 
-                                max_length = 300, 
+                                max_length = 1000, 
                                 return_dict_in_generate = True, 
                                 # do_sample = False, 
                                 do_sample = True, 
