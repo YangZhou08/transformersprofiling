@@ -134,8 +134,7 @@ class LlamaMLP(nn.Module):
                     # print("int_states.norm(dim=-1).shape {}".format(int_states.norm(dim = -1).shape)) 
                     # print("int_states.norm(dim=-1).unsqueeze(-1).shape {}".format(int_states.norm(dim=-1).unsqueeze(-1).shape)) 
                     neuron_stat = ((int_states / int_states.norm(dim=-1).unsqueeze(-1))).norm(dim=1) # B, D 
-                    for i in range(neuron_stat.shape[1]): 
-                        print("f{:.2f}".format(neuron_stat[0][i].item())) 
+                    
                     # print("neuron_stat.shape {}".format(neuron_stat.shape)) 
                     topk_weight, topk_indices = select_neurons(neuron_stat, self.config.selection_method, k) 
                     print("topk_indices.shape {}".format(topk_indices.shape)) 
