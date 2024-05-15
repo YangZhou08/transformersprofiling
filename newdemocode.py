@@ -223,7 +223,7 @@ def get_dataset(datasetname, max_length):
     
     def encode_text_summary_gsm8k(examples): 
         # tokdictionary = tokenizer( 
-        topdictionary = tokenizer("Question: " + examples["question"] + "\n " + "Answer: " + examples["context"], padding = "max_length", 
+        topdictionary = tokenizer("Question: " + examples["question"] + "\n " + "Answer: " + examples["answer"], padding = "max_length", 
                                   max_length = max_length, return_attention_mask = True, return_tensors = "pt", 
                                   add_special_tokens = True) 
 
