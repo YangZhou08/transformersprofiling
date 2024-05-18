@@ -106,16 +106,6 @@ def get_llama_griffinIndexOff(model, k_schedule):
 
         if config.selection_method == "oracle": 
             assert k_schedule[i] > 0.0 
-            
-        if config.selection_method == 'magnitude':
-            assert k_schedule[i] > 0.0
-            gate_stat = l.mlp.gate_proj.weight.data.norm(dim=1)
-            up_stat = l.mlp.up_proj.weight.data.norm(dim=1)
-            stat = (gate_stat * up_stat).unsqueeze(0)
-            _, indices = torch.topk(stat, int(stat.shape[1] * new_mlp.k_factor), dim=-1)
-            new_mlp.prepare_reduced_weights(indices)
-            new_mlp.mag_mask = torch.ones(stat.shape[-1], dtype=bool)
-            new_mlp.mag_mask[indices[0]] = False 
 
         l.mlp = new_mlp
     
