@@ -598,7 +598,7 @@ class LlamaGriffinMLP(nn.Module):
         self.act_fn = F.silu
         
         self.k_factor = k_factor
-        # self.mode = config.mode 
+        self.mode = config.mode 
         
         self.pass_count = 0 
         assert self.mode in ['gen', 'class'] 
