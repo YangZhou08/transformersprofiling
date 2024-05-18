@@ -827,18 +827,38 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
-        outputs = self.model(
+        
+        outputnotused = self.model(
             input_ids=input_ids,
             attention_mask=attention_mask,
             position_ids=position_ids,
-            past_key_values=past_key_values,
+            # past_key_values=past_key_values,
+            past_key_values = None, 
             inputs_embeds=inputs_embeds,
-            use_cache=use_cache,
-            output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
-            return_dict=return_dict,
-            cache_position=cache_position,
-        )
+            # use_cache=use_cache,
+            use_cache = False, 
+            # output_attentions=output_attentions,
+            output_attentions = False, 
+            # output_hidden_states=output_hidden_states,
+            output_hidden_states = False, 
+            # return_dict=return_dict, 
+            return_dict = False, 
+            cache_position=cache_position, 
+        ) 
+        
+        outputs = self.model(
+            input_ids = input_ids, 
+            attention_mask = attention_mask, 
+            position_ids = position_ids, 
+            past_key_values = past_key_values, 
+            inputs_embeds = inputs_embeds, 
+            use_cache = use_cache, 
+            output_attentions = output_attentions, 
+            output_hidden_states = output_hidden_states, 
+            return_dict = return_dict, 
+            cache_position = cache_position, 
+        ) 
+        
 
         hidden_states = outputs[0]
         if self.config.pretraining_tp > 1:
