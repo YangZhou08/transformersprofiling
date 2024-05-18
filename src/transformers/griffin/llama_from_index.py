@@ -183,7 +183,7 @@ class LlamaAttention(nn.Module):
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
-        past_key_value: Optional[GriffinCache] = None,
+        past_key_value = None, 
         output_attentions: bool = False,
         use_cache: bool = False,
         cache_position: Optional[torch.LongTensor] = None,
@@ -834,13 +834,8 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
     ):
         past_length = 0
         if past_key_values is not None:
-            if isinstance(past_key_values, GriffinCache):
-                cache_length = past_key_values.get_seq_length()
-                past_length = past_key_values.seen_tokens
-                max_cache_length = past_key_values.get_max_length()
-            else:
-                cache_length = past_length = past_key_values[0][0].shape[2]
-                max_cache_length = None
+            cache_length = past_length = past_key_values[0][0].shape[2]
+            max_cache_length = None
 
             # Keep only the unprocessed tokens:
             # 1 - If the length of the attention_mask exceeds the length of input_ids, then we are in a setting where
