@@ -110,6 +110,7 @@ class LlamaMLP(nn.Module):
     
     def visualizecolormap(self, tensorinput, filename): 
         array = tensorinput.cpu().numpy() 
+        array = array / array.norm(-1).unsqueeze(-1) 
         
         cmap = LinearSegmentedColormap.from_list('white_to_green', ['white', 'darkgreen']) 
         
