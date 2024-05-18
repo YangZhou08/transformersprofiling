@@ -101,7 +101,7 @@ sys.path.append(parent_dir)
 
 from utils import select_neurons 
 
-def get_llama_griffin(model,  k_schedule):
+def get_llama_griffinIndexOff(model,  k_schedule):
     config = model.config
     for i, l in enumerate(model.model.layers):
         new_mlp = LlamaMLP(config, k_schedule[i])
