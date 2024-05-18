@@ -81,6 +81,8 @@ from transformers.utils import (
 
 from termcolor import colored 
 
+from transformers.models.llama.modeling_llama import LlamaRotaryEmbeddingqksep 
+
 # from transformers.generation.utils import GenerateOutput, GenerateDecoderOnlyOutput, GenerateNonBeamOutput, GenerateEncoderDecoderOutput 
 # from transformers.generation_utils import GenerationOutput, GenerateDecoderOnlyOutput, GenerateNonBeamOutput, GenerateEncoderDecoderOutput 
 import numpy as np 
