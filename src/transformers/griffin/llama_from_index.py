@@ -779,7 +779,6 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
             output_hidden_states = False, 
             # return_dict=return_dict, 
             return_dict = False, 
-            cache_position=cache_position, 
         ) 
         
         # outputs = self.model(
