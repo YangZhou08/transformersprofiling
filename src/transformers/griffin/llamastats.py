@@ -61,6 +61,7 @@ class LlamaMLP(nn.Module):
     
     def resetgenerationiterateingcount(self): 
         self.savingintermediatestates = None 
+        self.savingactivations = None 
         
     def getdense(self, indextensor, shape): 
         # Convert the tensor to a numpy array for visualization 
