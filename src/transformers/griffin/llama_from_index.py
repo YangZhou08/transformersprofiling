@@ -94,7 +94,7 @@ from utils import select_neurons
 
 logger = logging.get_logger(__name__) 
 
-def get_llama_griffinIndexOff(model,  k_schedule):
+def get_llama_griffinIndexOff(model, k_schedule): 
     config = model.config
     for i, l in enumerate(model.model.layers):
         new_mlp = LlamaGriffinMLP(config, k_schedule[i]) 
@@ -598,7 +598,8 @@ class LlamaGriffinMLP(nn.Module):
         self.act_fn = F.silu
         
         self.k_factor = k_factor
-        self.mode = config.mode 
+        # self.mode = config.mode 
+        
         self.pass_count = 0 
         assert self.mode in ['gen', 'class'] 
         
