@@ -704,12 +704,12 @@ class LlamaGriffinMLP(nn.Module):
                     k = int(int_states.shape[-1] * k_factor) 
                     # print("int_states.norm(dim=-1).shape {}".format(int_states.norm(dim = -1).shape)) 
                     # print("int_states.norm(dim=-1).unsqueeze(-1).shape {}".format(int_states.norm(dim=-1).unsqueeze(-1).shape)) 
-                    neuron_stat = ((int_states / int_states.norm(dim=-1).unsqueeze(-1))).norm(dim=1) # B, D 
+                    neuron_stat = ((int_states / int_states.norm(dim=-1).unsqueeze(-1)))  # B, D 
                     # print("(int_states / int_states.norm(dim=-1).unsqueeze(-1)).shape {}".format((int_states / int_states.norm(dim=-1).unsqueeze(-1)).shape)) 
                     # print("neuron_stat.shape {}".format(neuron_stat.shape)) 
-                    topk_weight, topk_indices = select_neurons(neuron_stat, "topk", k) 
+                    topk_weight, topk_indices = select_neurons(neuron_stat.norm(dim = 1), "topk", k) 
                     # print("topk_indices.shape {}".format(topk_indices.shape)) 
-                    self.prepare_reduced_weights(topk_indices)
+                    self.prepare_reduced_weights(topk_indices) 
                     
                 down_proj = self.down_proj(int_states) 
                 self.pass_count = 1 
@@ -835,8 +835,9 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
             # output_hidden_states=output_hidden_states,
             output_hidden_states = False, 
             # return_dict=return_dict, 
-            return_dict = False, 
+            return_dict = True, 
         ) 
+        
         
         for l in self.model.layers: 
             assert l.mlp.pass_count == 1 
