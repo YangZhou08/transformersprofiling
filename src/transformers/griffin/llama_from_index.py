@@ -841,6 +841,7 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
         
         for l in self.model.layers: 
             assert l.mlp.pass_count == 1 
+            l.mlp.pass_count = 0 
         # outputs = self.model(
         #     input_ids = input_ids, 
         #     attention_mask = attention_mask, 
