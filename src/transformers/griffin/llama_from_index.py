@@ -268,18 +268,18 @@ class LlamaAttention(nn.Module):
         return attn_output, attn_weights, past_key_value 
 
 class LlamaDecoderLayer(nn.Module):
-    def __init__(self, config: LlamaConfig, layer_idx: int):
+    def __init__(self, config: LlamaConfig):
         super().__init__()
         self.hidden_size = config.hidden_size
-
-        self.self_attn = LlamaAttention(config=config, layer_idx=layer_idx)
-
-        # self.mlp = LlamaGriffinMLP(config) 
-        self.mlp = LlamaMLP(config) 
-
+        self.self_attn = (
+            LlamaAttention(config=config)
+            if not getattr(config, "_flash_attn_2_enabled", False)
+            else LlamaFlashAttention2(config=config)
+        )
+        self.mlp = LlamaMLP(config)
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
-        
+
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -288,7 +288,6 @@ class LlamaDecoderLayer(nn.Module):
         past_key_value: Optional[Tuple[torch.Tensor]] = None,
         output_attentions: Optional[bool] = False,
         use_cache: Optional[bool] = False,
-        cache_position: Optional[torch.LongTensor] = None,
         **kwargs,
     ) -> Tuple[torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]]:
         """
@@ -311,9 +310,9 @@ class LlamaDecoderLayer(nn.Module):
             )
 
         residual = hidden_states
-        
+
         hidden_states = self.input_layernorm(hidden_states)
-        
+
         # Self Attention
         hidden_states, self_attn_weights, present_key_value = self.self_attn(
             hidden_states=hidden_states,
@@ -322,7 +321,6 @@ class LlamaDecoderLayer(nn.Module):
             past_key_value=past_key_value,
             output_attentions=output_attentions,
             use_cache=use_cache,
-            cache_position=cache_position,
             **kwargs,
         )
         hidden_states = residual + hidden_states
