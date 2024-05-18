@@ -932,7 +932,7 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
         synced_gpus: bool = False,
         streamer: Optional["BaseStreamer"] = None,
         **model_kwargs,
-    ) -> Union[GenerateNonBeamOutput, torch.LongTensor]:
+    ): 
         
         kernel_size = 8
         # init values
