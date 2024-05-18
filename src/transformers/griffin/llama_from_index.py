@@ -79,6 +79,8 @@ from transformers.utils import (
     replace_return_docstrings,
 ) 
 
+from termcolor import colored 
+
 # from transformers.generation.utils import GenerateOutput, GenerateDecoderOnlyOutput, GenerateNonBeamOutput, GenerateEncoderDecoderOutput 
 # from transformers.generation_utils import GenerationOutput, GenerateDecoderOnlyOutput, GenerateNonBeamOutput, GenerateEncoderDecoderOutput 
 import numpy as np 
@@ -114,12 +116,9 @@ def get_llama_griffinIndexOff(model, k_schedule):
 class LlamaAttention(nn.Module):
     """Multi-headed attention from 'Attention Is All You Need' paper"""
 
-    def __init__(self, config: LlamaConfig, layer_idx: Optional[int] = None):
+    def __init__(self, config: LlamaConfig):
         super().__init__()
         self.config = config
-        self.layer_idx = layer_idx
-        
-
         self.attention_dropout = config.attention_dropout
         self.hidden_size = config.hidden_size
         self.num_heads = config.num_attention_heads
@@ -139,7 +138,7 @@ class LlamaAttention(nn.Module):
         self.q_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim, bias=config.attention_bias)
         self.k_proj = nn.Linear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias)
         self.v_proj = nn.Linear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias)
-        self.o_proj = nn.Linear(self.hidden_size, self.hidden_size, bias=config.attention_bias)
+        self.o_proj = nn.Linear(self.num_heads * self.head_dim, self.hidden_size, bias=config.attention_bias)
         self._init_rope()
 
     def _init_rope(self):
@@ -165,23 +164,38 @@ class LlamaAttention(nn.Module):
                     max_position_embeddings=self.max_position_embeddings,
                     scaling_factor=scaling_factor,
                     base=self.rope_theta,
-                )
+                ) 
+            elif scaling_type == "sep_q_k": # NOTE I added to separate the q and k embeddings 
+                print(colored("We got hee", "red")) 
+                self.rotary_emb = LlamaRotaryEmbeddingqksep( 
+                    self.head_dim, 
+                    max_position_embeddings = self.max_position_embeddings, 
+                    base = self.rope_theta, 
+                    key_scaling_factor = scaling_factor, 
+                ) 
             else:
                 raise ValueError(f"Unknown RoPE scaling type {scaling_type}")
+
+    def _shape(self, tensor: torch.Tensor, seq_len: int, bsz: int):
+        return tensor.view(bsz, seq_len, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
 
     def forward(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
-        past_key_value = None, 
+        past_key_value: Optional[Tuple[torch.Tensor]] = None,
         output_attentions: bool = False,
         use_cache: bool = False,
-        cache_position: Optional[torch.LongTensor] = None,
         **kwargs,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
+        if "padding_mask" in kwargs:
+            warnings.warn(
+                "Passing `padding_mask` is deprecated and will be removed in v4.37. Please make sure use `attention_mask` instead.`"
+            )
+
         bsz, q_len, _ = hidden_states.size()
-        
+
         if self.config.pretraining_tp > 1:
             key_value_slicing = (self.num_key_value_heads * self.head_dim) // self.config.pretraining_tp
             query_slices = self.q_proj.weight.split(
@@ -203,37 +217,68 @@ class LlamaAttention(nn.Module):
             query_states = self.q_proj(hidden_states)
             key_states = self.k_proj(hidden_states)
             value_states = self.v_proj(hidden_states)
-        
+
         query_states = query_states.view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
         key_states = key_states.view(bsz, q_len, self.num_key_value_heads, self.head_dim).transpose(1, 2)
         value_states = value_states.view(bsz, q_len, self.num_key_value_heads, self.head_dim).transpose(1, 2)
 
-        past_key_value = getattr(self, "past_key_value", past_key_value)
-        cos, sin = self.rotary_emb(value_states, position_ids)
-        
-        query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin)
-        
+        kv_seq_len = key_states.shape[-2]
         if past_key_value is not None:
-            # sin and cos are specific to RoPE models; cache_position needed for the static cache
-            cache_kwargs = {"sin": sin, "cos": cos, "cache_position": cache_position}
-            key_states, value_states = past_key_value.update(key_states, value_states, self.layer_idx, cache_kwargs)
+            kv_seq_len += past_key_value[0].shape[-2] 
+        if isinstance(self.rotary_emb, LlamaRotaryEmbeddingqksep): 
+            print(colored("We Got Here!!!", "red")) 
+            cosq, sinq, cosk, sink = self.rotary_emb(value_states, seq_len = kv_seq_len) 
+            inv_freq = self.rotary_emb.inv_freq 
+            query_states, key_states = apply_differently_rotary_pos_emb(query_states, key_states, cosq, sinq, cosk, sink, position_ids, inv_freq = inv_freq) 
+        else: 
+            cos, sin = self.rotary_emb(value_states, seq_len=kv_seq_len) 
+            query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids) 
+        
+
+        if past_key_value is not None:
+            # reuse k, v, self_attention
+            key_states = torch.cat([past_key_value[0], key_states], dim=2)
+            value_states = torch.cat([past_key_value[1], value_states], dim=2)
+
+        past_key_value = (key_states, value_states) if use_cache else None
 
         key_states = repeat_kv(key_states, self.num_key_value_groups)
         value_states = repeat_kv(value_states, self.num_key_value_groups)
 
         attn_weights = torch.matmul(query_states, key_states.transpose(2, 3)) / math.sqrt(self.head_dim)
 
-        if attention_mask is not None:  # no matter the length, we just slice it
-            causal_mask = attention_mask[:, :, :, : key_states.shape[-2]]
-            attn_weights = attn_weights + causal_mask
-            
+        if attn_weights.size() != (bsz, self.num_heads, q_len, kv_seq_len):
+            raise ValueError(
+                f"Attention weights should be of size {(bsz, self.num_heads, q_len, kv_seq_len)}, but is"
+                f" {attn_weights.size()}"
+            )
 
+        if attention_mask is not None:
+            if attention_mask.size() != (bsz, 1, q_len, kv_seq_len):
+                raise ValueError(
+                    f"Attention mask should be of size {(bsz, 1, q_len, kv_seq_len)}, but is {attention_mask.size()}"
+                )
+            attn_weights = attn_weights + attention_mask
+        
         # upcast attention to fp32
-        attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query_states.dtype)
+        # attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query_states.dtype) 
+        # Note the next line is critical, since right now the softmax of all the values -inf is a very strange number 
+
+        attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query_states.dtype) 
+        # Note the next line is critical, since right now the softmax of all the values -inf is a very strange number 
+        
+        # using the following not the above 
+        if "mask_list_pos" in kwargs and "horizontal_bar_enabled" in kwargs: 
+            if kwargs["horizontal_bar_enabled"]: 
+                # print("found it") 
+                mask = torch.ones((attn_weights.shape[-2], attn_weights.shape[-1]), device = attn_weights.device) 
+                mask[kwargs["mask_list_pos"], :] = 0.0 
+                # attn_weights[:, :, kwargs["mask_list_pos"], :] = 0.0 
+                attn_weights = attn_weights * mask 
+                attn_weights = attn_weights.to(value_states.dtype) 
         
         attn_weights = nn.functional.dropout(attn_weights, p=self.attention_dropout, training=self.training)
-        #attn_weights[1:] = nn.functional.dropout(attn_weights[1:], p=0.01)
-        attn_output = torch.matmul(attn_weights, value_states)
+        attn_output = torch.matmul(attn_weights, value_states) 
 
         if attn_output.size() != (bsz, self.num_heads, q_len, self.head_dim):
             raise ValueError(
@@ -255,7 +300,7 @@ class LlamaAttention(nn.Module):
         if not output_attentions:
             attn_weights = None
 
-        return attn_output, attn_weights, past_key_value 
+        return attn_output, attn_weights, past_key_value
 
 class LlamaDecoderLayer(nn.Module):
     def __init__(self, config: LlamaConfig):
