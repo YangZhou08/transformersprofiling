@@ -840,19 +840,19 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
         
         for l in self.model.layers: 
             assert l.mlp.pass_count == 0 
-        outputs = self.model(
-            input_ids = input_ids, 
-            attention_mask = attention_mask, 
-            position_ids = position_ids, 
-            past_key_values = past_key_values, 
-            inputs_embeds = inputs_embeds, 
-            use_cache = use_cache, 
-            output_attentions = output_attentions, 
-            output_hidden_states = output_hidden_states, 
-            return_dict = return_dict, 
-            cache_position = cache_position, 
-        ) 
-        # outputs = outputnotused 
+        # outputs = self.model(
+        #     input_ids = input_ids, 
+        #     attention_mask = attention_mask, 
+        #     position_ids = position_ids, 
+        #     past_key_values = past_key_values, 
+        #     inputs_embeds = inputs_embeds, 
+        #     use_cache = use_cache, 
+        #     output_attentions = output_attentions, 
+        #     output_hidden_states = output_hidden_states, 
+        #     return_dict = return_dict, 
+        #     cache_position = cache_position, 
+        # ) 
+        outputs = outputnotused 
         
 
         hidden_states = outputs[0]
