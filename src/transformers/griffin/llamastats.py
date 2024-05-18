@@ -109,6 +109,7 @@ class LlamaMLP(nn.Module):
         plt.savefig(filename, bbox_inches='tight') 
     
     def visualizecolormap(self, tensorinput, filename): 
+        print("this is an updated version of the function") 
         array = tensorinput.cpu().numpy() 
         # array = array / array.norm(-1).unsqueeze(-1) 
         array = (array - array.min()) / (array.max() - array.min()) 
