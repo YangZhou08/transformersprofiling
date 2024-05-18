@@ -80,7 +80,7 @@ from transformers.utils import (
 ) 
 
 # from transformers.generation.utils import GenerateOutput, GenerateDecoderOnlyOutput, GenerateNonBeamOutput, GenerateEncoderDecoderOutput 
-from transformers.generation_utils import GenerationOutput, GenerateDecoderOnlyOutput, GenerateNonBeamOutput, GenerateEncoderDecoderOutput 
+# from transformers.generation_utils import GenerationOutput, GenerateDecoderOnlyOutput, GenerateNonBeamOutput, GenerateEncoderDecoderOutput 
 import numpy as np 
 
 import sys 
