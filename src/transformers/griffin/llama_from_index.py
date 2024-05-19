@@ -780,7 +780,7 @@ class LlamaGriffinMLP(nn.Module):
                     down_proj =self.down_proj_reduced(self.act_fn(self.gate_proj_reduced(x)) * self.up_proj_reduced(x)) 
                 else: 
                     assert seq_idx is not None 
-                    print("seq_idx is {}".format(seq_idx)) 
+                    # print("seq_idx is {}".format(seq_idx)) 
                     foundlandscape = self.savingintermediatestates[seq_idx] 
                     # foundlandscapeidx = torch.nonzero(foundlandscape) 
                     # foundlandscapeidx = np.nonzero(foundlandscape.unsqueeze(0))[1].unsqueeze(0) 
