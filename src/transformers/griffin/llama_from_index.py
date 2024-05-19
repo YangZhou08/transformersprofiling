@@ -683,7 +683,6 @@ class LlamaGriffinMLP(nn.Module):
         row_indices = torch.arange(indextensor.shape[1]).unsqueeze(1).expand_as(indextensor) 
         tensorinput.index_put_((row_indices, indextensor[0]), torch.tensor(1).to(torch.int32).to("cpu")) 
         
-        assert tensorinput.shape[0] == 1 
         self.savingintermediatestates = tensorinput 
 
     def prepare_reduced_weights(self, topk_indices):
