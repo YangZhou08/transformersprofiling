@@ -932,6 +932,8 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
             l.mlp.pass_count = 0 
         # outputs = outputnotused 
         
+        print(torch.allclose(outputnotused[0], aggregated_hidden_states)) 
+        print(torch.allclose(outputnotused[0], aggregated_hidden_states).all()) 
         exit(0) 
         
 
