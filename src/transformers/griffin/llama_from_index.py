@@ -914,7 +914,7 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
             # l.mlp.seqlenbyintermediate(l.mlp.savingintermediatestates, "intermediate_{}.png".format(j)) 
             # print("layer {} shape of seqlenbyintermediate {}".format(j, l.mlp.savingintermediatestates.shape)) 
         
-        if self.config.selection_mode != "griffin": 
+        if self.config.selection_method == "griffin": 
             past_key_values = None 
             aggregated_hidden_states = None 
             for i in range(input_ids.shape[1]): 
