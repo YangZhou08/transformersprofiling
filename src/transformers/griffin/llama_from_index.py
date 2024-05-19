@@ -779,6 +779,7 @@ class LlamaGriffinMLP(nn.Module):
                     # print("running inside griffin") 
                     down_proj =self.down_proj_reduced(self.act_fn(self.gate_proj_reduced(x)) * self.up_proj_reduced(x)) 
                 else: 
+                    '''
                     assert seq_idx is not None 
                     # print("seq_idx is {}".format(seq_idx)) 
                     foundlandscape = self.savingintermediatestates[seq_idx] 
@@ -788,6 +789,11 @@ class LlamaGriffinMLP(nn.Module):
                     # print("foundlandscapeidx shape {}".format(foundlandscapeidx.shape)) 
                     self.prepare_reduced_weights(foundlandscapeidx) 
                     down_proj = self.down_proj_reduced(self.act_fn(self.gate_proj_reduced(x)) * self.up_proj_reduced(x)) 
+                    ''' 
+                    int_states = self.act_fn(self.gate_proj(x)) * self.up_proj(x) 
+                    print("int_states shape {}".format(int_states.shape)) 
+                    int_states = int_states * self.savingintermediatestates 
+                    down_proj = self.down_proj(int_states) 
             else: 
                 raise ValueError("Invalid pass count") 
             '''
