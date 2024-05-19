@@ -783,7 +783,6 @@ class LlamaGriffinMLP(nn.Module):
                     # foundlandscapeidx = np.nonzero(foundlandscape.unsqueeze(0))[1].unsqueeze(0) 
                     foundlandscapeidx = (foundlandscape.unsqueeze(0) == 1).nonzero(as_tuple = True)[1].unsqueeze(0) 
                     print("foundlandscapeidx shape {}".format(foundlandscapeidx.shape)) 
-                    exit(0) 
                     self.prepare_reduced_weights(foundlandscapeidx) 
                     down_proj = self.down_proj_reduced(self.act_fn(self.gate_proj_reduced(x)) * self.up_proj_reduced(x)) 
             else: 
