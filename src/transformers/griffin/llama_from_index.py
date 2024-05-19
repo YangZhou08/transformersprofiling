@@ -779,7 +779,8 @@ class LlamaGriffinMLP(nn.Module):
                 else: 
                     assert seq_idx is not None 
                     foundlandscape = self.savingintermediatestates[seq_idx] 
-                    foundlandscapeidx = torch.nonzero(foundlandscape) 
+                    # foundlandscapeidx = torch.nonzero(foundlandscape) 
+                    foundlandscapeidx = np.nonzero(foundlandscape.unsqueeze(0))[1].unsqueeze(0) 
                     print("foundlandscapeidx shape {}".format(foundlandscapeidx.shape)) 
                     foundlandscapeidx = foundlandscapeidx.squeeze(-1) 
                     print("foundlandscapeidx shape {}".format(foundlandscapeidx.shape)) 
