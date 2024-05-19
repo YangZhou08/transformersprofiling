@@ -780,6 +780,7 @@ class LlamaGriffinMLP(nn.Module):
                     down_proj =self.down_proj_reduced(self.act_fn(self.gate_proj_reduced(x)) * self.up_proj_reduced(x)) 
                 else: 
                     assert seq_idx is not None 
+                    print("seq_idx is {}".format(seq_idx)) 
                     foundlandscape = self.savingintermediatestates[seq_idx] 
                     # foundlandscapeidx = torch.nonzero(foundlandscape) 
                     # foundlandscapeidx = np.nonzero(foundlandscape.unsqueeze(0))[1].unsqueeze(0) 
@@ -886,12 +887,15 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict 
 
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
         
         for l in self.model.layers: 
+            l.mlp.resetcount() 
+            l.mlp.resetgenerationiterateingcount() 
             assert l.mlp.pass_count == 0 
+            
         outputnotused = self.model(
             input_ids=input_ids,
             attention_mask=attention_mask,
