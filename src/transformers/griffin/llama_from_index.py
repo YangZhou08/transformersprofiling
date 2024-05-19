@@ -664,8 +664,6 @@ class LlamaGriffinMLP(nn.Module):
         
         self.savingintermediatestates = None 
         
-        self.seqidx = -1 
-        
     def resetpasscount(self): 
         self.pass_count = 0 
     
@@ -723,7 +721,7 @@ class LlamaGriffinMLP(nn.Module):
         
         plt.savefig(filename, bbox_inches='tight') 
 
-    def forward(self, x):
+    def forward(self, x, seq_idx = None): 
         if self.config.pretraining_tp > 1:
             slice = self.intermediate_size // self.config.pretraining_tp
             gate_proj_slices = self.gate_proj.weight.split(slice, dim=0)
@@ -771,15 +769,17 @@ class LlamaGriffinMLP(nn.Module):
                 down_proj = self.down_proj(int_states) 
                 self.pass_count = 1 
 
-            else: 
+            elif self.pass_count == 1: 
                 if self.config.selection_method == "griffin": 
                     down_proj =self.down_proj_reduced(self.act_fn(self.gate_proj_reduced(x)) * self.up_proj_reduced(x)) 
                 else: 
-                    assert self.seqidx != -1 
+                    assert seq_idx is not None 
                     foundlandscape = self.savingintermediatestates[self.seqidx] 
                     foundlandscapeidx = torch.nonzero(foundlandscape).squeeze(0) 
                     self.prepare_reduced_weights(foundlandscapeidx) 
                     down_proj = self.down_proj_reduced(self.act_fn(self.gate_proj_reduced(x)) * self.up_proj_reduced(x)) 
+            else: 
+                raise ValueError("Invalid pass count") 
             '''
             elif self.mode == 'class':
                 assert x.shape[1] > 1
@@ -847,7 +847,6 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
-        cache_position: Optional[torch.LongTensor] = None,
     ) -> Union[Tuple, CausalLMOutputWithPast]:
         r"""
         Args:
@@ -903,9 +902,8 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
         
         for j, l in enumerate(self.model.layers): 
             assert l.mlp.pass_count == 1 
-            l.mlp.seqlenbyintermediate(l.mlp.savingintermediatestates, "intermediate_{}.png".format(j)) 
-            print("layer {} shape of seqlenbyintermediate {}".format(j, l.mlp.savingintermediatestates.shape)) 
-        exit(0) 
+            # l.mlp.seqlenbyintermediate(l.mlp.savingintermediatestates, "intermediate_{}.png".format(j)) 
+            # print("layer {} shape of seqlenbyintermediate {}".format(j, l.mlp.savingintermediatestates.shape)) 
         
         past_key_values = None 
         for i in range(input_ids.shape[1]): 
@@ -921,6 +919,7 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
                 output_attentions = output_attentions, 
                 output_hidden_states = output_hidden_states, 
                 return_dict = return_dict, 
+                seq_idx = i, 
             ) 
             past_key_values = outputs.past_key_values 
         for l in self.model.layers: 
