@@ -925,6 +925,7 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
             # print("layer {} shape of seqlenbyintermediate {}".format(j, l.mlp.savingintermediatestates.shape)) 
         
         if self.config.selection_method != "griffin": 
+            '''
             past_key_values = None 
             aggregated_hidden_states = None 
             for i in range(input_ids.shape[1]): 
@@ -952,6 +953,26 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
             # outputs = outputnotused 
             outputs = stepoutputs 
             hidden_states = aggregated_hidden_states 
+            ''' 
+            outputs = self.model(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                position_ids=position_ids,
+                # past_key_values=past_key_values,
+                past_key_values = None, 
+                inputs_embeds=inputs_embeds,
+                # use_cache=use_cache,
+                use_cache = False, 
+                # output_attentions=output_attentions,
+                output_attentions = False, 
+                # output_hidden_states=output_hidden_states,
+                output_hidden_states = False, 
+                # return_dict=return_dict, 
+                return_dict = True, 
+            ) 
+            hidden_states = outputs[0] 
+            for l in self.model.layers: 
+                l.mlp.pass_count = 0 
         else: 
             outputs = self.model(
                 input_ids=input_ids,
