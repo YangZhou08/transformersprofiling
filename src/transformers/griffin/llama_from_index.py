@@ -82,6 +82,8 @@ from transformers.utils import (
 from termcolor import colored 
 
 from transformers.models.llama.modeling_llama import LlamaRotaryEmbeddingqksep 
+from matplotlib import colors 
+from matplotlib.colors import LinearSegmentedColormap 
 
 # from transformers.generation.utils import GenerateOutput, GenerateDecoderOnlyOutput, GenerateNonBeamOutput, GenerateEncoderDecoderOutput 
 # from transformers.generation_utils import GenerationOutput, GenerateDecoderOnlyOutput, GenerateNonBeamOutput, GenerateEncoderDecoderOutput 
@@ -658,8 +660,28 @@ class LlamaGriffinMLP(nn.Module):
         self.pass_count = 0 
         assert self.mode in ['gen', 'class'] 
         
+        self.savingintermediatestates = None 
+        
+        self.seqidx = -1 
+        
     def resetpasscount(self): 
         self.pass_count = 0 
+    
+    def resetgenerationiterateingcount(self): 
+        self.savingintermediatestates = None 
+    
+    def getdense(self, indextensor, shape): 
+        shape = (shape[1], shape[2]) 
+        tensorinput = torch.zeros(shape).to(torch.int32).to("cpu") 
+        
+        row_indices, col_indices = indextensor[:, 0], indextensor[:, 1] 
+        tensorinput.index_put_((row_indices, col_indices), torch.tensor(1).to(torch.int32).to("cpu")) 
+        
+        assert tensorinput.shape[0] == 1 
+        if self.savingintermediatestates is not None: 
+            self.savingintermediatestates = torch.cat([self.savingintermediatestates, tensorinput], dim = 0) 
+        else: 
+            self.savingintermediatestates = tensorinput 
 
     def prepare_reduced_weights(self, topk_indices):
         assert topk_indices.shape[0] == 1 # Batch size 1
@@ -673,6 +695,31 @@ class LlamaGriffinMLP(nn.Module):
         self.up_proj_reduced.weight.data = self.up_proj.weight.data[topk_indices]
         self.down_proj_reduced.weight.data = self.down_proj.weight.data[:, topk_indices]
     
+    def seqlenbyintermediate(self, tensorinput, filename): 
+        # assert tensorinput.shape[1] == 111008 
+        # this is the intermediate 
+        
+        array = tensorinput.cpu().numpy() 
+
+        # Create a colormap: 0 -> white, 1 -> green
+        cmap = colors.ListedColormap(['white', 'green']) 
+
+        # Create the plot
+        # fig, ax = plt.subplots(figsize=(10, 20)) 
+        fig, ax = plt.subplots(figsize = (20, 20)) 
+        array = array[:, : array.shape[0]] 
+        car = ax.imshow(array, cmap=cmap, interpolation='nearest') 
+
+        # Remove grid lines
+        ax.grid(False)
+
+        # Remove axis ticks
+        ax.set_xticks([]) 
+        ax.set_yticks([]) 
+
+        # Display the plot
+        
+        plt.savefig(filename, bbox_inches='tight') 
 
     def forward(self, x):
         if self.config.pretraining_tp > 1:
@@ -709,14 +756,26 @@ class LlamaGriffinMLP(nn.Module):
                     # print("neuron_stat.shape {}".format(neuron_stat.shape)) 
                     topk_weight, topk_indices = select_neurons(neuron_stat.norm(dim = 1), "topk", k) 
                     # print("topk_indices.shape {}".format(topk_indices.shape)) 
-                    self.prepare_reduced_weights(topk_indices) 
+                    if self.config.selection_method == "griffin": 
+                        self.prepare_reduced_weights(topk_indices) 
+                    
+                    if self.config.selection_method == "oracle": 
+                        oweights, ooindices = select_neurons(neuron_stat, "topk", k) 
+                        self.getdense(ooindices, x.shape) 
+                        
                     
                 down_proj = self.down_proj(int_states) 
                 self.pass_count = 1 
 
-            else:
-                down_proj =self.down_proj_reduced(self.act_fn(self.gate_proj_reduced(x)) * self.up_proj_reduced(x)) 
-                self.pass_count = 0 
+            else: 
+                if self.config.selection_method == "griffin": 
+                    down_proj =self.down_proj_reduced(self.act_fn(self.gate_proj_reduced(x)) * self.up_proj_reduced(x)) 
+                else: 
+                    assert self.seqidx != -1 
+                    foundlandscape = self.savingintermediatestates[self.seqidx] 
+                    foundlandscapeidx = torch.nonzero(foundlandscape).squeeze(0) 
+                    self.prepare_reduced_weights(foundlandscapeidx) 
+                    down_proj = self.down_proj_reduced(self.act_fn(self.gate_proj_reduced(x)) * self.up_proj_reduced(x)) 
             '''
             elif self.mode == 'class':
                 assert x.shape[1] > 1
@@ -838,23 +897,30 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
             return_dict = True, 
         ) 
         
-        
-        for l in self.model.layers: 
+        for j, l in enumerate(self.model.layers): 
             assert l.mlp.pass_count == 1 
+            l.mlp.seqlenbyintermediate(l.mlp.savingintermediatestates, "intermediate_{}.png".format(j)) 
+        exit(0) 
+        
+        past_key_values = None 
+        for i in range(input_ids.shape[1]): 
+            outputs = self.model(
+                input_ids = input_ids[:, i].unsqueeze(1), 
+                attention_mask = attention_mask[:, : i + 1], 
+                # position_ids = position_ids, 
+                position_ids = None, 
+                past_key_values = past_key_values, 
+                inputs_embeds = inputs_embeds, 
+                # use_cache = use_cache, 
+                use_cache = True, 
+                output_attentions = output_attentions, 
+                output_hidden_states = output_hidden_states, 
+                return_dict = return_dict, 
+            ) 
+            past_key_values = outputs.past_key_values 
+        for l in self.model.layers: 
             l.mlp.pass_count = 0 
-        # outputs = self.model(
-        #     input_ids = input_ids, 
-        #     attention_mask = attention_mask, 
-        #     position_ids = position_ids, 
-        #     past_key_values = past_key_values, 
-        #     inputs_embeds = inputs_embeds, 
-        #     use_cache = use_cache, 
-        #     output_attentions = output_attentions, 
-        #     output_hidden_states = output_hidden_states, 
-        #     return_dict = return_dict, 
-        #     cache_position = cache_position, 
-        # ) 
-        outputs = outputnotused 
+        # outputs = outputnotused 
         
 
         hidden_states = outputs[0]
