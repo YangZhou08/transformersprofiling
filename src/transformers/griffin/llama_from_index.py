@@ -892,7 +892,7 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
         
         for l in self.model.layers: 
-            l.mlp.resetcount() 
+            l.mlp.resetpasscount() 
             l.mlp.resetgenerationiterateingcount() 
             assert l.mlp.pass_count == 0 
             
