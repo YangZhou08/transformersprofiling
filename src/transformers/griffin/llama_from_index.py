@@ -920,7 +920,8 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
             l.mlp.resetpasscount() 
             l.mlp.resetgenerationiterateingcount() 
             assert l.mlp.pass_count == 0 
-            
+        
+        print("shape of input_ids is {}".format(input_ids.shape)) 
         outputnotused = self.model(
             input_ids=input_ids,
             attention_mask=attention_mask,
