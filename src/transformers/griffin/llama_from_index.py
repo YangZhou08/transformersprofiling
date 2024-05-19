@@ -761,7 +761,7 @@ class LlamaGriffinMLP(nn.Module):
                     topk_weight, topk_indices = select_neurons(neuron_stat.norm(dim = 1), "topk", k) 
                     # print("topk_indices.shape {}".format(topk_indices.shape)) 
                     if self.config.selection_method == "griffin": 
-                        print("griffin prepare weights") 
+                        # print("griffin prepare weights") 
                         self.prepare_reduced_weights(topk_indices) 
                     
                     if self.config.selection_method == "oracle": 
@@ -776,7 +776,7 @@ class LlamaGriffinMLP(nn.Module):
 
             elif self.pass_count == 1: 
                 if self.config.selection_method == "griffin": 
-                    print("running inside griffin") 
+                    # print("running inside griffin") 
                     down_proj =self.down_proj_reduced(self.act_fn(self.gate_proj_reduced(x)) * self.up_proj_reduced(x)) 
                 else: 
                     assert seq_idx is not None 
