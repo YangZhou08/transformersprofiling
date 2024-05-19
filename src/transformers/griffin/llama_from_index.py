@@ -809,7 +809,7 @@ class LlamaGriffinMLP(nn.Module):
                     int_states = self.act_fn(self.gate_proj(x)) * self.up_proj(x) 
                     print("int_states shape {}".format(int_states.shape)) 
                     int_states = int_states.squeeze(0) 
-                    int_states = int_states * self.savingintermediatestates.to(int_states.device) 
+                    int_states = int_states * self.savingintermediatestates 
                     int_states = int_states.unsqueeze(0) 
                     down_proj = self.down_proj(int_states) 
             else: 
