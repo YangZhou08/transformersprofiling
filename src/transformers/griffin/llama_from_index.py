@@ -766,7 +766,7 @@ class LlamaGriffinMLP(nn.Module):
                         print("shape of neuron_stat is {}".format(neuron_stat.shape)) 
                         oweights, ooindices = select_neurons(neuron_stat, "topk", k) 
                         print("shape of ooindices is {}".format(ooindices.shape)) 
-                        self.getdense(ooindices, x.shape) 
+                        self.getdense(ooindices, int_states.shape) 
                         
                     
                 down_proj = self.down_proj(int_states) 
