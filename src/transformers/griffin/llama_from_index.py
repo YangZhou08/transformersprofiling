@@ -612,7 +612,8 @@ class LlamaModel(LlamaPreTrainedModel):
                     past_key_value,
                     output_attentions,
                     use_cache,
-                )
+                    seq_idx, 
+                ) 
             else:
                 layer_outputs = decoder_layer(
                     hidden_states,
@@ -620,8 +621,9 @@ class LlamaModel(LlamaPreTrainedModel):
                     position_ids=position_ids,
                     past_key_value=past_key_value,
                     output_attentions=output_attentions,
-                    use_cache=use_cache,
-                )
+                    use_cache=use_cache, 
+                    seq_idx = seq_idx, 
+                ) 
 
             hidden_states = layer_outputs[0]
 
