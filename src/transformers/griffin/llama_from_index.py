@@ -678,7 +678,7 @@ class LlamaGriffinMLP(nn.Module):
         shape = (shape[1], shape[2]) 
         tensorinput = torch.zeros(shape).to(torch.int32).to("cpu") 
         
-        print("shape of indextensor is {}".format(indextensor.shape)) 
+        # print("shape of indextensor is {}".format(indextensor.shape)) 
         # row_indices, col_indices = indextensor[:, 0], indextensor[:, 1] 
 
         # tensorinput.index_put_((row_indices, col_indices), torch.tensor(1).to(torch.int32).to("cpu")) 
