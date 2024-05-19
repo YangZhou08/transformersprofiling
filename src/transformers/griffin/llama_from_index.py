@@ -960,12 +960,15 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
                 return_dict = True, 
             ) 
             hidden_states = outputs[0] 
+            for l in self.model.layers: 
+                l.mlp.pass_count = 0 
         
         # print(torch.allclose(outputnotused[0], aggregated_hidden_states)) 
         # print(torch.allclose(outputnotused[0], aggregated_hidden_states, atol = 1e-2)) 
         # print("shape of outputnotused[0] is {} shape of aggregated_hidden_states is {}".format(outputnotused[0].shape, aggregated_hidden_states.shape)) 
         # exit(0) 
         
+
         if self.config.pretraining_tp > 1:
             lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
             logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]
