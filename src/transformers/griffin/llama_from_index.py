@@ -684,10 +684,7 @@ class LlamaGriffinMLP(nn.Module):
         tensorinput.index_put_((row_indices, indextensor[0]), torch.tensor(1).to(torch.int32).to("cpu")) 
         
         assert tensorinput.shape[0] == 1 
-        if self.savingintermediatestates is not None: 
-            self.savingintermediatestates = torch.cat([self.savingintermediatestates, tensorinput], dim = 0) 
-        else: 
-            self.savingintermediatestates = tensorinput 
+        self.savingintermediatestates = tensorinput 
 
     def prepare_reduced_weights(self, topk_indices):
         assert topk_indices.shape[0] == 1 # Batch size 1
