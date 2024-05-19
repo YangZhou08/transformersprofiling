@@ -761,6 +761,7 @@ class LlamaGriffinMLP(nn.Module):
                     topk_weight, topk_indices = select_neurons(neuron_stat.norm(dim = 1), "topk", k) 
                     # print("topk_indices.shape {}".format(topk_indices.shape)) 
                     if self.config.selection_method == "griffin": 
+                        print("griffin prepare weights") 
                         self.prepare_reduced_weights(topk_indices) 
                     
                     if self.config.selection_method == "oracle": 
@@ -775,6 +776,7 @@ class LlamaGriffinMLP(nn.Module):
 
             elif self.pass_count == 1: 
                 if self.config.selection_method == "griffin": 
+                    print("running inside griffin") 
                     down_proj =self.down_proj_reduced(self.act_fn(self.gate_proj_reduced(x)) * self.up_proj_reduced(x)) 
                 else: 
                     assert seq_idx is not None 
@@ -912,32 +914,50 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
             # l.mlp.seqlenbyintermediate(l.mlp.savingintermediatestates, "intermediate_{}.png".format(j)) 
             # print("layer {} shape of seqlenbyintermediate {}".format(j, l.mlp.savingintermediatestates.shape)) 
         
-        past_key_values = None 
-        aggregated_hidden_states = None 
-        for i in range(input_ids.shape[1]): 
-            stepoutputs = self.model(
-                input_ids = input_ids[:, i].unsqueeze(1), 
-                attention_mask = None if attention_mask is None else attention_mask[:, : i + 1], 
-                # position_ids = position_ids, 
-                position_ids = None, 
-                past_key_values = past_key_values, 
-                inputs_embeds = inputs_embeds, 
-                # use_cache = use_cache, 
-                use_cache = True, 
-                output_attentions = output_attentions, 
-                output_hidden_states = output_hidden_states, 
-                return_dict = return_dict, 
-                seq_idx = i, 
+        if self.config.selection_mode != "griffin": 
+            past_key_values = None 
+            aggregated_hidden_states = None 
+            for i in range(input_ids.shape[1]): 
+                stepoutputs = self.model(
+                    input_ids = input_ids[:, i].unsqueeze(1), 
+                    attention_mask = None if attention_mask is None else attention_mask[:, : i + 1], 
+                    # position_ids = position_ids, 
+                    position_ids = None, 
+                    past_key_values = past_key_values, 
+                    inputs_embeds = inputs_embeds, 
+                    # use_cache = use_cache, 
+                    use_cache = True, 
+                    output_attentions = output_attentions, 
+                    output_hidden_states = output_hidden_states, 
+                    return_dict = return_dict, 
+                    seq_idx = i, 
+                ) 
+                if aggregated_hidden_states is None: 
+                    aggregated_hidden_states = stepoutputs[0] 
+                else: 
+                    aggregated_hidden_states = torch.cat([aggregated_hidden_states, stepoutputs[0]], dim = 1) 
+                past_key_values = stepoutputs.past_key_values 
+            for l in self.model.layers: 
+                l.mlp.pass_count = 0 
+            # outputs = outputnotused 
+            outputs = stepoutputs 
+        else: 
+            outputs = self.model(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                position_ids=position_ids,
+                # past_key_values=past_key_values,
+                past_key_values = None, 
+                inputs_embeds=inputs_embeds,
+                # use_cache=use_cache,
+                use_cache = False, 
+                # output_attentions=output_attentions,
+                output_attentions = False, 
+                # output_hidden_states=output_hidden_states,
+                output_hidden_states = False, 
+                # return_dict=return_dict, 
+                return_dict = True, 
             ) 
-            if aggregated_hidden_states is None: 
-                aggregated_hidden_states = stepoutputs[0] 
-            else: 
-                aggregated_hidden_states = torch.cat([aggregated_hidden_states, stepoutputs[0]], dim = 1) 
-            past_key_values = stepoutputs.past_key_values 
-        for l in self.model.layers: 
-            l.mlp.pass_count = 0 
-        # outputs = outputnotused 
-        outputs = stepoutputs 
         
         # print(torch.allclose(outputnotused[0], aggregated_hidden_states)) 
         # print(torch.allclose(outputnotused[0], aggregated_hidden_states, atol = 1e-2)) 
