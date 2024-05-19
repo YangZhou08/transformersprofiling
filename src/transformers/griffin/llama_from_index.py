@@ -759,14 +759,14 @@ class LlamaGriffinMLP(nn.Module):
                     # print("(int_states / int_states.norm(dim=-1).unsqueeze(-1)).shape {}".format((int_states / int_states.norm(dim=-1).unsqueeze(-1)).shape)) 
                     # print("neuron_stat.shape {}".format(neuron_stat.shape)) 
                     topk_weight, topk_indices = select_neurons(neuron_stat.norm(dim = 1), "topk", k) 
-                    print("topk_indices.shape {}".format(topk_indices.shape)) 
+                    # print("topk_indices.shape {}".format(topk_indices.shape)) 
                     if self.config.selection_method == "griffin": 
                         self.prepare_reduced_weights(topk_indices) 
                     
                     if self.config.selection_method == "oracle": 
-                        print("shape of neuron_stat is {}".format(neuron_stat.shape)) 
+                        # print("shape of neuron_stat is {}".format(neuron_stat.shape)) 
                         oweights, ooindices = select_neurons(neuron_stat, "topk", k) 
-                        print("shape of ooindices is {}".format(ooindices.shape)) 
+                        # print("shape of ooindices is {}".format(ooindices.shape)) 
                         self.getdense(ooindices, int_states.shape) 
                         
                     
@@ -782,7 +782,7 @@ class LlamaGriffinMLP(nn.Module):
                     # foundlandscapeidx = torch.nonzero(foundlandscape) 
                     # foundlandscapeidx = np.nonzero(foundlandscape.unsqueeze(0))[1].unsqueeze(0) 
                     foundlandscapeidx = (foundlandscape.unsqueeze(0) == 1).nonzero(as_tuple = True)[1].unsqueeze(0) 
-                    print("foundlandscapeidx shape {}".format(foundlandscapeidx.shape)) 
+                    # print("foundlandscapeidx shape {}".format(foundlandscapeidx.shape)) 
                     self.prepare_reduced_weights(foundlandscapeidx) 
                     down_proj = self.down_proj_reduced(self.act_fn(self.gate_proj_reduced(x)) * self.up_proj_reduced(x)) 
             else: 
@@ -907,8 +907,8 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
             return_dict = True, 
         ) 
         
-        for j, l in enumerate(self.model.layers): 
-            assert l.mlp.pass_count == 1 
+        # for j, l in enumerate(self.model.layers): 
+            # assert l.mlp.pass_count == 1 
             # l.mlp.seqlenbyintermediate(l.mlp.savingintermediatestates, "intermediate_{}.png".format(j)) 
             # print("layer {} shape of seqlenbyintermediate {}".format(j, l.mlp.savingintermediatestates.shape)) 
         
@@ -937,11 +937,12 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
         for l in self.model.layers: 
             l.mlp.pass_count = 0 
         # outputs = outputnotused 
+        outputs = stepoutputs 
         
-        print(torch.allclose(outputnotused[0], aggregated_hidden_states)) 
-        print(torch.allclose(outputnotused[0], aggregated_hidden_states, atol = 1e-2)) 
-        print("shape of outputnotused[0] is {} shape of aggregated_hidden_states is {}".format(outputnotused[0].shape, aggregated_hidden_states.shape)) 
-        exit(0) 
+        # print(torch.allclose(outputnotused[0], aggregated_hidden_states)) 
+        # print(torch.allclose(outputnotused[0], aggregated_hidden_states, atol = 1e-2)) 
+        # print("shape of outputnotused[0] is {} shape of aggregated_hidden_states is {}".format(outputnotused[0].shape, aggregated_hidden_states.shape)) 
+        # exit(0) 
         
 
         # hidden_states = outputs[0]
@@ -975,7 +976,7 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
             loss=loss,
             logits=logits,
             past_key_values=outputs.past_key_values,
-            hidden_states=outputs.hidden_states,
+            hidden_states=hidden_states,
             attentions=outputs.attentions,
         )
 
