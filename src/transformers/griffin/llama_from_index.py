@@ -766,9 +766,25 @@ class LlamaGriffinMLP(nn.Module):
                     
                     if self.config.selection_method == "oracle": 
                         # print("shape of neuron_stat is {}".format(neuron_stat.shape)) 
-                        oweights, ooindices = select_neurons(neuron_stat, "topk", k) 
+                        # oweights, ooindices = select_neurons(neuron_stat, "topk", k) 
                         # print("shape of ooindices is {}".format(ooindices.shape)) 
-                        self.getdense(ooindices, int_states.shape) 
+                        # self.getdense(ooindices, int_states.shape) 
+                        
+                        self.savingintermediatestates = None 
+                        for i in range(neuron_stat.shape[0]): 
+                            neuron_stat_i = neuron_stat[: i + 1, :] 
+                            neuron_stat_i = select_neurons(neuron_stat_i.norm(dim = 1), "topk", k) 
+                            if self.savingintermediatestates is None: 
+                                oweights, ooindices = select_neurons(neuron_stat_i, "topk", k) 
+                                tensorinput = torch.zeros((1, int_states.shape[2])).to(torch.int32).to(int_states.device) 
+                                tensorinput.index_put_((torch.zeros_like(ooindices), ooindices), torch.tensor(1).to(torch.int32).to(int_states.device)) 
+                                
+                                assert tensorinput.shape[0] == 1 
+                                if self.savingintermediatestates is not None: 
+                                    self.savingintermediatestates = torch.cat([self.savingintermediatestates, tensorinput], dim = 0) 
+                                else: 
+                                    self.savingintermediatestates = tensorinput 
+                        print("savingintermediatestates shape {}".format(self.savingintermediatestates.shape)) 
                         
                     
                 down_proj = self.down_proj(int_states) 
