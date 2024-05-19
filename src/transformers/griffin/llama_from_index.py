@@ -773,9 +773,9 @@ class LlamaGriffinMLP(nn.Module):
                         self.savingintermediatestates = None 
                         for i in range(neuron_stat.shape[0]): 
                             neuron_stat_i = neuron_stat[: i + 1, :] 
-                            neuron_stat_i = select_neurons(neuron_stat_i.norm(dim = 1), "topk", k) 
+                            # neuron_stat_i = select_neurons(neuron_stat_i.norm(dim = 1), "topk", k) 
                             
-                            oweights, ooindices = select_neurons(neuron_stat_i, "topk", k) 
+                            oweights, ooindices = select_neurons(neuron_stat_i.norm(dim = 1), "topk", k) 
                             tensorinput = torch.zeros((1, int_states.shape[2])).to(torch.int32).to(int_states.device) 
                             tensorinput.index_put_((torch.zeros_like(ooindices), ooindices), torch.tensor(1).to(torch.int32).to(int_states.device)) 
                             
