@@ -907,8 +907,9 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
             # print("layer {} shape of seqlenbyintermediate {}".format(j, l.mlp.savingintermediatestates.shape)) 
         
         past_key_values = None 
+        aggregated_hidden_states = None 
         for i in range(input_ids.shape[1]): 
-            outputs = self.model(
+            stepoutputs = self.model(
                 input_ids = input_ids[:, i].unsqueeze(1), 
                 attention_mask = None if attention_mask is None else attention_mask[:, : i + 1], 
                 # position_ids = position_ids, 
@@ -922,13 +923,20 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
                 return_dict = return_dict, 
                 seq_idx = i, 
             ) 
-            past_key_values = outputs.past_key_values 
+            if aggregated_hidden_states is None: 
+                aggregated_hidden_states = stepoutputs[0] 
+            else: 
+                aggregated_hidden_states = torch.cat([aggregated_hidden_states, stepoutputs[0]], dim = 1) 
+            past_key_values = stepoutputs.past_key_values 
         for l in self.model.layers: 
             l.mlp.pass_count = 0 
         # outputs = outputnotused 
         
+        exit(0) 
+        
 
-        hidden_states = outputs[0]
+        # hidden_states = outputs[0]
+        hidden_states = aggregated_hidden_states 
         if self.config.pretraining_tp > 1:
             lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
             logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]
