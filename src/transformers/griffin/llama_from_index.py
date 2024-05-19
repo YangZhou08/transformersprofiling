@@ -85,6 +85,8 @@ from transformers.models.llama.modeling_llama import LlamaRotaryEmbeddingqksep
 from matplotlib import colors 
 from matplotlib.colors import LinearSegmentedColormap 
 
+import matplotlib.pyplot as plt 
+
 # from transformers.generation.utils import GenerateOutput, GenerateDecoderOnlyOutput, GenerateNonBeamOutput, GenerateEncoderDecoderOutput 
 # from transformers.generation_utils import GenerationOutput, GenerateDecoderOnlyOutput, GenerateNonBeamOutput, GenerateEncoderDecoderOutput 
 import numpy as np 
@@ -674,6 +676,7 @@ class LlamaGriffinMLP(nn.Module):
         shape = (shape[1], shape[2]) 
         tensorinput = torch.zeros(shape).to(torch.int32).to("cpu") 
         
+        print("shape of indextensor is {}".format(indextensor.shape)) 
         row_indices, col_indices = indextensor[:, 0], indextensor[:, 1] 
         tensorinput.index_put_((row_indices, col_indices), torch.tensor(1).to(torch.int32).to("cpu")) 
         
@@ -760,7 +763,9 @@ class LlamaGriffinMLP(nn.Module):
                         self.prepare_reduced_weights(topk_indices) 
                     
                     if self.config.selection_method == "oracle": 
+                        print("shape of neuron_stat is {}".format(neuron_stat.shape)) 
                         oweights, ooindices = select_neurons(neuron_stat, "topk", k) 
+                        print("shape of ooindices is {}".format(ooindices.shape)) 
                         self.getdense(ooindices, x.shape) 
                         
                     
