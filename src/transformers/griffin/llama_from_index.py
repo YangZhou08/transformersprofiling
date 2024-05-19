@@ -939,7 +939,8 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
         # outputs = outputnotused 
         
         print(torch.allclose(outputnotused[0], aggregated_hidden_states)) 
-        print(torch.allclose(outputnotused[0], aggregated_hidden_states).all()) 
+        print(torch.allclose(outputnotused[0], aggregated_hidden_states, atol = 1e-2)) 
+        print("shape of outputnotused[0] is {} shape of aggregated_hidden_states is {}".format(outputnotused[0].shape, aggregated_hidden_states.shape)) 
         exit(0) 
         
 
