@@ -900,6 +900,7 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
         for j, l in enumerate(self.model.layers): 
             assert l.mlp.pass_count == 1 
             l.mlp.seqlenbyintermediate(l.mlp.savingintermediatestates, "intermediate_{}.png".format(j)) 
+            print("layer {} shape of seqlenbyintermediate {}".format(j, l.mlp.savingintermediatestates.shape)) 
         exit(0) 
         
         past_key_values = None 
