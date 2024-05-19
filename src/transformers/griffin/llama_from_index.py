@@ -677,8 +677,11 @@ class LlamaGriffinMLP(nn.Module):
         tensorinput = torch.zeros(shape).to(torch.int32).to("cpu") 
         
         print("shape of indextensor is {}".format(indextensor.shape)) 
-        row_indices, col_indices = indextensor[:, 0], indextensor[:, 1] 
-        tensorinput.index_put_((row_indices, col_indices), torch.tensor(1).to(torch.int32).to("cpu")) 
+        # row_indices, col_indices = indextensor[:, 0], indextensor[:, 1] 
+
+        # tensorinput.index_put_((row_indices, col_indices), torch.tensor(1).to(torch.int32).to("cpu")) 
+        row_indices = torch.arange(indextensor.shape[1]).unsqueeze(1).expand_as(indextensor) 
+        tensorinput.index_put_((row_indices, indextensor[0]), torch.tensor(1).to(torch.int32).to("cpu")) 
         
         assert tensorinput.shape[0] == 1 
         if self.savingintermediatestates is not None: 
