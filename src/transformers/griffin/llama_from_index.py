@@ -910,7 +910,7 @@ class LlamaForCausalLMSpecializedIndex(LlamaPreTrainedModel):
         for i in range(input_ids.shape[1]): 
             outputs = self.model(
                 input_ids = input_ids[:, i].unsqueeze(1), 
-                attention_mask = attention_mask[:, : i + 1], 
+                attention_mask = None if attention_mask is None else attention_mask[:, : i + 1], 
                 # position_ids = position_ids, 
                 position_ids = None, 
                 past_key_values = past_key_values, 
