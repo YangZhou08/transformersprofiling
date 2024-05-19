@@ -772,9 +772,8 @@ class LlamaGriffinMLP(nn.Module):
                         
                         self.savingintermediatestates = None 
                         print("neuron_stat shape {}".format(neuron_stat.shape)) 
-                        exit(0) 
-                        for i in range(neuron_stat.shape[0]): 
-                            neuron_stat_i = neuron_stat[: i + 1, :] 
+                        for i in range(neuron_stat.shape[1]): 
+                            neuron_stat_i = neuron_stat[:, : i + 1, :] 
                             # neuron_stat_i = select_neurons(neuron_stat_i.norm(dim = 1), "topk", k) 
                             
                             oweights, ooindices = select_neurons(neuron_stat_i.norm(dim = 1), "topk", k) 
