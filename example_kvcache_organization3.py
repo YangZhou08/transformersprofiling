@@ -133,6 +133,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         past_key_values = cache, # using large model's cache 
         use_cache = True, 
     ) 
+    attention_mask = torch.cat([attention_mask, torch.ones(1, 1).to(attention_mask.device)], dim = 1) 
     
     resample_count = 0
     accepted_count = 0
@@ -153,6 +154,8 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
 
         speculation_probs = []
         generated_ids = []
+        
+        disposableattentionmask = attention_mask.clone() 
 
         model.set_inference_mode("partial") 
         for _ in range(gamma):
@@ -160,7 +163,9 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
                 input_ids=pred_token_idx,
                 past_key_values=cache, 
                 use_cache=True,
+                attention_mask = disposableattentionmask, 
             ) 
+            disposableattentionmask = torch.cat([disposableattentionmask, torch.ones(1, 1).to(disposableattentionmask.device)], dim = 1) 
 
             probs = norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)
             pred_token_idx = sample(probs)
@@ -189,6 +194,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
                 input_ids=verify_tokens,
                 past_key_values=cache, 
                 use_cache=True,
+                attention_mask = disposableattentionmask, 
             ) 
         
         count = 0
@@ -241,12 +247,16 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
             for layer in cache: 
                 new_layer = [] 
                 for k, v in layer.items(): 
-                    new_layer.append(k[:, :-gamma+count, :].contiguous()) 
-                    new_layer.append(v[:, :-gamma+count, :].contiguous()) 
+                    new_layer.append(k[:, :-gamma+count-1, :].contiguous()) 
+                    new_layer.append(v[:, :-gamma+count-1, :].contiguous()) 
                 new_layer = tuple(new_layer) 
                 new_cache.append(new_layer) 
             new_cache = tuple(new_cache) 
             cache = new_cache 
+            
+            attention_mask = torch.cat([attention_mask, torch.ones(1, count).to(attention_mask.device)], dim = 1) 
+        else: 
+            attention_mask = torch.cat([attention_mask, torch.ones(1, gamma + 1).to(attention_mask.device)], dim = 1) 
         
     acceptance_rate = accepted_count / draft_count
     avg_tokens = accepted_count / draft_count * gamma
