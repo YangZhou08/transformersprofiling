@@ -50,7 +50,7 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 def spec_stream(pred_token_idx, tokenizer, color='blue'): 
     # print("pred_token_idx: ", pred_token_idx) 
-    pred_token_idx = pred_token_idx.squeeze(0) 
+    # pred_token_idx = pred_token_idx.squeeze(0) 
     decoded_token = tokenizer.decode(
             pred_token_idx,
             # skip_special_tokens=True,
@@ -180,7 +180,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         for layer in cache: 
             new_layer = [] 
             # print("len(layer), ", len(layer)) 
-            print("kv shape, ", layer[0].shape) 
+            # print("kv shape, ", layer[0].shape) 
             for kv in layer: 
                 new_layer.append(kv[:, :, :-gamma, :].contiguous()) 
                 # new_layer.append(v[:, :-gamma, :].contiguous()) 
