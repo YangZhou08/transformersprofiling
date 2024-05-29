@@ -312,6 +312,12 @@ def get_dataset(datasetname = None, tokenizer = None, max_length = None, limit =
 
 if __name__ == "__main__": 
     tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", trust_remote_code = True) 
+    if tokenizer.pad_token is not None: 
+        print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
+    else: 
+        tokenizer.pad_token = tokenizer.eos_token 
+        print("We now use eos_token as pad token") 
+    tokenizer.padding_side = "left" 
     model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models, device_map = torch_device, torch_dtype = torch.bfloat16) 
     
     schedule_k = [0.5 for _ in range(model.config.num_hidden_layers)] 
@@ -319,6 +325,8 @@ if __name__ == "__main__":
     model.config.selection_method = "topk" 
     
     model = get_llama_griffin(model, schedule_k, notcats = True) 
+    model.config.pad_token_id = tokenizer.pad_token_id 
+    model.eval() 
     
     datasetnew = get_dataset("c4", tokenizer, 256, 200) 
     
