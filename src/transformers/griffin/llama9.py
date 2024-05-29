@@ -888,7 +888,7 @@ class LlamaForCausalLM(LlamaPreTrainedModel):
     def set_inference_mode(self, mode): 
         assert mode in ["full", "partial"] 
         for layer in self.model.layers: 
-            layer.set_inference_mode(mode) 
+            layer.mlp.set_inference_mode(mode) 
 
 
     def forward(
