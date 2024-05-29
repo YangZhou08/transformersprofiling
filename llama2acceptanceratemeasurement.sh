@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the parameters
-model_name="meta-llama/Llama-2-7b-hf"
+model_name="meta-llama/Llama-2-7b-chat-hf"
 sparse_values=("0.25" "0.5" "0.75")
 datasets=("gsm8k" "c4")
 usegriffin_options=("true" "false")
