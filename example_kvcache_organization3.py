@@ -367,12 +367,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "Speculative Acceptance Rate") 
     parser.add_argument("--usegriffin", action = "store_true") 
     parser.add_argument("--datasetname", choices = ["c4", "gsm8k"], default = "gsm8k") 
+    parser.add_argument("--modelname", type = str, required = True) 
+    parser.add_argument("--sparse", type = float, default = 0.5) 
     
     args = parser.parse_args() 
     print(args) 
     
     # tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", trust_remote_code = True) 
-    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B", trust_remote_code = True) 
+    tokenizer = AutoTokenizer.from_pretrained(args.modelname) 
     if tokenizer.pad_token is not None: 
         print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
     else: 
@@ -380,9 +382,10 @@ if __name__ == "__main__":
         print("We now use eos_token as pad token") 
     tokenizer.padding_side = "left" 
     # model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models, device_map = torch_device, torch_dtype = torch.bfloat16) 
-    model = LlamaForCausalLM.from_pretrained("meta-llama/Meta-Llama-3-8B", cache_dir = dir_models, device_map = torch_device, torch_dtype = torch.bfloat16) 
+    model = LlamaForCausalLM.from_pretrained(args.modelname, cache_dir = dir_models, device_map = torch_device, torch_dtype = torch.bfloat16) 
     
-    schedule_k = [0.5 for _ in range(model.config.num_hidden_layers)] 
+    # schedule_k = [0.5 for _ in range(model.config.num_hidden_layers)] 
+    schedule_k = [args.sparse for _ in range(model.config.num_hidden_layers)] 
     model.config.mode = "gen"
     model.config.selection_method = "topk" 
     
@@ -450,7 +453,7 @@ if __name__ == "__main__":
                                                      top_k = -1, 
                                                      top_p = 0.9, 
                                                      temperature = 0.6, 
-                                                     verbose = True, 
+                                                     verbose = False, 
                                                      attention_mask = attention_mask, 
         ) 
     
