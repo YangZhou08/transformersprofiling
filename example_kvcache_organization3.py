@@ -131,13 +131,21 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
     cache = None 
     
     model.set_inference_mode("full") 
-    outputs = model(
-        input_ids = input_ids, 
-        attention_mask = attention_mask, 
-        past_key_values = cache, # using large model's cache 
-        use_cache = True, 
-    ) 
-    cache = outputs.past_key_values 
+    newinputids = input_ids 
+    n = 0 
+    while n < max_len: 
+        outputs = model(
+            input_ids = newinputids, 
+            # attention_mask = attention_mask, 
+            past_key_values = cache, # using large model's cache 
+            use_cache = True, 
+        ) 
+        cache = outputs.past_key_values 
+        newinputids = sample(norm_logits(outputs.logits[:, -1, :], temperature = temperature, top_k = top_k, top_p = top_p)) 
+        print(tokenizer.decode(newinputids[0]), end = " ") 
+        cache = outputs.past_key_values 
+        n += 1 
+    exit(0) 
     # attention_mask = torch.cat([attention_mask, torch.ones(1, 1).to(attention_mask.device)], dim = 1) 
     
     resample_count = 0
