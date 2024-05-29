@@ -361,6 +361,8 @@ if __name__ == "__main__":
         input_ids = batch["input_ids"].to(torch_device) 
         attention_mask = batch["attention_mask"].to(torch_device) 
         
+        print(tokenizer.decode(input_ids[0]), end = " ") 
+        
         acceptancer, draftcount = Vanilla_Spec_cache(tokenizer, 
                                                      model, 
                                                      None, 
