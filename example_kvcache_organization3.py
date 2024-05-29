@@ -130,7 +130,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
     # reset cache 
     cache = None 
     
-    model.set_inference_mode("full") 
+    # model.set_inference_mode("full") 
     newinputids = input_ids 
     n = 0 
     while n < max_len: 
