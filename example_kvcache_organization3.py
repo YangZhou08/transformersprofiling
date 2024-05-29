@@ -305,8 +305,52 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
     # return acceptance_rate 
     return acceptance_rate, draft_count 
 
-def get_dataset(datasetname = None, tokenizer = None, max_length = None, limit = None): 
-    
+def get_dataset(datasetname, max_length): 
+    if datasetname == "c4llm_synthesized": 
+        # datasetnew = load_dataset('json', data_files = dfiles, split = "train[:10000]") 
+        dfiles = [] 
+        if "lovelace" in hostname: 
+            # filename = "c4synthesized_file1_kernel7_0.json" 
+            filename = "c4synthesized_file1_1_0.json" 
+            # dfiles.append(dir_c4llmsynthesized + "{}/".format("tinyllama") + filename) 
+            dfiles.append(dir_c4llmsynthesized + filename) 
+            datasetnew = load_dataset("json", data_files = dfiles, split = "train[:100]") 
+        else: 
+            filename = "c4synthesized_file1_kernel7_{}_combined.json".format(7) 
+            dfiles.append(dir_c4llmsynthesized + "{}_topk{}/".format("tinyllama", "na") + filename) 
+            datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
+    elif datasetname == "c4": 
+        dfiles = [] 
+        # filename = "c4_file1.json" 
+        # filename = "c4_file15.json" 
+        filename = "c4_file150.json" 
+        dfiles.append(dir_c4 + filename) 
+        datasetnew = load_dataset("json", data_files = dfiles, split = "train[:100]") 
+    elif datasetname == "pg19": 
+        datasetnew = load_dataset('emozilla/pg19', split = "train[:100]") 
+    elif datasetname == "cnn_dailymail": # we need to use special processing for this dataset 
+        datasetnew = load_dataset("cnn_dailymail", "3.0.0", split = "test[:10000]") 
+    elif datasetname == "openwebtext": 
+        datasetnew = load_dataset("Skylion007/openwebtext", split = "train[:10000]") 
+    elif datasetname == "xsum": # we need to use special processing for this dataset 
+        datasetnew = load_dataset("xsum", split = "test[:10000]") 
+    elif datasetname == "gsm8k": 
+        datasetnew = load_dataset("gsm8k", "main", split = "train[:10000]") 
+    else: 
+        raise ValueError("dataset_name is not recognized") 
+
+    def encode_with_truncationspecialized(examples): 
+        # tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = max_length, 
+        #                 return_attention_mask = True, return_tensors = "pt", truncation = True, 
+        #                 add_special_tokens = True) 
+        tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 260, 
+                                 return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                                 add_special_tokens = True) 
+        newdictionary = {} 
+        newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
+        newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
+        return newdictionary 
+
     def encode_with_truncation(examples): 
         # tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = 260, 
         #                  return_attention_mask = True, return_tensors = "pt", truncation = True, 
@@ -319,51 +363,60 @@ def get_dataset(datasetname = None, tokenizer = None, max_length = None, limit =
         newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
         return newdictionary 
     
-    def encode_with_truncationspecialized(examples): 
-        # tokdictionary = tokenizer(examples['text'][100000 : 100000 + 3000], padding = "max_length", max_length = max_length, 
-        #                           eturn_attention_mask = True, return_tensors = "pt", truncation = True, 
-        #                           add_special_tokens = True) 
-        tokdictionary = tokenizer(examples['text'][50000 : 50000 + 3000], padding = "max_length", max_length = max_length, 
-                                  return_attention_mask = True, return_tensors = "pt", truncation = True, 
-                                  add_special_tokens = True) 
-        # tokdictionary = tokenizer(examples['text'], padding = "max_length", max_length = 260, 
-        #                          return_attention_mask = True, return_tensors = "pt", truncation = True, 
-        #                          add_special_tokens = True) 
+    def encode_text_summary(examples): # cnn_dailymail uses "article" 
+        tokdictionary = tokenizer(examples['article'], padding = "max_length", max_length = max_length, 
+                                return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                                add_special_tokens = True) 
         newdictionary = {} 
         newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
         newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
         return newdictionary 
     
-    if datasetname == "c4": 
-        dfiles = [] 
-        # filename = "c4_file1.json" 
-        filename = "c4_file15.json" 
-        dfiles.append(dir_c4 + filename) 
-        datasetnew = load_dataset("json", data_files = dfiles, split = "train[:{}]".format(limit)) 
-        # datasetnew = load_dataset("json", data_files = dfiles, split = "train[:10000]") 
-        
-        datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
-        datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
-    elif datasetname == "pg19": 
-        # TODO: loading another dataset 
-        # datasetnew = load_dataset('emozilla/pg19', split = "test") 
-        datasetnew = load_dataset('emozilla/pg19', split = "train[:{}]".format(limit)) 
-        # datasetnew = load_dataset('emozilla/pg19', split = "train[:1000]") 
-        
-        datasetnew = datasetnew.map(encode_with_truncationspecialized, num_proc = 8) 
-        datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
-    elif datasetname == "openwebtext": 
-        # datasetnew = load_dataset("Skylion007/openwebtext", split = "train[:10000]") 
-        datasetnew = load_dataset("Skylion007/openwebtext", split = "train[:{}]".format(limit)) 
-        
-        datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
-        datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
+    def encode_text_summary_xsum(examples): # xsum uses "document" 
+        tokdictionary = tokenizer(examples["document"], padding = "max_length", max_length = max_length, 
+                                return_attention_mask = True, return_tensors = "pt", truncation = True, 
+                                add_special_tokens = True) 
+        newdictionary = {} 
+        newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
+        newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
+        return newdictionary 
     
+    def encode_text_summary_gsm8k(examples): 
+        # tokdictionary = tokenizer( 
+        tokdictionary = tokenizer("Question: " + examples["question"] + "\n " + "Answer: " + examples["answer"], padding = "max_length", 
+                                  max_length = max_length, return_attention_mask = True, return_tensors = "pt", 
+                                  add_special_tokens = False) 
+        newdictionary = {} 
+        newdictionary['input_ids'] = tokdictionary['input_ids'].squeeze(0) 
+        newdictionary['attention_mask'] = tokdictionary['attention_mask'].squeeze(0) 
+        return newdictionary 
+
+    def unflatten_list_func(examples): 
+        examples['input_ids'] = examples['input_ids'].squeeze(0) 
+        examples['attention_mask'] = examples['attention_mask'].squeeze(0) 
+
+    if datasetname == "pg19": 
+        datasetnew = datasetnew.map(encode_with_truncationspecialized, num_proc = 8) 
+        datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
+    elif datasetname == "xsum": 
+        datasetnew = datasetnew.map(encode_text_summary_xsum, num_proc = 8) 
+        datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
+    elif datasetname == "cnn_dailymail": 
+        datasetnew = datasetnew.map(encode_text_summary, num_proc = 8) 
+        datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
+    elif datasetname == "gsm8k": 
+        datasetnew = datasetnew.map(encode_text_summary_gsm8k, num_proc = 8) 
+        datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask"]) 
+    else: 
+        datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
+        datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
+
     return datasetnew 
 
 if __name__ == "__main__": 
     parser = argparse.ArgumentParser(description = "Speculative Acceptance Rate") 
     parser.add_argument("--usegriffin", action = "store_true") 
+    parser.add_argument("--datasetname", choices = ["c4", "gsm8k"], default = "gsm8k") 
     
     args = parser.parse_args() 
     print(args) 
@@ -388,8 +441,8 @@ if __name__ == "__main__":
     model.eval() 
     
     datasetnew = get_dataset("c4", tokenizer, 128, 1000) 
-    
-    dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 1, shuffle = False) 
+    if args.datasetname == "c4": 
+        datasetnew = torch.utils.data.DataLoader(datasetnew, batch_size = 1, shuffle = False) 
     
     globalacceptancerate = 0 
     globaldraftcount = 0 
@@ -397,9 +450,32 @@ if __name__ == "__main__":
     globalnumverifications = 0 
     
     totalinstances = 0 
-    for batch in tqdm(dataloader): 
-        input_ids = batch["input_ids"].to(torch_device) 
-        attention_mask = batch["attention_mask"].to(torch_device) 
+    prefixi = None 
+    for i, batch in enumerate(tqdm(datasetnew)): 
+        if args.datasetname == "gsm8k": 
+            if i < 10: 
+                continue 
+            if prefixi == None: 
+                for j in range(5): 
+                    # input_ids = datasetone[j]["question"] 
+                    print("Question: " + datasetnew[j]["question"] + "\n" + "Answer: " + datasetnew[j]["answer"]) 
+                    tokenizedinput = tokenizer.encode("Question: " + datasetnew[j]["question"] + "\n" + "Answer: " + datasetnew[j]["answer"] + "\n\n", return_tensors = "pt", add_special_tokens = False) 
+                    if input_ids == None: 
+                        input_ids = tokenizedinput 
+                    else: 
+                        input_ids = torch.cat((input_ids, tokenizedinput), dim = -1) 
+                    # tokenizedinput = tokenizer.encode(datasetone[j]["answer"], return_tensors = "pt", add_special_tokens = False) 
+                    # input_ids = torch.cat((input_ids, tokenizedinput), dim = -1) 
+                    print(input_ids) 
+                    print(input_ids.shape) 
+            question_input = tokenizer.encode("Question: " + datasetnew[i]["question"] + "\n" + "Answer: ", return_tensors = "pt", add_special_tokens = False) 
+            print(question_input) 
+            input_ids = torch.cat((prefixi, question_input), dim = -1) 
+            print(tokenizer.decode(input_ids[0])) 
+            attention_mask = None 
+        else: 
+            input_ids = batch["input_ids"].to(torch_device) 
+            attention_mask = batch["attention_mask"].to(torch_device) 
         if attention_mask[0][0] == 0: 
             continue 
         
@@ -421,6 +497,7 @@ if __name__ == "__main__":
                                                      verbose = True, 
                                                      attention_mask = attention_mask, 
         ) 
+        break 
     
         globalacceptancerate += (acceptancer * draftcount) 
         globaldraftcount += draftcount 
