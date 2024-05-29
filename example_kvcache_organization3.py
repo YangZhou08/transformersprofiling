@@ -362,6 +362,12 @@ def get_dataset(datasetname = None, tokenizer = None, max_length = None, limit =
     return datasetnew 
 
 if __name__ == "__main__": 
+    parser = argparse.ArgumentParser(description = "Speculative Acceptance Rate") 
+    parser.add_argument("--usegriffin", action = "store_true") 
+    
+    args = parser.parse_args() 
+    print(args) 
+    
     # tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", trust_remote_code = True) 
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B", trust_remote_code = True) 
     if tokenizer.pad_token is not None: 
@@ -377,7 +383,7 @@ if __name__ == "__main__":
     model.config.mode = "gen"
     model.config.selection_method = "topk" 
     
-    model = get_llama_griffin(model, schedule_k, notcats = True) 
+    model = get_llama_griffin(model, schedule_k, notcats = args.usegriffin) 
     model.config.pad_token_id = tokenizer.pad_token_id 
     model.eval() 
     
