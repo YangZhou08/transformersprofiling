@@ -179,10 +179,11 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         new_cache = [] 
         for layer in cache: 
             new_layer = [] 
-            print("len(layer), ", len(layer)) 
-            for k, v in layer: 
-                new_layer.append(k[:, :-gamma, :].contiguous()) 
-                new_layer.append(v[:, :-gamma, :].contiguous()) 
+            # print("len(layer), ", len(layer)) 
+            print("kv shape, ", layer[0].shape) 
+            for kv in layer: 
+                new_layer.append(kv[:, :-gamma, :].contiguous()) 
+                # new_layer.append(v[:, :-gamma, :].contiguous()) 
             new_layer = tuple(new_layer) 
             new_cache.append(new_layer) 
         new_cache = tuple(new_cache) 
