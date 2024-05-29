@@ -51,6 +51,8 @@ torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 def spec_stream(pred_token_idx, tokenizer, color='blue'): 
     # print("pred_token_idx: ", pred_token_idx) 
     # pred_token_idx = pred_token_idx.squeeze(0) 
+    if len(pred_token_idx.shape) > 1: 
+        pred_token_idx = pred_token_idx.squeeze(0) 
     decoded_token = tokenizer.decode(
             pred_token_idx,
             # skip_special_tokens=True,
