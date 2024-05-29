@@ -352,7 +352,7 @@ if __name__ == "__main__":
     model.config.mode = "gen"
     model.config.selection_method = "topk" 
     
-    model = get_llama_griffin(model, schedule_k, notcats = True) 
+    model = get_llama_griffin(model, schedule_k, notcats = False) 
     model.config.pad_token_id = tokenizer.pad_token_id 
     model.eval() 
     
