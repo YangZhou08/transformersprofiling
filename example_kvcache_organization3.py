@@ -442,7 +442,7 @@ if __name__ == "__main__":
         if totalinstances > 100: 
             break 
         
-        print(tokenizer.decode(input_ids[0]), end = " ") 
+        # print(tokenizer.decode(input_ids[0]), end = " ") 
         
         acceptancer, draftcount = Vanilla_Spec_cache(tokenizer, 
                                                      model, 
