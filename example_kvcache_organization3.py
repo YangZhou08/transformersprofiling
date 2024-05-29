@@ -412,7 +412,7 @@ if __name__ == "__main__":
             if prefixi == None: 
                 for j in range(5): 
                     # input_ids = datasetone[j]["question"] 
-                    print("Question: " + datasetnew[j]["question"] + "\n" + "Answer: " + datasetnew[j]["answer"]) 
+                    # print("Question: " + datasetnew[j]["question"] + "\n" + "Answer: " + datasetnew[j]["answer"]) 
                     tokenizedinput = tokenizer.encode("Question: " + datasetnew[j]["question"] + "\n" + "Answer: " + datasetnew[j]["answer"] + "\n\n", return_tensors = "pt", add_special_tokens = False) 
                     if prefixi == None: 
                         prefixi = tokenizedinput 
@@ -421,13 +421,13 @@ if __name__ == "__main__":
                         prefixi = torch.cat((prefixi, tokenizedinput), dim = -1) 
                     # tokenizedinput = tokenizer.encode(datasetone[j]["answer"], return_tensors = "pt", add_special_tokens = False) 
                     # input_ids = torch.cat((input_ids, tokenizedinput), dim = -1) 
-                    print(prefixi) 
-                    print(prefixi.shape) 
+                    # print(prefixi) 
+                    # print(prefixi.shape) 
             question_input = tokenizer.encode("Question: " + datasetnew[i]["question"] + "\n" + "Answer: ", return_tensors = "pt", add_special_tokens = False) 
-            print(question_input) 
+            # print(question_input) 
             input_ids = torch.cat((prefixi, question_input), dim = -1) 
             input_ids = input_ids.to(torch_device) 
-            print(tokenizer.decode(input_ids[0])) 
+            # print(tokenizer.decode(input_ids[0])) 
             attention_mask = torch.ones_like(input_ids) 
         else: 
             input_ids = batch["input_ids"].to(torch_device) 
@@ -453,7 +453,6 @@ if __name__ == "__main__":
                                                      verbose = True, 
                                                      attention_mask = attention_mask, 
         ) 
-        break 
     
         globalacceptancerate += (acceptancer * draftcount) 
         globaldraftcount += draftcount 
