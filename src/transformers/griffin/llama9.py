@@ -257,7 +257,11 @@ class GriffinLlamaMLP2(nn.Module):
         self.inference_mode = "full"
         self.neuron_stat: torch.Tensor = None
         assert self.inference_mode in ["full", "partial"]
-        assert self.mode in ['gen', 'class']
+        assert self.mode in ['gen', 'class'] 
+    
+    def set_inference_mode(self, mode): 
+        assert mode in ["full", "partial"] 
+        self.inference_mode = mode 
 
 
     def prepare_reduced_weights(self, topk_indices):
