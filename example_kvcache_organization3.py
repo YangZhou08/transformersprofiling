@@ -348,14 +348,16 @@ def get_dataset(datasetname = None, tokenizer = None, max_length = None, limit =
     return datasetnew 
 
 if __name__ == "__main__": 
-    tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", trust_remote_code = True) 
-    if tokenizer.pad_token is not None: 
-        print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
-    else: 
-        tokenizer.pad_token = tokenizer.eos_token 
-        print("We now use eos_token as pad token") 
-    tokenizer.padding_side = "left" 
-    model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models, device_map = torch_device, torch_dtype = torch.bfloat16) 
+    # tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", trust_remote_code = True) 
+    tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B", trust_remote_code = True) 
+    # if tokenizer.pad_token is not None: 
+    #     print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
+    # else: 
+    #     tokenizer.pad_token = tokenizer.eos_token 
+    #     print("We now use eos_token as pad token") 
+    # tokenizer.padding_side = "left" 
+    # model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir = dir_models, device_map = torch_device, torch_dtype = torch.bfloat16) 
+    model = LlamaForCausalLM.from_pretrained("meta-llama/Meta-Llama-3-8B", cache_dir = dir_models, device_map = torch_device, torch_dtype = torch.bfloat16) 
     
     schedule_k = [0.5 for _ in range(model.config.num_hidden_layers)] 
     model.config.mode = "gen"
