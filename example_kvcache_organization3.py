@@ -122,7 +122,7 @@ def sample(probs : torch.Tensor, num_samples: int = 1, random_seed = None):
     return idx_next 
 
 @torch.inference_mode() 
-def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 256, top_k = -1, top_p = 0.9, temperature = 0.6, verbose = False, file_path = None): 
+def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 256, top_k = -1, top_p = 0.9, temperature = 0.6, verbose = False, file_path = None, attention_mask = None): 
     # reset cache 
     cache = None 
     
