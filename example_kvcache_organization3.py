@@ -129,6 +129,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
     model.set_inference_mode("full") 
     outputs = model(
         input_ids = input_ids, 
+        attention_mask = attention_mask, 
         past_key_values = cache, # using large model's cache 
         use_cache = True, 
     ) 
