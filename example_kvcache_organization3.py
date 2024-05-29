@@ -262,6 +262,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
                 for kv in layer: 
                     new_layer.append(kv[:, :, :-(gamma - count), :].contiguous()) 
                     # new_layer.append(v[:, :-gamma+count-1, :].contiguous()) 
+                assert new_layer[0].shape[2] == input_ids.shape[1] + n 
                 new_layer = tuple(new_layer) 
                 new_cache.append(new_layer) 
             new_cache = tuple(new_cache) 
