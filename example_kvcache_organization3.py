@@ -349,7 +349,7 @@ def get_dataset(datasetname = None, tokenizer = None, max_length = None, limit =
 
 if __name__ == "__main__": 
     # tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", trust_remote_code = True) 
-    tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B", trust_remote_code = True) 
+    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B", trust_remote_code = True) 
     # if tokenizer.pad_token is not None: 
     #     print("tokenizer has pad token {}".format(tokenizer.pad_token)) 
     # else: 
