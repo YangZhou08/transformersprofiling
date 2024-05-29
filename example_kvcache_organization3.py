@@ -271,7 +271,8 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
     if verbose:
         print(f"accepted rate {acceptance_rate}, avg generated tokens {avg_tokens}")
 
-    return acceptance_rate 
+    # return acceptance_rate 
+    return acceptance_rate, draft_count 
 
 def get_dataset(datasetname = None, tokenizer = None, max_length = None, limit = None): 
     
