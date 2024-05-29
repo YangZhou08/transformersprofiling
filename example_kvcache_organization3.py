@@ -426,6 +426,7 @@ if __name__ == "__main__":
             question_input = tokenizer.encode("Question: " + datasetnew[i]["question"] + "\n" + "Answer: ", return_tensors = "pt", add_special_tokens = False) 
             print(question_input) 
             input_ids = torch.cat((prefixi, question_input), dim = -1) 
+            input_ids = input_ids.to(torch_device) 
             print(tokenizer.decode(input_ids[0])) 
             attention_mask = torch.ones_like(input_ids) 
         else: 
