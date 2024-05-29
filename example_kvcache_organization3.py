@@ -126,12 +126,16 @@ def sample(probs : torch.Tensor, num_samples: int = 1, random_seed = None):
         # raise RuntimeError 
     return idx_next 
 
+def set_inference_mode(model, mode): 
+    for layer in model.model.layers: 
+        layer.mlp.set_inference_mode(mode) 
+
 @torch.inference_mode() 
 def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 256, top_k = -1, top_p = 0.9, temperature = 0.6, verbose = False, file_path = None, attention_mask = None): 
     # reset cache 
     cache = None 
     
-    model.set_inference_mode("full") 
+    set_inference_mode(model, "full") 
     # newinputids = input_ids 
     n = 0 
     '''
@@ -180,7 +184,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         
         # disposableattentionmask = attention_mask.clone() 
 
-        model.set_inference_mode("partial") 
+        set_inference_mode(model, "partial") 
         for _ in range(gamma):
             outputs = model(
                 input_ids=pred_token_idx,
@@ -215,7 +219,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         verify_tokens = torch.cat([next_token, torch.LongTensor([generated_ids]).to(model.device)], dim = 1) 
         # print("verify_tokens shape: ", verify_tokens.shape) 
         
-        model.set_inference_mode("full") 
+        set_inference_mode(model, "full") 
         with torch.no_grad():
             outputs = model(
                 input_ids=verify_tokens,
