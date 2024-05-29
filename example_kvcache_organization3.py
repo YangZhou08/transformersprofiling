@@ -427,7 +427,7 @@ if __name__ == "__main__":
             print(question_input) 
             input_ids = torch.cat((prefixi, question_input), dim = -1) 
             print(tokenizer.decode(input_ids[0])) 
-            attention_mask = None 
+            attention_mask = torch.ones_like(input_ids) 
         else: 
             input_ids = batch["input_ids"].to(torch_device) 
             attention_mask = batch["attention_mask"].to(torch_device) 
