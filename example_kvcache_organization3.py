@@ -381,7 +381,7 @@ if __name__ == "__main__":
     model.config.pad_token_id = tokenizer.pad_token_id 
     model.eval() 
     
-    datasetnew = get_dataset("c4", tokenizer, 64, 200) 
+    datasetnew = get_dataset("c4", tokenizer, 256, 50) 
     
     dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 1, shuffle = False) 
     
