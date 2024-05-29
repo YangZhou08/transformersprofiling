@@ -400,7 +400,7 @@ if __name__ == "__main__":
                                                      model, 
                                                      None, 
                                                      input_ids, 
-                                                     gamma = 4, 
+                                                     gamma = 1, 
                                                      max_len = 256, 
                                                      top_k = -1, 
                                                      top_p = 0.9, 
