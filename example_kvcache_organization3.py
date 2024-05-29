@@ -194,7 +194,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         
         # verification
         verify_tokens = torch.cat([next_token, torch.LongTensor([generated_ids]).to(model.device)], dim = 1) 
-        print("verify_tokens shape: ", verify_tokens.shape) 
+        # print("verify_tokens shape: ", verify_tokens.shape) 
         
         model.set_inference_mode("full") 
         with torch.no_grad():
@@ -233,8 +233,8 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
                 resample_count += 1
                 n += 1
                 # print("shape of verify_prob {} shape of speculation_prob {}".format(verify_prob.shape, speculation_prob.shape)) 
-                verify_prob = verify_prob.unsqueeze(0) 
-                speculation_prob = speculation_prob.unsqueeze(0) 
+                # verify_prob = verify_prob.unsqueeze(0) 
+                # speculation_prob = speculation_prob.unsqueeze(0) 
                 pred_token_idx = sample(max_fn(verify_prob-speculation_prob))
                 if verbose:
                     spec_stream(pred_token_idx, tokenizer, 'red')
@@ -262,7 +262,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
                 for kv in layer: 
                     new_layer.append(kv[:, :, :-(gamma - count), :].contiguous()) 
                     # new_layer.append(v[:, :-gamma+count-1, :].contiguous()) 
-                print("length of kv cache {} count {} expected {}".format(new_layer[0].shape[2], count, input_ids.shape[1] + n - 1)) 
+                print("length of kv cache {} count {} expected {}".format(new_layer[0].shape[2], count, input_ids.shape[1] + n)) 
                 assert new_layer[0].shape[2] == input_ids.shape[1] + n 
                 new_layer = tuple(new_layer) 
                 new_cache.append(new_layer) 
@@ -270,7 +270,8 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
             cache = new_cache 
         else: 
             print("length of kv cache: ", new_layer[0].shape[2]) 
-            assert new_layer[0].shape[2] == input_ids.shape[1] + n 
+            # assert new_layer[0].shape[2] == input_ids.shape[1] + n 
+            assert cache[0][0].shape[2] == input_ids.shape[1] + n 
         
     acceptance_rate = accepted_count / draft_count
     avg_tokens = accepted_count / draft_count * gamma
