@@ -131,9 +131,10 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
     # reset cache 
     cache = None 
     
-    # model.set_inference_mode("full") 
-    newinputids = input_ids 
+    model.set_inference_mode("full") 
+    # newinputids = input_ids 
     n = 0 
+    '''
     while n < max_len: 
         outputs = model(
             input_ids = newinputids, 
@@ -147,6 +148,14 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         cache = outputs.past_key_values 
         n += 1 
     exit(0) 
+    ''' 
+    outputs = model(
+        input_ids = input_ids, 
+        attention_mask = attention_mask, 
+        past_key_values = cache, # using large model's cache 
+        use_cache = True, 
+    ) 
+    cache = outputs.past_key_values 
     # attention_mask = torch.cat([attention_mask, torch.ones(1, 1).to(attention_mask.device)], dim = 1) 
     
     resample_count = 0
@@ -392,7 +401,7 @@ if __name__ == "__main__":
                                                      top_k = -1, 
                                                      top_p = 0.9, 
                                                      temperature = 0.6, 
-                                                     verbose = False, 
+                                                     verbose = True, 
                                                      attention_mask = attention_mask, 
         ) 
     
