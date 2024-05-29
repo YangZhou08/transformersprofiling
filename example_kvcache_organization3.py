@@ -393,6 +393,7 @@ if __name__ == "__main__":
     if args.datasetname == "c4": 
         datasetnew = get_dataset("c4", tokenizer, 128, 1000) 
     else: 
+        datasetnew = get_dataset("gsm8k", tokenizer, 128, 500) 
         
     if args.datasetname == "c4": 
         datasetnew = torch.utils.data.DataLoader(datasetnew, batch_size = 1, shuffle = False) 
