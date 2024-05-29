@@ -228,6 +228,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
             else:
                 resample_count += 1
                 n += 1
+                print("shape of verify_prob {} shape of speculation_prob {}".format(verify_prob.shape, speculation_prob.shape)) 
                 pred_token_idx = sample(max_fn(verify_prob-speculation_prob))
                 if verbose:
                     spec_stream(pred_token_idx, tokenizer, 'red')
