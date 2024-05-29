@@ -179,7 +179,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         new_cache = [] 
         for layer in cache: 
             new_layer = [] 
-            for k, v in layer.items(): 
+            for k, v in layer: 
                 new_layer.append(k[:, :-gamma, :].contiguous()) 
                 new_layer.append(v[:, :-gamma, :].contiguous()) 
             new_layer = tuple(new_layer) 
@@ -249,7 +249,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
             new_cache = [] 
             for layer in cache: 
                 new_layer = [] 
-                for k, v in layer.items(): 
+                for k, v in layer: 
                     new_layer.append(k[:, :-gamma+count-1, :].contiguous()) 
                     new_layer.append(v[:, :-gamma+count-1, :].contiguous()) 
                 new_layer = tuple(new_layer) 
