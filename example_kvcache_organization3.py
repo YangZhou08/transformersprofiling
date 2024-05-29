@@ -213,6 +213,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         for i in range(gamma + 1):
             assert outputs.logits.shape[1] == gamma + 1
             verify_probs.append(norm_logits(outputs.logits[:, i, :], temperature=temperature ,top_k=top_k, top_p=top_p)[0]) 
+            print(tokenizer.decode(sample(verify_probs[-1])), end = " ") 
         
         for i, speculation_prob, verify_prob in zip(generated_ids, speculation_probs, verify_probs[:-1]):
             r = torch.rand(1, device = model.device) 
@@ -263,14 +264,14 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
                 for kv in layer: 
                     new_layer.append(kv[:, :, :-(gamma - count), :].contiguous()) 
                     # new_layer.append(v[:, :-gamma+count-1, :].contiguous()) 
-                print("length of kv cache {} count {} expected {}".format(new_layer[0].shape[2], count, input_ids.shape[1] + n)) 
+                # print("length of kv cache {} count {} expected {}".format(new_layer[0].shape[2], count, input_ids.shape[1] + n)) 
                 assert new_layer[0].shape[2] == input_ids.shape[1] + n 
                 new_layer = tuple(new_layer) 
                 new_cache.append(new_layer) 
             new_cache = tuple(new_cache) 
             cache = new_cache 
         else: 
-            print("length of kv cache: ", new_layer[0].shape[2]) 
+            # print("length of kv cache: ", new_layer[0].shape[2]) 
             # assert new_layer[0].shape[2] == input_ids.shape[1] + n 
             assert cache[0][0].shape[2] == input_ids.shape[1] + n 
         
@@ -380,7 +381,7 @@ if __name__ == "__main__":
                                                      top_k = -1, 
                                                      top_p = 0.9, 
                                                      temperature = 0.6, 
-                                                     verbose = True, 
+                                                     verbose = False, 
                                                      attention_mask = attention_mask, 
         ) 
     
