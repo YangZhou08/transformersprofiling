@@ -133,6 +133,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         past_key_values = cache, # using large model's cache 
         use_cache = True, 
     ) 
+    cache = outputs.past_key_values 
     # attention_mask = torch.cat([attention_mask, torch.ones(1, 1).to(attention_mask.device)], dim = 1) 
     
     resample_count = 0
@@ -165,6 +166,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
                 use_cache=True,
                 # attention_mask = disposableattentionmask, 
             ) 
+            cache = outputs.past_key_values 
             # disposableattentionmask = torch.cat([disposableattentionmask, torch.ones(1, 1).to(disposableattentionmask.device)], dim = 1) 
 
             probs = norm_logits(outputs.logits[:,-1,:], temperature=temperature ,top_k=top_k, top_p=top_p)
@@ -196,6 +198,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
                 use_cache=True,
                 # attention_mask = disposableattentionmask, 
             ) 
+        cache = outputs.past_key_values 
         
         count = 0
         verify_probs = []
