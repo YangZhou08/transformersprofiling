@@ -194,6 +194,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         
         # verification
         verify_tokens = torch.cat([next_token, torch.LongTensor([generated_ids]).to(model.device)], dim = 1) 
+        print("verify_tokens shape: ", verify_tokens.shape) 
         
         model.set_inference_mode("full") 
         with torch.no_grad():
