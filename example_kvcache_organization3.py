@@ -414,14 +414,15 @@ if __name__ == "__main__":
                     # input_ids = datasetone[j]["question"] 
                     print("Question: " + datasetnew[j]["question"] + "\n" + "Answer: " + datasetnew[j]["answer"]) 
                     tokenizedinput = tokenizer.encode("Question: " + datasetnew[j]["question"] + "\n" + "Answer: " + datasetnew[j]["answer"] + "\n\n", return_tensors = "pt", add_special_tokens = False) 
-                    if input_ids == None: 
-                        input_ids = tokenizedinput 
+                    if prefixi == None: 
+                        prefixi = tokenizedinput 
                     else: 
-                        input_ids = torch.cat((input_ids, tokenizedinput), dim = -1) 
+                        # input_ids = torch.cat((input_ids, tokenizedinput), dim = -1) 
+                        prefixi = torch.cat((prefixi, tokenizedinput), dim = -1) 
                     # tokenizedinput = tokenizer.encode(datasetone[j]["answer"], return_tensors = "pt", add_special_tokens = False) 
                     # input_ids = torch.cat((input_ids, tokenizedinput), dim = -1) 
-                    print(input_ids) 
-                    print(input_ids.shape) 
+                    print(prefixi) 
+                    print(prefixi.shape) 
             question_input = tokenizer.encode("Question: " + datasetnew[i]["question"] + "\n" + "Answer: ", return_tensors = "pt", add_special_tokens = False) 
             print(question_input) 
             input_ids = torch.cat((prefixi, question_input), dim = -1) 
