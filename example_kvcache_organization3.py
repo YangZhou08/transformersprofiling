@@ -381,7 +381,7 @@ if __name__ == "__main__":
     model.config.pad_token_id = tokenizer.pad_token_id 
     model.eval() 
     
-    datasetnew = get_dataset("c4", tokenizer, 256, 50) 
+    datasetnew = get_dataset("c4", tokenizer, 128, 1000) 
     
     dataloader = torch.utils.data.DataLoader(datasetnew, batch_size = 1, shuffle = False) 
     
@@ -390,11 +390,16 @@ if __name__ == "__main__":
     globalacceptedtokenscount = 0 
     globalnumverifications = 0 
     
+    totalinstances = 0 
     for batch in tqdm(dataloader): 
         input_ids = batch["input_ids"].to(torch_device) 
         attention_mask = batch["attention_mask"].to(torch_device) 
         if attention_mask[0][0] == 0: 
             continue 
+        
+        totalinstances += 1 
+        if totalinstances > 100: 
+            break 
         
         print(tokenizer.decode(input_ids[0]), end = " ") 
         
@@ -403,7 +408,7 @@ if __name__ == "__main__":
                                                      None, 
                                                      input_ids, 
                                                      gamma = 1, 
-                                                     max_len = 256, 
+                                                     max_len = 128, 
                                                      top_k = -1, 
                                                      top_p = 0.9, 
                                                      temperature = 0.6, 
