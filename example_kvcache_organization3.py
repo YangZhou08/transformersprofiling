@@ -375,7 +375,6 @@ if __name__ == "__main__":
                                                      verbose = True, 
                                                      attention_mask = attention_mask, 
         ) 
-        exit(0) 
     
         globalacceptancerate += (acceptancer * draftcount) 
         globaldraftcount += draftcount 
