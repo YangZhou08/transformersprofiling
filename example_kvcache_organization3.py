@@ -393,6 +393,8 @@ if __name__ == "__main__":
     for batch in tqdm(dataloader): 
         input_ids = batch["input_ids"].to(torch_device) 
         attention_mask = batch["attention_mask"].to(torch_device) 
+        if attention_mask[0][0] == 0: 
+            continue 
         
         print(tokenizer.decode(input_ids[0]), end = " ") 
         
