@@ -404,6 +404,7 @@ if __name__ == "__main__":
         file.close() 
         attention_mask = None 
         ''' 
+        print(tokenizer.decode(input_ids[0])) 
         acceptancer, draftcount = Vanilla_Spec_cache(tokenizer, 
                                                      model, 
                                                      None, 
@@ -417,7 +418,7 @@ if __name__ == "__main__":
                                                      attention_mask = attention_mask, 
         ) 
         
-        exit(0) 
+        print("##########") 
     
         globalacceptancerate += (acceptancer * draftcount) 
         globaldraftcount += draftcount 
