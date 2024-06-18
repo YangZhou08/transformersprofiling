@@ -192,8 +192,8 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         for _ in range(gamma):
             outputs = model(
                 input_ids=pred_token_idx,
-                past_key_values=None, 
-                use_cache=False, 
+                past_key_values=cache, 
+                use_cache=True, 
                 # attention_mask = disposableattentionmask, 
             ) 
             cache = outputs.past_key_values 
@@ -217,8 +217,8 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         with torch.no_grad():
             outputs = model(
                 input_ids=input_ids, 
-                past_key_values=cache, 
-                use_cache=True,
+                past_key_values=None, 
+                use_cache=False, 
                 # attention_mask = disposableattentionmask, 
             ) 
             
@@ -241,7 +241,6 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
 
             # if eos
             if tokenizer.eos_token_id == i:
-                draft_count -= gamma - count
                 break 
 
         # if eos
