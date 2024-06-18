@@ -390,7 +390,7 @@ if __name__ == "__main__":
             break 
         
         # print(tokenizer.decode(input_ids[0]), end = " ") 
-        file = open("~/first.txt", "r+") 
+        file = open("first.txt", "r") 
         print(file.read()) 
         tokenizedinput = tokenizer.encode(file.read(), return_tensors = "pt", add_special_tokens = False) 
         input_ids = tokenizedinput 
