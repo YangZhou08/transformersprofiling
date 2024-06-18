@@ -394,7 +394,7 @@ if __name__ == "__main__":
         totalinstances += 1 
         if totalinstances > 100: 
             break 
-        
+        '''
         # print(tokenizer.decode(input_ids[0]), end = " ") 
         file = open("first.txt", "r") 
         tokenizedinput = tokenizer.encode(file.read(), return_tensors = "pt", add_special_tokens = True) 
@@ -403,7 +403,7 @@ if __name__ == "__main__":
         print(tokenizer.decode(input_ids[0])) 
         file.close() 
         attention_mask = None 
-        
+        ''' 
         print(tokenizer.decode(input_ids[0])) 
         acceptancer, draftcount = Vanilla_Spec_cache(tokenizer, 
                                                      model, 
@@ -418,7 +418,6 @@ if __name__ == "__main__":
                                                      attention_mask = attention_mask, 
         ) 
         
-        exit(0) 
         print("##########") 
     
         globalacceptancerate += (acceptancer * draftcount) 
