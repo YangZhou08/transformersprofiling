@@ -363,7 +363,9 @@ if __name__ == "__main__":
                 for j in range(5): 
                     # input_ids = datasetone[j]["question"] 
                     # print("Question: " + datasetnew[j]["question"] + "\n" + "Answer: " + datasetnew[j]["answer"]) 
-                    tokenizedinput = tokenizer.encode("Question: " + datasetnew[j]["question"] + "\n" + "Answer: " + datasetnew[j]["answer"] + "\n\n", return_tensors = "pt", add_special_tokens = False) 
+                    # tokenizedinput = tokenizer.encode("Question: " + datasetnew[j]["question"] + "\n" + "Answer: " + datasetnew[j]["answer"] + "\n\n", return_tensors = "pt", add_special_tokens = False) 
+                    file = open("first.txt", "r") 
+                    tokenizedinput = tokenizer.encode(file.read(), return_tensors = "pt", add_special_tokens = False) 
                     if prefixi == None: 
                         prefixi = tokenizedinput 
                     else: 
