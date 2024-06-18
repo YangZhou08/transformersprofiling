@@ -231,8 +231,6 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         # for i, speculation_prob, verify_prob in zip(generated_ids, speculation_probs, verify_probs[:-1]): 
             # r = torch.rand(1, device = model.device) 
             
-            count += 1
-            accepted_count += 1
             n += 1
             pred_token_idx = torch.tensor([[generated_ids[0][i]]], device = model.device) 
             for j in range(k): 
