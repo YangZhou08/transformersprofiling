@@ -363,9 +363,7 @@ if __name__ == "__main__":
                 for j in range(5): 
                     # input_ids = datasetone[j]["question"] 
                     # print("Question: " + datasetnew[j]["question"] + "\n" + "Answer: " + datasetnew[j]["answer"]) 
-                    # tokenizedinput = tokenizer.encode("Question: " + datasetnew[j]["question"] + "\n" + "Answer: " + datasetnew[j]["answer"] + "\n\n", return_tensors = "pt", add_special_tokens = False) 
-                    file = open("first.txt", "r") 
-                    tokenizedinput = tokenizer.encode(file.read(), return_tensors = "pt", add_special_tokens = False) 
+                    tokenizedinput = tokenizer.encode("Question: " + datasetnew[j]["question"] + "\n" + "Answer: " + datasetnew[j]["answer"] + "\n\n", return_tensors = "pt", add_special_tokens = False) 
                     if prefixi == None: 
                         prefixi = tokenizedinput 
                     else: 
@@ -392,6 +390,11 @@ if __name__ == "__main__":
             break 
         
         # print(tokenizer.decode(input_ids[0]), end = " ") 
+        file = open("first.txt", "r") 
+        print(file.read()) 
+        tokenizedinput = tokenizer.encode(file.read(), return_tensors = "pt", add_special_tokens = False) 
+        input_ids = tokenizedinput 
+        file.close() 
         
         acceptancer, draftcount = Vanilla_Spec_cache(tokenizer, 
                                                      model, 
@@ -405,6 +408,8 @@ if __name__ == "__main__":
                                                      verbose = True, 
                                                      attention_mask = attention_mask, 
         ) 
+        
+        exit(0) 
     
         globalacceptancerate += (acceptancer * draftcount) 
         globaldraftcount += draftcount 
