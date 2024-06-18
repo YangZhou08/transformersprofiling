@@ -222,9 +222,9 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
                 # attention_mask = disposableattentionmask, 
             ) 
             
-        assert outputs.logits.shape[1] == gamma + 1
+        # assert outputs.logits.shape[1] == gamma + 1 
         # verify_probs.append(norm_logits(outputs.logits[:, i, :], temperature=temperature ,top_k=top_k, top_p=top_p)[0]) 
-        verify_probs.append(norm_logits(outputs.logits[:, i, :], temperature=temperature ,top_k=top_k, top_p=top_p)[0]) 
+        verify_probs.append(norm_logits(outputs.logits[:, -1, :], temperature=temperature ,top_k=top_k, top_p=top_p)[0]) 
         # print(tokenizer.decode(sample(verify_probs[-1])), end = " ") 
         
         for i in range(len(generated_ids[0])): 
