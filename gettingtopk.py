@@ -180,7 +180,8 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         if next_token.shape == torch.Size([1]):
             next_token = next_token.unsqueeze(0)
         
-        pred_token_idx = next_token
+        pred_token_idx = next_token 
+        input_ids = torch.cat([input_ids, next_token], dim  = 1) 
 
         speculation_probs = [[], [], []] 
         generated_ids = [[], [], []] 
@@ -191,8 +192,8 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         for _ in range(gamma):
             outputs = model(
                 input_ids=pred_token_idx,
-                past_key_values=cache, 
-                use_cache=True,
+                past_key_values=None, 
+                use_cache=False, 
                 # attention_mask = disposableattentionmask, 
             ) 
             cache = outputs.past_key_values 
@@ -202,62 +203,29 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
             # pred_token_idx = sample(probs)
             # pred_token_idx = torch.argmax(probs, dim = -1) 
             pred_token_indices = torch.topk(probs, k, dim = -1).indices # shape (1, 3) 
+            print("shape of top three indices: ", pred_token_indices.shape) 
             pred_token_indices = pred_token_indices.squeeze(0) 
             # speculation_probs.append(probs[0]) 
             for i in range(k): 
                 speculation_probs[i].append(probs[0][pred_token_indices[i]]) 
                 generated_ids[i].append(pred_token_indices[i].item()) 
-            draft_count += 1
+            draft_count += 1 
         
-        new_cache = [] 
-        for layer in cache: 
-            new_layer = [] 
-            # print("len(layer), ", len(layer)) 
-            # print("kv shape, ", layer[0].shape) 
-            for kv in layer: 
-                new_layer.append(kv[:, :, :-gamma, :].contiguous()) 
-                # new_layer.append(v[:, :-gamma, :].contiguous()) 
-            new_layer = tuple(new_layer) 
-            new_cache.append(new_layer) 
-        new_cache = tuple(new_cache) 
-        cache = new_cache 
-        
-        verify_probs = [[], [], []] 
-        # verification 
-        for i in range(k): 
-            # verify_tokens = torch.cat([next_token, torch.LongTensor([generated_ids]).to(model.device)], dim = 1) 
-            # verify_tokens = torch.cat([input_ids, torch.LongTensor([generated_ids[i]]).to(model.device)], dim = 1) 
-            verify_tokens = torch.cat([next_token, torch.LongTensor([generated_ids[i]]).to(model.device)], dim = 1) 
-            # print("verify_tokens shape: ", verify_tokens.shape) 
+        verify_probs = [] 
             
-            set_inference_mode(model, "full") 
-            with torch.no_grad():
-                outputs = model(
-                    input_ids=verify_tokens,
-                    past_key_values=cache, 
-                    use_cache=True,
-                    # attention_mask = disposableattentionmask, 
-                ) 
-            cache = outputs.past_key_values 
+        set_inference_mode(model, "full") 
+        with torch.no_grad():
+            outputs = model(
+                input_ids=input_ids, 
+                past_key_values=cache, 
+                use_cache=True,
+                # attention_mask = disposableattentionmask, 
+            ) 
             
-            count = 0
-            
-            for i in range(gamma + 1):
-                assert outputs.logits.shape[1] == gamma + 1
-                # verify_probs.append(norm_logits(outputs.logits[:, i, :], temperature=temperature ,top_k=top_k, top_p=top_p)[0]) 
-                verify_probs[i].append(norm_logits(outputs.logits[:, i, :], temperature=temperature ,top_k=top_k, top_p=top_p)[0]) 
-                # print(tokenizer.decode(sample(verify_probs[-1])), end = " ") 
-            
-            # rollback 
-            new_cache = [] 
-            for layer in cache: 
-                new_layer = [] 
-                for kv in layer: 
-                    new_layer.append(kv[:, :, :-verify_tokens.shape[1], :].contiguous()) 
-                new_layer = tuple(new_layer) 
-                new_cache.append(new_layer) 
-            new_cache = tuple(new_cache) 
-            cache = new_cache 
+        assert outputs.logits.shape[1] == gamma + 1
+        # verify_probs.append(norm_logits(outputs.logits[:, i, :], temperature=temperature ,top_k=top_k, top_p=top_p)[0]) 
+        verify_probs.append(norm_logits(outputs.logits[:, i, :], temperature=temperature ,top_k=top_k, top_p=top_p)[0]) 
+        # print(tokenizer.decode(sample(verify_probs[-1])), end = " ") 
         
         for i in range(len(generated_ids[0])): 
         # for i, speculation_prob, verify_prob in zip(generated_ids, speculation_probs, verify_probs[:-1]): 
@@ -268,8 +236,9 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
             n += 1
             pred_token_idx = torch.tensor([[generated_ids[0][i]]], device = model.device) 
             for j in range(k): 
-                if verbose:
-                    print("{} ({}|{})".format(tokenizer.decode(generated_ids[j][i]), speculation_probs[j][i], verify_probs[j][i]), flush = True, end = " ") 
+                if verbose: 
+                    indextoken = generated_ids[j][i] 
+                    print("{} ({}|{})".format(tokenizer.decode(indextoken), speculation_probs[j][i], verify_probs[0][indextoken]), end = " ") 
             print("\n", flush = True, end = " ") 
 
             # if eos
@@ -284,7 +253,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         next_token = pred_token_idx 
         
         print(cache[0][0].shape, input_ids.shape) 
-        assert cache[0][0].shape[2] == input_ids.shape[1] + 1 
+        assert cache[0][0].shape[2] == input_ids.shape[1] 
 
     return -1, -1 
 
