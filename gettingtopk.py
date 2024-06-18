@@ -173,7 +173,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
     next_token = torch.argmax(outputs.logits[:, -1, :], dim = -1) 
     
     if verbose: 
-        spec_stream(next_token[0], tokenizer, 'cyan') 
+        print(colored(tokenizer.decode(next_token), "cyan"), flush = True) 
     
     n = 0 
     while n < max_len:
@@ -235,7 +235,13 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
             for j in range(k): 
                 if verbose: 
                     indextoken = generated_ids[j][i] 
-                    print("{} ({:.2f}|{:.2f})".format(tokenizer.decode(indextoken), speculation_probs[j][i], verify_probs[0][indextoken]), end = " ") 
+                    if verify_probs[0][indextoken] > 0.1: 
+                        print(colored(tokenizer.decode(indextoken), "green"), end = " ") 
+                        print("{:.2f}|{:.2f}".format(speculation_probs[j][i], verify_probs[0][indextoken]), end = " ") 
+                    else: 
+                        print(colored(tokenizer.decode(indextoken), "red"), end = " ") 
+                        print("{:.2f}|{:.2f}".format(speculation_probs[j][i], verify_probs[0][indextoken]), end = " ") 
+                    # print("{} ({:.2f}|{:.2f})".format(tokenizer.decode(indextoken), speculation_probs[j][i], verify_probs[0][indextoken]), end = " ") 
             print("\n", flush = True, end = " ") 
 
             # if eos
