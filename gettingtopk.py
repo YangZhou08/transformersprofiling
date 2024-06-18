@@ -235,7 +235,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
             for j in range(k): 
                 if verbose: 
                     indextoken = generated_ids[j][i] 
-                    print("{} ({}|{})".format(tokenizer.decode(indextoken), speculation_probs[j][i], verify_probs[0][indextoken]), end = " ") 
+                    print("{} ({:.2f}|{:.2f})".format(tokenizer.decode(indextoken), speculation_probs[j][i], verify_probs[0][indextoken]), end = " ") 
             print("\n", flush = True, end = " ") 
 
             # if eos
