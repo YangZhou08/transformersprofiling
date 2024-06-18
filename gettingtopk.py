@@ -283,7 +283,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         
         next_token = pred_token_idx 
         
-        assert cache[0][0].shape[2] == input_ids.shape[1] + n 
+        assert cache[0][0].shape[2] == input_ids.shape[1] + 1 
 
     return -1, -1 
 
