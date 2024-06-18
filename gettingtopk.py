@@ -203,7 +203,6 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
             # pred_token_idx = sample(probs)
             # pred_token_idx = torch.argmax(probs, dim = -1) 
             pred_token_indices = torch.topk(probs, k, dim = -1).indices # shape (1, 3) 
-            print("shape of top three indices: ", pred_token_indices.shape) 
             pred_token_indices = pred_token_indices.squeeze(0) 
             # speculation_probs.append(probs[0]) 
             for i in range(k): 
@@ -249,7 +248,6 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         
         next_token = pred_token_idx 
         
-        print(cache[0][0].shape, input_ids.shape) 
         assert cache[0][0].shape[2] == input_ids.shape[1] 
 
     return -1, -1 
@@ -402,7 +400,7 @@ if __name__ == "__main__":
                                                      top_k = -1, 
                                                      top_p = 0.9, 
                                                      temperature = 0.6, 
-                                                     verbose = False, 
+                                                     verbose = True, 
                                                      attention_mask = attention_mask, 
         ) 
     
