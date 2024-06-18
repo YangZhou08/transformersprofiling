@@ -394,7 +394,7 @@ if __name__ == "__main__":
         totalinstances += 1 
         if totalinstances > 100: 
             break 
-        
+        '''
         # print(tokenizer.decode(input_ids[0]), end = " ") 
         file = open("first.txt", "r") 
         tokenizedinput = tokenizer.encode(file.read(), return_tensors = "pt", add_special_tokens = True) 
@@ -402,7 +402,8 @@ if __name__ == "__main__":
         input_ids = input_ids.to(torch_device) 
         print(tokenizer.decode(input_ids[0])) 
         file.close() 
-        
+        attention_mask = None 
+        ''' 
         acceptancer, draftcount = Vanilla_Spec_cache(tokenizer, 
                                                      model, 
                                                      None, 
@@ -413,7 +414,7 @@ if __name__ == "__main__":
                                                      top_p = 0.9, 
                                                      temperature = 0.6, 
                                                      verbose = True, 
-                                                     attention_mask = None, 
+                                                     attention_mask = attention_mask, 
         ) 
         
         exit(0) 
