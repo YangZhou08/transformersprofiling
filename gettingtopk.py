@@ -392,8 +392,9 @@ if __name__ == "__main__":
         # print(tokenizer.decode(input_ids[0]), end = " ") 
         file = open("first.txt", "r") 
         print(file.read()) 
-        tokenizedinput = tokenizer.encode(file.read(), return_tensors = "pt", add_special_tokens = False) 
+        tokenizedinput = tokenizer.encode(file.read(), return_tensors = "pt", add_special_tokens = True) 
         input_ids = tokenizedinput 
+        input_ids = input_ids.to(torch_device) 
         file.close() 
         
         acceptancer, draftcount = Vanilla_Spec_cache(tokenizer, 
