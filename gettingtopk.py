@@ -407,7 +407,7 @@ if __name__ == "__main__":
                                                      top_p = 0.9, 
                                                      temperature = 0.6, 
                                                      verbose = True, 
-                                                     attention_mask = attention_mask, 
+                                                     attention_mask = None, 
         ) 
         
         exit(0) 
