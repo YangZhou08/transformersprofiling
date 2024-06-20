@@ -268,6 +268,9 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
                         print("{:.2f}|{:.2f}".format(speculation_probs[j][i], verify_probs[0][indextoken]), end = " ") 
                     # print("{} ({:.2f}|{:.2f})".format(tokenizer.decode(indextoken), speculation_probs[j][i], verify_probs[0][indextoken]), end = " ") 
             print("\n", flush = True, end = " ") 
+            if missedfirst: 
+                print("Missed first", flush = True) 
+                return firsthitcount, secondhitcount, thirdhitcount, misscount 
 
             # if eos
             if tokenizer.eos_token_id == i:
