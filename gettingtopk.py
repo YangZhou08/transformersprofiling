@@ -49,6 +49,11 @@ else:
     
 torch_device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 
+firsthitcount = 0 
+secondhitcount = 0 
+thirdhitcount = 0 
+misscount = 0 
+
 def spec_stream(pred_token_idx, tokenizer, color='blue'): 
     # print("pred_token_idx: ", pred_token_idx) 
     # pred_token_idx = pred_token_idx.squeeze(0) 
@@ -132,7 +137,7 @@ def set_inference_mode(model, mode):
         layer.mlp.set_inference_mode(mode) 
 
 @torch.inference_mode() 
-def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 256, top_k = -1, top_p = 0.9, temperature = 0.6, verbose = False, file_path = None, attention_mask = None): 
+def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 256, top_k = -1, top_p = 0.9, temperature = 0.6, verbose = False, file_path = None, attention_mask = None, firsthitcount = 0, secondhitcount = 0, thirdhitcount = 0, misscount = 0): 
     # reset cache 
     cache = None 
     
@@ -167,7 +172,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
     resample_count = 0
     accepted_count = 0
     target_sample_count = 0
-    draft_count = 0
+    draft_count = 0 
     
     # next_token = sample(norm_logits(outputs.logits[:, -1, :], temperature = temperature, top_k = top_k, top_p = top_p)) 
     next_token = torch.argmax(outputs.logits[:, -1, :], dim = -1) 
@@ -208,7 +213,6 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
             for i in range(k): 
                 speculation_probs[i].append(probs[0][pred_token_indices[i]]) 
                 generated_ids[i].append(pred_token_indices[i].item()) 
-            draft_count += 1 
         
         verify_probs = [] 
             
@@ -232,7 +236,28 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
             
             n += 1
             pred_token_idx = torch.tensor([[generated_ids[0][i]]], device = model.device) 
+            missedfirst = False 
+            missedsecond = False 
             for j in range(k): 
+                if j == 0: 
+                    if verify_probs[0][generated_ids[j][i]] <= 0.1: 
+                        missedfirst = True 
+                    else: 
+                        firsthitcount += 1 
+                elif j == 1: 
+                    if verify_probs[0][generated_ids[j][i]] <= 0.1: 
+                        missedsecond = True 
+                    else: 
+                        if missedfirst: 
+                            secondhitcount += 1 
+                elif j == 2: 
+                    if verify_probs[0][generated_ids[j][i]] <= 0.1: 
+                        missedthird = True 
+                        if missedfirst and missedsecond: 
+                            misscount += 1 
+                    else: 
+                        if missedfirst and missedsecond: 
+                            thirdhitcount += 1 
                 if verbose: 
                     indextoken = generated_ids[j][i] 
                     if verify_probs[0][indextoken] > 0.1: 
@@ -256,7 +281,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         
         assert cache[0][0].shape[2] == input_ids.shape[1] 
 
-    return -1, -1 
+    return firsthitcount, secondhitcount, thirdhitcount, misscount 
 
 def get_dataset(datasetname = None, tokenizer = None, max_length = None, limit = None): 
     
@@ -405,7 +430,7 @@ if __name__ == "__main__":
         attention_mask = None 
         ''' 
         print(tokenizer.decode(input_ids[0])) 
-        acceptancer, draftcount = Vanilla_Spec_cache(tokenizer, 
+        firsthitcount, secondhitcount, thirdhitcount, misscount = Vanilla_Spec_cache(tokenizer, 
                                                      model, 
                                                      None, 
                                                      input_ids, 
@@ -416,10 +441,11 @@ if __name__ == "__main__":
                                                      temperature = 0.6, 
                                                      verbose = True, 
                                                      attention_mask = attention_mask, 
-        ) 
+                                                     firsthitcount = firsthitcount, 
+                                                     secondhitcount = secondhitcount, 
+                                                     thirdhitcount = thirdhitcount, 
+                                                     misscount = misscount) 
         
         print("##########") 
-    
-        globalacceptancerate += (acceptancer * draftcount) 
-        globaldraftcount += draftcount 
-    print("globalacceptancerate: ", globalacceptancerate / globaldraftcount) 
+        print("first hit {} second hit {} third hit {} miss {}".format(firsthitcount, secondhitcount, thirdhitcount, misscount)) 
+    # print("globalacceptancerate: ", globalacceptancerate / globaldraftcount) 
