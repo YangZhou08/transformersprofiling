@@ -340,7 +340,8 @@ def get_dataset(datasetname = None, tokenizer = None, max_length = None, limit =
         datasetnew = datasetnew.map(encode_with_truncation, num_proc = 8) 
         datasetnew.set_format(type = "torch", columns = ["input_ids", "attention_mask", "text"]) 
     elif datasetname == "gsm8k": 
-        datasetnew = load_dataset("gsm8k", "main", split = "train[:{}]".format(limit)) 
+        # datasetnew = load_dataset("gsm8k", "main", split = "train[:{}]".format(limit)) 
+        datasetnew = load_dataset("gsm8k", "main", split = "test") 
     
     return datasetnew 
 
@@ -420,8 +421,6 @@ if __name__ == "__main__":
             continue 
         
         totalinstances += 1 
-        if totalinstances > 200: 
-            break 
         '''
         # print(tokenizer.decode(input_ids[0]), end = " ") 
         file = open("first.txt", "r") 
