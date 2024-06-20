@@ -12,8 +12,8 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2Se
 
 # from transformers.griffin.llama9 import LlamaForCausalLM 
 from transformers import LlamaForCausalLM 
-# from transformers.griffin.llama9 import get_llama_griffin 
-from transformers.griffin.llama10 import get_llama_griffin 
+from transformers.griffin.llama9 import get_llama_griffin 
+# from transformers.griffin.llama10 import get_llama_griffin 
 
 import socket 
 from tqdm import tqdm 
