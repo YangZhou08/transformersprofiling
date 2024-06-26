@@ -55,6 +55,8 @@ secondhitcount = 0
 thirdhitcount = 0 
 misscount = 0 
 
+largefirstcountt = 0 
+
 def spec_stream(pred_token_idx, tokenizer, color='blue'): 
     # print("pred_token_idx: ", pred_token_idx) 
     # pred_token_idx = pred_token_idx.squeeze(0) 
