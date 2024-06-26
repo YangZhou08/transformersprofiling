@@ -289,6 +289,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         
         assert cache[0][0].shape[2] == input_ids.shape[1] 
 
+    print(firsthitcount, secondhitcount, thirdhitcount, misscount, largefirstcountt, flush = True) 
     return firsthitcount, secondhitcount, thirdhitcount, misscount, largefirstcountt 
 
 def get_dataset(datasetname = None, tokenizer = None, max_length = None, limit = None): 
