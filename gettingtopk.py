@@ -138,7 +138,7 @@ def set_inference_mode(model, mode):
         layer.mlp.set_inference_mode(mode) 
 
 @torch.inference_mode() 
-def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 256, top_k = -1, top_p = 0.9, temperature = 0.6, verbose = False, file_path = None, attention_mask = None, firsthitcount = 0, secondhitcount = 0, thirdhitcount = 0, misscount = 0): 
+def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 256, top_k = -1, top_p = 0.9, temperature = 0.6, verbose = False, file_path = None, attention_mask = None, firsthitcount = 0, secondhitcount = 0, thirdhitcount = 0, misscount = 0, largefirstcountt = 0): 
     # reset cache 
     cache = None 
     
@@ -244,6 +244,8 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
                     if verify_probs[0][generated_ids[j][i]] <= 0.1: 
                         missedfirst = True 
                     else: 
+                        if verify_probs[0][generated_ids[j][i]] > 0.95: 
+                            largefirstcountt += 1 
                         firsthitcount += 1 
                 elif j == 1: 
                     if verify_probs[0][generated_ids[j][i]] <= 0.1: 
@@ -285,7 +287,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
         
         assert cache[0][0].shape[2] == input_ids.shape[1] 
 
-    return firsthitcount, secondhitcount, thirdhitcount, misscount 
+    return firsthitcount, secondhitcount, thirdhitcount, misscount, largefirstcountt 
 
 def get_dataset(datasetname = None, tokenizer = None, max_length = None, limit = None): 
     
@@ -433,7 +435,7 @@ if __name__ == "__main__":
         attention_mask = None 
         ''' 
         print(tokenizer.decode(input_ids[0])) 
-        firsthitcount, secondhitcount, thirdhitcount, misscount = Vanilla_Spec_cache(tokenizer, 
+        firsthitcount, secondhitcount, thirdhitcount, misscount, largefirstcountt = Vanilla_Spec_cache(tokenizer, 
                                                      model, 
                                                      None, 
                                                      input_ids, 
@@ -447,8 +449,9 @@ if __name__ == "__main__":
                                                      firsthitcount = firsthitcount, 
                                                      secondhitcount = secondhitcount, 
                                                      thirdhitcount = thirdhitcount, 
-                                                     misscount = misscount) 
+                                                     misscount = misscount, 
+                                                     largefirstcountt = largefirstcountt) 
         
         print("##########") 
-        print("first hit {} second hit {} third hit {} miss {}".format(firsthitcount, secondhitcount, thirdhitcount, misscount)) 
+        print("first hit {} second hit {} third hit {} miss {} largefirstcount {} total {} largefirstcountrat {}".format(firsthitcount, secondhitcount, thirdhitcount, misscount, largefirstcountt, firsthitcount + secondhitcount + thirdhitcount + misscount, largefirstcountt / (firsthitcount + secondhitcount + thirdhitcount + misscount))) 
     # print("globalacceptancerate: ", globalacceptancerate / globaldraftcount) 
