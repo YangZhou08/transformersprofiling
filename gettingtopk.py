@@ -275,7 +275,7 @@ def Vanilla_Spec_cache(tokenizer, model, cache, input_ids, gamma = 4, max_len = 
             print("\n", flush = True, end = " ") 
             if missedfirst: 
                 print("Missed first", flush = True) 
-                return firsthitcount, secondhitcount, thirdhitcount, misscount 
+                return firsthitcount, secondhitcount, thirdhitcount, misscount, largefirstcountt 
 
             # if eos
             if tokenizer.eos_token_id == i:
